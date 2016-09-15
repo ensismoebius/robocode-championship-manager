@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ====================================================================== 
+     06/07/2016 17:37:52                                                        
+
+     MuralEletronico    
+     Sistema de exibição de multimedia para Raspberry
+                   
+     ensismoebius                                                                
+     ====================================================================== -->
+<project name="RobocodeChampManager" default="main">
+	<description>
+            Sistema de controle de batalhas no robocode
+    </description>
+
+	<!-- Directories -->
+	<property name="source.directory" value="src" />
+	<property name="library.directory" value="lib" />
+	<property name="build.directory" value="build" />
+	<property name="jar.directory" value="${build.directory}/jar" />
+	<property name="classes.directory" value="${build.directory}/classes" />
+
+	<!-- Start program class -->
+	<property name="mainClassName" value="Main" />
+
+	<!-- A path: Used to set the build path -->
+	<path id="buildPath">
+		<fileset dir="${library.directory}" includes="**/*.jar" />
+	</path>
+
+	<!-- Targets for ant -->
+	<target name="clean">
+		<delete dir="${build.directory}" />
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${classes.directory}" />
+		<javac srcdir="${source.directory}" destdir="${classes.directory}" classpathref="buildPath" />
+		<copy todir="${classes.directory}">
+			<fileset dir="${source.directory}" excludes="**/*.java" />
+		</copy>
+	</target>
+
+	<target name="jar" depends="clean, compile">
+		<mkdir dir="${jar.directory}" />
+		<jar destfile="${jar.directory}/${ant.project.name}.jar" basedir="${classes.directory}">
+			<manifest>
+				<attribute name="Main-Class" value="${mainClassName}" />
+			</manifest>
+			<zipgroupfileset dir="${library.directory}" includes="**/*.jar" />
+		</jar>
+	</target>
+
+	<target name="run" depends="jar">
+		<java jar="${jar.directory}/${ant.project.name}.jar" fork="true" />
+	</target>
+
+	<target name="main" depends="clean,compile" />
+
+</project>
