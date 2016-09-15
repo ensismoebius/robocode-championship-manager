@@ -9,7 +9,11 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import model.Opponent;
 import utils.database.Database;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class BattleWinnerUpdater extends Scene {
 
 	private Opponent opponent1;

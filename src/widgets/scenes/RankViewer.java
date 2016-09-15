@@ -19,7 +19,11 @@ import listeners.OpponentsUpdater;
 import model.Opponent;
 import utils.database.Database;
 import widgets.Oponent;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class RankViewer extends Scene {
 
 	private Canvas oponentsPane;

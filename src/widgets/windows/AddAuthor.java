@@ -7,7 +7,11 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Author;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class AddAuthor extends Stage {
 
 	private TextField name;

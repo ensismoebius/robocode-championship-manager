@@ -7,6 +7,11 @@ import javax.persistence.EntityManager;
 import org.hibernate.Session;
 import org.hibernate.jdbc.Work;
 
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class HibernateConnectionProvider implements Work {
 
 	private EntityManager entityManager;

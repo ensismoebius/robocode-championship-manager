@@ -21,6 +21,11 @@ import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
 
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class Main extends Application {
 
 	// Data structures that holds all data

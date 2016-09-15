@@ -12,6 +12,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import model.Opponent;
 
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class BattleControl {
 
 	public Opponent[] startsBattle(HashMap<Long, Opponent> battleList, String robocodePath) {

@@ -9,6 +9,11 @@ import javafx.collections.ObservableList;
 import model.Opponent;
 import utils.database.Database;
 
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class OpponentsUpdater implements ListChangeListener<Opponent> {
 
 	private ObservableList<Opponent> list;

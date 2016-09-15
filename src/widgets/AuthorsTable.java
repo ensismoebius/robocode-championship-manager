@@ -7,7 +7,11 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.util.Callback;
 import model.Author;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class AuthorsTable extends TableView<Author> {
 
 	private TableColumn<Author, String> name;

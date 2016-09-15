@@ -21,7 +21,11 @@ import widgets.AuthorsTable;
 import widgets.MediaControl;
 import widgets.OpponentsTable;
 import widgets.windows.AddAuthor;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class EditRobots extends Scene {
 
 	private TextField name;

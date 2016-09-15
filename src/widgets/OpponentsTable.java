@@ -8,7 +8,11 @@ import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
 import javafx.util.Callback;
 import model.Opponent;
-
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class OpponentsTable extends TableView<Opponent> {
 
 	private TableColumn<Opponent, String> name;
