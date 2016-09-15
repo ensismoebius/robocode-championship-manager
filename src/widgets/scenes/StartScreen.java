@@ -24,12 +24,8 @@ public class StartScreen extends Scene {
 	private StackPane stackPane;
 	private MediaPlayer music;
 
-	private final double margin;
-
 	public StartScreen() {
 		super(new StackPane());
-
-		this.margin = 10d;
 
 		Rectangle2D primaryScreenBounds = Screen.getPrimary().getVisualBounds();
 
