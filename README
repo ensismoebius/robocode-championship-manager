@@ -1,3 +1,28 @@
+--- Robocode Championship Manager ---
+This program is licensed under GPLv3.
+
+I had organized the program in the folowing way:
+
+Package listeners:
+	Contains the source that updates the database and listem to changes in the list of opponents.
+
+Package model:
+	Contains the POJOs we need
+
+Package utils:
+	Contains utilities used in the program
+
+Package widgets:
+ 	Contains the controls, windows and scenes used in the program 
+
+Folder lib:
+	Contains the libraries the program needs
+
+Folder Robocode Starter:
+	Contais a pre-compiled version of the program tha controls the robocode battles
+
+ --- --- ---
+
 GNU GENERAL PUBLIC LICENSE
 
 Version 3, 29 June 2007
