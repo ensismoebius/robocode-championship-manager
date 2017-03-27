@@ -35,20 +35,28 @@ public class Main extends Application {
 	// Point to primary stage
 	private Stage primaryStage;
 
-	// The Scenes and Windows of application
+	// The Scenes of application
 	private RankViewer rankScene;
+	private StartScreen startScene;
 	private EditRobots addRobotScene;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
 	private BattleWinnerUpdater battleWinnerUpdater;
 
-	// The current opponent index
+	/**
+	 * The current opponent index
+	 */
 	private int opponentIndex;
 
-	// Controls the battles
+	/**
+	 * Controls the battles
+	 */
 	private BattleControl battleController;
+
+	/**
+	 * The path of the robocode program
+	 */
 	private String robocodePath;
-	private StartScreen startScene;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -71,25 +79,32 @@ public class Main extends Application {
 				Main.this.resetAllScenes();
 
 				// Initial screen
-				if (event.getCode() == KeyCode.I) Main.this.showStartScreen();
+				if (event.getCode() == KeyCode.I)
+					Main.this.showStartScreen();
 
 				// Repaint canvas
-				if (event.getCode() == KeyCode.R) Main.this.showRankAndPopulateOpponentsList();
+				if (event.getCode() == KeyCode.R)
+					Main.this.showRankAndPopulateOpponentsList();
 
 				// Adds a new robot
-				if (event.getCode() == KeyCode.A) Main.this.editRobots();
+				if (event.getCode() == KeyCode.A)
+					Main.this.editRobots();
 
 				// Show the battle screen
-				if (event.getCode() == KeyCode.B) Main.this.showBattle();
+				if (event.getCode() == KeyCode.B)
+					Main.this.showBattle();
 
 				// Starts the battle on robocode!
-				if (event.getCode() == KeyCode.S) Main.this.startsBattle();
+				if (event.getCode() == KeyCode.S)
+					Main.this.startsBattle();
 
 				// Circle through all opponents every time the M key is pressed
-				if (event.getCode() == KeyCode.M) Main.this.showNextSelectedOpponent();
+				if (event.getCode() == KeyCode.M)
+					Main.this.showNextSelectedOpponent();
 
 				// Circle through all opponents every time the M key is pressed
-				if (event.getCode() == KeyCode.W) Main.this.showWinnerScreen();
+				if (event.getCode() == KeyCode.W)
+					Main.this.showWinnerScreen();
 
 			}
 		});
@@ -105,7 +120,7 @@ public class Main extends Application {
 		primaryStage.show();
 
 		this.showRankAndPopulateOpponentsList();
-		
+
 		// Default scene
 		this.showStartScreen();
 	}
@@ -116,7 +131,7 @@ public class Main extends Application {
 	protected void showStartScreen() {
 		this.startScene = new StartScreen();
 		this.startScene.play();
-		
+
 		this.primaryStage.setScene(this.startScene);
 	}
 
@@ -202,7 +217,8 @@ public class Main extends Application {
 
 		// Show the opponent
 		try {
-			if (this.opponentScene != null) this.opponentScene.stop();
+			if (this.opponentScene != null)
+				this.opponentScene.stop();
 			this.opponentScene = null;
 			this.opponentScene = new ShowOponent();
 			this.opponentScene.setOponent(item);
@@ -246,15 +262,18 @@ public class Main extends Application {
 	private void resetAllScenes() {
 
 		// Resets the opponents scene
-		if (this.opponentScene != null) this.opponentScene.stop();
+		if (this.opponentScene != null)
+			this.opponentScene.stop();
 		this.opponentScene = null;
 
 		// Resets the main Scene
-		if (this.battleScene != null) this.battleScene.stop();
+		if (this.battleScene != null)
+			this.battleScene.stop();
 		this.battleScene = null;
 
 		// Resets initial screen
-		if(this.startScene != null) this.startScene.stop();
+		if (this.startScene != null)
+			this.startScene.stop();
 		this.startScene = null;
 
 		// Resets the add robot scene
@@ -262,5 +281,8 @@ public class Main extends Application {
 
 		// Resets the rank scene
 		this.rankScene = null;
+
+		// Tells java to clean the memory
+		System.gc();
 	}
 }

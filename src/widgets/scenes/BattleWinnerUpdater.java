@@ -14,8 +14,8 @@ import utils.database.Database;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class BattleWinnerUpdater extends Scene {
 
+public class BattleWinnerUpdater extends Scene {
 	private Opponent opponent1;
 	private Opponent opponent2;
 
