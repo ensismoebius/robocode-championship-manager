@@ -45,12 +45,14 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 			RobotBasicViewer robotViewer = new RobotBasicViewer(opponent);
 			robotViewer.setRobotMarkedEventListener(this);
-			
+
 			this.gridPane.add(robotViewer, opponent.getLevel(), linha);
 			linha++;
 		});
 
-		this.setRoot(new ScrollPane(this.gridPane));
+		ScrollPane sp = new ScrollPane(this.gridPane);
+		sp.setStyle("-fx-background: #010;");
+		this.setRoot(sp);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -62,13 +64,15 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 		this.entityManager.close();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see widgets.IMarkedEvent#marked(boolean, model.Opponent)
 	 */
 	@Override
 	public void robotMarked(boolean marked, Opponent robot) {
-		if(marked){
-			this.battleList.put(robot.getName(),robot);
+		if (marked) {
+			this.battleList.put(robot.getName(), robot);
 			return;
 		}
 		this.battleList.remove(robot.getName());
