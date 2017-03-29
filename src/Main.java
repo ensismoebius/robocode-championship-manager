@@ -177,6 +177,11 @@ public class Main extends Application {
 	 * Shows the versus screen
 	 */
 	private void showBattle() {
+		
+		if(this.battleList.size() < 2){
+			new Alert(AlertType.ERROR,"Choose two robots at least!").showAndWait();
+			return;
+		}
 
 		this.battleScene = new BattleViewer();
 
