@@ -46,7 +46,8 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 			RobotBasicViewer robotViewer = new RobotBasicViewer(opponent);
 			robotViewer.setRobotMarkedEventListener(this);
 
-			this.gridPane.add(robotViewer, opponent.getLevel(), linha);
+			GridPane.setRowSpan(robotViewer, opponent.getLevel() + 1);
+			this.gridPane.add(robotViewer, opponent.getLevel(), linha - (opponent.getLevel() * 2));
 			linha++;
 		});
 

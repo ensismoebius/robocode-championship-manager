@@ -2,6 +2,7 @@ package widgets;
 
 import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
+import javafx.beans.binding.DoubleBinding;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
@@ -21,7 +22,7 @@ public class RobotBasicViewer extends HBox {
 	private boolean marked = false;
 	private ImageView image;
 
-	private int maximumWidth = 300;
+	private int desireWidth = 300;
 	private Label name;
 
 	private IRobotMarkedEvent markedEvent;
@@ -31,7 +32,9 @@ public class RobotBasicViewer extends HBox {
 		super(10);
 
 		this.oponent = oponent;
-		
+
+		this.setMinHeight(this.desireWidth);
+
 		this.name = new Label(oponent.getName());
 		this.setAlignment(Pos.CENTER);
 		this.name.setTextFill(Color.YELLOWGREEN);
@@ -45,8 +48,8 @@ public class RobotBasicViewer extends HBox {
 		this.getChildren().add(this.name);
 		this.getChildren().add(this.image);
 
-		this.image.setFitHeight(this.maximumWidth);
-		this.image.setFitWidth(this.maximumWidth);
+		this.image.setFitHeight(this.desireWidth);
+		this.image.setFitWidth(this.desireWidth);
 
 		this.applyNonSelectedStyle();
 
@@ -73,17 +76,26 @@ public class RobotBasicViewer extends HBox {
 	}
 
 	public int getMaximumWidth() {
-		return maximumWidth;
+		return desireWidth;
 	}
 
 	public void setMaximumWidth(int maximumWidth) {
-		this.maximumWidth = maximumWidth;
+		this.desireWidth = maximumWidth;
+	}
+
+	public DoubleBinding xCoords() {
+		return this.layoutXProperty().add(this.widthProperty().divide(2));
+	}
+
+	public DoubleBinding yCoords() {
+		return this.layoutYProperty().add(this.heightProperty().divide(2));
 	}
 
 	/**
 	 * 
 	 */
 	private void mark() {
+
 		if (this.marked) {
 			this.image.scaleXProperty().set(1.0);
 			this.image.scaleYProperty().set(1.0);
