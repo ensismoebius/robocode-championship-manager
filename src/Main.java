@@ -68,6 +68,7 @@ public class Main extends Application {
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 
 		this.initializeApplicationProperties(primaryStage);
+		Database.getEntityManager();
 
 		// Binds the keys to actions
 		primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
@@ -118,8 +119,6 @@ public class Main extends Application {
 		// Shows everything!
 		primaryStage.setMaximized(true);
 		primaryStage.show();
-
-		this.showRankAndPopulateOpponentsList();
 
 		// Default scene
 		this.showStartScreen();

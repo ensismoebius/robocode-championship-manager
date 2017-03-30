@@ -67,7 +67,7 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 		ScrollPane sp = new ScrollPane(this.gridPane);
 		sp.setPannable(true);  
-		sp.setStyle("-fx-background: #010;");
+		sp.setStyle("-fx-background: #000;");
 		// Adding zoom!!!!
 		sp.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
 			@Override
@@ -94,6 +94,7 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 		this.entityManager.createQuery("from Opponent order by level").getResultList()
 				.forEach(opponent -> this.opponentsList.add((Opponent) opponent));
 		this.opponentsList.addListener(new OpponentsUpdater(this.opponentsList));
+		this.entityManager.clear();
 		this.entityManager.close();
 	}
 
