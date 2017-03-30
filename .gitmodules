@@ -1,0 +1,3 @@
+[submodule "robocodebattlestarter"]
+	path = robocodebattlestarter
+	url = git://git.code.sf.net/p/robocodebattlestarter/code
