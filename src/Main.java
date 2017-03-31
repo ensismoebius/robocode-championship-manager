@@ -46,7 +46,7 @@ public class Main extends Application {
 	/**
 	 * The current opponent index
 	 */
-	private int opponentIndex;
+	private int opponentIndexIWantToShow;
 
 	/**
 	 * Controls the battles
@@ -158,7 +158,7 @@ public class Main extends Application {
 	 * @param primaryStage
 	 */
 	private void initializeApplicationProperties(Stage primaryStage) {
-		this.opponentIndex = 0;
+		this.opponentIndexIWantToShow = 0;
 		this.robocodePath = "";
 		this.primaryStage = primaryStage;
 		this.battleList = new HashMap<String, model.Opponent>();
@@ -217,7 +217,7 @@ public class Main extends Application {
 	 */
 	private void showNextSelectedOpponent() {
 		// Get next opponent
-		Opponent item = (Opponent) Main.this.battleList.values().toArray()[this.opponentIndex];
+		Opponent item = (Opponent) Main.this.battleList.values().toArray()[this.opponentIndexIWantToShow];
 
 		// Show the opponent
 		try {
@@ -234,7 +234,7 @@ public class Main extends Application {
 		}
 
 		// Controls the index values to circle between opponents
-		this.opponentIndex = this.opponentIndex == this.battleList.size() - 1 ? 0 : this.opponentIndex + 1;
+		this.opponentIndexIWantToShow = this.opponentIndexIWantToShow == this.battleList.size() - 1 ? 0 : this.opponentIndexIWantToShow + 1;
 	}
 
 	/**

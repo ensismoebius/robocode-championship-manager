@@ -79,7 +79,7 @@ public class Opponent implements Cloneable {
 		return o;
 	}
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "authorId")
 	public List<Author> getAuthors() {
 		return authors;

@@ -71,7 +71,7 @@ public class ShowOponent extends Scene {
 		this.battleCry.setTextAlignment(TextAlignment.CENTER);
 		this.battleCry.effectProperty().set(new javafx.scene.effect.Lighting());
 
-		this.hbox = new HBox();
+		this.hbox = new HBox(20);
 		this.stackPane = new StackPane();
 		this.stackPane.prefWidthProperty().bind(this.widthProperty());
 
@@ -91,7 +91,7 @@ public class ShowOponent extends Scene {
 		this.battleCry.setTextFill(Color.YELLOWGREEN);
 		this.battleCry.setTextAlignment(TextAlignment.CENTER);
 
-		VBox vbox = new VBox();
+		VBox vbox = new VBox(20);
 		vbox.getChildren().addAll(name, battleCry);
 
 		f = new Font(30);
