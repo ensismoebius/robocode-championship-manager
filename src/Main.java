@@ -29,7 +29,7 @@ import widgets.scenes.StartScreen;
 public class Main extends Application {
 
 	// Data structures that holds all data
-	private HashMap<Long, model.Opponent> battleList;
+	private HashMap<String, model.Opponent> battleList;
 	private ObservableList<model.Opponent> opponentsList;
 
 	// Point to primary stage
@@ -162,7 +162,7 @@ public class Main extends Application {
 		this.opponentIndex = 0;
 		this.robocodePath = "";
 		this.primaryStage = primaryStage;
-		this.battleList = new HashMap<Long, model.Opponent>();
+		this.battleList = new HashMap<String, model.Opponent>();
 	}
 
 	/**

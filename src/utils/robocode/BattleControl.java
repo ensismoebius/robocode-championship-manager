@@ -19,7 +19,7 @@ import model.Opponent;
  */
 public class BattleControl {
 
-	public Opponent[] startsBattle(HashMap<Long, Opponent> battleList, String robocodePath) {
+	public Opponent[] startsBattle(HashMap<String, Opponent> battleList, String robocodePath) {
 
 		Opponent[] results = new Opponent[2];
 		Opponent opponent1 = (Opponent) battleList.values().toArray()[0];

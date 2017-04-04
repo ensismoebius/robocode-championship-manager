@@ -11,6 +11,7 @@ import javafx.scene.layout.GridPane;
 import listeners.OpponentsUpdater;
 import model.Opponent;
 import utils.database.Database;
+import widgets.IRobotMarkedEvent;
 import widgets.RobotBasicViewer;
 
 /**
@@ -18,31 +19,36 @@ import widgets.RobotBasicViewer;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class RankViewer extends Scene {
+public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 	private EntityManager entityManager;
 
-	private HashMap<Long, Opponent> battleList;
+	private HashMap<String, Opponent> battleList;
 	private ObservableList<Opponent> opponentsList;
 
 	private GridPane gridPane;
 
-	public RankViewer(HashMap<Long, model.Opponent> battleList, ObservableList<Opponent> opponentsList) {
+	private int linha;
+
+	public RankViewer(HashMap<String, model.Opponent> battleList, ObservableList<Opponent> opponentsList) {
 		super(new GridPane());
 
-		
 		this.gridPane = new GridPane();
 		this.gridPane.setVgap(30);
 
 		this.battleList = battleList;
 		this.opponentsList = opponentsList;
 		this.loadData();
-		RobotBasicViewer rbv = new RobotBasicViewer(opponentsList.get(0));
-		RobotBasicViewer rbv1 = new RobotBasicViewer(opponentsList.get(1));
 
-		this.gridPane.add(rbv, 0, 0);
-		this.gridPane.add(rbv1, 0, 1);
+		this.linha = 0;
+		this.opponentsList.forEach(opponent -> {
 
+			RobotBasicViewer robotViewer = new RobotBasicViewer(opponent);
+			robotViewer.setRobotMarkedEventListener(this);
+			
+			this.gridPane.add(robotViewer, opponent.getLevel(), linha);
+			linha++;
+		});
 
 		this.setRoot(new ScrollPane(this.gridPane));
 	}
@@ -54,5 +60,17 @@ public class RankViewer extends Scene {
 				.forEach(opponent -> this.opponentsList.add((Opponent) opponent));
 		this.opponentsList.addListener(new OpponentsUpdater(this.opponentsList));
 		this.entityManager.close();
+	}
+
+	/* (non-Javadoc)
+	 * @see widgets.IMarkedEvent#marked(boolean, model.Opponent)
+	 */
+	@Override
+	public void robotMarked(boolean marked, Opponent robot) {
+		if(marked){
+			this.battleList.put(robot.getName(),robot);
+			return;
+		}
+		this.battleList.remove(robot.getName());
 	}
 }
