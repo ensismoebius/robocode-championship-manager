@@ -2,19 +2,13 @@ package widgets.scenes;
 
 import java.util.HashMap;
 
-import javax.persistence.EntityManager;
-
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
-import listeners.OpponentsUpdater;
 import model.Opponent;
-import utils.database.Database;
 import widgets.IRobotMarkedEvent;
 import widgets.RobotBasicViewer;
 
@@ -24,8 +18,6 @@ import widgets.RobotBasicViewer;
  * @author André Furlan - ensismoebius@gmail.com
  */
 public class RankViewer extends Scene implements IRobotMarkedEvent {
-
-	private EntityManager entityManager;
 
 	private HashMap<String, Opponent> battleList;
 	private ObservableList<Opponent> opponentsList;
@@ -44,14 +36,15 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 		this.battleList = battleList;
 		this.opponentsList = opponentsList;
-		this.loadData();
 
 		this.linha = -1;
 		this.currentOpponentLevel = 0;
 		this.opponentsList.forEach(opponent -> {
 
-			if (opponent.getLevel() != currentOpponentLevel) {
-				currentOpponentLevel = opponent.getLevel();
+			int opponentLevel = opponent.getLevels().get(opponent.getLevels().size() - 1);
+
+			if (opponentLevel != currentOpponentLevel) {
+				currentOpponentLevel = opponentLevel;
 				linha = 0;
 			} else {
 				linha++;
@@ -61,12 +54,12 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 			robotViewer.setRobotMarkedEventListener(this);
 
 			GridPane.setRowSpan(robotViewer, currentOpponentLevel + 1);
-			this.gridPane.add(robotViewer, opponent.getLevel(), linha * (1 + currentOpponentLevel));
+			this.gridPane.add(robotViewer, opponentLevel, linha * (1 + currentOpponentLevel));
 
 		});
 
 		ScrollPane sp = new ScrollPane(this.gridPane);
-		sp.setPannable(true);  
+		sp.setPannable(true);
 		sp.setStyle("-fx-background: #000;");
 		// Adding zoom!!!!
 		sp.addEventFilter(ScrollEvent.ANY, new EventHandler<ScrollEvent>() {
@@ -84,18 +77,8 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 				event.consume();
 			}
 		});
-		
-		this.setRoot(sp);
-	}
 
-	@SuppressWarnings("unchecked")
-	private void loadData() {
-		this.entityManager = Database.getEntityManager();
-		this.entityManager.createQuery("from Opponent order by level").getResultList()
-				.forEach(opponent -> this.opponentsList.add((Opponent) opponent));
-		this.opponentsList.addListener(new OpponentsUpdater(this.opponentsList));
-		this.entityManager.clear();
-		this.entityManager.close();
+		this.setRoot(sp);
 	}
 
 	/*

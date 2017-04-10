@@ -60,7 +60,7 @@ public class StartScreen extends Scene {
 		this.setRoot(this.stackPane);
 	}
 
-	public void play() {
+	public void playBackgroundMusic() {
 		this.music.play();
 	}
 

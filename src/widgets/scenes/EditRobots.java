@@ -77,7 +77,7 @@ public class EditRobots extends Scene {
 		this.save.setOnMouseClicked(event -> {
 			try {
 				Opponent robo = new Opponent(this.name.getText(), this.imagePath);
-				robo.setLevel(Integer.parseInt(this.level.getText()));
+				robo.getLevels().add(Integer.parseInt(this.level.getText()));
 				robo.setTeam(this.team.getText());
 				robo.setAuthors(authorsTable.getItems());
 				robo.setBattleCry(this.warcry.getText());

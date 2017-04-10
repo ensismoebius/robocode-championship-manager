@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -27,7 +28,7 @@ public class Opponent implements Cloneable {
 
 	private long id;
 
-	private int level;
+	private List<Integer> levels;
 
 	private String name;
 
@@ -48,7 +49,7 @@ public class Opponent implements Cloneable {
 	private List<Author> authors;
 
 	public Opponent() {
-		this.level = 0;
+		this.levels = new ArrayList<Integer>();
 		this.authors = new ArrayList<Author>();
 	}
 
@@ -64,7 +65,7 @@ public class Opponent implements Cloneable {
 		o.setName(this.name);
 		o.setTeam(this.team);
 		o.setImage(this.image);
-		o.setLevel(this.level);
+		o.setLevels(this.levels);
 		o.setMusic(this.music);
 		o.setBattleCry(this.battleCry);
 		o.setSourceCode(this.sourceCode);
@@ -73,14 +74,15 @@ public class Opponent implements Cloneable {
 		this.authors.forEach(author -> {
 			try {
 				o.getAuthors().add((Author) author.clone());
-			} catch (CloneNotSupportedException e) {}
+			} catch (CloneNotSupportedException e) {
+			}
 		});
 
 		return o;
 	}
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	@JoinColumn(name = "authorId")
+	@JoinColumn(name = "opponentId")
 	public List<Author> getAuthors() {
 		return authors;
 	}
@@ -106,9 +108,9 @@ public class Opponent implements Cloneable {
 		return this.image;
 	}
 
-	@Column(nullable = false)
-	public int getLevel() {
-		return level;
+	@ElementCollection(fetch = FetchType.EAGER)
+	public List<Integer> getLevels() {
+		return levels;
 	}
 
 	@Column(nullable = true, columnDefinition = "LONGBLOB")
@@ -189,8 +191,8 @@ public class Opponent implements Cloneable {
 		this.image = pictureBytes;
 	}
 
-	public void setLevel(int level) {
-		this.level = level;
+	public void setLevels(List<Integer> levels) {
+		this.levels = levels;
 	}
 
 	public void setMusic(byte[] musicBytes) {

@@ -46,7 +46,9 @@ public class BattleWinnerUpdater extends Scene {
 			em.getTransaction().begin();
 
 			if (this.rbOpponent1.isSelected()) {
-				this.opponent1.setLevel(this.opponent1.getLevel() + 1);
+				
+				// Add the next level for the opponent
+				this.opponent1.getLevels().add(this.opponent1.getLevels().size());
 
 				try {
 					em.persist((Opponent) this.opponent1.clone());
@@ -56,7 +58,8 @@ public class BattleWinnerUpdater extends Scene {
 			}
 
 			if (this.rbOpponent2.isSelected()) {
-				this.opponent2.setLevel(this.opponent2.getLevel() + 1);
+				// Add the next level for the opponent
+				this.opponent2.getLevels().add(this.opponent2.getLevels().size());
 
 				try {
 					em.persist((Opponent) this.opponent2.clone());

@@ -1,5 +1,8 @@
 import java.util.HashMap;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
+
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -11,6 +14,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import listeners.OpponentsUpdater;
 import model.Opponent;
 import utils.database.Database;
 import utils.robocode.BattleControl;
@@ -30,7 +34,7 @@ public class Main extends Application {
 
 	// Data structures that holds all data
 	private HashMap<String, model.Opponent> battleList;
-	private ObservableList<model.Opponent> opponentsList;
+	private ObservableList<model.Opponent> opponentsList = FXCollections.observableArrayList();
 
 	// Point to primary stage
 	private Stage primaryStage;
@@ -67,8 +71,13 @@ public class Main extends Application {
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 
-		this.initializeApplicationProperties(primaryStage);
+		// Initializes database
 		Database.getEntityManager();
+
+		// Binds a listener that are going to do the database operations
+		this.opponentsList.addListener(new OpponentsUpdater(this.opponentsList));
+
+		this.initializeApplicationProperties(primaryStage);
 
 		// Binds the keys to actions
 		primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
@@ -128,8 +137,12 @@ public class Main extends Application {
 	 * 
 	 */
 	protected void showStartScreen() {
+
+		if (this.startScene == null) {
+			this.startScene = new StartScreen();
+		}
 		this.startScene = new StartScreen();
-		this.startScene.play();
+		this.startScene.playBackgroundMusic();
 
 		this.primaryStage.setScene(this.startScene);
 	}
@@ -149,7 +162,20 @@ public class Main extends Application {
 			this.robocodePath = dc.showDialog(null).getPath();
 		}
 
-		this.battleController.startsBattle(this.battleList, this.robocodePath);
+		Opponent[] results = this.battleController.startsBattle(this.battleList, this.robocodePath);
+
+		// Add one more level to the winner!!!
+		// And saves to database
+		results[0].getLevels().add(results[0].getLevels().size());
+		EntityManager em = Database.getEntityManager();
+		em.getTransaction().begin();
+		em.merge(results[0]);
+		em.getTransaction().commit();
+		em.close();
+
+		// Show the winner at all of his glory!!!
+		this.showOpponent(results[0]);
+
 	}
 
 	/**
@@ -176,9 +202,9 @@ public class Main extends Application {
 	 * Shows the versus screen
 	 */
 	private void showBattle() {
-		
-		if(this.battleList.size() < 2){
-			new Alert(AlertType.ERROR,"Choose two robots at least!").showAndWait();
+
+		if (this.battleList.size() < 2) {
+			new Alert(AlertType.ERROR, "Choose two robots at least!").showAndWait();
 			return;
 		}
 
@@ -219,6 +245,17 @@ public class Main extends Application {
 		// Get next opponent
 		Opponent item = (Opponent) Main.this.battleList.values().toArray()[this.opponentIndexIWantToShow];
 
+		this.showOpponent(item);
+
+		// Controls the index values to circle between opponents
+		this.opponentIndexIWantToShow = this.opponentIndexIWantToShow == this.battleList.size() - 1 ? 0
+				: this.opponentIndexIWantToShow + 1;
+	}
+
+	/**
+	 * @param item
+	 */
+	private void showOpponent(Opponent item) {
 		// Show the opponent
 		try {
 			if (this.opponentScene != null)
@@ -232,9 +269,6 @@ public class Main extends Application {
 			new Alert(AlertType.ERROR, "Falha ao exibir oponente").showAndWait();
 			System.out.println(e.getMessage());
 		}
-
-		// Controls the index values to circle between opponents
-		this.opponentIndexIWantToShow = this.opponentIndexIWantToShow == this.battleList.size() - 1 ? 0 : this.opponentIndexIWantToShow + 1;
 	}
 
 	/**
@@ -242,7 +276,8 @@ public class Main extends Application {
 	 */
 	private void showRankAndPopulateOpponentsList() {
 
-		this.opponentsList = FXCollections.observableArrayList();
+		// Loads the robots!!
+		this.loadData();
 
 		// Every time we show the rank, we must erase all opponents in
 		// battleList property otherwise it will become increasingly crowded
@@ -258,6 +293,21 @@ public class Main extends Application {
 		// A weird bug demands that we demaximize and maximize the window
 		// otherwise scroll bars vanishes
 		this.primaryStage.setMaximized(true);
+	}
+
+	@SuppressWarnings("unchecked")
+	private void loadData() {
+		EntityManager entityManager = Database.getEntityManager();
+
+		try {
+			entityManager.createQuery("from Opponent").getResultList()
+					.forEach(opponent -> this.opponentsList.add((Opponent) opponent));
+
+		} catch (PersistenceException e) {
+			this.opponentsList.clear();
+		}
+		entityManager.clear();
+		entityManager.close();
 	}
 
 	/**

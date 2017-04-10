@@ -11,8 +11,9 @@
 			<property name="javax.persistence.jdbc.password" value="1234" />
 			<property name="hibernate.dialect" value="org.hibernate.dialect.MySQL5Dialect" />
 			<!-- none, create, drop, drop-and-create, update -->
-			<property name="hibernate.hbm2ddl.auto" value="update" />
-			<property name="hibernate.cache.use_second_level_cache" value="false" />
+<!-- 			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.cache.use_second_level_cache" value="false" /> -->
+			<property name="javax.persistence.schema-generation.database.action" value="none"/>
 		</properties>
 	</persistence-unit>
 </persistence>

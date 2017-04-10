@@ -60,8 +60,6 @@ public class BattleControl {
 
 				int index = Integer.parseInt(line.split("\t")[0]) - 1;
 				results[index] = (Opponent) battleList.values().toArray()[index];
-
-				System.out.println(line);
 			}
 		} catch (IOException e) {
 			new Alert(AlertType.ERROR, "Fail to start the battle").show();
