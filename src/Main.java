@@ -19,7 +19,6 @@ import model.Opponent;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
-import widgets.scenes.BattleWinnerUpdater;
 import widgets.scenes.EditRobots;
 import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
@@ -45,7 +44,6 @@ public class Main extends Application {
 	private EditRobots addRobotScene;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
-	private BattleWinnerUpdater battleWinnerUpdater;
 
 	/**
 	 * The current opponent index
@@ -111,11 +109,6 @@ public class Main extends Application {
 				// Circle through all opponents every time the M key is pressed
 				if (event.getCode() == KeyCode.M)
 					Main.this.showNextSelectedOpponent();
-
-				// Circle through all opponents every time the M key is pressed
-				if (event.getCode() == KeyCode.W)
-					Main.this.showWinnerScreen();
-
 			}
 		});
 
@@ -147,8 +140,6 @@ public class Main extends Application {
 		this.primaryStage.setScene(this.startScene);
 	}
 
-	// FIXME The battle starts fine and all needed files are created but the
-	// looks corrupted
 	protected void startsBattle() {
 
 		if (this.battleController == null) {
@@ -220,23 +211,6 @@ public class Main extends Application {
 		this.battleScene.play();
 
 		primaryStage.setScene(this.battleScene);
-	}
-
-	/**
-	 * Updates a winner of the versus screen
-	 */
-	private void showWinnerScreen() {
-
-		this.battleWinnerUpdater = new BattleWinnerUpdater();
-
-		// Get the opponents from list
-		model.Opponent opponent1 = (model.Opponent) this.battleList.values().toArray()[0];
-		model.Opponent opponent2 = (model.Opponent) this.battleList.values().toArray()[1];
-
-		// Set the data!
-		this.battleWinnerUpdater.setOpponents(opponent1, opponent2);
-
-		primaryStage.setScene(this.battleWinnerUpdater);
 	}
 
 	/**
