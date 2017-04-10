@@ -162,19 +162,20 @@ public class Main extends Application {
 			this.robocodePath = dc.showDialog(null).getPath();
 		}
 
-		Opponent[] results = this.battleController.startsBattle(this.battleList, this.robocodePath);
+		// Gets the winner
+		Opponent winner = this.battleController.startsBattle(this.battleList, this.robocodePath)[0];
 
 		// Add one more level to the winner!!!
 		// And saves to database
-		results[0].getLevels().add(results[0].getLevels().size());
+		winner.getLevels().add(winner.getLevels().size());
 		EntityManager em = Database.getEntityManager();
 		em.getTransaction().begin();
-		em.merge(results[0]);
+		em.merge(winner);
 		em.getTransaction().commit();
 		em.close();
 
 		// Show the winner at all of his glory!!!
-		this.showOpponent(results[0]);
+		this.showOpponent(winner);
 
 	}
 
