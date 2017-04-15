@@ -153,17 +153,30 @@ public class Main extends Application {
 			this.robocodePath = dc.showDialog(null).getPath();
 		}
 
-		// Gets the winner
-		Opponent winner = this.battleController.startsBattle(this.battleList, this.robocodePath)[0];
+		// Do the battle an gets the results
+		Opponent[] opponents = this.battleController.startsBattle(this.battleList, this.robocodePath);
 
-		// Add one more level to the winner!!!
-		// And saves to database
-		winner.getLevels().add(winner.getLevels().size());
-		EntityManager em = Database.getEntityManager();
-		em.getTransaction().begin();
-		em.merge(winner);
-		em.getTransaction().commit();
-		em.close();
+		// Gets the winner
+		Opponent winner = opponents[0];
+		Integer winnerLevel = winner.getLevels().get(winner.getLevels().size() - 1);
+
+		// Gets the loser
+		Opponent loser = opponents[1];
+		Integer loserLevel = loser.getLevels().get(loser.getLevels().size() - 1);
+
+		// Only opponets with lower or same level can level up.
+		// This is done because sometimes we have to make lower
+		// levels robots compete with higher leves robots
+		if (winnerLevel <= loserLevel) {
+			// Add one more level to the winner!!!
+			// And saves to database
+			winner.getLevels().add(winner.getLevels().size());
+			EntityManager em = Database.getEntityManager();
+			em.getTransaction().begin();
+			em.merge(winner);
+			em.getTransaction().commit();
+			em.close();
+		}
 
 		// Show the winner at all of his glory!!!
 		this.showOpponent(winner);
@@ -272,9 +285,9 @@ public class Main extends Application {
 
 	@SuppressWarnings("unchecked")
 	private void loadData() {
-		
+
 		this.opponentsList.clear();
-		
+
 		EntityManager entityManager = Database.getEntityManager();
 
 		try {

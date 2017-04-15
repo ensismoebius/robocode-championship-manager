@@ -67,8 +67,8 @@ public class RobotBasicViewer extends HBox {
 
 	private void applySelectedStyle() {
 
-		this.setStyle("" + "-fx-border-color: #00ff00;" + "-fx-border-width: 8px;" + "-fx-font-size: 2em;"
-				+ "-fx-background-color: #000;");
+		this.setStyle(
+				"-fx-border-color: #00ff00; -fx-border-width: 8px; -fx-font-size: 2em; -fx-background-color: #000;");
 	}
 
 	private void applyNonSelectedStyle() {
@@ -109,6 +109,16 @@ public class RobotBasicViewer extends HBox {
 		this.applySelectedStyle();
 		this.markedEvent.robotMarked(true, this.oponent);
 		this.marked = true;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see javafx.scene.Node#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.name.getText() + " - " + this.oponent.getLevels().toString();
 	}
 
 }

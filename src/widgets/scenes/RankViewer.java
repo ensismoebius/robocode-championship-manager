@@ -37,29 +37,30 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 		this.battleList = battleList;
 		this.opponentsList = opponentsList;
 
-		this.rankGridRowNumber = -1;
+		this.rankGridRowNumber = 1;
 		this.currentOpponentLevel = 0;
 		this.opponentsList.forEach(opponent -> {
 
 			int opponentLevel = opponent.getLevels().get(opponent.getLevels().size() - 1);
 
-			if (opponentLevel != currentOpponentLevel) {
-				currentOpponentLevel = opponentLevel;
-				rankGridRowNumber = 0;
-			} else {
-				rankGridRowNumber++;
-			}
+//			if (opponentLevel != currentOpponentLevel) {
+//				currentOpponentLevel = opponentLevel;
+//				rankGridRowNumber = 1;
+//			} else {
+//				rankGridRowNumber++;
+//			}
 
 			
-			//for (Integer level : opponent.getLevels()) {
+			for (Integer level : opponent.getLevels()) {
 
 				RobotBasicViewer robotViewer = new RobotBasicViewer(opponent);
 				robotViewer.setRobotMarkedEventListener(this);
 
-				GridPane.setRowSpan(robotViewer, currentOpponentLevel + 1);
-				this.gridPane.add(robotViewer, opponentLevel, rankGridRowNumber * (1 + currentOpponentLevel));
-
-			//}
+				GridPane.setRowSpan(robotViewer, level + 1);
+				this.gridPane.add(robotViewer, level + 1, rankGridRowNumber);
+			}
+			
+			rankGridRowNumber++;
 		});
 
 		ScrollPane sp = new ScrollPane(this.gridPane);
