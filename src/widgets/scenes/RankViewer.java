@@ -51,7 +51,6 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 			}
 
 			
-			// TODO test it!! ITS NOT DONE YET!!!!!
 			//for (Integer level : opponent.getLevels()) {
 
 				RobotBasicViewer robotViewer = new RobotBasicViewer(opponent);

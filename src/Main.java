@@ -272,6 +272,9 @@ public class Main extends Application {
 
 	@SuppressWarnings("unchecked")
 	private void loadData() {
+		
+		this.opponentsList.clear();
+		
 		EntityManager entityManager = Database.getEntityManager();
 
 		try {
@@ -280,6 +283,7 @@ public class Main extends Application {
 
 		} catch (PersistenceException e) {
 			this.opponentsList.clear();
+			e.printStackTrace();
 		}
 		entityManager.clear();
 		entityManager.close();

@@ -50,7 +50,7 @@ public class BattleControl {
 		try {
 
 			// TODO make it flexible!
-			process = new ProcessBuilder("RobocodeStarter/start.sh", robocodePath, "3", robot1, robot2).start();
+			process = new ProcessBuilder("RobocodeStarter/start.sh", robocodePath, "5", robot1, robot2).start();
 			InputStream is = process.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
