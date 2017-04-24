@@ -164,7 +164,16 @@ public class EditRobots extends Scene {
 			if (robot.exists()) try {
 				this.compiledRobot.setText(robot.toURI().toURL().toString());
 				this.team.setText(robot.getName().split("\\.")[0]);
-				this.name.setText(robot.getName().split("\\.")[1].split("_")[0]);
+				
+				String[] robotName = robot.getName().split("\\.")[1].split("_");
+				String name = null;
+				if(robotName.length > 2){
+					name = robotName[0] + "_" + robotName[1];
+				}else{
+					name = robotName[0];
+				}
+				
+				this.name.setText(name);
 
 			} catch (Exception e) {
 				e.printStackTrace();
