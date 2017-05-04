@@ -293,7 +293,7 @@ public class Main extends Application {
 
 		try {
 			entityManager.createQuery("from Opponent").getResultList()
-					.forEach(opponent -> this.opponentsList.add((Opponent) opponent));
+					.forEach(opponent -> this.opponentsList.put(((Opponent) opponent).getName(), (Opponent) opponent));
 
 		} catch (PersistenceException e) {
 			this.opponentsList.clear();

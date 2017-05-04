@@ -2,7 +2,7 @@ package widgets.scenes;
 
 import java.util.HashMap;
 
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
@@ -20,15 +20,13 @@ import widgets.RobotBasicViewer;
 public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 	private HashMap<String, Opponent> battleList;
-	private ObservableList<Opponent> opponentsList;
+	private ObservableMap<String, Opponent> opponentsList;
 
 	private GridPane gridPane;
 
 	private int rankGridRowNumber;
 
-	private int currentOpponentLevel;
-
-	public RankViewer(HashMap<String, model.Opponent> battleList, ObservableList<Opponent> opponentsList) {
+	public RankViewer(HashMap<String, model.Opponent> battleList, ObservableMap<String, Opponent> opponentsList) {
 		super(new GridPane());
 
 		this.gridPane = new GridPane();
@@ -38,13 +36,12 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 		this.opponentsList = opponentsList;
 
 		this.rankGridRowNumber = 1;
-		this.currentOpponentLevel = 0;
-		this.opponentsList.forEach(opponent -> {
+		this.opponentsList.entrySet().forEach(opponent -> {
 
-			for (Integer level : opponent.getLevels()) {
+			for (Integer level : opponent.getValue().getLevels()) {
 
-				RobotBasicViewer robotViewer = 
-						new RobotBasicViewer(opponent.getImage(), opponent.getName(), String.valueOf(opponent.getId()));
+				RobotBasicViewer robotViewer = new RobotBasicViewer(opponent.getValue().getImage(),
+						opponent.getValue().getName(), String.valueOf(opponent.getValue().getId()));
 				robotViewer.setRobotMarkedEventListener(this);
 
 				GridPane.setRowSpan(robotViewer, level + 1);
@@ -85,7 +82,7 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 	@Override
 	public void robotMarked(boolean marked, String robotId) {
 		if (marked) {
-			this.battleList.put(robotId, robot);
+			this.battleList.put(robotId, this.opponentsList.get(robotId));
 			return;
 		}
 		this.battleList.remove(robotId);
