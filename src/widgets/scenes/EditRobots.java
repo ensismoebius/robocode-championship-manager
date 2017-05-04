@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.net.URI;
 
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -51,12 +52,12 @@ public class EditRobots extends Scene {
 	private VBox vbox;
 	private HBox hbox;
 
-	private ObservableList<Opponent> opponentsList;
+	private ObservableMap<String,Opponent> opponentsList;
 
-	public EditRobots(ObservableList<Opponent> opponentsList) {
+	public EditRobots(ObservableMap<String,Opponent> opponentsList2) {
 		super(new HBox());
 
-		this.opponentsList = opponentsList;
+		this.opponentsList = opponentsList2;
 
 		this.mediaControl = new MediaControl(null);
 		this.chooser = new FileChooser();
@@ -86,7 +87,7 @@ public class EditRobots extends Scene {
 				robo.setMusic(this.mediaControl.getSelectedFile().toURI());
 				robo.setMusicStart(this.mediaControl.getCurrentTime());
 
-				EditRobots.this.opponentsList.add(robo);
+				EditRobots.this.opponentsList.put(robo.getName(), robo);
 
 				this.authorsTable.getItems().clear();
 				this.name.clear();
@@ -183,7 +184,7 @@ public class EditRobots extends Scene {
 		this.authorsTable = new AuthorsTable();
 		this.authorsTable.setPrefHeight(150);
 
-		this.opponentsTable = new OpponentsTable(opponentsList);
+		this.opponentsTable = new OpponentsTable(opponentsList2);
 		this.opponentsTable.prefWidthProperty().bind(this.widthProperty().divide(2));
 
 		this.vbox.getChildren().addAll(compiledRobot, name, team, warcry, level, sourceCode, mediaControl, authorsTable, addAuthor, image, addImage, save);

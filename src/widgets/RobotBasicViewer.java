@@ -26,23 +26,23 @@ public class RobotBasicViewer extends HBox {
 	private Label name;
 
 	private IRobotMarkedEvent markedEvent;
-	private Opponent oponent;
+	private String opponentId;
 
-	public RobotBasicViewer(model.Opponent oponent) {
+	public RobotBasicViewer(byte[] oponentImage, String opponentName, String opponentId) {
 		super(10);
 
-		this.oponent = oponent;
 
 		this.setMinHeight(this.desireWidth);
 
-		this.name = new Label(oponent.getName());
+		this.opponentId = opponentId;
+		this.name = new Label(opponentName);
 		this.setAlignment(Pos.CENTER);
 		this.name.setTextFill(Color.YELLOWGREEN);
 		this.name.setTextAlignment(TextAlignment.RIGHT);
 		this.name.setRotate(90);
 
 		this.image = new ImageView();
-		this.image.setImage(new Image(new ByteInputStream(oponent.getImage(), oponent.getImage().length)));
+		this.image.setImage(new Image(new ByteInputStream(oponentImage, oponentImage.length)));
 		this.image.setPreserveRatio(true);
 
 		this.getChildren().add(this.name);
@@ -100,14 +100,14 @@ public class RobotBasicViewer extends HBox {
 			this.image.scaleXProperty().set(1.0);
 			this.image.scaleYProperty().set(1.0);
 			this.applyNonSelectedStyle();
-			this.markedEvent.robotMarked(false, this.oponent);
+			this.markedEvent.robotMarked(false, this.opponentId);
 			this.marked = false;
 			return;
 		}
 		this.image.scaleXProperty().set(1.0);
 		this.image.scaleYProperty().set(1.0);
 		this.applySelectedStyle();
-		this.markedEvent.robotMarked(true, this.oponent);
+		this.markedEvent.robotMarked(true, this.opponentId);
 		this.marked = true;
 	}
 
@@ -118,7 +118,7 @@ public class RobotBasicViewer extends HBox {
 	 */
 	@Override
 	public String toString() {
-		return this.name.getText() + " - " + this.oponent.getLevels().toString();
+		return this.name.getText() + " - " + this.opponentId;
 	}
 
 }

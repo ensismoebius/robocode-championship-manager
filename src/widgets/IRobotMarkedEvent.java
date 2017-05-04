@@ -12,6 +12,6 @@ import model.Opponent;
  */
 public interface IRobotMarkedEvent {
 	
-	public void robotMarked(boolean marked, Opponent robot);
+	public void robotMarked(boolean marked, String robotId);
 
 }

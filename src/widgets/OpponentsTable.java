@@ -3,6 +3,7 @@ package widgets;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableColumn.CellDataFeatures;
 import javafx.scene.control.TableView;
@@ -19,10 +20,10 @@ public class OpponentsTable extends TableView<Opponent> {
 	private TableColumn<Opponent, String> battleCry;
 
 	@SuppressWarnings("unchecked")
-	public OpponentsTable(ObservableList<Opponent> opponentsList) {
+	public OpponentsTable(ObservableMap<String,Opponent> opponentsList2) {
 
 		this.setEditable(false);
-		this.setItems(opponentsList);
+		this.setItems(opponentsList2);
 
 		this.name = new TableColumn<Opponent, String>("Nome");
 		this.battleCry = new TableColumn<Opponent, String>("Lema");

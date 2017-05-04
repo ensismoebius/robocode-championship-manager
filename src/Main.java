@@ -7,6 +7,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -33,7 +34,7 @@ public class Main extends Application {
 
 	// Data structures that holds all data
 	private HashMap<String, model.Opponent> battleList;
-	private ObservableList<model.Opponent> opponentsList = FXCollections.observableArrayList();
+	private ObservableMap<String, model.Opponent> opponentsList = FXCollections.observableHashMap();
 
 	// Point to primary stage
 	private Stage primaryStage;
@@ -73,7 +74,7 @@ public class Main extends Application {
 		Database.getEntityManager();
 
 		// Binds a listener that are going to do the database operations
-		this.opponentsList.addListener(new OpponentsUpdater(this.opponentsList));
+		this.opponentsList.addListener(new OpponentsUpdater());
 
 		this.initializeApplicationProperties(primaryStage);
 
