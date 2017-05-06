@@ -1,5 +1,7 @@
 package widgets;
 
+import java.io.IOException;
+
 import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
 import javafx.beans.binding.DoubleBinding;
@@ -41,9 +43,21 @@ public class RobotBasicViewer extends HBox {
 		this.name.setTextAlignment(TextAlignment.RIGHT);
 		this.name.setRotate(90);
 
+		ByteInputStream bos = new ByteInputStream(oponentImage, oponentImage.length);
+		
+		// I dont know why, but tell to javafx the width and height of the image 
+		// turns the system faster
+		Image picture = new Image(bos, 320, 240, true, true);
+		
 		this.image = new ImageView();
-		this.image.setImage(new Image(new ByteInputStream(oponentImage, oponentImage.length)));
+		this.image.setImage(picture);
 		this.image.setPreserveRatio(true);
+		
+		try {
+			bos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		this.getChildren().add(this.name);
 		this.getChildren().add(this.image);

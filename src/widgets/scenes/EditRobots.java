@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.net.URI;
 
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -20,8 +19,8 @@ import javafx.stage.FileChooser;
 import model.Opponent;
 import widgets.AuthorsTable;
 import widgets.MediaControl;
-import widgets.OpponentsTable;
 import widgets.windows.AddAuthor;
+
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -47,14 +46,13 @@ public class EditRobots extends Scene {
 
 	private FileChooser chooser;
 	private AuthorsTable authorsTable;
-	private OpponentsTable opponentsTable;
 
 	private VBox vbox;
 	private HBox hbox;
 
-	private ObservableMap<String,Opponent> opponentsList;
+	private ObservableMap<String, Opponent> opponentsList;
 
-	public EditRobots(ObservableMap<String,Opponent> opponentsList2) {
+	public EditRobots(ObservableMap<String, Opponent> opponentsList2) {
 		super(new HBox());
 
 		this.opponentsList = opponentsList2;
@@ -110,12 +108,13 @@ public class EditRobots extends Scene {
 		this.addImage.setOnMouseClicked(event -> {
 			File lodedImage = chooser.showOpenDialog(null);
 
-			if (lodedImage.exists()) try {
-				image.setImage(new Image(lodedImage.toURI().toURL().toString()));
-				imagePath = lodedImage.toURI();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			if (lodedImage.exists())
+				try {
+					image.setImage(new Image(lodedImage.toURI().toURL().toString()));
+					imagePath = lodedImage.toURI();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 		});
 
 		this.image = new ImageView();
@@ -145,16 +144,17 @@ public class EditRobots extends Scene {
 		this.sourceCode.setOnMouseClicked(event -> {
 			File source = chooser.showOpenDialog(null);
 
-			if (source.exists()) try {
-				FileInputStream fis = new FileInputStream(source);
-				byte[] bytes = new byte[(int) source.length()];
-				fis.read(bytes, 0, (int) source.length());
-				String s = new String(bytes);
-				fis.close();
-				sourceCode.setText(s);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			if (source.exists())
+				try {
+					FileInputStream fis = new FileInputStream(source);
+					byte[] bytes = new byte[(int) source.length()];
+					fis.read(bytes, 0, (int) source.length());
+					String s = new String(bytes);
+					fis.close();
+					sourceCode.setText(s);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 		});
 
 		this.compiledRobot = new TextField();
@@ -162,37 +162,35 @@ public class EditRobots extends Scene {
 		this.compiledRobot.setOnMouseClicked(event -> {
 			File robot = chooser.showOpenDialog(null);
 
-			if (robot.exists()) try {
-				this.compiledRobot.setText(robot.toURI().toURL().toString());
-				this.team.setText(robot.getName().split("\\.")[0]);
-				
-				String[] robotName = robot.getName().split("\\.")[1].split("_");
-				String name = null;
-				if(robotName.length > 2){
-					name = robotName[0] + "_" + robotName[1];
-				}else{
-					name = robotName[0];
-				}
-				
-				this.name.setText(name);
+			if (robot.exists())
+				try {
+					this.compiledRobot.setText(robot.toURI().toURL().toString());
+					this.team.setText(robot.getName().split("\\.")[0]);
 
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+					String[] robotName = robot.getName().split("\\.")[1].split("_");
+					String name = null;
+					if (robotName.length > 2) {
+						name = robotName[0] + "_" + robotName[1];
+					} else {
+						name = robotName[0];
+					}
+
+					this.name.setText(name);
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 		});
 
 		this.authorsTable = new AuthorsTable();
 		this.authorsTable.setPrefHeight(150);
 
-		this.opponentsTable = new OpponentsTable(opponentsList2);
-		this.opponentsTable.prefWidthProperty().bind(this.widthProperty().divide(2));
+		this.vbox.getChildren().addAll(compiledRobot, name, team, warcry, level, sourceCode, mediaControl, authorsTable,
+				addAuthor, image, addImage, save);
 
-		this.vbox.getChildren().addAll(compiledRobot, name, team, warcry, level, sourceCode, mediaControl, authorsTable, addAuthor, image, addImage, save);
-
-		this.hbox.getChildren().addAll(this.vbox, this.opponentsTable);
 		this.hbox.prefHeightProperty().bind(this.heightProperty());
 
-		this.setRoot(this.hbox);
+		this.setRoot(this.vbox);
 	}
 
 }
