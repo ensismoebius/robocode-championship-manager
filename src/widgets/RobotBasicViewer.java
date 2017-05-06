@@ -28,15 +28,15 @@ public class RobotBasicViewer extends HBox {
 	private Label name;
 
 	private IRobotMarkedEvent markedEvent;
-	private String opponentId;
+	private String opponentName;
 
-	public RobotBasicViewer(byte[] oponentImage, String opponentName, String opponentId) {
+	public RobotBasicViewer(byte[] oponentImage, String opponentName) {
 		super(10);
 
 
 		this.setMinHeight(this.desireWidth);
 
-		this.opponentId = opponentId;
+		this.opponentName = opponentName;
 		this.name = new Label(opponentName);
 		this.setAlignment(Pos.CENTER);
 		this.name.setTextFill(Color.YELLOWGREEN);
@@ -114,14 +114,14 @@ public class RobotBasicViewer extends HBox {
 			this.image.scaleXProperty().set(1.0);
 			this.image.scaleYProperty().set(1.0);
 			this.applyNonSelectedStyle();
-			this.markedEvent.robotMarked(false, this.opponentId);
+			this.markedEvent.robotMarked(false, this.opponentName);
 			this.marked = false;
 			return;
 		}
 		this.image.scaleXProperty().set(1.0);
 		this.image.scaleYProperty().set(1.0);
 		this.applySelectedStyle();
-		this.markedEvent.robotMarked(true, this.opponentId);
+		this.markedEvent.robotMarked(true, this.opponentName);
 		this.marked = true;
 	}
 
@@ -132,7 +132,7 @@ public class RobotBasicViewer extends HBox {
 	 */
 	@Override
 	public String toString() {
-		return this.name.getText() + " - " + this.opponentId;
+		return this.name.getText() + " - " + this.opponentName;
 	}
 
 }

@@ -41,7 +41,7 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 			for (Integer level : opponent.getValue().getLevels()) {
 
 				RobotBasicViewer robotViewer = new RobotBasicViewer(opponent.getValue().getImage(),
-						opponent.getValue().getName(), String.valueOf(opponent.getValue().getId()));
+						opponent.getValue().getName());
 				robotViewer.setRobotMarkedEventListener(this);
 
 				GridPane.setRowSpan(robotViewer, level + 1);
@@ -80,11 +80,11 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 	 * @see widgets.IMarkedEvent#marked(boolean, model.Opponent)
 	 */
 	@Override
-	public void robotMarked(boolean marked, String robotId) {
+	public void robotMarked(boolean marked, String robotName) {
 		if (marked) {
-			this.battleList.put(robotId, this.opponentsList.get(robotId));
+			this.battleList.put(robotName, this.opponentsList.get(robotName));
 			return;
 		}
-		this.battleList.remove(robotId);
+		this.battleList.remove(robotName);
 	}
 }
