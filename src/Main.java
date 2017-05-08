@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.persistence.EntityManager;
@@ -6,7 +7,6 @@ import javax.persistence.PersistenceException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
@@ -155,19 +155,19 @@ public class Main extends Application {
 		}
 
 		// Do the battle an gets the results
-		Opponent[] opponents = this.battleController.startsBattle(this.battleList, this.robocodePath);
+		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, this.robocodePath);
 
 		// Gets the winner
-		Opponent winner = opponents[0];
+		Opponent winner = opponents.get(0);
 		Integer winnerLevel = winner.getLevels().get(winner.getLevels().size() - 1);
 
 		// Gets the loser
-		Opponent loser = opponents[1];
+		Opponent loser = opponents.get(1);
 		Integer loserLevel = loser.getLevels().get(loser.getLevels().size() - 1);
 
-		// Only opponets with lower or same level can level up.
+		// Only opponents with lower or same level can level up.
 		// This is done because sometimes we have to make lower
-		// levels robots compete with higher leves robots
+		// levels robots compete with higher levels robots
 		if (winnerLevel <= loserLevel) {
 			// Add one more level to the winner!!!
 			// And saves to database

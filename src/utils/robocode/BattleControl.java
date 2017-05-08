@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javafx.scene.control.Alert;
@@ -19,9 +20,9 @@ import model.Opponent;
  */
 public class BattleControl {
 
-	public Opponent[] startsBattle(HashMap<String, Opponent> battleList, String robocodePath) {
+	public ArrayList<Opponent> startsBattle(HashMap<String, Opponent> battleList, String robocodePath) {
 
-		Opponent[] results = new Opponent[2];
+		ArrayList<Opponent> results = new ArrayList<Opponent>();
 		Opponent opponent1 = (Opponent) battleList.values().toArray()[0];
 		Opponent opponent2 = (Opponent) battleList.values().toArray()[1];
 
@@ -59,7 +60,8 @@ public class BattleControl {
 			while ((line = br.readLine()) != null) {
 
 				int index = Integer.parseInt(line.split("\t")[0]) - 1;
-				results[index] = (Opponent) battleList.values().toArray()[index];
+
+				results.add((Opponent) battleList.values().toArray()[index]);
 			}
 		} catch (IOException e) {
 			new Alert(AlertType.ERROR, "Fail to start the battle").show();
