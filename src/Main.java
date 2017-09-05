@@ -1,3 +1,5 @@
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -110,6 +112,10 @@ public class Main extends Application {
 				// Circle through all opponents every time the M key is pressed
 				if (event.getCode() == KeyCode.M)
 					Main.this.showNextSelectedOpponent();
+				
+				// Exports all robots to files
+				if (event.getCode() == KeyCode.X)
+					Main.this.exportToFiles();
 			}
 		});
 
@@ -303,6 +309,40 @@ public class Main extends Application {
 		entityManager.close();
 	}
 
+	@SuppressWarnings("unchecked")
+	private void exportToFiles() {
+
+		EntityManager entityManager = Database.getEntityManager();
+
+		try {
+			entityManager.createQuery("from Opponent").getResultList()
+					.forEach(opponent -> {
+						
+						String filename = ((Opponent)opponent).getName();
+						String sourceCode = ((Opponent)opponent).getSourceCode();
+						
+						try {
+							// TODO turn into a dynamic thing!
+							FileWriter fw = new FileWriter("/tmp/" + filename + ".java");
+							fw.write(sourceCode);
+							fw.flush();
+							fw.close();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+						
+					});
+
+		} catch (PersistenceException e) {
+			e.printStackTrace();
+		}
+		entityManager.clear();
+		entityManager.close();
+	}
+	
+	
 	/**
 	 * Keep things clean an silent
 	 */
