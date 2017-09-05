@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,12 +32,18 @@ public class BattleControl {
 
 		try {
 			File f1 = new File(robocodePath + "/robots/" + robot1 + ".jar");
+
+			System.out.println("Write to " + f1.getPath());
+
 			f1.createNewFile();
 			FileOutputStream fos1 = new FileOutputStream(f1);
 			fos1.write(opponent1.getCompiledRobot(), 0, opponent1.getCompiledRobot().length);
 			fos1.close();
 
 			File f2 = new File(robocodePath + "/robots/" + robot2 + ".jar");
+
+			System.out.println("Write to " + f2.getPath());
+
 			f2.createNewFile();
 			FileOutputStream fos2 = new FileOutputStream(f2);
 			fos2.write(opponent2.getCompiledRobot(), 0, opponent2.getCompiledRobot().length);
@@ -51,7 +58,23 @@ public class BattleControl {
 		try {
 
 			// TODO make it flexible!
-			process = new ProcessBuilder("RobocodeStarter/start.sh", robocodePath, "5", robot1, robot2).start();
+
+			File startScript;
+			try {
+				startScript = new File(
+						BattleControl.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+			} catch (URISyntaxException e) {
+				new Alert(AlertType.ERROR, "Fail to load the start script").show();
+				return null;
+
+			}
+			
+			String absoluteStartScriptFile = startScript.getAbsolutePath().replaceAll(startScript.getName(), "");
+			absoluteStartScriptFile += "RobocodeStarter/start.sh";
+			
+			System.out.println(absoluteStartScriptFile);
+
+			process = new ProcessBuilder(absoluteStartScriptFile, robocodePath, "5", robot1, robot2).start();
 			InputStream is = process.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
