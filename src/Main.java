@@ -26,6 +26,7 @@ import widgets.scenes.EditRobots;
 import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
+import utils.battle.Calculator;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -34,6 +35,7 @@ import widgets.scenes.StartScreen;
  */
 public class Main extends Application {
 
+	
 	// Data structures that holds all data
 	private HashMap<String, model.Opponent> battleList;
 	private ObservableMap<String, model.Opponent> opponentsList = FXCollections.observableHashMap();
@@ -62,9 +64,9 @@ public class Main extends Application {
 	 * The path of the robocode program
 	 */
 	private String robocodePath;
-
+ 
 	public static void main(String[] args) {
-		launch(args);
+		//launch(args);
 	}
 
 	@Override
