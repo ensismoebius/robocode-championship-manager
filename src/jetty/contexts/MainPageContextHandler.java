@@ -1,4 +1,5 @@
 package jetty.contexts;
+
 import java.net.URL;
 
 import org.eclipse.jetty.server.Server;
@@ -11,7 +12,7 @@ public class MainPageContextHandler extends ContextHandler {
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(false);
 
-		this.setWelcomeFiles(new String[] { "index.html" });
+		this.setWelcomeFiles(new String[] { "mainPage.html" });
 		this.setContextPath("/");
 		this.setResourceBase(resourseFolder.toExternalForm());
 		this.setHandler(resourceHandler);

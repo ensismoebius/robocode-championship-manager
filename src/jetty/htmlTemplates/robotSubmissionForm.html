@@ -11,6 +11,18 @@
 			<input type="text" name="user" placeholder="Login" required="required">
 			<input type="password" name="password" placeholder="Senha" required="required">
 		</fieldset>
+
+		<fieldset>
+		<legend>Dados do time</legend>
+		<input type="text" name="teamName" placeholder="Nome do time" required="required"><br>
+		<input type="text" name="teamWarcry" placeholder="Lema do time" required="required"><br>
+		<br>		
+		<label for="teamMusic">Musica tema do time - Tamanho maximo de 1MB em formato mp3</label><br>
+		<input type="file" name="teamMusic" placeholder="Musica tema do time (Tamanho maximo 1MB em mp3)" required="required"><br>
+		<br>
+		<label for="teamLogo">Logotipo do time - Tamanho maximo de 1MB em formato .gif, .jpg, ou .png</label><br>
+		<input type="file" name="teamLogo" placeholder="Logotipo do time (.gif, .jpg ou .jpg)" required="required"><br>
+		</fieldset>
 		
 		<fieldset>
 		<legend>Dados de quem desenvolveu (minimo uma pessoa)</legend>
@@ -23,7 +35,14 @@
 		<fieldset>
 		<legend>Dados do robô</legend>
 			<input type="text" name="robotName" placeholder="Nome do robô" required="required"><br>
-			<input type="file" name="robotJarFile" placeholder="Arquivo .jar do Robô" required="required">
+
+			<br>
+			<label for="robotJarFile">Arquivo do robô compilado, ou seja o arquivo .JAR</label><br>
+			<input type="file" name="robotJarFile" placeholder="Arquivo .jar do Robô" required="required"><br>
+			
+			<br>
+			<label for="robotJavaFile">Código fonte do robô, ou seja o arquivo .JAVA</label><br>
+			<input type="file" name="robotJavaFile" placeholder="Arquivo .java do Robô" required="required">
 		</fieldset>
 		
 		<input type="submit" value="Enviar"> 

@@ -9,8 +9,8 @@ import org.eclipse.jetty.servlet.ServletHolder;
 
 import jetty.servlets.ImageUploadServlet;
 
-public class SaveRobotContextHandler extends ServletContextHandler {
-	public SaveRobotContextHandler(Server server, URL resourseFolder) {
+public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
+	public RobotSaveConfirmationContextHandler(Server server, URL resourseFolder) {
 
 		// 1. Create a Servlet Handler
 		ServletHandler servletHandler = new ServletHandler();
@@ -24,13 +24,13 @@ public class SaveRobotContextHandler extends ServletContextHandler {
 
 		// 4. Defining the context sub path the servlet will
 		// answer (in this case: http://<address>/upload
-		this.addServlet(servletHolder, "./upload/*");
+		this.addServlet(servletHolder, "./robotSaveConfirmation/*");
 
 		// 5. Set from where the files must be fetch (if any)
 		this.setResourceBase(resourseFolder.toExternalForm());
 
 		// 6. Set the welcome to display if any
-		this.setWelcomeFiles(new String[] { "index.html" });
+		this.setWelcomeFiles(new String[] { "robotSaveConfirmation.html" });
 
 		// 7. Binds the servletHandler with the ServletContextHandler
 		this.insertHandler(servletHandler);

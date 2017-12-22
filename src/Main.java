@@ -132,11 +132,11 @@ public class Main extends Application {
 		});
 
 		// Shows everything!
-		primaryStage.setMaximized(true);
-		primaryStage.show();
+		//primaryStage.setMaximized(true);
+		//primaryStage.show();
 
 		// Default scene
-		this.showStartScreen();
+		//this.showStartScreen();
 
 		// Start the web server for remote robots uploads
 		this.startWebServer();
