@@ -30,7 +30,7 @@ public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
 		this.setResourceBase(resourseFolder.toExternalForm());
 
 		// 6. Set the welcome to display if any
-		this.setWelcomeFiles(new String[] { "robotSaveConfirmation.html" });
+		//this.setWelcomeFiles(new String[] { "robotSaveConfirmation.html" });
 
 		// 7. Binds the servletHandler with the ServletContextHandler
 		this.insertHandler(servletHandler);

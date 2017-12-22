@@ -12,7 +12,7 @@ public class RobotSubmissionFormContextHandler extends ContextHandler {
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(false);
 
-		this.setWelcomeFiles(new String[] { "robotSubmissionForm.html" });
+		this.setWelcomeFiles(new String[] { "index.html" });
 		this.setContextPath("/robotSubmissionForm");
 		this.setResourceBase(resourseFolder.toExternalForm());
 		this.setHandler(resourceHandler);
