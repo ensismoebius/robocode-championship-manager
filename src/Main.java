@@ -10,6 +10,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
+import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -17,9 +18,11 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import jetty.server.HttpServer;
 import listeners.OpponentsUpdater;
 import model.Opponent;
 import model.OpponentGroup;
+import utils.battle.Calculator;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
@@ -27,7 +30,6 @@ import widgets.scenes.EditRobots;
 import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
-import utils.battle.Calculator;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -72,7 +74,6 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 
-		@SuppressWarnings("unused")
 		OpponentGroup[] teste = Calculator.createBattleGroups(200);
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
@@ -136,6 +137,25 @@ public class Main extends Application {
 
 		// Default scene
 		this.showStartScreen();
+
+		// Start the web server for remote robots uploads
+		this.startWebServer();
+	}
+
+	/**
+	 * Start the web server for remote robots uploads
+	 */
+	private void startWebServer() {
+		Task<Void> serverTask = new Task<Void>() {
+
+			@Override
+			protected Void call() throws Exception {
+				new HttpServer();
+				return null;
+			}
+
+		};
+		new Thread(serverTask).start();
 	}
 
 	/**

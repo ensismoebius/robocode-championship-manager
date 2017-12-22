@@ -21,7 +21,7 @@ public class Calculator {
 		OpponentGroup[] groups = new OpponentGroup[groupsAmount];
 		
 		for(int i = 0; i < groupsAmount; i++) {
-			groups[i] = new OpponentGroup(groupsSize, generateCharacter(i));
+			groups[i] = new OpponentGroup(Calculator.generateCharacter(i));
 		}
 		
 		return groups;

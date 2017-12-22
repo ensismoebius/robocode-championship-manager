@@ -10,24 +10,22 @@ import jetty.contexts.SaveRobotContextHandler;
 
 public class HttpServer {
 
-	public void start() throws Exception {
+	public HttpServer() {
+		try {
+			Server server = new Server(8080);
 
-		Server server = new Server(8080);
+			URL pagesUrl = this.getClass().getResource("../htmlTemplates");
+			URL uploadUrl = this.getClass().getResource("../htmlTemplates");
 
-		URL pagesUrl = this.getClass().getResource("../htmlTemplates");
-		URL uploadUrl = this.getClass().getResource("../htmlTemplates");
+			ContextHandlerCollection contexts = new ContextHandlerCollection();
+			contexts.addHandler(new MainPageContextHandler(server, pagesUrl));
+			contexts.addHandler(new SaveRobotContextHandler(server, uploadUrl));
 
-		ContextHandlerCollection contexts = new ContextHandlerCollection();
-		contexts.addHandler(new MainPageContextHandler(server, pagesUrl));
-		contexts.addHandler(new SaveRobotContextHandler(server, uploadUrl));
-
-		server.setHandler(contexts);
-		server.start();
-		server.join();
-	}
-
-	public static void main(String[] args) throws Exception {
-		HttpServer server = new HttpServer();
-		server.start();
+			server.setHandler(contexts);
+			server.start();
+			server.join();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -3,6 +3,9 @@
  */
 package model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,11 +33,19 @@ public class OpponentGroup {
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JoinColumn(name = "groupId")
-	private Opponent[] opponents;
+	private List<Opponent> opponents;
 
-	public OpponentGroup(int amountOfOpponents, String name) {
-		this.opponents = new Opponent[amountOfOpponents];
+	public OpponentGroup(String name) {
+		this.opponents = new ArrayList<Opponent>();
 		this.name = name;
+	}
+
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -45,11 +56,11 @@ public class OpponentGroup {
 		this.name = name;
 	}
 
-	public Opponent[] getOpponents() {
+	public List<Opponent> getOpponents() {
 		return opponents;
 	}
 
-	public void setOpponents(Opponent[] opponents) {
+	public void setOpponents(List<Opponent> opponents) {
 		this.opponents = opponents;
 	}
 }
