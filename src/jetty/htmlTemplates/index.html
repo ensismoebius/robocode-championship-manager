@@ -1,0 +1,54 @@
+<html>
+	<head>
+		<title>Cadastre seu robo aqui</title>
+		<meta charset="utf-8">
+	</head>
+	<body>
+	<form action="./upload" method="post" enctype="multipart/form-data">
+		<h1>Cadastro para o campeonato de Robocode</h1>
+		<fieldset>
+		<legend>Dados de login</legend>
+			<input type="text" name="user" placeholder="Login" required="required">
+			<input type="password" name="password" placeholder="Senha" required="required">
+		</fieldset>
+		
+		<fieldset>
+		<legend>Dados de quem desenvolveu (minimo uma pessoa)</legend>
+		<div id="devFields">
+			<input type="text" name="name[]" placeholder="Nome" required="required"><input type="email" name="email[]" placeholder="E-mail" required="required">
+		</div>
+		<button onclick="return addDeveloperFields()"> + Adicionar</button>
+		</fieldset>
+		
+		<fieldset>
+		<legend>Dados do robô</legend>
+			<input type="text" name="robotName" placeholder="Nome do robô" required="required"><br>
+			<input type="file" name="robotJarFile" placeholder="Arquivo .jar do Robô" required="required">
+		</fieldset>
+		
+		<input type="submit" value="Enviar"> 
+	</form>
+	
+	<script>
+	function addDeveloperFields(){
+		let br = document.createElement("br");
+		
+		let inputName = document.createElement("input");
+		inputName.name="name[]";
+		inputName.type="text";
+		inputName.placeholder="Nome";
+		
+		let inputEmail = document.createElement("input");
+		inputEmail.name="email[]";
+		inputEmail.type="text";
+		inputEmail.placeholder="E-mail";
+		
+		document.getElementById("devFields").appendChild(br);
+		document.getElementById("devFields").appendChild(inputName);
+		document.getElementById("devFields").appendChild(inputEmail);
+		return false;
+	}
+	
+	</script>
+	</body>
+</html>  

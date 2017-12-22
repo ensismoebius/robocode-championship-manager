@@ -19,6 +19,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import listeners.OpponentsUpdater;
 import model.Opponent;
+import model.OpponentGroup;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
@@ -35,7 +36,6 @@ import utils.battle.Calculator;
  */
 public class Main extends Application {
 
-	
 	// Data structures that holds all data
 	private HashMap<String, model.Opponent> battleList;
 	private ObservableMap<String, model.Opponent> opponentsList = FXCollections.observableHashMap();
@@ -64,13 +64,16 @@ public class Main extends Application {
 	 * The path of the robocode program
 	 */
 	private String robocodePath;
- 
+
 	public static void main(String[] args) {
-		//launch(args);
+		launch(args);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+
+		@SuppressWarnings("unused")
+		OpponentGroup[] teste = Calculator.createBattleGroups(200);
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 
@@ -114,7 +117,7 @@ public class Main extends Application {
 				// Circle through all opponents every time the M key is pressed
 				if (event.getCode() == KeyCode.M)
 					Main.this.showNextSelectedOpponent();
-				
+
 				// Exports all robots to files
 				if (event.getCode() == KeyCode.X)
 					Main.this.exportToFiles();
@@ -317,25 +320,23 @@ public class Main extends Application {
 		EntityManager entityManager = Database.getEntityManager();
 
 		try {
-			entityManager.createQuery("from Opponent").getResultList()
-					.forEach(opponent -> {
-						
-						String filename = ((Opponent)opponent).getName();
-						String sourceCode = ((Opponent)opponent).getSourceCode();
-						
-						try {
-							// TODO turn into a dynamic thing!
-							FileWriter fw = new FileWriter("/tmp/" + filename + ".java");
-							fw.write(sourceCode);
-							fw.flush();
-							fw.close();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						
-						
-					});
+			entityManager.createQuery("from Opponent").getResultList().forEach(opponent -> {
+
+				String filename = ((Opponent) opponent).getName();
+				String sourceCode = ((Opponent) opponent).getSourceCode();
+
+				try {
+					// TODO turn into a dynamic thing!
+					FileWriter fw = new FileWriter("/tmp/" + filename + ".java");
+					fw.write(sourceCode);
+					fw.flush();
+					fw.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+			});
 
 		} catch (PersistenceException e) {
 			e.printStackTrace();
@@ -343,8 +344,7 @@ public class Main extends Application {
 		entityManager.clear();
 		entityManager.close();
 	}
-	
-	
+
 	/**
 	 * Keep things clean an silent
 	 */

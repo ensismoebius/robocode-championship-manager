@@ -14,7 +14,7 @@
 			<!-- none, create, drop, drop-and-create, update -->
 <!-- 			<property name="hibernate.hbm2ddl.auto" value="update" />
 			<property name="hibernate.cache.use_second_level_cache" value="false" /> -->
-			<property name="javax.persistence.schema-generation.database.action" value="none"/>
+			<property name="javax.persistence.schema-generation.database.action" value="drop-and-create"/>
 		</properties>
 	</persistence-unit>
 </persistence>

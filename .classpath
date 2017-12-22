@@ -50,6 +50,7 @@
 	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.jar"/>
 	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.repository-1.9.2.4.jar"/>
 	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.ui-1.9.2.5.jar"/>
+	<classpathentry kind="lib" path="lib/jetty-all-9.4.8.v20171121-uber.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
