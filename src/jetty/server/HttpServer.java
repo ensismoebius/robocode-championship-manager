@@ -15,12 +15,14 @@ public class HttpServer {
 		try {
 			Server server = new Server(8080);
 
-			URL templateFolder = this.getClass().getResource("../htmlTemplates");
+			URL templateMainFolder = this.getClass().getResource("../htmlTemplates/main");
+			URL templateSubmissionFolder = this.getClass().getResource("../htmlTemplates/robotSubmissionForm");
+			URL templateConfirmationFolder = this.getClass().getResource("../htmlTemplates/robotSaveConfirmationContextHandler");
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new MainPageContextHandler(server, templateFolder));
-			contexts.addHandler(new RobotSubmissionFormContextHandler(server, templateFolder));
-			contexts.addHandler(new RobotSaveConfirmationContextHandler(server, templateFolder));
+			contexts.addHandler(new MainPageContextHandler(server, templateMainFolder));
+			contexts.addHandler(new RobotSubmissionFormContextHandler(server, templateSubmissionFolder));
+			contexts.addHandler(new RobotSaveConfirmationContextHandler(server, templateConfirmationFolder));
 
 			server.setHandler(contexts);
 			server.start();
