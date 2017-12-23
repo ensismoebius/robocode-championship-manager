@@ -14,7 +14,7 @@ import javax.servlet.http.Part;
 
 import org.eclipse.jetty.server.Request;
 
-public class RobotSubmissionServlet extends HttpServlet {
+public class RobotEditor extends HttpServlet {
 
 	private static final long serialVersionUID = 4848049705802230040L;
 

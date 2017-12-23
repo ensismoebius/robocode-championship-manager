@@ -3,9 +3,8 @@ package jetty.server;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 
-import jetty.contexts.MainPageContextHandler;
-import jetty.contexts.RobotSaveConfirmationContextHandler;
-import jetty.contexts.RobotSubmissionFormContextHandler;
+import jetty.contexts.Main;
+import jetty.contexts.RobotEditor;
 
 public class HttpServer {
 
@@ -14,9 +13,8 @@ public class HttpServer {
 			Server server = new Server(8080);
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new MainPageContextHandler(server));
-			contexts.addHandler(new RobotSubmissionFormContextHandler(server));
-			contexts.addHandler(new RobotSaveConfirmationContextHandler(server));
+			contexts.addHandler(new Main(server));
+			contexts.addHandler(new RobotEditor(server));
 
 			server.setHandler(contexts);
 			server.start();

@@ -24,6 +24,28 @@ public class Author implements Cloneable {
 	@Column(nullable = false)
 	private String observations;
 
+	@Column(nullable = false)
+	private String login;
+
+	@Column(nullable = false)
+	private String password;
+
+	public String getLogin() {
+		return login;
+	}
+
+	public void setLogin(String login) {
+		this.login = login;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
 	@Override
 	public Object clone() throws CloneNotSupportedException {
 		Author a = new Author();

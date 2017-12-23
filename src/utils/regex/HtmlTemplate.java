@@ -142,7 +142,7 @@ public class HtmlTemplate {
 	}
 
 	private String replacePlaceholders(String block, String placehoder, String value) {
-		Pattern placeHoldersPattern = Pattern.compile("\\{" + placehoder + "}\\}",
+		Pattern placeHoldersPattern = Pattern.compile("\\{" + placehoder + "\\}",
 				Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 		Matcher m = placeHoldersPattern.matcher(block);
 
