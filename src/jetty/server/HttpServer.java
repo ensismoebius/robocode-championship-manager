@@ -17,7 +17,8 @@ public class HttpServer {
 
 			URL templateMainFolder = this.getClass().getResource("../htmlTemplates/main");
 			URL templateSubmissionFolder = this.getClass().getResource("../htmlTemplates/robotSubmissionForm");
-			URL templateConfirmationFolder = this.getClass().getResource("../htmlTemplates/robotSaveConfirmationContextHandler");
+			URL templateConfirmationFolder = this.getClass()
+					.getResource("../htmlTemplates/robotSaveConfirmationContextHandler");
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
 			contexts.addHandler(new MainPageContextHandler(server, templateMainFolder));

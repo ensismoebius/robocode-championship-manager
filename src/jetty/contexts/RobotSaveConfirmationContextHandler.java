@@ -7,7 +7,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 
-import jetty.servlets.ImageUploadServlet;
+import jetty.servlets.RobotSubmissionServlet;
 
 public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
 	public RobotSaveConfirmationContextHandler(Server server, URL resourseFolder) {
@@ -17,7 +17,7 @@ public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
 
 		// 2. Register our Servlet and its URL mapping
 		ServletHolder servletHolder = new ServletHolder();
-		servletHandler.addServletWithMapping(ImageUploadServlet.class, "/*");
+		servletHandler.addServletWithMapping(RobotSubmissionServlet.class, "/*");
 
 		// 3. Defining the context path (in this case: http://<address>/
 		this.setContextPath("/");

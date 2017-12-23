@@ -3,18 +3,37 @@ package jetty.contexts;
 import java.net.URL;
 
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.ResourceHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
-public class MainPageContextHandler extends ContextHandler {
+import jetty.servlets.MainServlet;
+import jetty.servlets.RobotSubmissionServlet;
+
+public class MainPageContextHandler extends ServletContextHandler {
 	public MainPageContextHandler(Server server, URL resourseFolder) {
 
-		ResourceHandler resourceHandler = new ResourceHandler();
-		resourceHandler.setDirectoriesListed(false);
+		// 1. Create a Servlet Handler
+		ServletHandler servletHandler = new ServletHandler();
 
-		this.setWelcomeFiles(new String[] { "mainPage.html" });
+		// 2. Register our Servlet and its URL mapping
+		ServletHolder servletHolder = new ServletHolder();
+		servletHandler.addServletWithMapping(MainServlet.class, "/");
+
+		// 3. Defining the context path (in this case: http://<address>/
 		this.setContextPath("/");
+
+		// 4. Defining the context sub path the servlet will
+		// answer (in this case: http://<address>/upload
+		this.addServlet(servletHolder, ".");
+
+		// 5. Set from where the files must be fetch (if any)
 		this.setResourceBase(resourseFolder.toExternalForm());
-		this.setHandler(resourceHandler);
+
+		// 6. Set the welcome to display if any
+		//this.setWelcomeFiles(new String[] { "robotSaveConfirmation.html" });
+
+		// 7. Binds the servletHandler with the ServletContextHandler
+		this.insertHandler(servletHandler);
 	}
 }

@@ -1,3 +1,4 @@
+<!-- begin:main -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,7 +7,6 @@
 </head>
 <body>
 <h1>Olá!</h1>
-
 <form action="./robotSubmissionForm?action=auth" method="post">
 	<fieldset>
 	<legend>Se você já cadastrou seu time entre com o login a senha</legend>
@@ -18,3 +18,4 @@
 <p>Se você não tem um login e senha <a href="./robotSubmissionForm?action=new">clique aqui</a></p>
 </body>
 </html>
+<!-- end:main -->
