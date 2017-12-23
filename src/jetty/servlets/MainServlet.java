@@ -32,7 +32,7 @@ public class MainServlet extends HttpServlet {
 
 		Path data = null;
 		try {
-			data = Paths.get(getClass().getResource("../htmlTemplates/main/main.jsp").toURI());
+			data = Paths.get(getClass().getResource("../htmlTemplates/mainServlet.html").toURI());
 		} catch (URISyntaxException e) {
 		}
 

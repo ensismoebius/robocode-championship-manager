@@ -7,14 +7,13 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
 public class RobotSubmissionFormContextHandler extends ContextHandler {
-	public RobotSubmissionFormContextHandler(Server server, URL resourseFolder) {
+	public RobotSubmissionFormContextHandler(Server server) {
 
 		ResourceHandler resourceHandler = new ResourceHandler();
 		resourceHandler.setDirectoriesListed(false);
 
 		this.setWelcomeFiles(new String[] { "index.html" });
 		this.setContextPath("/robotSubmissionForm");
-		this.setResourceBase(resourseFolder.toExternalForm());
 		this.setHandler(resourceHandler);
 	}
 }

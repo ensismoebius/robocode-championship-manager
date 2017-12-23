@@ -10,7 +10,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import jetty.servlets.RobotSubmissionServlet;
 
 public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
-	public RobotSaveConfirmationContextHandler(Server server, URL resourseFolder) {
+	public RobotSaveConfirmationContextHandler(Server server) {
 
 		// 1. Create a Servlet Handler
 		ServletHandler servletHandler = new ServletHandler();
@@ -18,19 +18,6 @@ public class RobotSaveConfirmationContextHandler extends ServletContextHandler {
 		// 2. Register our Servlet and its URL mapping
 		ServletHolder servletHolder = new ServletHolder();
 		servletHandler.addServletWithMapping(RobotSubmissionServlet.class, "/*");
-
-		// 3. Defining the context path (in this case: http://<address>/
-		this.setContextPath("/");
-
-		// 4. Defining the context sub path the servlet will
-		// answer (in this case: http://<address>/upload
-		this.addServlet(servletHolder, "./robotSaveConfirmation/*");
-
-		// 5. Set from where the files must be fetch (if any)
-		this.setResourceBase(resourseFolder.toExternalForm());
-
-		// 6. Set the welcome to display if any
-		//this.setWelcomeFiles(new String[] { "robotSaveConfirmation.html" });
 
 		// 7. Binds the servletHandler with the ServletContextHandler
 		this.insertHandler(servletHandler);
