@@ -6,9 +6,6 @@ package jetty.servlets;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 import javax.persistence.EntityManager;
@@ -21,7 +18,7 @@ import javax.servlet.http.HttpSession;
 
 import model.Author;
 import utils.database.Database;
-import utils.regex.HtmlTemplate;
+import utils.regex.TextTemplate;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -34,18 +31,21 @@ public class Main extends HttpServlet {
 
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		try {
+			String login = req.getParameter("login");
+			String passw = req.getParameter("password");
 
-		String login = req.getParameter("login");
-		String passw = req.getParameter("password");
-
-		if (login == null || passw == null) {
-			this.showAuthScreen(resp, "Olá!");
-			return;
-		}
-		if (this.authenticate(req, login, passw)) {
-			resp.sendRedirect("/robotEditor");
-		}else {
-			this.showAuthScreen(resp, "Falha ao autenticar!");
+			if (login == null || passw == null) {
+				this.showAuthScreen(resp, "Olá!");
+				return;
+			}
+			if (this.authenticate(req, login, passw)) {
+				resp.sendRedirect("/robotEditor");
+			} else {
+				this.showAuthScreen(resp, "Falha ao autenticar!");
+			}
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -60,7 +60,7 @@ public class Main extends HttpServlet {
 
 			if (list.size() > 0) {
 				HttpSession session = req.getSession();
-				session.setAttribute("user", list.get(0).getId());
+				session.setAttribute("userId", list.get(0).getId());
 				entityManager.clear();
 				entityManager.close();
 				return true;
@@ -76,21 +76,12 @@ public class Main extends HttpServlet {
 		return false;
 	}
 
-	private void showAuthScreen(HttpServletResponse resp, String message) throws IOException {
-		Path data = null;
-		try {
-			data = Paths.get(getClass().getResource("../htmlTemplates/main.html").toURI());
-		} catch (URISyntaxException e) {
-		}
-
-		String html = String.join("", Files.readAllLines(data));
-
+	private void showAuthScreen(HttpServletResponse resp, String message) throws IOException, URISyntaxException {
 		/*
 		 * JSP is a better tecnology than this,but looks like jetty does not gives
 		 * support to it so i have to use this workaround
 		 */
-		HtmlTemplate template = new HtmlTemplate();
-		template.setHtml(html);
+		TextTemplate template = new TextTemplate(getClass().getResource("../htmlTemplates/main.html").toURI());
 		template.assign("message", message);
 		template.parse("main");
 

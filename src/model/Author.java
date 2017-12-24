@@ -30,6 +30,17 @@ public class Author implements Cloneable {
 	@Column(nullable = false)
 	private String password;
 
+	@Column(nullable = false)
+	private String mail;
+
+	public String getMail() {
+		return mail;
+	}
+
+	public void setMail(String mail) {
+		this.mail = mail;
+	}
+
 	public String getLogin() {
 		return login;
 	}

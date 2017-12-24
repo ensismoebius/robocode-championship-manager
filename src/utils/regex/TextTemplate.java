@@ -3,6 +3,10 @@
  */
 package utils.regex;
 
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,9 +20,10 @@ import java.util.regex.Pattern;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class HtmlTemplate {
+public class TextTemplate {
 
-	private String html;
+	//TODO Implement an data estructure to parse the template
+	private String text;
 
 	private HashMap<String, Object> assignments;
 
@@ -26,17 +31,14 @@ public class HtmlTemplate {
 
 	private String parsingBlock;
 
-	public HtmlTemplate() {
+	public TextTemplate(URI templatePath) throws IOException {
 		this.assignments = new HashMap<String, Object>();
 		this.processedBlocks = new HashMap<String, List<String>>();
+		this.text = String.join("", Files.readAllLines(Paths.get(templatePath)));
 	}
 
-	public String getHtml() {
-		return html;
-	}
-
-	public void setHtml(String html) {
-		this.html = html;
+	public String getText() {
+		return text;
 	}
 
 	public HashMap<String, Object> getAllAssignments() {
@@ -57,14 +59,14 @@ public class HtmlTemplate {
 
 		String nextSubBlockName = this.getNextSubBlockName(block);
 
-		this.html = this.replaceBlock(this.html, blockName,
+		this.text = this.replaceBlock(this.text, blockName,
 				String.join("", this.processedBlocks.get(new String(blockName.toCharArray()))));
 
 		if (nextSubBlockName != "") {
 			this.out(nextSubBlockName);
 		}
 
-		return this.html;
+		return this.text;
 	}
 
 	public boolean parse(String blockName) {
@@ -161,7 +163,7 @@ public class HtmlTemplate {
 	private String getBlockContents(String blockName) {
 		String pattern = "(<!--\\s?begin:" + blockName + "\\s?-->)((.|\\n)*)(<!--\\s?end:" + blockName + "\\s?-->)";
 		Pattern blockPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-		Matcher m = blockPattern.matcher(this.html);
+		Matcher m = blockPattern.matcher(this.text);
 
 		return m.find() ? m.group(2).trim() : "";
 	}

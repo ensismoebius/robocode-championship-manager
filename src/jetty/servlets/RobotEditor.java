@@ -3,16 +3,25 @@ package jetty.servlets;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.persistence.EntityManager;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import org.eclipse.jetty.server.Request;
+
+import model.Opponent;
+import utils.database.Database;
+import utils.regex.TextTemplate;
 
 public class RobotEditor extends HttpServlet {
 
@@ -64,11 +73,62 @@ public class RobotEditor extends HttpServlet {
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
+		try {
+			HttpSession session = req.getSession();
+			this.showRobotEditionScreen(resp, session.getAttribute("userId").toString());
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void showRobotEditionScreen(HttpServletResponse resp, String userId)
+			throws IOException, URISyntaxException {
+
+		List<String> authorNames = new ArrayList<String>();
+		List<String> authorMails = new ArrayList<String>();
+
+		Opponent opponent = this.loadOpponent(userId);
+		opponent.getAuthors().forEach(author -> {
+			authorNames.add(author.getName());
+			authorNames.add(author.getMail());
+		});
+
+		/*
+		 * JSP is a better tecnology than this,but looks like jetty does not gives
+		 * support to it so i have to use this workaround
+		 */
+		TextTemplate template = new TextTemplate(getClass().getResource("../htmlTemplates/robotEditor.html").toURI());
+		template.assign("teamName", opponent.getTeam());
+		template.assign("teamWarcry", opponent.getBattleCry());
+		template.assign("name", authorNames);
+		template.assign("email", authorMails);
+		template.assign("robotName", opponent.getName());
+
+		template.parse("main");
+
 		// Set response content type
 		resp.setContentType("text/html");
 
-		// Actual logic goes here.
-		PrintWriter out = resp.getWriter();
-		out.println("<h1>sdsdsdsdsds</h1>");
+		// Get the writer and write
+		resp.getWriter().write(template.out("main"));
+	}
+
+	private Opponent loadOpponent(String userId) {
+
+		if (userId == null)
+			return new Opponent();
+
+		EntityManager entityManager = Database.getEntityManager();
+
+		@SuppressWarnings("unchecked")
+		List<Opponent> list = entityManager.createQuery("from Opponent o inner join o.authors a where a.id = :authorId")
+				.setParameter("authorId", Long.parseLong(userId)).getResultList();
+
+		Opponent o = list.size() > 0 ? list.get(0) : new Opponent();
+
+		entityManager.clear();
+		entityManager.close();
+
+		return o;
 	}
 }
