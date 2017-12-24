@@ -7,7 +7,7 @@ import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.server.session.HouseKeeper;
 import org.eclipse.jetty.server.session.SessionHandler;
 
-import jetty.contexts.Main;
+import jetty.contexts.MainContextHandler;
 
 public class HttpServer {
 
@@ -15,13 +15,10 @@ public class HttpServer {
 		try {
 			Server server = new Server(8080);
 
-			HouseKeeper houseKeeper = new HouseKeeper();
-			SessionIdManager idmanager = new DefaultSessionIdManager(server);
-			idmanager.setSessionHouseKeeper(houseKeeper);
-			server.setSessionIdManager(idmanager);
+			server.setSessionIdManager(this.generateIdManager(server));
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new Main(server, new SessionHandler()));
+			contexts.addHandler(new MainContextHandler(server, new SessionHandler()));
 
 			server.setHandler(contexts);
 			server.start();
@@ -29,5 +26,12 @@ public class HttpServer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private SessionIdManager generateIdManager(Server server) {
+		HouseKeeper houseKeeper = new HouseKeeper();
+		SessionIdManager idmanager = new DefaultSessionIdManager(server);
+		idmanager.setSessionHouseKeeper(houseKeeper);
+		return idmanager;
 	}
 }
