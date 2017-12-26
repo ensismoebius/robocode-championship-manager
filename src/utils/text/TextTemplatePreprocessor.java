@@ -1,4 +1,5 @@
 package utils.text;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -11,9 +12,8 @@ import java.util.regex.Pattern;
 
 /**
  * Preprocessor of text templates
- * 
- * @author ensismoebius
  *
+ * @author André Furlan - ensismoebius@gmail.com
  */
 public class TextTemplatePreprocessor {
 
