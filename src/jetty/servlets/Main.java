@@ -18,7 +18,7 @@ import javax.servlet.http.HttpSession;
 
 import model.Author;
 import utils.database.Database;
-import utils.regex.TextTemplate;
+import utils.text.TextTemplate;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

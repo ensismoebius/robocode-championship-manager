@@ -21,7 +21,7 @@ import org.eclipse.jetty.server.Request;
 
 import model.Opponent;
 import utils.database.Database;
-import utils.regex.TextTemplate;
+import utils.text.TextTemplate;
 
 public class RobotEditor extends HttpServlet {
 
