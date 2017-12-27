@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,33 +42,17 @@ public class RobotEditor extends HttpServlet {
 		resp.setContentType("text/plain");
 		PrintWriter out = resp.getWriter();
 
-		Opponent o = this.buildRobot(req);
+		Opponent o = this.buildOpponentObject(req);
 
 		// If something goes wrong show the erros and stop
 		if (o == null) {
 			template.assign("message", String.join("<br>", this.errors));
+			template.parse("main");
+			out.write(template.out("main"));
 			return;
 		}
 
-		// TODO otherwise save all in database
-
-		// TODO save all in database
-		// File targetFile = new File("/tmp/");
-		// OutputStream outStream = new FileOutputStream(targetFile);
-		// outStream.write(buffer);
-
-		// for (Part part : req.getParts()) {
-
-		// out.printf(req.getParameter("password"));
-
-		// for (String header : part.getHeaderNames()) {
-		// String headerName = part.getHeader(header) == null ? "" :
-		// part.getHeader(header);
-		// }
-
-		// out.printf("Got part: name=%s, size=%d%n", part.getName(), part.getSize());
-		// part.write(String.format("part-%02d.dat", i++));
-		// }
+		this.saveOpponent(o);
 	}
 
 	@Override
@@ -83,17 +66,18 @@ public class RobotEditor extends HttpServlet {
 		}
 	}
 
+	/**
+	 * Shows robot edition screen
+	 * 
+	 * @param resp
+	 * @param userId
+	 * @throws IOException
+	 * @throws URISyntaxException
+	 */
 	private void showRobotEditionScreen(HttpServletResponse resp, String userId)
 			throws IOException, URISyntaxException {
 
-		List<String> authorNames = new ArrayList<String>();
-		List<String> authorMails = new ArrayList<String>();
-
 		Opponent opponent = this.loadOpponent(userId);
-		opponent.getAuthors().forEach(author -> {
-			authorNames.add(author.getName());
-			authorNames.add(author.getMail());
-		});
 
 		/*
 		 * JSP is a better tecnology than this,but looks like jetty does not gives
@@ -101,9 +85,13 @@ public class RobotEditor extends HttpServlet {
 		 */
 		template.assign("teamName", opponent.getTeam());
 		template.assign("teamWarcry", opponent.getBattleCry());
-		template.assign("name", authorNames);
-		template.assign("email", authorMails);
 		template.assign("robotName", opponent.getName());
+
+		opponent.getAuthors().forEach(author -> {
+			template.assign("name", author.getName());
+			template.assign("email", author.getMail());
+			template.parse("author");
+		});
 
 		template.parse("main");
 
@@ -115,13 +103,14 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/**
-	 * Builds the robot based on the posted data
-	 * Updates the errors list if any error occurs
+	 * Builds the robot based on the posted data Updates the errors list if any
+	 * error occurs
+	 * 
 	 * @see errors
 	 * @param req
 	 * @return
 	 */
-	private Opponent buildRobot(HttpServletRequest req) {
+	private Opponent buildOpponentObject(HttpServletRequest req) {
 
 		this.errors.clear();
 
@@ -143,7 +132,8 @@ public class RobotEditor extends HttpServlet {
 		byte[] robotJarBuffer = null;
 		try {
 			robotJarfilePart = req.getPart("robotJarFile");
-			String fileName = Paths.get(robotJarfilePart.getSubmittedFileName()).getFileName().toString();
+			// String fileName =
+			// Paths.get(robotJarfilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = robotJarfilePart.getInputStream();
 			robotJarBuffer = new byte[fileContent.available()];
 
@@ -159,7 +149,8 @@ public class RobotEditor extends HttpServlet {
 		byte[] robotJavaBuffer = null;
 		try {
 			robotJavafilePart = req.getPart("teamMusic");
-			String fileName = Paths.get(robotJavafilePart.getSubmittedFileName()).getFileName().toString();
+			// String fileName =
+			// Paths.get(robotJavafilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = robotJavafilePart.getInputStream();
 			robotJavaBuffer = new byte[fileContent.available()];
 
@@ -175,7 +166,8 @@ public class RobotEditor extends HttpServlet {
 		byte[] teamMusicBuffer = null;
 		try {
 			teamMusicfilePart = req.getPart("teamMusic");
-			String fileName = Paths.get(teamMusicfilePart.getSubmittedFileName()).getFileName().toString();
+			// String fileName =
+			// Paths.get(teamMusicfilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = teamMusicfilePart.getInputStream();
 			teamMusicBuffer = new byte[fileContent.available()];
 
@@ -191,7 +183,8 @@ public class RobotEditor extends HttpServlet {
 		byte[] teamLogoBuffer = null;
 		try {
 			teamLogofilePart = req.getPart("teamMusic");
-			String fileName = Paths.get(teamLogofilePart.getSubmittedFileName()).getFileName().toString();
+			// String fileName =
+			// Paths.get(teamLogofilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = teamLogofilePart.getInputStream();
 			teamLogoBuffer = new byte[fileContent.available()];
 
@@ -246,7 +239,7 @@ public class RobotEditor extends HttpServlet {
 
 		// Nothing is wrong build the objects!!
 
-		// Create authors
+		// Create and store authors
 		List<Author> arrAuthors = new ArrayList<Author>();
 		for (int i = 0; i < arrName.length; i++) {
 
@@ -256,13 +249,14 @@ public class RobotEditor extends HttpServlet {
 			Author a = new Author();
 			a.setName(name);
 			a.setMail(mail);
-			
+
 			arrAuthors.add(a);
 		}
 
 		// Create the robot!!!
-		Opponent robot = new Opponent();
-		
+		String userId = req.getSession().getAttribute("userId").toString();
+		Opponent robot = this.loadOpponent(userId);
+
 		robot.setAuthors(arrAuthors);
 		robot.setBattleCry(teamWarcry);
 		robot.setCompiledRobot(robotJarBuffer);
@@ -275,6 +269,12 @@ public class RobotEditor extends HttpServlet {
 		return robot;
 	}
 
+	/**
+	 * Loads robot from database
+	 * 
+	 * @param userId
+	 * @return
+	 */
 	private Opponent loadOpponent(String userId) {
 
 		if (userId == null)
@@ -292,5 +292,27 @@ public class RobotEditor extends HttpServlet {
 		entityManager.close();
 
 		return o;
+	}
+
+	/**
+	 * Saves robot to database
+	 * 
+	 * @param o
+	 */
+	private void saveOpponent(Opponent o) {
+
+		EntityManager entityManager = Database.getEntityManager();
+		entityManager.getTransaction().begin();
+		entityManager.persist(o);
+
+		// Saves or update depending if it already exists or not
+		if (o.getId() == 0) {
+			entityManager.persist(o);
+		} else {
+			entityManager.merge(o);
+		}
+		entityManager.getTransaction().commit();
+		entityManager.clear();
+		entityManager.close();
 	}
 }
