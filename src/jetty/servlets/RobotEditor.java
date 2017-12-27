@@ -39,7 +39,8 @@ public class RobotEditor extends HttpServlet {
 		MultipartConfigElement multipartConfig = new MultipartConfigElement("/tmp");
 		req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, multipartConfig);
 
-		resp.setContentType("text/plain");
+		// Set response content type
+		resp.setContentType("text/html");
 		PrintWriter out = resp.getWriter();
 
 		Opponent o = this.buildOpponentObject(req);
@@ -52,7 +53,18 @@ public class RobotEditor extends HttpServlet {
 			return;
 		}
 
-		this.saveOpponent(o);
+		try {
+			this.saveOpponent(o);
+			template.assign("message", "Robô salvo com sucesso! Para editar entre com o login senha.");
+		} catch (Exception e) {
+			template.assign("message", "Algum erro inesperado aconteceu: " + e.getMessage());
+		}
+
+		try {
+			String userId = String.valueOf(o.getAuthors().get(0).getId());
+			this.showRobotEditionScreen(resp, userId);
+		} catch (URISyntaxException e) {
+		}
 	}
 
 	@Override
@@ -60,7 +72,8 @@ public class RobotEditor extends HttpServlet {
 
 		try {
 			HttpSession session = req.getSession();
-			this.showRobotEditionScreen(resp, session.getAttribute("userId").toString());
+			String userId = session.getAttribute("userId") == null ? null : session.getAttribute("userId").toString();
+			this.showRobotEditionScreen(resp, userId);
 		} catch (URISyntaxException e) {
 			e.printStackTrace();
 		}
@@ -83,10 +96,15 @@ public class RobotEditor extends HttpServlet {
 		 * JSP is a better tecnology than this,but looks like jetty does not gives
 		 * support to it so i have to use this workaround
 		 */
+		if (opponent.getAuthors().size() > 0) {
+			template.assign("login", opponent.getAuthors().get(0).getLogin());
+			template.assign("password", opponent.getAuthors().get(0).getPassword());
+		}
 		template.assign("teamName", opponent.getTeam());
 		template.assign("teamWarcry", opponent.getBattleCry());
 		template.assign("robotName", opponent.getName());
 
+		// TODO Not loading!!!
 		opponent.getAuthors().forEach(author -> {
 			template.assign("name", author.getName());
 			template.assign("email", author.getMail());
@@ -115,15 +133,15 @@ public class RobotEditor extends HttpServlet {
 		this.errors.clear();
 
 		// Retrieving data
-		String user = req.getParameter("user");
+		String login = req.getParameter("login");
 		String password = req.getParameter("password");
 
 		String teamName = req.getParameter("teamName");
 
 		String teamWarcry = req.getParameter("teamWarcry");
 
-		String[] arrName = req.getParameterValues("name");
-		String[] arrEmail = req.getParameterValues("email");
+		String[] arrName = req.getParameterValues("name[]");
+		String[] arrEmail = req.getParameterValues("email[]");
 
 		String robotName = req.getParameter("robotName");
 
@@ -136,11 +154,11 @@ public class RobotEditor extends HttpServlet {
 			// Paths.get(robotJarfilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = robotJarfilePart.getInputStream();
 			robotJarBuffer = new byte[fileContent.available()];
+			fileContent.read(robotJarBuffer);
 
 			if (robotJarBuffer.length == 0) {
 				this.errors.add("Arquivo .jar inválido!");
 			}
-			// fileContent.read(buffer);
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
@@ -148,16 +166,16 @@ public class RobotEditor extends HttpServlet {
 		Part robotJavafilePart;
 		byte[] robotJavaBuffer = null;
 		try {
-			robotJavafilePart = req.getPart("teamMusic");
+			robotJavafilePart = req.getPart("robotJavaFile");
 			// String fileName =
 			// Paths.get(robotJavafilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = robotJavafilePart.getInputStream();
 			robotJavaBuffer = new byte[fileContent.available()];
+			fileContent.read(robotJavaBuffer);
 
 			if (robotJavaBuffer.length == 0) {
 				this.errors.add("Arquivo .java inválido!");
 			}
-			// fileContent.read(buffer);
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
@@ -170,11 +188,11 @@ public class RobotEditor extends HttpServlet {
 			// Paths.get(teamMusicfilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = teamMusicfilePart.getInputStream();
 			teamMusicBuffer = new byte[fileContent.available()];
+			fileContent.read(teamMusicBuffer);
 
 			if (teamMusicBuffer.length == 0) {
 				this.errors.add("Arquivo música inválido!");
 			}
-			// fileContent.read(buffer);
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
@@ -182,21 +200,21 @@ public class RobotEditor extends HttpServlet {
 		Part teamLogofilePart;
 		byte[] teamLogoBuffer = null;
 		try {
-			teamLogofilePart = req.getPart("teamMusic");
+			teamLogofilePart = req.getPart("teamLogo");
 			// String fileName =
 			// Paths.get(teamLogofilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = teamLogofilePart.getInputStream();
 			teamLogoBuffer = new byte[fileContent.available()];
+			fileContent.read(teamLogoBuffer);
 
 			if (teamLogoBuffer.length == 0) {
 				this.errors.add("Arquivo logotipo inválido!");
 			}
-			// fileContent.read(buffer);
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
 
-		if (user == null || user.trim().length() == 0) {
+		if (login == null || login.trim().length() == 0) {
 			this.errors.add("Preencha o usuário");
 		}
 
@@ -249,12 +267,16 @@ public class RobotEditor extends HttpServlet {
 			Author a = new Author();
 			a.setName(name);
 			a.setMail(mail);
+			a.setLogin(login);
+			a.setPassword(password);
+			a.setObservations("");
 
 			arrAuthors.add(a);
 		}
 
 		// Create the robot!!!
-		String userId = req.getSession().getAttribute("userId").toString();
+		HttpSession session = req.getSession();
+		String userId = session.getAttribute("userId") == null ? null : session.getAttribute("userId").toString();
 		Opponent robot = this.loadOpponent(userId);
 
 		robot.setAuthors(arrAuthors);
@@ -283,10 +305,11 @@ public class RobotEditor extends HttpServlet {
 		EntityManager entityManager = Database.getEntityManager();
 
 		@SuppressWarnings("unchecked")
-		List<Opponent> list = entityManager.createQuery("from Opponent o inner join o.authors a where a.id = :authorId")
+		List<Object> list = entityManager.createQuery("from Opponent o inner join o.authors a where a.id = :authorId")
 				.setParameter("authorId", Long.parseLong(userId)).getResultList();
 
-		Opponent o = list.size() > 0 ? list.get(0) : new Opponent();
+		Object[] result = (Object[]) list.get(0);
+		Opponent o = list.size() > 0 ? (Opponent) result[0] : new Opponent();
 
 		entityManager.clear();
 		entityManager.close();
@@ -303,7 +326,6 @@ public class RobotEditor extends HttpServlet {
 
 		EntityManager entityManager = Database.getEntityManager();
 		entityManager.getTransaction().begin();
-		entityManager.persist(o);
 
 		// Saves or update depending if it already exists or not
 		if (o.getId() == 0) {
