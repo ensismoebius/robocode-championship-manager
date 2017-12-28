@@ -19,6 +19,7 @@ import javax.servlet.http.HttpSession;
 import model.Author;
 import utils.database.Database;
 import utils.text.TextTemplate;
+import utils.web.ServletAutheticator;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -30,7 +31,7 @@ public class Main extends HttpServlet {
 	private static final long serialVersionUID = -5170201804563458934L;
 
 	@Override
-	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	protected void service(HttpServletRequest req, HttpServletResponse resp) {
 		try {
 			String login = req.getParameter("login");
 			String passw = req.getParameter("password");
@@ -39,41 +40,18 @@ public class Main extends HttpServlet {
 				this.showAuthScreen(resp, "Olá!");
 				return;
 			}
-			if (this.authenticate(req, login, passw)) {
+			
+			ServletAutheticator sa = new ServletAutheticator();
+			sa.setRequestObject(req);
+			
+			if (sa.authenticate(login, passw)) {
 				resp.sendRedirect("/robotEditor");
 			} else {
 				this.showAuthScreen(resp, "Falha ao autenticar!");
 			}
-		} catch (URISyntaxException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private boolean authenticate(HttpServletRequest req, String login, String passw) {
-		EntityManager entityManager = Database.getEntityManager();
-
-		try {
-			@SuppressWarnings("unchecked")
-			List<Author> list = entityManager
-					.createQuery("from Author a where a.login = :login and a.password = :password ")
-					.setParameter("login", login).setParameter("password", passw).getResultList();
-
-			if (list.size() > 0) {
-				HttpSession session = req.getSession();
-				session.setAttribute("userId", list.get(0).getId());
-				entityManager.clear();
-				entityManager.close();
-				return true;
-			}
-
-		} catch (PersistenceException e) {
-			entityManager.clear();
-			entityManager.close();
-			return false;
-		}
-		entityManager.clear();
-		entityManager.close();
-		return false;
 	}
 
 	private void showAuthScreen(HttpServletResponse resp, String message) throws IOException, URISyntaxException {

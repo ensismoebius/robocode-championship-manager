@@ -34,8 +34,8 @@
 			<legend>Dados de quem desenvolveu (minimo uma pessoa)</legend>
 			<div id="devFields">
 				<!-- begin:author -->
-				<input type="text" name="name[]" placeholder="Nome" required="required">
-				<input type="email" name="email[]" placeholder="E-mail" required="required">
+				<input type="text" name="name[]" value="{name}" placeholder="Nome" required="required">
+				<input type="email" name="email[]" value="{email}" placeholder="E-mail" required="required"><br>
 				<!-- end:author -->
 			</div>
 			<button onclick="return addDeveloperFields()">+ Adicionar</button>
@@ -43,8 +43,8 @@
 
 		<fieldset>
 			<legend>Dados do robô</legend>
-			<input type="text" name="robotName" placeholder="Nome do robô" required="required">
-			<br> <br>
+			<input type="text" name="robotName" value="{robotName}" placeholder="Nome do robô" required="required">
+			<br><br>
 			<label for="robotJarFile">Arquivo do robô compilado, ou seja o arquivo .JAR</label>
 			<br>
 			<input type="file" name="robotJarFile" placeholder="Arquivo .jar do Robô" required="required">

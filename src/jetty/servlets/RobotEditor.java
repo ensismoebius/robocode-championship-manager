@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -22,6 +23,7 @@ import model.Author;
 import model.Opponent;
 import utils.database.Database;
 import utils.text.TextTemplate;
+import utils.web.ServletAutheticator;
 
 public class RobotEditor extends HttpServlet {
 
@@ -104,7 +106,6 @@ public class RobotEditor extends HttpServlet {
 		template.assign("teamWarcry", opponent.getBattleCry());
 		template.assign("robotName", opponent.getName());
 
-		// TODO Not loading!!!
 		opponent.getAuthors().forEach(author -> {
 			template.assign("name", author.getName());
 			template.assign("email", author.getMail());
@@ -131,6 +132,11 @@ public class RobotEditor extends HttpServlet {
 	private Opponent buildOpponentObject(HttpServletRequest req) {
 
 		this.errors.clear();
+
+		ServletAutheticator sa = new ServletAutheticator();
+		sa.setRequestObject(req);
+
+		// TODO Diferentiate actions of save new and update
 
 		// Retrieving data
 		String login = req.getParameter("login");
