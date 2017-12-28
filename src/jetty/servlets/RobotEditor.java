@@ -245,6 +245,10 @@ public class RobotEditor extends HttpServlet {
 			if (teamMusicBuffer.length == 0) {
 				this.errors.add("Arquivo música inválido!");
 			}
+
+			if (teamMusicBuffer.length > 1024 * 1024) {
+				this.errors.add("Arquivo música muito grande!");
+			}
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
@@ -260,7 +264,11 @@ public class RobotEditor extends HttpServlet {
 			fileContent.read(teamLogoBuffer);
 
 			if (teamLogoBuffer.length == 0) {
-				this.errors.add("Arquivo logotipo inválido!");
+				this.errors.add("Arquivo de logotipo inválido!");
+			}
+
+			if (teamLogoBuffer.length > 1024 * 1024) {
+				this.errors.add("Arquivo de logotipo muito grande!");
 			}
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
