@@ -365,6 +365,7 @@ public class RobotEditor extends HttpServlet {
 			arrAuthors.add(a);
 		}
 
+		robot.getLevels().add(0);
 		robot.setAuthors(arrAuthors);
 		robot.setBattleCry(teamWarcry);
 		robot.setCompiledRobot(robotJarBuffer);
