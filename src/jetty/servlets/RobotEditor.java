@@ -87,8 +87,15 @@ public class RobotEditor extends HttpServlet {
 				resp.sendRedirect("/");
 			}
 
-			// If is editing the team/robot and its not authenticated, goto auth screen
 			this.servletAutheticator.setRequestObject(req);
+
+			if (this.getAction(req).equals("logout")) {
+				this.servletAutheticator.logout();
+				resp.sendRedirect("/");
+				return;
+			}
+
+			// If is editing the team/robot and its not authenticated, goto auth screen
 			if (this.getAction(req).equals("edit") && !this.servletAutheticator.isAuthenticated()) {
 				resp.sendRedirect("/");
 				return;

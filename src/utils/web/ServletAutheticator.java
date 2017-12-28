@@ -56,6 +56,15 @@ public class ServletAutheticator {
 		return id == null ? false : true;
 	}
 
+	public void logout() {
+
+		if (this.requestObject == null)
+			return;
+
+		HttpSession session = this.requestObject.getSession();
+		session.invalidate();
+	}
+
 	public boolean authenticate(String login, String passw) throws Exception {
 
 		if (this.requestObject == null)
