@@ -50,7 +50,10 @@ public class ServletAutheticator {
 			throw new Exception(ERROR_MESSAGE);
 
 		HttpSession session = this.requestObject.getSession();
-		return !session.getAttribute("userId").equals("");
+
+		Object id = session.getAttribute("userId");
+
+		return id == null ? false : true;
 	}
 
 	public boolean authenticate(String login, String passw) throws Exception {

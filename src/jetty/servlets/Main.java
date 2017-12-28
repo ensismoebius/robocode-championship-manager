@@ -45,7 +45,7 @@ public class Main extends HttpServlet {
 			sa.setRequestObject(req);
 			
 			if (sa.authenticate(login, passw)) {
-				resp.sendRedirect("/robotEditor");
+				resp.sendRedirect("/robotEditor?action=edit");
 			} else {
 				this.showAuthScreen(resp, "Falha ao autenticar!");
 			}

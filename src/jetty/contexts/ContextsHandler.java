@@ -5,8 +5,8 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 
-public class MainContextHandler extends ServletContextHandler {
-	public MainContextHandler(Server server, SessionHandler sessionHandler) {
+public class ContextsHandler extends ServletContextHandler {
+	public ContextsHandler(Server server, SessionHandler sessionHandler) {
 
 		this.setSessionHandler(sessionHandler);
 

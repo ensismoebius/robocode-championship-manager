@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 import org.eclipse.jetty.server.Request;
@@ -30,55 +28,98 @@ public class RobotEditor extends HttpServlet {
 	private static final long serialVersionUID = 4848049705802230040L;
 	private TextTemplate template;
 	private List<String> errors = new ArrayList<String>();
+	private ServletAutheticator servletAutheticator;
 
 	public RobotEditor() throws IOException, URISyntaxException {
+		this.servletAutheticator = new ServletAutheticator();
 		template = new TextTemplate(getClass().getResource("../htmlTemplates/robotEditor.html").toURI());
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
+		// This must be executed BEFORE any request reading otherwise all data get
+		// missing
 		MultipartConfigElement multipartConfig = new MultipartConfigElement("/tmp");
 		req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, multipartConfig);
+
+		// An action MUST be declared
+		if (this.getAction(req) == null || this.getAction(req).equals("")) {
+			resp.sendRedirect("/");
+		}
 
 		// Set response content type
 		resp.setContentType("text/html");
 		PrintWriter out = resp.getWriter();
 
-		Opponent o = this.buildOpponentObject(req);
-
-		// If something goes wrong show the erros and stop
-		if (o == null) {
-			template.assign("message", String.join("<br>", this.errors));
-			template.parse("main");
-			out.write(template.out("main"));
-			return;
-		}
-
 		try {
-			this.saveOpponent(o);
+			Opponent o = this.buildOpponentObject(req);
+
+			// If something goes wrong show the erros and stop
+			if (o == null) {
+				template.assign("action", this.getAction(req));
+				template.assign("message", String.join("<br>", this.errors));
+				template.parse("main");
+				out.write(template.out("main"));
+				return;
+			}
+
+			o = this.saveOpponent(o, this.getAction(req).equals("edit"));
+			this.servletAutheticator.authenticate(o.getAuthors().get(0).getLogin(),
+					o.getAuthors().get(0).getPassword());
+			template.assign("action", "edit");
 			template.assign("message", "Robô salvo com sucesso! Para editar entre com o login senha.");
-		} catch (Exception e) {
-			template.assign("message", "Algum erro inesperado aconteceu: " + e.getMessage());
-		}
 
-		try {
 			String userId = String.valueOf(o.getAuthors().get(0).getId());
-			this.showRobotEditionScreen(resp, userId);
-		} catch (URISyntaxException e) {
+			this.showRobotEditionScreen(resp, req, userId);
+
+		} catch (Exception e) {
+			template.assign("action", "new");
+			template.assign("message", "Algum erro inesperado aconteceu: " + e.getMessage());
 		}
 	}
 
 	@Override
-	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
 		try {
-			HttpSession session = req.getSession();
-			String userId = session.getAttribute("userId") == null ? null : session.getAttribute("userId").toString();
-			this.showRobotEditionScreen(resp, userId);
-		} catch (URISyntaxException e) {
+			// An action MUST be declared
+			if (this.getAction(req) == null || this.getAction(req).equals("")) {
+				resp.sendRedirect("/");
+			}
+
+			// If is editing the team/robot and its not authenticated, goto auth screen
+			this.servletAutheticator.setRequestObject(req);
+			if (this.getAction(req).equals("edit") && !this.servletAutheticator.isAuthenticated()) {
+				resp.sendRedirect("/");
+				return;
+			}
+			// New robot/team with authentication not allowed, redirecting to edition
+			if (this.getAction(req).equals("new") && this.servletAutheticator.isAuthenticated()) {
+				resp.sendRedirect("/robotEditor?action=edit");
+				return;
+			}
+
+			// Is editing and authenticated, its fine
+			if (this.getAction(req).equals("edit") && this.servletAutheticator.isAuthenticated()) {
+				this.template.assign("action", "edit");
+				this.showRobotEditionScreen(resp, req, this.servletAutheticator.getId());
+				return;
+			}
+
+			// New robot/team with no authentication, its fine
+			if (this.getAction(req).equals("new") && !this.servletAutheticator.isAuthenticated()) {
+				this.template.assign("action", "new");
+				this.showRobotEditionScreen(resp, req, this.servletAutheticator.getId());
+				return;
+			}
+
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private String getAction(HttpServletRequest req) {
+		return req.getParameter("action");
 	}
 
 	/**
@@ -89,7 +130,7 @@ public class RobotEditor extends HttpServlet {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	private void showRobotEditionScreen(HttpServletResponse resp, String userId)
+	private void showRobotEditionScreen(HttpServletResponse resp, HttpServletRequest req, String userId)
 			throws IOException, URISyntaxException {
 
 		Opponent opponent = this.loadOpponent(userId);
@@ -128,13 +169,11 @@ public class RobotEditor extends HttpServlet {
 	 * @see errors
 	 * @param req
 	 * @return
+	 * @throws Exception
 	 */
-	private Opponent buildOpponentObject(HttpServletRequest req) {
+	private Opponent buildOpponentObject(HttpServletRequest req) throws Exception {
 
 		this.errors.clear();
-
-		ServletAutheticator sa = new ServletAutheticator();
-		sa.setRequestObject(req);
 
 		// TODO Diferentiate actions of save new and update
 
@@ -263,27 +302,53 @@ public class RobotEditor extends HttpServlet {
 
 		// Nothing is wrong build the objects!!
 
+		// Create the robot!!!
+		this.servletAutheticator.setRequestObject(req);
+		this.servletAutheticator.authenticate(login, password);
+		Opponent robot = this.loadOpponent(this.servletAutheticator.getId());
+
 		// Create and store authors
 		List<Author> arrAuthors = new ArrayList<Author>();
 		for (int i = 0; i < arrName.length; i++) {
+
+			boolean updateAuthor = false;
 
 			String name = arrName[i];
 			String mail = arrEmail[i];
 
 			Author a = new Author();
+
+			for (Author author : robot.getAuthors()) {
+
+				// If there is an existing author updates it
+				if (author.getMail().equals(mail)) {
+					a.setId(author.getId());
+
+					a.setLogin(login);
+					a.setPassword(password);
+
+					a.setName(name);
+					a.setMail(mail);
+					a.setObservations("");
+					updateAuthor = true;
+					break;
+				}
+			}
+
+			// Adds the updated author
+			if (updateAuthor) {
+				arrAuthors.add(a);
+				continue;
+			}
+
+			// Adds new author
 			a.setName(name);
 			a.setMail(mail);
 			a.setLogin(login);
 			a.setPassword(password);
 			a.setObservations("");
-
 			arrAuthors.add(a);
 		}
-
-		// Create the robot!!!
-		HttpSession session = req.getSession();
-		String userId = session.getAttribute("userId") == null ? null : session.getAttribute("userId").toString();
-		Opponent robot = this.loadOpponent(userId);
 
 		robot.setAuthors(arrAuthors);
 		robot.setBattleCry(teamWarcry);
@@ -328,19 +393,21 @@ public class RobotEditor extends HttpServlet {
 	 * 
 	 * @param o
 	 */
-	private void saveOpponent(Opponent o) {
+	private Opponent saveOpponent(Opponent o, boolean editing) {
 
 		EntityManager entityManager = Database.getEntityManager();
 		entityManager.getTransaction().begin();
 
 		// Saves or update depending if it already exists or not
-		if (o.getId() == 0) {
-			entityManager.persist(o);
+		if (editing) {
+			o = entityManager.merge(o);
 		} else {
-			entityManager.merge(o);
+			entityManager.persist(o);
 		}
 		entityManager.getTransaction().commit();
 		entityManager.clear();
 		entityManager.close();
+
+		return o;
 	}
 }

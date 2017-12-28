@@ -7,7 +7,7 @@ import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.server.session.HouseKeeper;
 import org.eclipse.jetty.server.session.SessionHandler;
 
-import jetty.contexts.MainContextHandler;
+import jetty.contexts.ContextsHandler;
 
 public class HttpServer {
 
@@ -18,7 +18,7 @@ public class HttpServer {
 			server.setSessionIdManager(this.generateIdManager(server));
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new MainContextHandler(server, new SessionHandler()));
+			contexts.addHandler(new ContextsHandler(server, new SessionHandler()));
 
 			server.setHandler(contexts);
 			server.start();
