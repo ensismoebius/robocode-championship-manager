@@ -39,8 +39,26 @@
 			<fileset dir="${source.directory}" excludes="**/*.java" />
 		</copy>
 	</target>
-
+	
+	<target name="compileWithDebugSimbols">
+		<mkdir dir="${classes.directory}" />
+		<javac debug="true" srcdir="${source.directory}" destdir="${classes.directory}" classpathref="buildPath" />
+		<copy todir="${classes.directory}">
+			<fileset dir="${source.directory}" excludes="**/*.java" />
+		</copy>
+	</target>
+	
 	<target name="jar" depends="clean, compile">
+		<mkdir dir="${jar.directory}" />
+		<jar destfile="${jar.directory}/${ant.project.name}.jar" basedir="${classes.directory}">
+			<manifest>
+				<attribute name="Main-Class" value="${mainClassName}" />
+			</manifest>
+			<zipgroupfileset dir="${library.directory}" includes="**/*.jar" />
+		</jar>
+	</target>
+	
+	<target name="jarDebug" depends="clean, compileWithDebugSimbols">
 		<mkdir dir="${jar.directory}" />
 		<jar destfile="${jar.directory}/${ant.project.name}.jar" basedir="${classes.directory}">
 			<manifest>

@@ -52,7 +52,7 @@ public class Main extends HttpServlet {
 		 * JSP is a better tecnology than this,but looks like jetty does not gives
 		 * support to it so i have to use this workaround
 		 */
-		TextTemplate template = new TextTemplate(getClass().getResource("../htmlTemplates/main.html").toURI());
+		TextTemplate template = new TextTemplate(getClass().getResourceAsStream("/jetty/htmlTemplates/main.html"));
 		template.assign("message", message);
 		template.parse("main");
 

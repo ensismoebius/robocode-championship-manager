@@ -1,14 +1,15 @@
 package utils.text;
 
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Preprocessor of text templates
@@ -25,18 +26,16 @@ public class TextTemplatePreprocessor {
 	/**
 	 * Loads the template and return a Hashmap ArrayList representation of it
 	 * 
-	 * @param path
+	 * @param inputStream
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	public ArrayList<HashMap<String, Object>> loadTemplate(URI path) {
-		try {
-			HashMap<String, Object> parsed = this.process(Files.readAllLines(Paths.get(path)), "root", 0);
-			return (ArrayList<HashMap<String, Object>>) parsed.get("root");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return null;
+	public ArrayList<HashMap<String, Object>> loadTemplate(InputStream inputStream) {
+		List<String> template = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
+				.collect(Collectors.toList());
+
+		HashMap<String, Object> parsed = this.process(template, "root", 0);
+		return (ArrayList<HashMap<String, Object>>) parsed.get("root");
 	}
 
 	/**

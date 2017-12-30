@@ -5,6 +5,7 @@ package utils.text;
  */
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,9 +28,9 @@ public class TextTemplate {
 	private ArrayList<HashMap<String, Object>> template;
 	private HashMap<String, Object> assignments;
 
-	public TextTemplate(URI templatePath) throws IOException {
+	public TextTemplate(InputStream inputStream) throws IOException {
 		this.assignments = new HashMap<String, Object>();
-		this.template = new TextTemplatePreprocessor().loadTemplate(templatePath);
+		this.template = new TextTemplatePreprocessor().loadTemplate(inputStream);
 	}
 
 	public HashMap<String, Object> getAllAssignments() {

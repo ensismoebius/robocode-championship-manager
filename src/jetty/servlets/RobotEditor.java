@@ -37,8 +37,8 @@ public class RobotEditor extends HttpServlet {
 	public void initialize() {
 		try {
 			this.servletAutheticator = new ServletAutheticator();
-			this.template = new TextTemplate(getClass().getResource("../htmlTemplates/robotEditor.html").toURI());
-		} catch (IOException | URISyntaxException e) {
+			this.template = new TextTemplate(getClass().getResourceAsStream("/jetty/htmlTemplates/robotEditor.html"));
+		} catch (IOException e) {
 			System.exit(1);
 		}
 	}
@@ -49,7 +49,7 @@ public class RobotEditor extends HttpServlet {
 
 		// This must be executed BEFORE any request reading otherwise all data get
 		// missing
-		MultipartConfigElement multipartConfig = new MultipartConfigElement("/tmp");
+		MultipartConfigElement multipartConfig = new MultipartConfigElement(System.getProperty("java.io.tmpdir"));
 		req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, multipartConfig);
 
 		// An action MUST be declared
