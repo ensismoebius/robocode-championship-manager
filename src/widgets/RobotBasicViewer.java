@@ -12,7 +12,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
-import model.Opponent;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -24,7 +23,7 @@ public class RobotBasicViewer extends HBox {
 	private boolean marked = false;
 	private ImageView image;
 
-	private int desireWidth = 300;
+	private int desireHeight = 100;
 	private Label name;
 
 	private IRobotMarkedEvent markedEvent;
@@ -33,37 +32,35 @@ public class RobotBasicViewer extends HBox {
 	public RobotBasicViewer(byte[] oponentImage, String opponentName) {
 		super(10);
 
-
-		this.setMinHeight(this.desireWidth);
+		this.setMinHeight(this.desireHeight);
 
 		this.opponentName = opponentName;
 		this.name = new Label(opponentName);
-		this.setAlignment(Pos.CENTER);
+		this.setAlignment(Pos.CENTER_LEFT);
 		this.name.setTextFill(Color.YELLOWGREEN);
-		this.name.setTextAlignment(TextAlignment.RIGHT);
-		this.name.setRotate(90);
+		this.name.setTextAlignment(TextAlignment.LEFT);
 
 		ByteInputStream bos = new ByteInputStream(oponentImage, oponentImage.length);
-		
-		// I dont know why, but tell to javafx the width and height of the image 
+
+		// I dont know why, but tell to javafx the width and height of the image
 		// turns the system faster
-		Image picture = new Image(bos, 320, 240, true, true);
-		
+		Image picture = new Image(bos, 160, 120, true, true);
+
 		this.image = new ImageView();
 		this.image.setImage(picture);
 		this.image.setPreserveRatio(true);
-		
+
 		try {
 			bos.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		this.getChildren().add(this.name);
 		this.getChildren().add(this.image);
+		this.getChildren().add(this.name);
 
-		this.image.setFitHeight(this.desireWidth);
-		this.image.setFitWidth(this.desireWidth);
+		this.image.setFitHeight(this.desireHeight);
+		this.image.setFitWidth(this.desireHeight * 2);
 
 		this.applyNonSelectedStyle();
 
@@ -82,19 +79,20 @@ public class RobotBasicViewer extends HBox {
 	private void applySelectedStyle() {
 
 		this.setStyle(
-				"-fx-border-color: #00ff00; -fx-border-width: 8px; -fx-font-size: 2em; -fx-background-color: #000;");
+				"-fx-border-color: #00ff00; -fx-border-width: 2px; -fx-font-size: 2em; -fx-background-color: #000;");
 	}
 
 	private void applyNonSelectedStyle() {
-		this.setStyle("" + "-fx-font-size: 2em;" + "-fx-background-color: #000;");
+		this.setStyle("" + "-fx-font-size: 2em;"
+				+ "-fx-background-color: #000; -fx-border-color: #0000ff; -fx-border-width: 1px;");
 	}
 
 	public int getMaximumWidth() {
-		return desireWidth;
+		return desireHeight * 2;
 	}
 
-	public void setMaximumWidth(int maximumWidth) {
-		this.desireWidth = maximumWidth;
+	public void setMaximumHeight(int maximumWidth) {
+		this.desireHeight = maximumWidth;
 	}
 
 	public DoubleBinding xCoords() {

@@ -24,18 +24,19 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 
 	private GridPane gridPane;
 
-	private int rankGridRowNumber;
+	private int[] rankGridRowNumber = new int[50];
 
 	public RankViewer(HashMap<String, model.Opponent> battleList, ObservableMap<String, Opponent> opponentsList) {
 		super(new GridPane());
 
 		this.gridPane = new GridPane();
-		this.gridPane.setVgap(30);
+		this.gridPane.setVgap(10);
+		this.gridPane.setHgap(10);
 
 		this.battleList = battleList;
 		this.opponentsList = opponentsList;
 
-		this.rankGridRowNumber = 1;
+		//this.rankGridRowNumber = 1;
 		this.opponentsList.entrySet().forEach(opponent -> {
 
 			for (int level : opponent.getValue().getLevels()) {
@@ -44,9 +45,8 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 						opponent.getValue().getName());
 				robotViewer.setRobotMarkedEventListener(this);
 
-				GridPane.setRowSpan(robotViewer, level + 1);
-				this.gridPane.add(robotViewer, level + 1, this.rankGridRowNumber);
-				this.rankGridRowNumber++;
+				this.gridPane.add(robotViewer, level + 1, this.rankGridRowNumber[level]);
+				this.rankGridRowNumber[level] ++;
 			}
 		});
 

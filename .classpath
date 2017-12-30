@@ -36,7 +36,6 @@
 	<classpathentry kind="lib" path="lib/hibernate-release-4.3.5.Final/required/jboss-transaction-api_1.2_spec-1.0.0.Final.jar"/>
 	<classpathentry kind="lib" path="lib/joda-time-2.3.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.28-bin.jar"/>
-	<classpathentry kind="lib" path="lib/robocode/picocontainer-2.14.2.jar"/>
 	<classpathentry kind="lib" path="lib/robocode/robocode.jar"/>
 	<classpathentry kind="lib" path="lib/saaj-ri-5.2.3.jar"/>
 	<classpathentry kind="lib" path="RobocodeStarter/lib/picocontainer-2.14.2.jar"/>
