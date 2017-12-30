@@ -37,19 +37,10 @@
 	<classpathentry kind="lib" path="lib/joda-time-2.3.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.28-bin.jar"/>
 	<classpathentry kind="lib" path="lib/robocode/picocontainer-2.14.2.jar"/>
-	<classpathentry kind="lib" path="lib/robocode/robocode.battle-1.9.2.4.jar"/>
-	<classpathentry kind="lib" path="lib/robocode/robocode.core-1.9.2.4.jar"/>
-	<classpathentry kind="lib" path="lib/robocode/robocode.host-1.9.2.5.jar"/>
 	<classpathentry kind="lib" path="lib/robocode/robocode.jar"/>
-	<classpathentry kind="lib" path="lib/robocode/robocode.repository-1.9.2.4.jar"/>
 	<classpathentry kind="lib" path="lib/saaj-ri-5.2.3.jar"/>
 	<classpathentry kind="lib" path="RobocodeStarter/lib/picocontainer-2.14.2.jar"/>
-	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.battle-1.9.2.4.jar"/>
-	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.core-1.9.2.4.jar"/>
-	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.host-1.9.2.5.jar"/>
 	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.jar"/>
-	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.repository-1.9.2.4.jar"/>
-	<classpathentry kind="lib" path="RobocodeStarter/lib/robocode.ui-1.9.2.5.jar"/>
 	<classpathentry kind="lib" path="lib/jetty-all-9.4.8.v20171121-uber.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>

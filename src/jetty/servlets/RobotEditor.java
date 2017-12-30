@@ -290,7 +290,7 @@ public class RobotEditor extends HttpServlet {
 			this.errors.add("Preencha a senha");
 		}
 
-		Pattern robotTeamAndName = Pattern.compile("^([^\\.]*)\\.(.*)(\\.jar)$");
+		Pattern robotTeamAndName = Pattern.compile("^([^\\.]*)\\.([^\\_]*).*(\\.jar)$");
 		Matcher robotTeamAndNameMatcher = robotTeamAndName.matcher(jarFileName);
 
 		if (!robotTeamAndNameMatcher.find()) {
