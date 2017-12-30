@@ -6,8 +6,11 @@ import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -298,6 +301,19 @@ public class RobotEditor extends HttpServlet {
 			this.errors.add("Informe o nome do seu time");
 		}
 
+		// The team and robot names must have only numbers and/or alphabetical chars
+		Pattern alowedChars = Pattern.compile("[a-zA-Z0-9]{1,50}", Pattern.CASE_INSENSITIVE);
+
+		Matcher m = alowedChars.matcher(robotName);
+		if (!m.find()) {
+			this.errors.add("O nome do robô pode ter APENAS caracteres alfabéticos e numéricos!");
+		}
+
+		m = alowedChars.matcher(teamName);
+		if (!m.find()) {
+			this.errors.add("O nome do time pode ter APENAS caracteres alfabéticos e numéricos!");
+		}
+
 		if (teamWarcry == null || teamWarcry.trim().length() == 0) {
 			this.errors.add("Informe seu lema");
 		}
@@ -316,6 +332,12 @@ public class RobotEditor extends HttpServlet {
 
 		if (arrEmail.length != arrName.length) {
 			this.errors.add("Cada membro do time deve ter um e-mail");
+		}
+
+		// If we want create a new team and the login existis cancel and call for
+		// another login
+		if (this.getAction(req).equals("new") && this.loginExistis(login)) {
+			this.errors.add("Este login já existe, escolha outro. Geralmente um e-mail é uma boa escolha.");
 		}
 
 		// If something is wrong returns null
@@ -386,6 +408,31 @@ public class RobotEditor extends HttpServlet {
 		robot.setTeam(teamName);
 
 		return robot;
+	}
+
+	private boolean loginExistis(String login) throws Exception {
+
+		EntityManager entityManager = Database.getEntityManager();
+
+		try {
+			@SuppressWarnings("unchecked")
+			List<Author> list = entityManager.createQuery("from Author a where a.login = :login")
+					.setParameter("login", login).getResultList();
+
+			if (list.size() > 0) {
+				entityManager.clear();
+				entityManager.close();
+				return true;
+			}
+
+		} catch (PersistenceException e) {
+			entityManager.clear();
+			entityManager.close();
+			return false;
+		}
+		entityManager.clear();
+		entityManager.close();
+		return false;
 	}
 
 	/**
