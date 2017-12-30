@@ -30,13 +30,19 @@ public class RobotEditor extends HttpServlet {
 	private List<String> errors = new ArrayList<String>();
 	private ServletAutheticator servletAutheticator;
 
-	public RobotEditor() throws IOException, URISyntaxException {
-		this.servletAutheticator = new ServletAutheticator();
-		template = new TextTemplate(getClass().getResource("../htmlTemplates/robotEditor.html").toURI());
+	public void initialize() {
+		try {
+			this.servletAutheticator = new ServletAutheticator();
+			this.template = new TextTemplate(getClass().getResource("../htmlTemplates/robotEditor.html").toURI());
+		} catch (IOException | URISyntaxException e) {
+			System.exit(1);
+		}
 	}
 
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		this.initialize();
+
 		// This must be executed BEFORE any request reading otherwise all data get
 		// missing
 		MultipartConfigElement multipartConfig = new MultipartConfigElement("/tmp");
@@ -80,6 +86,8 @@ public class RobotEditor extends HttpServlet {
 
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+
+		this.initialize();
 
 		try {
 			// An action MUST be declared
@@ -365,7 +373,9 @@ public class RobotEditor extends HttpServlet {
 			arrAuthors.add(a);
 		}
 
-		robot.getLevels().add(0);
+		if (robot.getLevels().size() == 0) {
+			robot.getLevels().add(0);
+		}
 		robot.setAuthors(arrAuthors);
 		robot.setBattleCry(teamWarcry);
 		robot.setCompiledRobot(robotJarBuffer);

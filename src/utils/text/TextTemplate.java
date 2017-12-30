@@ -50,6 +50,8 @@ public class TextTemplate {
 
 	public void parse(String blockName) {
 		List<Object> indexes = this.getBlockIndexes(this.template, blockName, null);
+		
+		//TODO BUG here!!! 
 		List<Object> block = (List<Object>) accessBlock(indexes, this.template);
 		this.parseBlockElements(block);
 	}
