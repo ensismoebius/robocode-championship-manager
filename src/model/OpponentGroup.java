@@ -35,8 +35,12 @@ public class OpponentGroup {
 	@JoinColumn(name = "groupId")
 	private List<Opponent> opponents;
 
-	public OpponentGroup(String name) {
+	@Column(nullable = false)
+	private int maxSize;
+
+	public OpponentGroup(String name, int maxSize) {
 		this.opponents = new ArrayList<Opponent>();
+		this.maxSize = maxSize;
 		this.name = name;
 	}
 
@@ -63,4 +67,13 @@ public class OpponentGroup {
 	public void setOpponents(List<Opponent> opponents) {
 		this.opponents = opponents;
 	}
+
+	public int getMaxSize() {
+		return maxSize;
+	}
+
+	public void setMaxSize(int maxSize) {
+		this.maxSize = maxSize;
+	}
+
 }

@@ -6,18 +6,11 @@ package jetty.servlets;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
-import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import model.Author;
-import utils.database.Database;
 import utils.text.TextTemplate;
 import utils.web.ServletAutheticator;
 
@@ -40,10 +33,10 @@ public class Main extends HttpServlet {
 				this.showAuthScreen(resp, "Olá!");
 				return;
 			}
-			
+
 			ServletAutheticator sa = new ServletAutheticator();
 			sa.setRequestObject(req);
-			
+
 			if (sa.authenticate(login, passw)) {
 				resp.sendRedirect("/robotEditor?action=edit");
 			} else {

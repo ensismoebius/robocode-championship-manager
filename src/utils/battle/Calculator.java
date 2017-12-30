@@ -3,7 +3,6 @@
  */
 package utils.battle;
 
-import model.Opponent;
 import model.OpponentGroup;
 
 /**
@@ -19,11 +18,11 @@ public class Calculator {
 		int groupsAmount = amountOfOpponets / groupsSize;
 
 		OpponentGroup[] groups = new OpponentGroup[groupsAmount];
-		
-		for(int i = 0; i < groupsAmount; i++) {
-			groups[i] = new OpponentGroup(Calculator.generateCharacter(i));
+
+		for (int i = 0; i < groupsAmount; i++) {
+			groups[i] = new OpponentGroup(Calculator.generateCharacter(i), groupsSize);
 		}
-		
+
 		return groups;
 	}
 
@@ -63,15 +62,14 @@ public class Calculator {
 			powerOfTwo++;
 		}
 	}
-	
-	
+
 	private static String generateCharacter(int number) {
-	    char generatedChar = (char) (65 + number);
-	    
-	    char[] arrChar = new char[1];
-	    arrChar[0] = generatedChar;
-	    
-	    return new String(arrChar);
+		char generatedChar = (char) (65 + number);
+
+		char[] arrChar = new char[1];
+		arrChar[0] = generatedChar;
+
+		return new String(arrChar);
 	}
 
 }
