@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -193,28 +194,24 @@ public class RobotEditor extends HttpServlet {
 
 		this.errors.clear();
 
-		// TODO Diferentiate actions of save new and update
-
 		// Retrieving data
 		String login = req.getParameter("login");
 		String password = req.getParameter("password");
-
-		String teamName = req.getParameter("teamName");
 
 		String teamWarcry = req.getParameter("teamWarcry");
 
 		String[] arrName = req.getParameterValues("name[]");
 		String[] arrEmail = req.getParameterValues("email[]");
 
-		String robotName = req.getParameter("robotName");
+		// Holds the file name which determines The team and robot name
+		String jarFileName = null;
 
 		// Validating data
 		Part robotJarfilePart;
 		byte[] robotJarBuffer = null;
 		try {
 			robotJarfilePart = req.getPart("robotJarFile");
-			// String fileName =
-			// Paths.get(robotJarfilePart.getSubmittedFileName()).getFileName().toString();
+			jarFileName = Paths.get(robotJarfilePart.getSubmittedFileName()).getFileName().toString();
 			InputStream fileContent = robotJarfilePart.getInputStream();
 			robotJarBuffer = new byte[fileContent.available()];
 			fileContent.read(robotJarBuffer);
@@ -293,24 +290,27 @@ public class RobotEditor extends HttpServlet {
 			this.errors.add("Preencha a senha");
 		}
 
-		if (robotName == null || robotName.trim().length() == 0) {
-			this.errors.add("Informe o nome do seu robô");
+		Pattern robotTeamAndName = Pattern.compile("^([^\\.]*)\\.(.*)(\\.jar)$");
+		Matcher robotTeamAndNameMatcher = robotTeamAndName.matcher(jarFileName);
+
+		if (!robotTeamAndNameMatcher.find()) {
+			this.errors.add(
+					"O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
 		}
 
-		if (teamName == null || teamName.trim().length() == 0) {
-			this.errors.add("Informe o nome do seu time");
-		}
+		String teamName = robotTeamAndNameMatcher.group(1);
+		String robotName = robotTeamAndNameMatcher.group(2);
 
 		// The team and robot names must have only numbers and/or alphabetical chars
-		Pattern alowedChars = Pattern.compile("[a-zA-Z0-9]{1,50}", Pattern.CASE_INSENSITIVE);
+		Pattern alowedChars = Pattern.compile("[^a-zA-Z0-9_\\.]{1,50}", Pattern.CASE_INSENSITIVE);
 
 		Matcher m = alowedChars.matcher(robotName);
-		if (!m.find()) {
+		if (m.find()) {
 			this.errors.add("O nome do robô pode ter APENAS caracteres alfabéticos e numéricos!");
 		}
 
 		m = alowedChars.matcher(teamName);
-		if (!m.find()) {
+		if (m.find()) {
 			this.errors.add("O nome do time pode ter APENAS caracteres alfabéticos e numéricos!");
 		}
 
