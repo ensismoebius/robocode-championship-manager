@@ -21,6 +21,9 @@ import javax.servlet.http.Part;
 
 import org.eclipse.jetty.server.Request;
 
+import com.sun.xml.messaging.saaj.util.ByteInputStream;
+
+import javafx.scene.image.Image;
 import model.Author;
 import model.Opponent;
 import utils.configuration.Configuration;
@@ -279,6 +282,15 @@ public class RobotEditor extends HttpServlet {
 			if (teamLogoBuffer.length > 1024 * 1024) {
 				this.errors.add("Arquivo de logotipo muito grande!");
 			}
+
+			Image teamLogoImage = new Image(new ByteInputStream(teamLogoBuffer, teamLogoBuffer.length));
+			if (teamLogoImage.getWidth() > 640d) {
+				this.errors.add("A largura do logotipo é maior que 640 pixels!");
+			}
+			if (teamLogoImage.getHeight() > 480d) {
+				this.errors.add("A altura do logotipo é maior que 480 pixels!");
+			}
+
 		} catch (IOException | ServletException e) {
 			e.printStackTrace();
 		}
