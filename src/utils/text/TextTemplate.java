@@ -6,7 +6,6 @@ package utils.text;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -51,8 +50,8 @@ public class TextTemplate {
 
 	public void parse(String blockName) {
 		List<Object> indexes = this.getBlockIndexes(this.template, blockName, null);
-		
-		//TODO BUG here!!! 
+
+		// TODO BUG here!!!
 		List<Object> block = (List<Object>) accessBlock(indexes, this.template);
 		this.parseBlockElements(block);
 	}

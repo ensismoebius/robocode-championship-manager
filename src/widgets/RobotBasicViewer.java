@@ -37,7 +37,7 @@ public class RobotBasicViewer extends HBox {
 		this.opponentName = opponentName;
 		this.name = new Label(opponentName);
 		this.setAlignment(Pos.CENTER_LEFT);
-		this.name.setTextFill(Color.YELLOWGREEN);
+		this.name.setTextFill(Color.YELLOW);
 		this.name.setTextAlignment(TextAlignment.LEFT);
 
 		ByteInputStream bos = new ByteInputStream(oponentImage, oponentImage.length);

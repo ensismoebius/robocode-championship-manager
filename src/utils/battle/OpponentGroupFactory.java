@@ -1,6 +1,3 @@
-/**
- * 
- */
 package utils.battle;
 
 import model.OpponentGroup;
@@ -10,7 +7,7 @@ import model.OpponentGroup;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class Calculator {
+public class OpponentGroupFactory {
 
 	public static OpponentGroup[] createBattleGroups(int amountOfOpponets) {
 
@@ -20,7 +17,7 @@ public class Calculator {
 		OpponentGroup[] groups = new OpponentGroup[groupsAmount];
 
 		for (int i = 0; i < groupsAmount; i++) {
-			groups[i] = new OpponentGroup(Calculator.generateCharacter(i), groupsSize);
+			groups[i] = new OpponentGroup(OpponentGroupFactory.generateCharacter(i), groupsSize);
 		}
 
 		return groups;

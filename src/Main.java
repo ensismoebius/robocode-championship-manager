@@ -22,7 +22,7 @@ import jetty.server.HttpServer;
 import listeners.OpponentsUpdater;
 import model.Opponent;
 import model.OpponentGroup;
-import utils.battle.Calculator;
+import utils.battle.OpponentGroupFactory;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
@@ -74,7 +74,7 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 
-		OpponentGroup[] teste = Calculator.createBattleGroups(200);
+		OpponentGroup[] teste = OpponentGroupFactory.createBattleGroups(200);
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 

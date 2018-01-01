@@ -24,13 +24,13 @@ import javafx.stage.Screen;
  */
 public class BattleViewer extends Scene {
 
+	private ImageView vsImage;
 	private ImageView oponentImage01;
-	private ImageView vs;
 	private ImageView oponentImage02;
 
+	private MediaPlayer versusMusic;
 	private AnchorPane anchorPane;
 	private StackPane stackPane;
-	private MediaPlayer versusMusic;
 
 	private final double margin;
 
@@ -52,11 +52,11 @@ public class BattleViewer extends Scene {
 			this.stackPane.setPrefWidth(primaryScreenBounds.getWidth());
 			this.stackPane.setPrefHeight(primaryScreenBounds.getHeight());
 
-			this.vs = new ImageView();
-			this.vs.setImage(new Image(getClass().getResource("vs.png").openStream()));
-			this.vs.effectProperty().set(new Reflection());
-			this.vs.fitWidthProperty().bind(this.widthProperty().divide(5));
-			this.vs.fitHeightProperty().bind(this.heightProperty().divide(5));
+			this.vsImage = new ImageView();
+			this.vsImage.setImage(new Image(getClass().getResource("vs.gif").openStream()));
+			this.vsImage.effectProperty().set(new Reflection());
+			this.vsImage.fitWidthProperty().bind(this.widthProperty().divide(5));
+			this.vsImage.fitHeightProperty().bind(this.heightProperty().divide(5));
 
 			this.versusMusic = new MediaPlayer(new Media(getClass().getResource("versusMusic.mp3").toURI().toString()));
 		} catch (IOException | URISyntaxException e) {
@@ -74,7 +74,7 @@ public class BattleViewer extends Scene {
 		AnchorPane.setRightAnchor(oponentImage02, this.margin);
 		this.anchorPane.getChildren().add(this.oponentImage02);
 
-		this.stackPane.getChildren().addAll(this.anchorPane, this.vs);
+		this.stackPane.getChildren().addAll(this.anchorPane, this.vsImage);
 		this.stackPane.setStyle("-fx-background-color: #000;");
 
 		this.setRoot(this.stackPane);
