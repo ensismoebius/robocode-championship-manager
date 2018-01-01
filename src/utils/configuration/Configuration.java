@@ -17,18 +17,34 @@ import java.util.Properties;
  */
 public class Configuration {
 
+	/**
+	 * Indicates if this is the first time the system runs
+	 */
 	private static boolean firstRun = false;
 
 	private static Properties configurations;
 	private static String configFileLocation;
 	private static String tempDir;
 
+	/**
+	 * If there is no configuration stored call the implementation of this interface
+	 * to create new properties
+	 */
 	private static NewConfigurationHandle newConfigurationHandle;
 
+	/**
+	 * Sets the implementation of {@link NewConfigurationHandle} to create new
+	 * properties
+	 * 
+	 * @see NewConfigurationHandle
+	 */
 	public static void setNewConfigurationHandle(NewConfigurationHandle newConfigurationHandle) {
 		Configuration.newConfigurationHandle = newConfigurationHandle;
 	}
 
+	/**
+	 * Initialize if need the {@link Configuration} class
+	 */
 	private static void init() {
 		Configuration.tempDir = System.getProperty("java.io.tmpdir");
 		Configuration.configFileLocation = System.getProperty("user.home") + "/robocodeChampManager.config";
@@ -40,6 +56,12 @@ public class Configuration {
 		}
 	}
 
+	/**
+	 * Returns any configuration if any
+	 * 
+	 * @param name
+	 * @return
+	 */
 	private static String getConfiguration(String name) {
 
 		while (Configuration.configurations == null) {
@@ -49,6 +71,11 @@ public class Configuration {
 		return Configuration.configurations.getProperty(name);
 	}
 
+	/**
+	 * Loads the configurations from file
+	 * 
+	 * @return
+	 */
 	private static boolean loadConfigurations() {
 		InputStream is;
 		try {
@@ -65,6 +92,11 @@ public class Configuration {
 		return false;
 	}
 
+	/**
+	 * Save all configurations to a file
+	 * 
+	 * @return
+	 */
 	private static boolean saveConfigurations() {
 		FileOutputStream os;
 		try {

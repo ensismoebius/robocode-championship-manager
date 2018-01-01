@@ -23,13 +23,13 @@ public class Database {
 
 		if (Database.entityManagerFactory == null) {
 
+			// Loads the database configuration from config file
 			Map<String, String> persistenceMap = new HashMap<String, String>();
-
 			persistenceMap.put("javax.persistence.jdbc.url", Configuration.getDatabaseURL());
 			persistenceMap.put("javax.persistence.jdbc.user", Configuration.getDatabaseUser());
 			persistenceMap.put("javax.persistence.jdbc.password", Configuration.getDatabasePassword());
 
-			// Used to create the database, only if there is no config file
+			// Creates the database, only if there is no config file
 			if (Configuration.isFirstRun()) {
 				persistenceMap.put("javax.persistence.schema-generation.database.action", "drop-and-create");
 			}
