@@ -40,16 +40,19 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 
 		this.databaseURL = new TextField();
 		this.databaseURL.setPromptText("Endereço do banco de dados");
+		this.lbldatabaseURL = new Label("Endereço do banco de dados");
 
 		this.databaseUser = new TextField();
 		this.databaseUser.setPromptText("Usuário do banco de dados");
+		this.lbldatabaseUser = new Label("Usuário do banco de dados");
 
 		this.databasePassword = new TextField();
 		this.databasePassword.setPromptText("Senha do banco de dados");
+		this.lbldatabasePassword = new Label("Senha do banco de dados");
 
 		this.robocodeDirectory = new TextField();
 		this.lblrobocodeDirectory = new Label("Diretório do robocode");
-		this.robocodeDirectory.setOnAction(event -> {
+		this.robocodeDirectory.setOnMouseClicked(event -> {
 			DirectoryChooser dc = new DirectoryChooser();
 			dc.setTitle("Escolha o diretório onde está instalado o robocode");
 			this.robocodeDirectory.setText(dc.showDialog(null).getPath());
@@ -58,7 +61,7 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 		VBox vb = new VBox(10);
 		vb.getChildren().addAll(lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword,
 				databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
-		this.setScene(new Scene(vb, 320, 240));
+		this.setScene(new Scene(vb));
 		this.showAndWait();
 
 		if (this.databaseURL.getText().trim().equals("")) {
@@ -74,10 +77,12 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 		if (this.robocodeDirectory.getText().trim().equals("")) {
 			return null;
 		}
+
 		Properties properties = new Properties();
 		properties.put("databaseURL", this.databaseURL.getText().trim());
 		properties.put("databaseUser", this.databaseUser.getText().trim());
 		properties.put("databasePassword", this.databasePassword.getText().trim());
+		properties.put("robocodeDirectory", this.robocodeDirectory.getText().trim());
 
 		return properties;
 	}
