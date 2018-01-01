@@ -2,6 +2,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Properties;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
@@ -23,6 +24,8 @@ import listeners.OpponentsUpdater;
 import model.Opponent;
 import model.OpponentGroup;
 import utils.battle.OpponentGroupFactory;
+import utils.configuration.Configuration;
+import utils.configuration.NewConfigurationHandle;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
@@ -30,6 +33,7 @@ import widgets.scenes.EditRobots;
 import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
+import widgets.windows.NewConfigurationHandleWindow;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -74,7 +78,7 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 
-		OpponentGroup[] teste = OpponentGroupFactory.createBattleGroups(200);
+		Configuration.setNewConfigurationHandle(new NewConfigurationHandleWindow());
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 

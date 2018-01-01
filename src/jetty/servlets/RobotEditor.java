@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Request;
 
 import model.Author;
 import model.Opponent;
+import utils.configuration.Configuration;
 import utils.database.Database;
 import utils.text.TextTemplate;
 import utils.web.ServletAutheticator;
@@ -49,7 +50,7 @@ public class RobotEditor extends HttpServlet {
 
 		// This must be executed BEFORE any request reading otherwise all data get
 		// missing
-		MultipartConfigElement multipartConfig = new MultipartConfigElement(System.getProperty("java.io.tmpdir"));
+		MultipartConfigElement multipartConfig = new MultipartConfigElement(Configuration.getTempDir());
 		req.setAttribute(Request.__MULTIPART_CONFIG_ELEMENT, multipartConfig);
 
 		// An action MUST be declared
