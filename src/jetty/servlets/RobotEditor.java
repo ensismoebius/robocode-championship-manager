@@ -66,10 +66,10 @@ public class RobotEditor extends HttpServlet {
 		PrintWriter out = resp.getWriter();
 
 		try {
-			Opponent o = this.buildOpponentObject(req);
+			Opponent newRobot = this.buildOpponentObject(req);
 
 			// If something goes wrong show the erros and stop
-			if (o == null) {
+			if (newRobot == null) {
 				template.assign("action", this.getAction(req));
 				template.assign("message", String.join("<br>", this.errors));
 				template.parse("main");
@@ -77,13 +77,13 @@ public class RobotEditor extends HttpServlet {
 				return;
 			}
 
-			o = this.saveOpponent(o, this.getAction(req).equals("edit"));
-			this.servletAutheticator.authenticate(o.getAuthors().get(0).getLogin(),
-					o.getAuthors().get(0).getPassword());
+			newRobot = this.saveOpponent(newRobot, this.getAction(req).equals("edit"));
+			this.servletAutheticator.authenticate(newRobot.getAuthors().get(0).getLogin(),
+					newRobot.getAuthors().get(0).getPassword());
 			template.assign("action", "edit");
 			template.assign("message", "Robô salvo com sucesso! Para editar entre com o login senha.");
 
-			String userId = String.valueOf(o.getAuthors().get(0).getId());
+			String userId = String.valueOf(newRobot.getAuthors().get(0).getId());
 			this.showRobotEditionScreen(resp, req, userId);
 
 		} catch (Exception e) {
