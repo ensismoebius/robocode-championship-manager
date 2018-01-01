@@ -51,9 +51,13 @@ public class Configuration {
 
 		if (!Configuration.loadConfigurations()) {
 			Configuration.firstRun = true;
-			Configuration.configurations = Configuration.newConfigurationHandle.askForProperties();
-			Configuration.saveConfigurations();
+			Configuration.askForProperties();
 		}
+	}
+
+	public static void askForProperties() {
+		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties();
+		Configuration.saveConfigurations();
 	}
 
 	/**
@@ -130,4 +134,9 @@ public class Configuration {
 	public static String getDatabasePassword() {
 		return Configuration.getConfiguration("databasePassword");
 	}
+
+	public static String getRobocodePath() {
+		return Configuration.getConfiguration("robocodePath");
+	}
+
 }

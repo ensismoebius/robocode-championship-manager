@@ -10,6 +10,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import utils.configuration.NewConfigurationHandle;
 
@@ -24,10 +25,12 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 	private TextField databaseURL;
 	private TextField databaseUser;
 	private TextField databasePassword;
+	private TextField robocodeDirectory;
 
 	private Label lbldatabaseURL;
 	private Label lbldatabaseUser;
 	private Label lbldatabasePassword;
+	private Label lblrobocodeDirectory;
 
 	@Override
 	public Properties askForProperties() {
@@ -44,13 +47,17 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 		this.databasePassword = new TextField();
 		this.databasePassword.setPromptText("Senha do banco de dados");
 
-		this.lbldatabaseURL = new Label("Endereço do banco de dados");
-		this.lbldatabaseUser = new Label("Usuário do banco de dados");
-		this.lbldatabasePassword = new Label("Senha do banco de dados");
+		this.robocodeDirectory = new TextField();
+		this.lblrobocodeDirectory = new Label("Diretório do robocode");
+		this.robocodeDirectory.setOnAction(event -> {
+			DirectoryChooser dc = new DirectoryChooser();
+			dc.setTitle("Escolha o diretório onde está instalado o robocode");
+			this.robocodeDirectory.setText(dc.showDialog(null).getPath());
+		});
 
 		VBox vb = new VBox(10);
 		vb.getChildren().addAll(lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword,
-				databasePassword, save);
+				databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
 		this.setScene(new Scene(vb, 320, 240));
 		this.showAndWait();
 
@@ -64,6 +71,9 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 			return null;
 		}
 
+		if (this.robocodeDirectory.getText().trim().equals("")) {
+			return null;
+		}
 		Properties properties = new Properties();
 		properties.put("databaseURL", this.databaseURL.getText().trim());
 		properties.put("databaseUser", this.databaseUser.getText().trim());

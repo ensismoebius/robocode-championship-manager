@@ -2,7 +2,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
@@ -17,15 +16,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import jetty.server.HttpServer;
 import listeners.OpponentsUpdater;
 import model.Opponent;
-import model.OpponentGroup;
-import utils.battle.OpponentGroupFactory;
 import utils.configuration.Configuration;
-import utils.configuration.NewConfigurationHandle;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
@@ -65,11 +60,6 @@ public class Main extends Application {
 	 * Controls the battles
 	 */
 	private BattleControl battleController;
-
-	/**
-	 * The path of the robocode program
-	 */
-	private String robocodePath;
 
 	public static void main(String[] args) {
 		launch(args);
@@ -183,14 +173,13 @@ public class Main extends Application {
 		}
 
 		// Chooses the robocode dir
-		if (this.robocodePath.equals("")) {
-			DirectoryChooser dc = new DirectoryChooser();
-			dc.setTitle("Choose a valid robocode directory");
-			this.robocodePath = dc.showDialog(null).getPath();
+		if (Configuration.getRobocodePath().equals("")) {
+			Configuration.askForProperties();
 		}
 
 		// Do the battle an gets the results
-		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, this.robocodePath);
+		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList,
+				Configuration.getRobocodePath());
 
 		// Gets the winner
 		Opponent winner = opponents.get(0);
@@ -226,7 +215,6 @@ public class Main extends Application {
 	 */
 	private void initializeApplicationProperties(Stage primaryStage) {
 		this.opponentIndexIWantToShow = 0;
-		this.robocodePath = "";
 		this.primaryStage = primaryStage;
 		this.battleList = new HashMap<String, model.Opponent>();
 	}
@@ -351,17 +339,14 @@ public class Main extends Application {
 
 				try {
 					// TODO turn into a dynamic thing!
-					FileWriter fw = new FileWriter("/tmp/" + filename + ".java");
+					FileWriter fw = new FileWriter(Configuration.getTempDir() + filename + ".java");
 					fw.write(sourceCode);
 					fw.flush();
 					fw.close();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			});
-
 		} catch (PersistenceException e) {
 			e.printStackTrace();
 		}
