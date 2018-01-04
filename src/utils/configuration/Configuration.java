@@ -30,15 +30,15 @@ public class Configuration {
 	 * If there is no configuration stored call the implementation of this interface
 	 * to create new properties
 	 */
-	private static NewConfigurationHandle newConfigurationHandle;
+	private static INewConfigurationHandle newConfigurationHandle;
 
 	/**
-	 * Sets the implementation of {@link NewConfigurationHandle} to create new
+	 * Sets the implementation of {@link INewConfigurationHandle} to create new
 	 * properties
 	 * 
-	 * @see NewConfigurationHandle
+	 * @see INewConfigurationHandle
 	 */
-	public static void setNewConfigurationHandle(NewConfigurationHandle newConfigurationHandle) {
+	public static void setNewConfigurationHandle(INewConfigurationHandle newConfigurationHandle) {
 		Configuration.newConfigurationHandle = newConfigurationHandle;
 	}
 
@@ -56,7 +56,7 @@ public class Configuration {
 	}
 
 	public static void askForProperties() {
-		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties();
+		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties(Configuration.configurations);
 		Configuration.saveConfigurations();
 	}
 
@@ -105,7 +105,7 @@ public class Configuration {
 		FileOutputStream os;
 		try {
 			os = new FileOutputStream(Configuration.configFileLocation);
-			Configuration.configurations.store(os, "PropertiesDemo");
+			Configuration.configurations.store(os, "RobocodeChampManagerConfiguration");
 			return true;
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -124,19 +124,19 @@ public class Configuration {
 	}
 
 	public static String getDatabaseURL() {
-		return Configuration.getConfiguration("databaseURL");
+		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_URL);
 	}
 
 	public static String getDatabaseUser() {
-		return Configuration.getConfiguration("databaseUser");
+		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_USER);
 	}
 
 	public static String getDatabasePassword() {
-		return Configuration.getConfiguration("databasePassword");
+		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_PASSWORD);
 	}
 
 	public static String getRobocodePath() {
-		return Configuration.getConfiguration("robocodePath");
+		return Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
 	}
 
 }

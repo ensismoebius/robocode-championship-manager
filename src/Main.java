@@ -178,8 +178,7 @@ public class Main extends Application {
 		}
 
 		// Do the battle an gets the results
-		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList,
-				Configuration.getRobocodePath());
+		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, Configuration.getRobocodePath());
 
 		// Gets the winner
 		Opponent winner = opponents.get(0);
@@ -260,8 +259,7 @@ public class Main extends Application {
 		this.showOpponent(item);
 
 		// Controls the index values to circle between opponents
-		this.opponentIndexIWantToShow = this.opponentIndexIWantToShow == this.battleList.size() - 1 ? 0
-				: this.opponentIndexIWantToShow + 1;
+		this.opponentIndexIWantToShow = this.opponentIndexIWantToShow == this.battleList.size() - 1 ? 0 : this.opponentIndexIWantToShow + 1;
 	}
 
 	/**
@@ -315,8 +313,7 @@ public class Main extends Application {
 		EntityManager entityManager = Database.getEntityManager();
 
 		try {
-			entityManager.createQuery("from Opponent").getResultList()
-					.forEach(opponent -> this.opponentsList.put(((Opponent) opponent).getName(), (Opponent) opponent));
+			entityManager.createQuery("from Opponent").getResultList().forEach(opponent -> this.opponentsList.put(((Opponent) opponent).getName(), (Opponent) opponent));
 
 		} catch (PersistenceException e) {
 			this.opponentsList.clear();

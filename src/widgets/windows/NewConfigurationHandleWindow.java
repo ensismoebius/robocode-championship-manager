@@ -12,14 +12,14 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
-import utils.configuration.NewConfigurationHandle;
+import utils.configuration.INewConfigurationHandle;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class NewConfigurationHandleWindow extends Stage implements NewConfigurationHandle {
+public class NewConfigurationHandleWindow extends Stage implements INewConfigurationHandle {
 
 	private Button save;
 	private TextField databaseURL;
@@ -33,34 +33,38 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 	private Label lblrobocodeDirectory;
 
 	@Override
-	public Properties askForProperties() {
+	public Properties askForProperties(Properties oldProperties) {
 
 		this.save = new Button("Salvar");
 		this.save.setOnAction(event -> this.close());
 
 		this.databaseURL = new TextField();
 		this.databaseURL.setPromptText("Endereço do banco de dados");
+		this.databaseURL.setText(oldProperties == null ? "" : oldProperties.getProperty(INewConfigurationHandle.DATABASE_URL));
 		this.lbldatabaseURL = new Label("Endereço do banco de dados");
 
 		this.databaseUser = new TextField();
 		this.databaseUser.setPromptText("Usuário do banco de dados");
+		this.databaseUser.setText(oldProperties == null ? "" : oldProperties.getProperty(INewConfigurationHandle.DATABASE_USER));
 		this.lbldatabaseUser = new Label("Usuário do banco de dados");
 
 		this.databasePassword = new TextField();
 		this.databasePassword.setPromptText("Senha do banco de dados");
+		this.databasePassword.setText(oldProperties == null ? "" : oldProperties.getProperty(INewConfigurationHandle.DATABASE_PASSWORD));
 		this.lbldatabasePassword = new Label("Senha do banco de dados");
 
 		this.robocodeDirectory = new TextField();
-		this.lblrobocodeDirectory = new Label("Diretório do robocode");
+		this.robocodeDirectory.setPromptText("Caminho do diretório do robocode");
+		this.robocodeDirectory.setText(oldProperties == null ? "" : oldProperties.getProperty(INewConfigurationHandle.ROBOCODE_PATH));
 		this.robocodeDirectory.setOnMouseClicked(event -> {
 			DirectoryChooser dc = new DirectoryChooser();
 			dc.setTitle("Escolha o diretório onde está instalado o robocode");
 			this.robocodeDirectory.setText(dc.showDialog(null).getPath());
 		});
+		this.lblrobocodeDirectory = new Label("Diretório do robocode");
 
 		VBox vb = new VBox(10);
-		vb.getChildren().addAll(lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword,
-				databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
+		vb.getChildren().addAll(lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword, databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
 		this.setScene(new Scene(vb));
 		this.showAndWait();
 
@@ -79,10 +83,10 @@ public class NewConfigurationHandleWindow extends Stage implements NewConfigurat
 		}
 
 		Properties properties = new Properties();
-		properties.put("databaseURL", this.databaseURL.getText().trim());
-		properties.put("databaseUser", this.databaseUser.getText().trim());
-		properties.put("databasePassword", this.databasePassword.getText().trim());
-		properties.put("robocodeDirectory", this.robocodeDirectory.getText().trim());
+		properties.put(INewConfigurationHandle.DATABASE_URL, this.databaseURL.getText().trim());
+		properties.put(INewConfigurationHandle.DATABASE_USER, this.databaseUser.getText().trim());
+		properties.put(INewConfigurationHandle.DATABASE_PASSWORD, this.databasePassword.getText().trim());
+		properties.put(INewConfigurationHandle.ROBOCODE_PATH, this.robocodeDirectory.getText().trim());
 
 		return properties;
 	}

@@ -1,13 +1,17 @@
 package jetty.server;
 
+import java.io.File;
+
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.SessionIdManager;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.eclipse.jetty.server.session.HouseKeeper;
 import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.util.resource.Resource;
 
-import jetty.contexts.ContextsHandler;
+import jetty.contexts.ServletContextsHandler;
 
 public class HttpServer {
 
@@ -18,7 +22,7 @@ public class HttpServer {
 			server.setSessionIdManager(this.generateIdManager(server));
 
 			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new ContextsHandler(server, new SessionHandler()));
+			contexts.addHandler(new ServletContextsHandler(server, new SessionHandler()));
 
 			server.setHandler(contexts);
 			server.start();

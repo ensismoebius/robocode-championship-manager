@@ -12,13 +12,18 @@ import java.util.Properties;
  * 
  * @author André Furlan - ensismoebius@gmail.com
  */
-public interface NewConfigurationHandle {
+public interface INewConfigurationHandle {
+
+	public static final String DATABASE_URL = "databaseURL";
+	public static final String DATABASE_USER = "databaseUser";
+	public static final String DATABASE_PASSWORD = "databasePassword";
+	public static final String ROBOCODE_PATH = "robocodePath";
 
 	/**
 	 * Returns the properties for the system
 	 * 
 	 * @return
 	 */
-	public Properties askForProperties();
+	public Properties askForProperties(Properties oldProperties);
 
 }
