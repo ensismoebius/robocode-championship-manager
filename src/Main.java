@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
@@ -16,6 +17,7 @@ import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
@@ -297,12 +299,23 @@ public class Main extends Application {
 
 	private ObservableMap<String, model.OpponentGroup> createGroups() {
 
+		Alert a = new Alert(AlertType.CONFIRMATION);
+		a.setTitle("Criação dos grupos");
+		a.setHeaderText("ATENÇÃO!!");
+		a.setContentText("Isso vai criar grupos com os competidores \n NÃO FAÇA ISSO DUAS VEZES!! \n\n Clique em \"OK\" para confirmar.");
+
+		// Only go on if the cancel button was pressed
+		Optional<ButtonType> result = a.showAndWait();
+		if (result.get() != ButtonType.OK) {
+			return null;
+		}
+
 		EntityManager entityManager = Database.getEntityManager();
 		entityManager.getTransaction().begin();
 
 		@SuppressWarnings("unchecked")
 		List<Opponent> opponents = (List<Opponent>) entityManager.createQuery("from Opponent").getResultList();
-		
+
 		ObservableMap<String, OpponentGroup> groups = OpponentGroupFactory.createBattleGroups(opponents.size(), Integer.parseInt(Configuration.getGroupSize()));
 
 		// Put all the opponents in a group
