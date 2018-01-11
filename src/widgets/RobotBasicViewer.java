@@ -28,12 +28,14 @@ public class RobotBasicViewer extends HBox {
 
 	private IRobotMarkedEvent markedEvent;
 	private String opponentName;
+	private String groupName;
 
-	public RobotBasicViewer(byte[] oponentImage, String opponentName) {
+	public RobotBasicViewer(byte[] oponentImage, String groupName, String opponentName) {
 		super(10);
 
 		this.setMinHeight(this.desireHeight);
 
+		this.groupName = groupName;
 		this.opponentName = opponentName;
 		this.name = new Label(opponentName);
 		this.setAlignment(Pos.CENTER_LEFT);
@@ -78,13 +80,11 @@ public class RobotBasicViewer extends HBox {
 
 	private void applySelectedStyle() {
 
-		this.setStyle(
-				"-fx-border-color: #00ff00; -fx-border-width: 2px; -fx-font-size: 2em; -fx-background-color: #000;");
+		this.setStyle("-fx-border-color: #00ff00; -fx-border-width: 2px; -fx-font-size: 2em; -fx-background-color: #000;");
 	}
 
 	private void applyNonSelectedStyle() {
-		this.setStyle("" + "-fx-font-size: 2em;"
-				+ "-fx-background-color: #000; -fx-border-color: #0000ff; -fx-border-width: 1px;");
+		this.setStyle("" + "-fx-font-size: 2em;" + "-fx-background-color: #000; -fx-border-color: #0000ff; -fx-border-width: 1px;");
 	}
 
 	public int getMaximumWidth() {
@@ -112,14 +112,14 @@ public class RobotBasicViewer extends HBox {
 			this.image.scaleXProperty().set(1.0);
 			this.image.scaleYProperty().set(1.0);
 			this.applyNonSelectedStyle();
-			this.markedEvent.robotMarked(false, this.opponentName);
+			this.markedEvent.robotMarked(false, this.groupName, this.opponentName);
 			this.marked = false;
 			return;
 		}
 		this.image.scaleXProperty().set(1.0);
 		this.image.scaleYProperty().set(1.0);
 		this.applySelectedStyle();
-		this.markedEvent.robotMarked(true, this.opponentName);
+		this.markedEvent.robotMarked(true, this.groupName, this.opponentName);
 		this.marked = true;
 	}
 

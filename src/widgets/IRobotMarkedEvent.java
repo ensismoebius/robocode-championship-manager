@@ -9,7 +9,7 @@ package widgets;
  * @author André Furlan - ensismoebius@gmail.com
  */
 public interface IRobotMarkedEvent {
-	
-	public void robotMarked(boolean marked, String robotId);
+
+	public void robotMarked(boolean marked, String groupName, String robotId);
 
 }

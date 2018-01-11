@@ -75,5 +75,9 @@ public class OpponentGroup {
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 	}
+	
+	public boolean isFull() {
+		return this.opponents.size() == this.maxSize;
+	}
 
 }

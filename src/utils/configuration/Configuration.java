@@ -139,4 +139,11 @@ public class Configuration {
 		return Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
 	}
 
+	/**
+	 * @return
+	 */
+	public static String getGroupSize() {
+		return Configuration.getConfiguration(INewConfigurationHandle.GROUPS_SIZE);
+	}
+
 }

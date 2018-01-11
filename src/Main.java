@@ -2,6 +2,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
@@ -18,13 +20,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 import jetty.server.HttpServer;
-import listeners.OpponentsUpdater;
 import model.Opponent;
+import model.OpponentGroup;
+import utils.battle.OpponentGroupFactory;
 import utils.configuration.Configuration;
 import utils.database.Database;
 import utils.robocode.BattleControl;
 import widgets.scenes.BattleViewer;
-import widgets.scenes.EditRobots;
 import widgets.scenes.RankViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
@@ -39,7 +41,7 @@ public class Main extends Application {
 
 	// Data structures that holds all data
 	private HashMap<String, model.Opponent> battleList;
-	private ObservableMap<String, model.Opponent> opponentsList = FXCollections.observableHashMap();
+	private ObservableMap<String, model.OpponentGroup> groupsList = FXCollections.observableHashMap();
 
 	// Point to primary stage
 	private Stage primaryStage;
@@ -47,7 +49,6 @@ public class Main extends Application {
 	// The Scenes of application
 	private RankViewer rankScene;
 	private StartScreen startScene;
-	private EditRobots addRobotScene;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
 
@@ -75,9 +76,6 @@ public class Main extends Application {
 		// Initializes database
 		Database.getEntityManager();
 
-		// Binds a listener that are going to do the database operations
-		this.opponentsList.addListener(new OpponentsUpdater());
-
 		this.initializeApplicationProperties(primaryStage);
 
 		// Binds the keys to actions
@@ -93,13 +91,13 @@ public class Main extends Application {
 				if (event.getCode() == KeyCode.I)
 					Main.this.showStartScreen();
 
+				// Create groups
+				if (event.getCode() == KeyCode.C)
+					Main.this.createGroups();
+
 				// Repaint canvas
 				if (event.getCode() == KeyCode.R)
 					Main.this.showRankAndPopulateOpponentsList();
-
-				// Adds a new robot
-				if (event.getCode() == KeyCode.A)
-					Main.this.editRobots();
 
 				// Show the battle screen
 				if (event.getCode() == KeyCode.B)
@@ -219,14 +217,6 @@ public class Main extends Application {
 	}
 
 	/**
-	 * Shows the add robot screen
-	 */
-	private void editRobots() {
-		this.addRobotScene = new EditRobots(this.opponentsList);
-		primaryStage.setScene(this.addRobotScene);
-	}
-
-	/**
 	 * Shows the versus screen
 	 */
 	private void showBattle() {
@@ -297,7 +287,7 @@ public class Main extends Application {
 		// otherwise scroll bars vanishes
 		this.primaryStage.setMaximized(false);
 
-		this.rankScene = new RankViewer(this.battleList, this.opponentsList);
+		this.rankScene = new RankViewer(this.battleList, this.groupsList);
 		primaryStage.setScene(this.rankScene);
 
 		// A weird bug demands that we demaximize and maximize the window
@@ -305,18 +295,61 @@ public class Main extends Application {
 		this.primaryStage.setMaximized(true);
 	}
 
-	@SuppressWarnings("unchecked")
-	private void loadData() {
-
-		this.opponentsList.clear();
+	private ObservableMap<String, model.OpponentGroup> createGroups() {
 
 		EntityManager entityManager = Database.getEntityManager();
 
+		@SuppressWarnings("unchecked")
+		List<Opponent> opponents = (List<Opponent>) entityManager.createQuery("from Opponent").getResultList();
+
+		ObservableMap<String, OpponentGroup> groups = OpponentGroupFactory.createBattleGroups(opponents.size(), Integer.parseInt(Configuration.getGroupSize()));
+
+		// Put all the opponents in a group
+		for (int i = 0; i < opponents.size(); i++) {
+
+			// Iterates over all created group and populates it
+			for (Entry<String, OpponentGroup> opponentGroup : groups.entrySet()) {
+
+				try {
+
+					// While the group is not full and there is opponents put an opponent
+					while (!opponentGroup.getValue().isFull()) {
+						opponentGroup.getValue().getOpponents().add(opponents.get(i));
+						i++;
+					}
+
+					// Saves the group
+					entityManager.persist(opponentGroup.getValue());
+
+				} catch (IndexOutOfBoundsException e) {
+					break;
+				}
+
+			}
+		}
+
+		entityManager.clear();
+		entityManager.close();
+
+		return groups;
+	}
+
+	@SuppressWarnings("unchecked")
+	private void loadData() {
+
+		this.groupsList.clear();
+
+		EntityManager entityManager = Database.getEntityManager();
+
+		List opponentsGroups = entityManager.createQuery("from OpponentGroup").getResultList();
+
 		try {
-			entityManager.createQuery("from Opponent").getResultList().forEach(opponent -> this.opponentsList.put(((Opponent) opponent).getName(), (Opponent) opponent));
+			opponentsGroups.forEach(opponentGroup -> {
+				this.groupsList.put(((OpponentGroup) opponentGroup).getName(), (OpponentGroup) opponentGroup);
+			});
 
 		} catch (PersistenceException e) {
-			this.opponentsList.clear();
+			this.groupsList.clear();
 			e.printStackTrace();
 		}
 		entityManager.clear();
@@ -335,7 +368,6 @@ public class Main extends Application {
 				String sourceCode = ((Opponent) opponent).getSourceCode();
 
 				try {
-					// TODO turn into a dynamic thing!
 					FileWriter fw = new FileWriter(Configuration.getTempDir() + filename + ".java");
 					fw.write(sourceCode);
 					fw.flush();
@@ -370,9 +402,6 @@ public class Main extends Application {
 		if (this.startScene != null)
 			this.startScene.stop();
 		this.startScene = null;
-
-		// Resets the add robot scene
-		this.addRobotScene = null;
 
 		// Resets the rank scene
 		this.rankScene = null;

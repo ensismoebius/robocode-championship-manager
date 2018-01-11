@@ -14,6 +14,7 @@ import java.util.Properties;
  */
 public interface INewConfigurationHandle {
 
+	public static final String GROUPS_SIZE = "groupsSize";
 	public static final String DATABASE_URL = "databaseURL";
 	public static final String DATABASE_USER = "databaseUser";
 	public static final String DATABASE_PASSWORD = "databasePassword";

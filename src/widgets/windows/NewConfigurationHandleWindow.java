@@ -8,6 +8,7 @@ import java.util.Properties;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
@@ -22,11 +23,13 @@ import utils.configuration.INewConfigurationHandle;
 public class NewConfigurationHandleWindow extends Stage implements INewConfigurationHandle {
 
 	private Button save;
+	private Slider groupsSize;
 	private TextField databaseURL;
 	private TextField databaseUser;
 	private TextField databasePassword;
 	private TextField robocodeDirectory;
 
+	private Label lblgroupsSize;
 	private Label lbldatabaseURL;
 	private Label lbldatabaseUser;
 	private Label lbldatabasePassword;
@@ -34,6 +37,9 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 
 	@Override
 	public Properties askForProperties(Properties oldProperties) {
+
+		this.lblgroupsSize = new Label("Quantidade de robôs por grupo");
+		this.groupsSize = new Slider();
 
 		this.save = new Button("Salvar");
 		this.save.setOnAction(event -> this.close());
@@ -64,9 +70,13 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 		this.lblrobocodeDirectory = new Label("Diretório do robocode");
 
 		VBox vb = new VBox(10);
-		vb.getChildren().addAll(lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword, databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
+		vb.getChildren().addAll(lblgroupsSize, groupsSize, lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword, databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
 		this.setScene(new Scene(vb));
 		this.showAndWait();
+
+		if (this.groupsSize.getValue() == 0) {
+			return null;
+		}
 
 		if (this.databaseURL.getText().trim().equals("")) {
 			return null;
@@ -83,6 +93,7 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 		}
 
 		Properties properties = new Properties();
+		properties.put(INewConfigurationHandle.GROUPS_SIZE, this.groupsSize.getValue());
 		properties.put(INewConfigurationHandle.DATABASE_URL, this.databaseURL.getText().trim());
 		properties.put(INewConfigurationHandle.DATABASE_USER, this.databaseUser.getText().trim());
 		properties.put(INewConfigurationHandle.DATABASE_PASSWORD, this.databasePassword.getText().trim());

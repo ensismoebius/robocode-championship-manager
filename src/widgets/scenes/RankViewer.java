@@ -5,10 +5,13 @@ import java.util.HashMap;
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import model.Opponent;
+import model.OpponentGroup;
 import widgets.IRobotMarkedEvent;
 import widgets.RobotBasicViewer;
 
@@ -19,38 +22,53 @@ import widgets.RobotBasicViewer;
  */
 public class RankViewer extends Scene implements IRobotMarkedEvent {
 
+	/**
+	 * Holds the opponents must clash
+	 */
 	private HashMap<String, Opponent> battleList;
-	private ObservableMap<String, Opponent> opponentsList;
+	private ObservableMap<String, OpponentGroup> groupsList;
 
-	private GridPane gridPane;
+	private VBox vbox;
 
-	private int[] rankGridRowNumber = new int[50];
+	public RankViewer(HashMap<String, Opponent> battleList, ObservableMap<String, OpponentGroup> groupsList) {
+		super(new VBox());
 
-	public RankViewer(HashMap<String, model.Opponent> battleList, ObservableMap<String, Opponent> opponentsList) {
-		super(new GridPane());
-
-		this.gridPane = new GridPane();
-		this.gridPane.setVgap(10);
-		this.gridPane.setHgap(10);
+		this.vbox = new VBox(20);
 
 		this.battleList = battleList;
-		this.opponentsList = opponentsList;
+		this.groupsList = groupsList;
 
-		//this.rankGridRowNumber = 1;
-		this.opponentsList.entrySet().forEach(opponent -> {
+		// Create a rank for each group
+		this.groupsList.entrySet().forEach(group -> {
 
-			for (int level : opponent.getValue().getLevels()) {
+			int[] rankGridRowNumber = new int[50];
 
-				RobotBasicViewer robotViewer = new RobotBasicViewer(opponent.getValue().getImage(),
-						opponent.getValue().getName());
-				robotViewer.setRobotMarkedEventListener(this);
+			// Holds the rank of the group
+			GridPane groupRank = new GridPane();
+			groupRank.setVgap(10);
+			groupRank.setHgap(10);
 
-				this.gridPane.add(robotViewer, level + 1, this.rankGridRowNumber[level]);
-				this.rankGridRowNumber[level] ++;
-			}
+			// Sets the title of group
+			Label groupTitle = new Label(group.getValue().getName());
+			this.vbox.getChildren().add(groupTitle);
+
+			// Iterates over group members
+			group.getValue().getOpponents().forEach(opponent -> {
+
+				for (int level : opponent.getLevels()) {
+
+					RobotBasicViewer robotViewer = new RobotBasicViewer(opponent.getImage(), group.getValue().getName(), opponent.getName());
+					robotViewer.setRobotMarkedEventListener(this);
+
+					groupRank.add(robotViewer, level + 1, rankGridRowNumber[level]);
+					rankGridRowNumber[level]++;
+				}
+			});
+
+			this.vbox.getChildren().add(groupRank);
 		});
 
-		ScrollPane sp = new ScrollPane(this.gridPane);
+		ScrollPane sp = new ScrollPane(this.vbox);
 		sp.setPannable(true);
 		sp.setStyle("-fx-background: #000;");
 		// Adding zoom!!!!
@@ -63,8 +81,8 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 				if (deltaY < 0) {
 					zoomFactor = 2.0 - zoomFactor;
 				}
-				RankViewer.this.gridPane.setScaleX(RankViewer.this.gridPane.getScaleX() * zoomFactor);
-				RankViewer.this.gridPane.setScaleY(RankViewer.this.gridPane.getScaleY() * zoomFactor);
+				RankViewer.this.vbox.setScaleX(RankViewer.this.vbox.getScaleX() * zoomFactor);
+				RankViewer.this.vbox.setScaleY(RankViewer.this.vbox.getScaleY() * zoomFactor);
 
 				event.consume();
 			}
@@ -73,17 +91,17 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 		this.setRoot(sp);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see widgets.IMarkedEvent#marked(boolean, model.Opponent)
-	 */
 	@Override
-	public void robotMarked(boolean marked, String robotName) {
-		if (marked) {
-			this.battleList.put(robotName, this.opponentsList.get(robotName));
-			return;
-		}
-		this.battleList.remove(robotName);
+	public void robotMarked(boolean marked, String groupName, String robotName) {
+		this.groupsList.get(groupName).getOpponents().forEach(robot -> {
+			if (robot.getName().equals(robotName)) {
+				if (marked) {
+					this.battleList.put(robotName, robot);
+					return;
+				}
+				this.battleList.remove(robotName);
+				return;
+			}
+		});
 	}
 }

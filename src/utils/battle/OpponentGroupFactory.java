@@ -1,5 +1,7 @@
 package utils.battle;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 import model.OpponentGroup;
 
 /**
@@ -9,14 +11,14 @@ import model.OpponentGroup;
  */
 public class OpponentGroupFactory {
 
-	public static OpponentGroup[] createBattleGroups(int amountOfOpponents, int groupSize) {
+	public static ObservableMap<String, model.OpponentGroup> createBattleGroups(int amountOfOpponents, int groupSize) {
 
 		int groupsAmount = amountOfOpponents / groupSize;
 
-		OpponentGroup[] groups = new OpponentGroup[groupsAmount];
+		ObservableMap<String, model.OpponentGroup> groups = FXCollections.observableMap(null);
 
 		for (int i = 0; i < groupsAmount; i++) {
-			groups[i] = new OpponentGroup(OpponentGroupFactory.generateCharacter(i), groupSize);
+			groups.put(OpponentGroupFactory.generateCharacter(i), new OpponentGroup(OpponentGroupFactory.generateCharacter(i), groupSize));
 		}
 
 		return groups;
