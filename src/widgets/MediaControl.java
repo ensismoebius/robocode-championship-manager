@@ -55,6 +55,7 @@ import javafx.scene.media.MediaPlayer.Status;
 import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
+
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -97,11 +98,11 @@ public class MediaControl extends BorderPane {
 	public File getSelectedFile() {
 		return this.selectedFile;
 	}
-	
-	public void reset(){
+
+	public void reset() {
 		this.mp = null;
 		this.mediaBar = null;
-		this.mediaView = null; 
+		this.mediaView = null;
 		this.constructButton();
 	}
 
@@ -257,20 +258,21 @@ public class MediaControl extends BorderPane {
 	}
 
 	protected void updateValues() {
-		if (playTime != null && timeSlider != null && volumeSlider != null) Platform.runLater(new Runnable() {
+		if (playTime != null && timeSlider != null && volumeSlider != null)
+			Platform.runLater(new Runnable() {
 
-			public void run() {
-				currentTime = mp.getCurrentTime();
-				playTime.setText(formatTime(currentTime, duration));
-				timeSlider.setDisable(duration.isUnknown());
-				if (!timeSlider.isDisabled() && duration.greaterThan(Duration.ZERO) && !timeSlider.isValueChanging()) {
-					timeSlider.setValue(currentTime.divide(duration).toMillis() * 100.0);
+				public void run() {
+					currentTime = mp.getCurrentTime();
+					playTime.setText(formatTime(currentTime, duration));
+					timeSlider.setDisable(duration.isUnknown());
+					if (!timeSlider.isDisabled() && duration.greaterThan(Duration.ZERO) && !timeSlider.isValueChanging()) {
+						timeSlider.setValue(currentTime.divide(duration).toMillis() * 100.0);
+					}
+					if (!volumeSlider.isValueChanging()) {
+						volumeSlider.setValue((int) Math.round(mp.getVolume() * 100));
+					}
 				}
-				if (!volumeSlider.isValueChanging()) {
-					volumeSlider.setValue((int) Math.round(mp.getVolume() * 100));
-				}
-			}
-		});
+			});
 	}
 
 	private static String formatTime(Duration elapsed, Duration d) {
