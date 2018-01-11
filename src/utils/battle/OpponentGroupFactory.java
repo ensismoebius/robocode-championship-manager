@@ -15,7 +15,11 @@ public class OpponentGroupFactory {
 
 		int groupsAmount = amountOfOpponents / groupSize;
 
-		ObservableMap<String, model.OpponentGroup> groups = FXCollections.observableMap(null);
+		if (amountOfOpponents % groupSize > 0) {
+			groupsAmount++;
+		}
+
+		ObservableMap<String, model.OpponentGroup> groups = FXCollections.observableHashMap();
 
 		for (int i = 0; i < groupsAmount; i++) {
 			groups.put(OpponentGroupFactory.generateCharacter(i), new OpponentGroup(OpponentGroupFactory.generateCharacter(i), groupSize));

@@ -37,6 +37,10 @@ public class OpponentGroup {
 
 	@Column(nullable = false)
 	private int maxSize;
+	
+	public OpponentGroup() {
+		this.opponents = new ArrayList<Opponent>();
+	}
 
 	public OpponentGroup(String name, int maxSize) {
 		this.opponents = new ArrayList<Opponent>();

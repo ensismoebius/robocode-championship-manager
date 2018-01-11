@@ -22,6 +22,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import model.Author;
+import utils.configuration.Configuration;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -48,7 +49,7 @@ public class ShowOponent extends Scene {
 		this.mp = null;
 
 		// Create a temp music file and play it!
-		File file = new File("/tmp/temp.mp3");
+		File file = new File(Configuration.getTempDir() + "/temp.mp3");
 		FileOutputStream fos = new FileOutputStream(file);
 		fos.write(oponent.getMusic());
 		fos.close();

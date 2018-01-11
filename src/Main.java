@@ -298,10 +298,11 @@ public class Main extends Application {
 	private ObservableMap<String, model.OpponentGroup> createGroups() {
 
 		EntityManager entityManager = Database.getEntityManager();
+		entityManager.getTransaction().begin();
 
 		@SuppressWarnings("unchecked")
 		List<Opponent> opponents = (List<Opponent>) entityManager.createQuery("from Opponent").getResultList();
-
+		
 		ObservableMap<String, OpponentGroup> groups = OpponentGroupFactory.createBattleGroups(opponents.size(), Integer.parseInt(Configuration.getGroupSize()));
 
 		// Put all the opponents in a group
@@ -322,12 +323,14 @@ public class Main extends Application {
 					entityManager.persist(opponentGroup.getValue());
 
 				} catch (IndexOutOfBoundsException e) {
+					entityManager.persist(opponentGroup.getValue());
 					break;
 				}
 
 			}
 		}
 
+		entityManager.getTransaction().commit();
 		entityManager.clear();
 		entityManager.close();
 

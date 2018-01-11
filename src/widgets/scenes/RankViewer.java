@@ -4,12 +4,18 @@ import java.util.HashMap;
 
 import javafx.collections.ObservableMap;
 import javafx.event.EventHandler;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.effect.Reflection;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 import model.Opponent;
 import model.OpponentGroup;
 import widgets.IRobotMarkedEvent;
@@ -49,7 +55,13 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 			groupRank.setHgap(10);
 
 			// Sets the title of group
-			Label groupTitle = new Label(group.getValue().getName());
+			Font f = new Font(50);
+			Label groupTitle = new Label("Grupo: " + group.getValue().getName());
+			groupTitle.setWrapText(false);
+			groupTitle.setFont(f);
+			groupTitle.setTextFill(Color.YELLOW);
+			groupTitle.setTextAlignment(TextAlignment.CENTER);
+			groupTitle.effectProperty().set(new Reflection());
 			this.vbox.getChildren().add(groupTitle);
 
 			// Iterates over group members
@@ -64,7 +76,7 @@ public class RankViewer extends Scene implements IRobotMarkedEvent {
 					rankGridRowNumber[level]++;
 				}
 			});
-
+			
 			this.vbox.getChildren().add(groupRank);
 		});
 

@@ -34,6 +34,9 @@ public class RobotBasicViewer extends HBox {
 		super(10);
 
 		this.setMinHeight(this.desireHeight);
+		this.setMaxHeight(this.desireHeight);
+		this.setMinWidth(this.desireHeight * 3);
+		this.setMaxWidth(this.desireHeight * 3);
 
 		this.groupName = groupName;
 		this.opponentName = opponentName;
