@@ -56,6 +56,9 @@ public class Configuration {
 	}
 
 	public static void askForProperties() {
+		if (Configuration.configurations == null) {
+			Configuration.init();
+		}
 		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties(Configuration.configurations);
 		Configuration.saveConfigurations();
 	}
@@ -115,6 +118,11 @@ public class Configuration {
 		return false;
 	}
 
+	public static void setEnabledRegistration(boolean b) {
+		configurations.put(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
+		Configuration.saveConfigurations();
+	}
+
 	public static boolean isFirstRun() {
 		return Configuration.firstRun;
 	}
@@ -139,11 +147,18 @@ public class Configuration {
 		return Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
 	}
 
-	/**
-	 * @return
-	 */
 	public static String getGroupSize() {
 		return Configuration.getConfiguration(INewConfigurationHandle.GROUPS_SIZE);
 	}
 
+	public static boolean isEnabledRegistration() {
+		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.REGISTRATION_ENABLED));
+	}
+
+	/**
+	 * @return
+	 */
+	public static String getWebserverPort() {
+		return "8080";
+	}
 }

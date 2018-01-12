@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TextField;
@@ -28,6 +29,7 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 	private TextField databaseUser;
 	private TextField databasePassword;
 	private TextField robocodeDirectory;
+	private CheckBox registrationEnabled;
 
 	private Label lblgroupsSize;
 	private Label lbldatabaseURL;
@@ -38,8 +40,19 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 	@Override
 	public Properties askForProperties(Properties oldProperties) {
 
-		this.lblgroupsSize = new Label("Quantidade de robôs por grupo");
+		if (oldProperties.isEmpty()) {
+			oldProperties = null;
+		}
+
+		this.registrationEnabled = new CheckBox("Aceitar novos robôs");
+		this.registrationEnabled.setSelected(oldProperties == null ? true : Boolean.parseBoolean(oldProperties.getProperty(INewConfigurationHandle.REGISTRATION_ENABLED)));
+
+		this.lblgroupsSize = new Label();
 		this.groupsSize = new Slider();
+		this.groupsSize.setValue(oldProperties == null ? 1 : Double.parseDouble(oldProperties.getProperty(INewConfigurationHandle.GROUPS_SIZE)));
+		// just integers please...
+		this.groupsSize.valueProperty().addListener((obs, oldval, newVal) -> this.groupsSize.setValue(newVal.intValue()));
+		this.lblgroupsSize.textProperty().bind(this.groupsSize.valueProperty().asString().concat(" robôs por grupo"));
 
 		this.save = new Button("Salvar");
 		this.save.setOnAction(event -> this.close());
@@ -65,13 +78,19 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 		this.robocodeDirectory.setOnMouseClicked(event -> {
 			DirectoryChooser dc = new DirectoryChooser();
 			dc.setTitle("Escolha o diretório onde está instalado o robocode");
-			this.robocodeDirectory.setText(dc.showDialog(null).getPath());
+
+			try {
+				this.robocodeDirectory.setText(dc.showDialog(null).getPath());
+			} catch (Exception e) {
+			}
 		});
 		this.lblrobocodeDirectory = new Label("Diretório do robocode");
 
 		VBox vb = new VBox(10);
-		vb.getChildren().addAll(lblgroupsSize, groupsSize, lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword, databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
-		this.setScene(new Scene(vb));
+		vb.getChildren().addAll(registrationEnabled, lblgroupsSize, groupsSize, lbldatabaseURL, databaseURL, lbldatabaseUser, databaseUser, lbldatabasePassword, databasePassword, lblrobocodeDirectory, robocodeDirectory, save);
+
+		this.setTitle("Entre com as configurações");
+		this.setScene(new Scene(vb, 500, 380));
 		this.showAndWait();
 
 		if (this.groupsSize.getValue() == 0) {
@@ -93,11 +112,12 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 		}
 
 		Properties properties = new Properties();
-		properties.put(INewConfigurationHandle.GROUPS_SIZE, this.groupsSize.getValue());
+		properties.put(INewConfigurationHandle.GROUPS_SIZE, String.valueOf(this.groupsSize.getValue()));
 		properties.put(INewConfigurationHandle.DATABASE_URL, this.databaseURL.getText().trim());
 		properties.put(INewConfigurationHandle.DATABASE_USER, this.databaseUser.getText().trim());
-		properties.put(INewConfigurationHandle.DATABASE_PASSWORD, this.databasePassword.getText().trim());
+		properties.put(INewConfigurationHandle.DATABASE_PASSWORD, this.databasePassword.getText());
 		properties.put(INewConfigurationHandle.ROBOCODE_PATH, this.robocodeDirectory.getText().trim());
+		properties.put(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(this.registrationEnabled.isSelected()));
 
 		return properties;
 	}

@@ -65,6 +65,15 @@ public class RobotEditor extends HttpServlet {
 		resp.setContentType("text/html");
 		PrintWriter out = resp.getWriter();
 
+		// Blocks new robots registration if it is set in the configurations
+		if (!Configuration.isEnabledRegistration()) {
+			template.assign("action", this.getAction(req));
+			template.assign("message", String.join("Cadastro de novos robôs bloqueado!"));
+			template.parse("main");
+			out.write(template.out("main"));
+			return;
+		}
+
 		try {
 			Opponent newRobot = this.buildOpponentObject(req);
 
@@ -78,8 +87,7 @@ public class RobotEditor extends HttpServlet {
 			}
 
 			newRobot = this.saveOpponent(newRobot, this.getAction(req).equals("edit"));
-			this.servletAutheticator.authenticate(newRobot.getAuthors().get(0).getLogin(),
-					newRobot.getAuthors().get(0).getPassword());
+			this.servletAutheticator.authenticate(newRobot.getAuthors().get(0).getLogin(), newRobot.getAuthors().get(0).getPassword());
 			template.assign("action", "edit");
 			template.assign("message", "Robô salvo com sucesso! Para editar entre com o login senha.");
 
@@ -153,8 +161,7 @@ public class RobotEditor extends HttpServlet {
 	 * @throws IOException
 	 * @throws URISyntaxException
 	 */
-	private void showRobotEditionScreen(HttpServletResponse resp, HttpServletRequest req, String userId)
-			throws IOException, URISyntaxException {
+	private void showRobotEditionScreen(HttpServletResponse resp, HttpServletRequest req, String userId) throws IOException, URISyntaxException {
 
 		Opponent opponent = this.loadOpponent(userId);
 
@@ -175,6 +182,12 @@ public class RobotEditor extends HttpServlet {
 			template.assign("email", author.getMail());
 			template.parse("author");
 		});
+
+		if (Configuration.isEnabledRegistration()) {
+			template.assign("submitButton", "Salvar");
+		} else {
+			template.assign("submitButton", "Cadastro de novos robôs bloqueado!!");
+		}
 
 		template.parse("main");
 
@@ -307,8 +320,7 @@ public class RobotEditor extends HttpServlet {
 		Matcher robotTeamAndNameMatcher = robotTeamAndName.matcher(jarFileName);
 
 		if (!robotTeamAndNameMatcher.find()) {
-			this.errors.add(
-					"O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
+			this.errors.add("O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
 		}
 
 		String teamName = robotTeamAndNameMatcher.group(1);
@@ -429,8 +441,7 @@ public class RobotEditor extends HttpServlet {
 
 		try {
 			@SuppressWarnings("unchecked")
-			List<Author> list = entityManager.createQuery("from Author a where a.login = :login")
-					.setParameter("login", login).getResultList();
+			List<Author> list = entityManager.createQuery("from Author a where a.login = :login").setParameter("login", login).getResultList();
 
 			if (list.size() > 0) {
 				entityManager.clear();
@@ -462,8 +473,7 @@ public class RobotEditor extends HttpServlet {
 		EntityManager entityManager = Database.getEntityManager();
 
 		@SuppressWarnings("unchecked")
-		List<Object> list = entityManager.createQuery("from Opponent o inner join o.authors a where a.id = :authorId")
-				.setParameter("authorId", Long.parseLong(userId)).getResultList();
+		List<Object> list = entityManager.createQuery("from Opponent o inner join o.authors a where a.id = :authorId").setParameter("authorId", Long.parseLong(userId)).getResultList();
 
 		Object[] result = (Object[]) list.get(0);
 		Opponent o = list.size() > 0 ? (Opponent) result[0] : new Opponent();

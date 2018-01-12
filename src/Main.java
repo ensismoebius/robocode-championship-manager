@@ -72,6 +72,7 @@ public class Main extends Application {
 	public void start(Stage primaryStage) throws Exception {
 
 		Configuration.setNewConfigurationHandle(new NewConfigurationHandleWindow());
+		Configuration.askForProperties();
 
 		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
 
@@ -89,13 +90,28 @@ public class Main extends Application {
 				// Keeps everything clean and silent
 				Main.this.resetAllScenes();
 
+				// All events with control key
+				if (event.isControlDown()) {
+
+					// Blocks or liberate the robots registration
+					if (event.getCode() == KeyCode.S) {
+						if (Configuration.isEnabledRegistration()) {
+							Configuration.setEnabledRegistration(false);
+						}
+						Configuration.setEnabledRegistration(true);
+					}
+
+					// Create groups
+					if (event.getCode() == KeyCode.G)
+						Main.this.createGroups();
+
+					// If control is down block the access for another keys
+					return;
+				}
+
 				// Initial screen
 				if (event.getCode() == KeyCode.I)
 					Main.this.showStartScreen();
-
-				// Create groups
-				if (event.getCode() == KeyCode.C)
-					Main.this.createGroups();
 
 				// Repaint canvas
 				if (event.getCode() == KeyCode.R)

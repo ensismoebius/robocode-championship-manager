@@ -19,6 +19,7 @@ public interface INewConfigurationHandle {
 	public static final String DATABASE_USER = "databaseUser";
 	public static final String DATABASE_PASSWORD = "databasePassword";
 	public static final String ROBOCODE_PATH = "robocodePath";
+	public static final String REGISTRATION_ENABLED = "registrationEnabled";
 
 	/**
 	 * Returns the properties for the system
