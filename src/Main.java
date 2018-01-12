@@ -97,6 +97,7 @@ public class Main extends Application {
 					if (event.getCode() == KeyCode.S) {
 						if (Configuration.isEnabledRegistration()) {
 							Configuration.setEnabledRegistration(false);
+							return;
 						}
 						Configuration.setEnabledRegistration(true);
 					}

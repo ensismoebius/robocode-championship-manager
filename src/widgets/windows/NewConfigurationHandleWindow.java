@@ -40,7 +40,7 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 	@Override
 	public Properties askForProperties(Properties oldProperties) {
 
-		if (oldProperties.isEmpty()) {
+		if (oldProperties == null || oldProperties.isEmpty()) {
 			oldProperties = null;
 		}
 

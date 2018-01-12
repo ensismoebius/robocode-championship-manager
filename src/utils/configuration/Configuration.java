@@ -57,6 +57,8 @@ public class Configuration {
 
 	public static void askForProperties() {
 		if (Configuration.configurations == null) {
+			
+			if(Configuration.firstRun) return;
 			Configuration.init();
 		}
 		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties(Configuration.configurations);

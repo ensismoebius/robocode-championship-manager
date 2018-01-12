@@ -112,7 +112,7 @@ public class RobotEditor extends HttpServlet {
 			}
 
 			this.servletAutheticator.setRequestObject(req);
-
+			
 			if (this.getAction(req).equals("logout")) {
 				this.servletAutheticator.logout();
 				resp.sendRedirect("/");
@@ -187,6 +187,7 @@ public class RobotEditor extends HttpServlet {
 			template.assign("submitButton", "Salvar");
 		} else {
 			template.assign("submitButton", "Cadastro de novos robôs bloqueado!!");
+			template.assign("message", "Cadastro de novos robôs bloqueado!!");
 		}
 
 		template.parse("main");
