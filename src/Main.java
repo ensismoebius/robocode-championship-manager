@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
@@ -17,7 +16,6 @@ import javafx.concurrent.Task;
 import javafx.event.EventHandler;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
@@ -102,10 +100,11 @@ public class Main extends Application {
 						Configuration.setEnabledRegistration(true);
 					}
 
-					// Create groups
-					if (event.getCode() == KeyCode.G)
+					// Create groups and show rank
+					if (event.getCode() == KeyCode.G) {
 						Main.this.createGroups();
-
+						Main.this.showRankAndPopulateOpponentsList();
+					}
 					// If control is down block the access for another keys
 					return;
 				}
@@ -316,20 +315,17 @@ public class Main extends Application {
 
 	private ObservableMap<String, model.OpponentGroup> createGroups() {
 
-		Alert a = new Alert(AlertType.CONFIRMATION);
-		a.setTitle("Criação dos grupos");
-		a.setHeaderText("ATENÇÃO!!");
-		a.setContentText("Isso vai criar grupos com os competidores \n NÃO FAÇA ISSO DUAS VEZES!! \n\n Clique em \"OK\" para confirmar.");
-
-		// Only go on if the cancel button was pressed
-		Optional<ButtonType> result = a.showAndWait();
-		if (result.get() != ButtonType.OK) {
-			return null;
-		}
-
+		// delete all existent groups
 		EntityManager entityManager = Database.getEntityManager();
 		entityManager.getTransaction().begin();
+		entityManager.createQuery("UPDATE Opponent SET groupId = null").executeUpdate();
+		entityManager.createQuery("delete OpponentGroup").executeUpdate();
+		entityManager.getTransaction().commit();
+		entityManager.clear();
+		entityManager.close();
 
+		entityManager = Database.getEntityManager();
+		entityManager.getTransaction().begin();
 		@SuppressWarnings("unchecked")
 		List<Opponent> opponents = (List<Opponent>) entityManager.createQuery("from Opponent").getResultList();
 
@@ -374,7 +370,7 @@ public class Main extends Application {
 
 		EntityManager entityManager = Database.getEntityManager();
 
-		List opponentsGroups = entityManager.createQuery("from OpponentGroup").getResultList();
+		List<OpponentGroup> opponentsGroups = entityManager.createQuery("from OpponentGroup").getResultList();
 
 		try {
 			opponentsGroups.forEach(opponentGroup -> {
