@@ -112,7 +112,7 @@ public class NewConfigurationHandleWindow extends Stage implements INewConfigura
 		}
 
 		Properties properties = new Properties();
-		properties.put(INewConfigurationHandle.GROUPS_SIZE, String.valueOf(this.groupsSize.getValue()));
+		properties.put(INewConfigurationHandle.GROUPS_SIZE, String.valueOf(new Double(this.groupsSize.getValue()).intValue()));
 		properties.put(INewConfigurationHandle.DATABASE_URL, this.databaseURL.getText().trim());
 		properties.put(INewConfigurationHandle.DATABASE_USER, this.databaseUser.getText().trim());
 		properties.put(INewConfigurationHandle.DATABASE_PASSWORD, this.databasePassword.getText());

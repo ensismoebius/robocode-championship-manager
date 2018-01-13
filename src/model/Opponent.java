@@ -18,6 +18,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -82,6 +85,7 @@ public class Opponent implements Cloneable {
 	}
 
 	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@Fetch(FetchMode.SUBSELECT)
 	@JoinColumn(name = "opponentId")
 	public List<Author> getAuthors() {
 		return authors;
@@ -109,6 +113,7 @@ public class Opponent implements Cloneable {
 	}
 
 	@ElementCollection(fetch = FetchType.EAGER)
+	@Fetch(FetchMode.SUBSELECT)
 	public List<Integer> getLevels() {
 		return levels;
 	}

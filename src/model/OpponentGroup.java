@@ -37,7 +37,7 @@ public class OpponentGroup {
 
 	@Column(nullable = false)
 	private int maxSize;
-	
+
 	public OpponentGroup() {
 		this.opponents = new ArrayList<Opponent>();
 	}
@@ -79,7 +79,7 @@ public class OpponentGroup {
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 	}
-	
+
 	public boolean isFull() {
 		return this.opponents.size() == this.maxSize;
 	}
