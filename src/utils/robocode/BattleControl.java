@@ -6,7 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -21,7 +21,7 @@ import model.Opponent;
  */
 public class BattleControl {
 
-	public ArrayList<Opponent> startsBattle(HashMap<String, Opponent> battleList, String robocodePath) {
+	public ArrayList<Opponent> startsBattle(HashMap<String, Opponent> battleList, String robocodePath, String rounds) {
 
 		ArrayList<Opponent> results = new ArrayList<Opponent>();
 		Opponent opponent1 = (Opponent) battleList.values().toArray()[0];
@@ -57,33 +57,18 @@ public class BattleControl {
 		Process process;
 		try {
 
-			// TODO make it flexible!
+			String absoluteStartScriptFile = Paths.get("./RobocodeStarter/start.sh").toAbsolutePath().normalize().toString();
 
-			File startScript;
-			try {
-				startScript = new File(
-						BattleControl.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
-			} catch (URISyntaxException e) {
-				new Alert(AlertType.ERROR, "Fail to load the start script").show();
-				return null;
-
-			}
-			
-			String absoluteStartScriptFile = startScript.getAbsolutePath().replaceAll(startScript.getName(), "");
-			absoluteStartScriptFile += "RobocodeStarter/start.sh";
-			
 			System.out.println(absoluteStartScriptFile);
 
-			process = new ProcessBuilder(absoluteStartScriptFile, robocodePath, "5", robot1, robot2).start();
+			process = new ProcessBuilder(absoluteStartScriptFile, robocodePath, rounds, robot1, robot2).start();
 			InputStream is = process.getInputStream();
 			InputStreamReader isr = new InputStreamReader(is);
 			BufferedReader br = new BufferedReader(isr);
 			String line;
 
 			while ((line = br.readLine()) != null) {
-
 				int index = Integer.parseInt(line.split("\t")[0]) - 1;
-
 				results.add((Opponent) battleList.values().toArray()[index]);
 			}
 		} catch (IOException e) {

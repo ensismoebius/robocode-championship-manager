@@ -194,7 +194,7 @@ public class Main extends Application {
 		}
 
 		// Do the battle an gets the results
-		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, Configuration.getRobocodePath());
+		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, Configuration.getRobocodePath(), Configuration.getRobocodeRounds());
 
 		// Gets the winner
 		Opponent winner = opponents.get(0);

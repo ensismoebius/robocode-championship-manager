@@ -57,8 +57,9 @@ public class Configuration {
 
 	public static void askForProperties() {
 		if (Configuration.configurations == null) {
-			
-			if(Configuration.firstRun) return;
+
+			if (Configuration.firstRun)
+				return;
 			Configuration.init();
 		}
 		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties(Configuration.configurations);
@@ -157,10 +158,13 @@ public class Configuration {
 		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.REGISTRATION_ENABLED));
 	}
 
-	/**
-	 * @return
-	 */
 	public static String getWebserverPort() {
+		// TODO make it flexible!
 		return "8080";
+	}
+
+	public static String getRobocodeRounds() {
+		// TODO make it flexible!
+		return "5";
 	}
 }
