@@ -167,4 +167,23 @@ public class Configuration {
 		// TODO make it flexible!
 		return "5";
 	}
+
+	public static String getStartBattleScript() {
+
+		String osname = System.getProperty("os.name");
+
+		if (osname.indexOf("win") >= 0) {
+			return "./RobocodeStarter/start.bat";
+		}
+
+		if (osname.indexOf("nux") >= 0) {
+			return "./RobocodeStarter/start.sh";
+		}
+
+		if (osname.indexOf("mac") >= 0) {
+			return "./RobocodeStarter/start.sh";
+		}
+
+		return "";
+	}
 }

@@ -68,7 +68,7 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
-
+		
 		Configuration.setNewConfigurationHandle(new NewConfigurationHandleWindow());
 		Configuration.askForProperties();
 
@@ -194,7 +194,7 @@ public class Main extends Application {
 		}
 
 		// Do the battle an gets the results
-		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, Configuration.getRobocodePath(), Configuration.getRobocodeRounds());
+		ArrayList<Opponent> opponents = this.battleController.startsBattle(this.battleList, Configuration.getRobocodePath(), Configuration.getRobocodeRounds(), Configuration.getStartBattleScript());
 
 		// Gets the winner
 		Opponent winner = opponents.get(0);

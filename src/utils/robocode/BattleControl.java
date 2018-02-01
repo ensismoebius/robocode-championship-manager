@@ -21,7 +21,7 @@ import model.Opponent;
  */
 public class BattleControl {
 
-	public ArrayList<Opponent> startsBattle(HashMap<String, Opponent> battleList, String robocodePath, String rounds) {
+	public ArrayList<Opponent> startsBattle(HashMap<String, Opponent> battleList, String robocodePath, String rounds, String startScriptPath) {
 
 		ArrayList<Opponent> results = new ArrayList<Opponent>();
 		Opponent opponent1 = (Opponent) battleList.values().toArray()[0];
@@ -57,7 +57,7 @@ public class BattleControl {
 		Process process;
 		try {
 
-			String absoluteStartScriptFile = Paths.get("./RobocodeStarter/start.sh").toAbsolutePath().normalize().toString();
+			String absoluteStartScriptFile = Paths.get(startScriptPath).toAbsolutePath().normalize().toString();
 
 			System.out.println(absoluteStartScriptFile);
 
