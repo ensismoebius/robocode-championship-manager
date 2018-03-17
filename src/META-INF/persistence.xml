@@ -5,6 +5,21 @@
 	<persistence-unit name="PURobocode" transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
 		<properties>
+			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
+			<property name="javax.persistence.jdbc.url" value="jdbc:h2:database/./test" />
+			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+			<property name="hibernate.cache.use_second_level_cache" value="false"/>
+<!--             <property name="hibernate.show_sql" value="true" /> -->
+<!--             <property name="hibernate.format_sql" value="true" /> -->
+<!-- 				none, create, drop, drop-and-create, update -->
+<!-- 			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<property name="hibernate.cache.use_second_level_cache" value="false" /> -->
+			<property name="javax.persistence.schema-generation.database.action" value="none"/>
+		</properties>
+	</persistence-unit>
+	<persistence-unit name="PURobocode2" transaction-type="RESOURCE_LOCAL">
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<properties>
 			<property name="javax.persistence.jdbc.driver" value="com.mysql.jdbc.Driver" />
 			<property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/robocode" />
 			<property name="javax.persistence.jdbc.user" value="root" />

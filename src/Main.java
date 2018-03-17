@@ -397,7 +397,7 @@ public class Main extends Application {
 				String sourceCode = ((Opponent) opponent).getSourceCode();
 
 				try {
-					FileWriter fw = new FileWriter(Configuration.getTempDir() + filename + ".java");
+					FileWriter fw = new FileWriter(Configuration.getTempDir() + "/" + filename + ".java");
 					fw.write(sourceCode);
 					fw.flush();
 					fw.close();
