@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>RobocodeChampManager</groupId>
 	<artifactId>RobocodeChampManager</artifactId>
-	<version>2.0.1</version>
+	<version>3</version>
 	<build>
 		<sourceDirectory>src</sourceDirectory>
 		<resources>
@@ -105,4 +105,14 @@
 			<version>1.4.0</version>
 		</dependency>
 	</dependencies>
+	<name>Robocode Championship Manager</name>
+	<url>https://sourceforge.net/projects/robocode-championship-manager/</url>
+	<description>if you want to promote a robocode championship but do not have the right tools for this, that is the solution.
+Features
+
+Save robots and the team data direct to database
+Show a nice versus screen
+Show the detais of each robot
+Automatically builds the ranks
+Simple to control with the A, S, W, M and B keys!</description>
 </project>
