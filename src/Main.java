@@ -8,16 +8,12 @@ import java.util.Optional;
 
 import jakarta.persistence.PersistenceException;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -36,6 +32,9 @@ import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
+import widgets.ArcadeBackground;
+import widgets.GameDialog;
+import widgets.GameWindow;
 import widgets.Sfx;
 import widgets.Theme;
 import widgets.windows.NewConfigurationHandleWindow;
@@ -57,13 +56,14 @@ public class Main extends Application {
 	 */
 	private String selectedMatch;
 
+	/**
+	 * Match whose result was just recorded, the bracket shows it moving through
+	 * the bracket the next time it appears
+	 */
+	private String justPlayed;
+
 	// Point to primary stage
 	private Stage primaryStage;
-
-	/**
-	 * The only scene of the window, see {@link #show(Parent)}
-	 */
-	private Scene mainScene;
 
 	// The Scenes of application
 	private BracketViewer bracketScene;
@@ -82,6 +82,12 @@ public class Main extends Application {
 	private HttpServer httpServer;
 
 	/**
+	 * The configuration in use, to know what changed when it changes
+	 */
+	private Path databaseFile;
+	private int webserverPort;
+
+	/**
 	 * True while robocode is running a battle
 	 */
 	private boolean battleRunning = false;
@@ -94,44 +100,42 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 
+		// The only window, always in full screen. Dialogs are panels inside it.
+		GameWindow.init(primaryStage, "Robochamp - Gerenciador de campeonatos de robocode");
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		GameWindow.setScreen(new StackPane(new ArcadeBackground(), scanlines));
+
 		Configuration.setNewConfigurationHandle(new NewConfigurationHandleWindow());
 		if (!Configuration.askForProperties()) {
 			// The user cancelled the configuration and there is none stored
-			Platform.exit();
+			GameWindow.quit();
 			return;
 		}
 
-		primaryStage.setTitle("Robochamp - Gerenciador de campeonatos de robocode");
-
 		// Initializes database
 		try {
+			this.databaseFile = Main.configuredDatabaseFile();
 			Database.getEntityManager().close();
 			this.loadChampionship();
 		} catch (RuntimeException e) {
 			e.printStackTrace();
 			this.showError("Falha ao abrir o banco de dados " + Configuration.getDatabaseFile() + ":\n" + rootCauseMessage(e));
-			Platform.exit();
+			GameWindow.quit();
 			return;
 		}
 
 		// Binds the keys to actions
 		primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKey);
 
-		// Actions to do when closing the application
-		primaryStage.setOnCloseRequest(event -> Platform.exit());
-
-		this.mainScene = Theme.apply(new Scene(new StackPane(), 1280, 800));
-		primaryStage.setScene(this.mainScene);
-
-		// Shows everything!
-		primaryStage.setMaximized(true);
-		primaryStage.show();
+		// Start the web server for remote robots uploads
+		this.startWebServer();
 
 		// Default scene
 		this.showStartScreen();
 
-		// Start the web server for remote robots uploads
-		this.startWebServer();
+		// From now on the program follows every change of the configuration
+		Configuration.addListener(this::applyConfiguration);
 	}
 
 	@Override
@@ -154,6 +158,12 @@ public class Main extends Application {
 			case G -> this.newChampionship();
 			// Undo the last result
 			case Z -> this.undoLastResult();
+			// Ends the program, the window has no close button in full screen
+			case Q -> {
+				if (GameDialog.confirm("Sair", "Fechar o gerenciador de campeonatos?")) {
+					GameWindow.quit();
+				}
+			}
 			default -> {
 				// If control is down block the access for another keys
 			}
@@ -174,6 +184,9 @@ public class Main extends Application {
 			Sfx.blip();
 			this.selectedMatch = null;
 			this.showBracket();
+			if (this.bracketScene != null) {
+				this.bracketScene.focusSelected();
+			}
 		}
 		// Show the battle screen
 		case B -> {
@@ -192,6 +205,8 @@ public class Main extends Application {
 		}
 		// Exports all robots to files
 		case X -> this.exportToFiles();
+		// Reviews or changes the configuration
+		case C -> this.openConfiguration();
 		default -> {
 		}
 		}
@@ -201,18 +216,85 @@ public class Main extends Application {
 	 * Start the web server for remote robots uploads
 	 */
 	private void startWebServer() {
+		this.webserverPort = Configuration.getWebserverPort();
 		try {
-			this.httpServer = new HttpServer(Configuration.getWebserverPort());
+			this.httpServer = new HttpServer(this.webserverPort);
 		} catch (Exception e) {
 			e.printStackTrace();
-			this.showError("Falha ao iniciar o servidor web na porta " + Configuration.getWebserverPort() + ":\n" + rootCauseMessage(e));
+			this.httpServer = null;
+			this.showError("Falha ao iniciar o servidor web na porta " + this.webserverPort + ":\n" + rootCauseMessage(e));
+		}
+	}
+
+	/**
+	 * Port where the web server is listening, 0 if it is not running
+	 */
+	private int runningWebserverPort() {
+		return this.httpServer == null ? 0 : this.httpServer.getPort();
+	}
+
+	private static Path configuredDatabaseFile() {
+		return Path.of(Configuration.getDatabaseFile()).toAbsolutePath().normalize();
+	}
+
+	// ---------------------------------------------------------- configuration
+
+	private void openConfiguration() {
+		if (this.battleRunning) {
+			this.showError("Aguarde a batalha terminar para mudar as configurações.");
+			return;
+		}
+		Configuration.askForProperties();
+	}
+
+	/**
+	 * Makes the program follow the configuration: reopens the database and
+	 * restarts the web server when they change and updates the screen. Rounds,
+	 * winner criterion and robocode path are read when each battle starts.
+	 */
+	private void applyConfiguration() {
+		boolean databaseChanged = !Main.configuredDatabaseFile().equals(this.databaseFile);
+		if (databaseChanged) {
+			this.databaseFile = Main.configuredDatabaseFile();
+			Database.close();
+			this.selectedMatch = null;
+			this.justPlayed = null;
+			try {
+				this.loadChampionship();
+			} catch (RuntimeException e) {
+				e.printStackTrace();
+				this.setChampionship(null);
+				this.showError("Falha ao abrir o banco de dados " + this.databaseFile + ":\n" + rootCauseMessage(e));
+			}
+		}
+
+		if (this.httpServer == null || Configuration.getWebserverPort() != this.webserverPort) {
+			if (this.httpServer != null) {
+				this.httpServer.stop();
+				this.httpServer = null;
+			}
+			this.startWebServer();
+		}
+
+		// Updates what is on the screen
+		Parent screen = GameWindow.getScreen();
+		if (screen == this.startScene && this.startScene != null) {
+			this.startScene.refresh(this.runningWebserverPort());
+		} else if (databaseChanged) {
+			// Brackets and matches of the other database are gone
+			if (this.bracket == null) {
+				this.resetAllScenes();
+				this.showStartScreen();
+			} else {
+				this.showBracket();
+			}
 		}
 	}
 
 	private void toggleRegistration() {
 		boolean enabled = !Configuration.isEnabledRegistration();
 		Configuration.setEnabledRegistration(enabled);
-		Theme.alert(AlertType.INFORMATION, enabled ? "Cadastro de novos robôs liberado" : "Cadastro de novos robôs bloqueado").show();
+		GameDialog.toast(enabled ? "● INSCRIÇÕES ABERTAS: CADASTRO DE ROBÔS LIBERADO" : "■ INSCRIÇÕES ENCERRADAS: CADASTRO DE ROBÔS BLOQUEADO", enabled);
 	}
 
 	// ----------------------------------------------------------- championship
@@ -269,19 +351,15 @@ public class Main extends Application {
 		String warning = this.championship != null && !this.championship.getResults().isEmpty() ? "\n\nATENÇÃO: o campeonato atual já tem resultados e será substituído." : "";
 		Label message = new Label("Sortear um novo campeonato com os " + robots + " robôs cadastrados?" + warning);
 		message.setWrapText(true);
+		message.getStyleClass().add("game-dialog-message");
 
-		Alert dialog = Theme.alert(AlertType.CONFIRMATION, null);
-		dialog.setTitle("Novo campeonato");
-		dialog.setHeaderText("Novo campeonato");
-		dialog.getDialogPane().setContent(new VBox(14, message, repechage, finalReset));
-		dialog.getDialogPane().setPrefWidth(640);
-
-		if (dialog.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+		if (!GameDialog.confirm("Novo campeonato", new VBox(14, message, repechage, finalReset))) {
 			return;
 		}
 
 		try {
 			this.selectedMatch = null;
+			this.justPlayed = null;
 			this.setChampionship(ChampionshipService.create(repechage.isSelected(), finalReset.isSelected(), new SecureRandom()));
 			this.showBracket();
 		} catch (RuntimeException e) {
@@ -308,10 +386,13 @@ public class Main extends Application {
 
 		long outside = Math.max(0, ChampionshipService.countOpponents() - this.opponents.size());
 		this.bracketScene = new BracketViewer(this.championship.getName(), this.bracket, this.opponents, this.selectedMatch, code -> {
-			Sfx.blip();
 			this.selectedMatch = code;
 			this.opponentIndexIWantToShow = 0;
 		}, outside);
+		if (this.justPlayed != null) {
+			this.bracketScene.playResult(this.justPlayed);
+			this.justPlayed = null;
+		}
 
 		this.show(this.bracketScene);
 	}
@@ -342,6 +423,7 @@ public class Main extends Application {
 	private void recordResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		try {
 			this.setChampionship(ChampionshipService.recordResult(this.championship, match.getCode(), winnerId, winnerScore, loserScore));
+			this.justPlayed = match.getCode();
 		} catch (RuntimeException e) {
 			e.printStackTrace();
 			this.showError("Falha ao salvar o resultado:\n" + rootCauseMessage(e));
@@ -364,9 +446,7 @@ public class Main extends Application {
 		Match match = playable.get();
 		long winner = slotA ? match.getA().getParticipant() : match.getB().getParticipant();
 
-		Alert confirm = Theme.alert(AlertType.CONFIRMATION, "Declarar " + this.nameOf(winner) + " vencedor da partida " + match.getCode() + "?");
-		confirm.setHeaderText("Resultado manual");
-		if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+		if (GameDialog.confirm("Resultado manual", "Declarar " + this.nameOf(winner) + " vencedor da partida " + match.getCode() + "?")) {
 			this.recordResult(match, winner, null, null);
 		}
 	}
@@ -378,15 +458,14 @@ public class Main extends Application {
 		}
 
 		var last = this.championship.getResults().get(this.championship.getResults().size() - 1);
-		Alert confirm = Theme.alert(AlertType.CONFIRMATION,
-				"Desfazer o resultado da partida " + last.getMatchCode() + " (" + this.nameOf(last.getWinner().getId()) + " venceu " + this.nameOf(last.getLoser().getId()) + ")?");
-		confirm.setHeaderText("Desfazer resultado");
-		if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+		if (!GameDialog.confirm("Desfazer resultado",
+				"Desfazer o resultado da partida " + last.getMatchCode() + " (" + this.nameOf(last.getWinner().getId()) + " venceu " + this.nameOf(last.getLoser().getId()) + ")?")) {
 			return;
 		}
 
 		try {
 			this.selectedMatch = last.getMatchCode();
+			this.justPlayed = null;
 			this.setChampionship(ChampionshipService.undoLastResult(this.championship));
 			this.showBracket();
 		} catch (RuntimeException e) {
@@ -406,7 +485,7 @@ public class Main extends Application {
 	 *
 	 */
 	protected void showStartScreen() {
-		this.startScene = new StartScreen();
+		this.startScene = new StartScreen(this.runningWebserverPort());
 		this.startScene.playBackgroundMusic();
 
 		this.show(this.startScene);
@@ -418,16 +497,20 @@ public class Main extends Application {
 			return;
 		}
 
+		// Chooses the robocode dir. Comes first because the configuration may
+		// change the database and so the match.
+		if (!Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
+			Configuration.askForProperties();
+			if (!Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
+				return;
+			}
+		}
+
 		Optional<Match> playable = this.playableSelectedMatch();
 		if (playable.isEmpty()) {
 			return;
 		}
 		Match match = playable.get();
-
-		// Chooses the robocode dir
-		if (!Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
-			Configuration.askForProperties();
-		}
 
 		List<Opponent> fighters = List.of(this.opponents.get(match.getA().getParticipant()), this.opponents.get(match.getB().getParticipant()));
 		String robocodePath = Configuration.getRobocodePath();
@@ -539,7 +622,7 @@ public class Main extends Application {
 				Files.writeString(file, opponent.getSourceCode());
 			}
 
-			Theme.alert(AlertType.INFORMATION, all.size() + " robôs exportados para " + exportDir).show();
+			GameDialog.info("Exportação", all.size() + " robôs exportados para " + exportDir);
 
 		} catch (IOException | PersistenceException e) {
 			e.printStackTrace();
@@ -577,13 +660,12 @@ public class Main extends Application {
 	 * (it happens with tiling window managers)
 	 */
 	private void show(Parent screen) {
-		this.mainScene.setRoot(screen);
-		screen.requestFocus();
+		GameWindow.setScreen(screen);
 		Theme.enter(screen);
 	}
 
 	private void showError(String message) {
-		Theme.alert(AlertType.ERROR, message).showAndWait();
+		GameDialog.error(message);
 	}
 
 	private static String rootCauseMessage(Throwable e) {

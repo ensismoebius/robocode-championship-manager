@@ -20,6 +20,8 @@ public interface INewConfigurationHandle {
 	public static final String ROBOCODE_ROUNDS = "robocodeRounds";
 	public static final String WEBSERVER_PORT = "webserverPort";
 	public static final String WINNER_CRITERION = "winnerCriterion";
+	public static final String TITLE = "title";
+	public static final String SUBTITLE = "subtitle";
 
 	/**
 	 * Returns the properties for the system

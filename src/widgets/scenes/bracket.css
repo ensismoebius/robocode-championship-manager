@@ -203,3 +203,20 @@
 	-fx-font-size: 18px;
 	-fx-text-fill: -rc-text;
 }
+
+/* Result animation */
+
+.connector.drawing {
+	-fx-stroke-width: 4;
+	-fx-stroke-line-cap: round;
+	-fx-effect: dropshadow(gaussian, rgba(90, 240, 143, 0.9), 12, 0.5, 0, 0);
+}
+
+.next-tag {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-text-fill: #1a1400;
+	-fx-background-color: -rc-accent;
+	-fx-padding: 6 10 6 10;
+	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.7), 14, 0.3, 0, 0);
+}

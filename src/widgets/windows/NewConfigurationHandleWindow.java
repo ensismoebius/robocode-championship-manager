@@ -8,60 +8,56 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-import javafx.geometry.Insets;
-import javafx.scene.Scene;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import utils.configuration.Configuration;
 import utils.configuration.INewConfigurationHandle;
 import utils.robocode.BattleControl.WinnerCriterion;
-import widgets.Theme;
+import widgets.GameDialog;
+import widgets.GameWindow;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
+ *
+ * The configuration, as a panel inside the full screen window
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
 public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
-	/**
-	 * The answer of the window, null when cancelled
-	 */
-	private Properties result;
-
 	@Override
 	public Properties askForProperties(Properties oldProperties) {
 
 		Properties old = oldProperties == null ? new Properties() : oldProperties;
-		this.result = null;
 
-		Stage stage = new Stage();
-		stage.initModality(Modality.APPLICATION_MODAL);
-		stage.setTitle("Entre com as configurações");
+		TextField title = new TextField(old.getProperty(TITLE, Configuration.DEFAULT_TITLE));
+		title.setPromptText(Configuration.DEFAULT_TITLE);
+
+		TextField subtitle = new TextField(old.getProperty(SUBTITLE, Configuration.DEFAULT_SUBTITLE));
+		subtitle.setPromptText("Vazio para não exibir");
 
 		CheckBox registrationEnabled = new CheckBox("Aceitar novos robôs");
 		registrationEnabled.setSelected(Boolean.parseBoolean(old.getProperty(REGISTRATION_ENABLED, "true")));
 
 		TextField robocodeRounds = new TextField(old.getProperty(ROBOCODE_ROUNDS, String.valueOf(Configuration.DEFAULT_ROBOCODE_ROUNDS)));
-		Label lblrobocodeRounds = new Label("Rounds por batalha");
 
 		ChoiceBox<String> winnerCriterion = new ChoiceBox<String>();
 		winnerCriterion.getItems().addAll("Rank do robocode (mais rounds vencidos), pontuação desempata", "Pontuação total, rounds vencidos desempatam");
 		winnerCriterion.getSelectionModel().select(WinnerCriterion.SCORE.name().equals(old.getProperty(WINNER_CRITERION)) ? 1 : 0);
-		Label lblwinnerCriterion = new Label("Vencedor da batalha");
+		winnerCriterion.setMaxWidth(Double.MAX_VALUE);
 
 		TextField webserverPort = new TextField(old.getProperty(WEBSERVER_PORT, String.valueOf(Configuration.DEFAULT_WEBSERVER_PORT)));
-		Label lblwebserverPort = new Label("Porta do servidor web de cadastro (requer reiniciar)");
 
 		TextField databaseFile = new TextField(old.getProperty(DATABASE_FILE, Configuration.DEFAULT_DATABASE_FILE));
 		databaseFile.setPromptText(Configuration.DEFAULT_DATABASE_FILE);
@@ -71,12 +67,11 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			FileChooser fc = new FileChooser();
 			fc.setTitle("Arquivo do banco de dados (é criado se não existir)");
 			fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Banco SQLite", "*.db", "*.sqlite", "*.sqlite3"));
-			File chosen = fc.showSaveDialog(stage);
+			File chosen = fc.showSaveDialog(GameWindow.getWindow());
 			if (chosen != null) {
 				databaseFile.setText(chosen.getPath());
 			}
 		});
-		Label lbldatabaseFile = new Label("Arquivo do banco de dados SQLite (requer reiniciar)");
 
 		TextField robocodeDirectory = new TextField(old.getProperty(ROBOCODE_PATH, ""));
 		robocodeDirectory.setPromptText("Caminho do diretório do robocode");
@@ -85,19 +80,39 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		chooseRobocodeDirectory.setOnAction(event -> {
 			DirectoryChooser dc = new DirectoryChooser();
 			dc.setTitle("Escolha o diretório onde está instalado o robocode");
-			File chosen = dc.showDialog(stage);
+			File chosen = dc.showDialog(GameWindow.getWindow());
 			if (chosen != null) {
 				robocodeDirectory.setText(chosen.getPath());
 			}
 		});
-		Label lblrobocodeDirectory = new Label("Diretório do robocode");
 
 		Label error = new Label();
 		error.getStyleClass().add("error-text");
 		error.setWrapText(true);
 
+		// Two columns, so it fits on short screens
+		GridPane form = new GridPane();
+		form.setHgap(24);
+		form.setVgap(14);
+		ColumnConstraints half = new ColumnConstraints();
+		half.setPercentWidth(50);
+		form.getColumnConstraints().addAll(half, half);
+		form.add(field("Título da tela inicial", title), 0, 0);
+		form.add(field("Subtítulo da tela inicial", subtitle), 1, 0);
+		form.add(field("Rounds por batalha", robocodeRounds), 0, 1);
+		form.add(field("Vencedor da batalha", winnerCriterion), 1, 1);
+		form.add(field("Porta do servidor web de cadastro", webserverPort), 0, 2);
+		form.add(field("Inscrições", registrationEnabled), 1, 2);
+		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 3, 2, 1);
+		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 4, 2, 1);
+		form.add(error, 0, 5, 2, 1);
+
 		Button save = new Button("Salvar");
-		save.setDefaultButton(true);
+		save.getStyleClass().add("primary");
+		Button cancel = new Button("Cancelar");
+		VBox panel = GameDialog.panel("Configurações", form, cancel, save);
+		panel.setStyle("-fx-pref-width: 940;");
+
 		save.setOnAction(event -> {
 			int rounds = parseInt(robocodeRounds.getText(), -1);
 			int port = parseInt(webserverPort.getText(), -1);
@@ -127,32 +142,24 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(DATABASE_FILE, databaseFile.getText().trim());
 			properties.setProperty(ROBOCODE_PATH, robocodePath);
 			properties.setProperty(REGISTRATION_ENABLED, String.valueOf(registrationEnabled.isSelected()));
+			properties.setProperty(TITLE, title.getText().isBlank() ? Configuration.DEFAULT_TITLE : title.getText().strip());
+			properties.setProperty(SUBTITLE, subtitle.getText().strip());
 
-			this.result = properties;
-			stage.close();
+			GameWindow.close(panel, properties);
 		});
+		cancel.setOnAction(event -> GameWindow.close(panel, null));
 
-		Button cancel = new Button("Cancelar");
-		cancel.setCancelButton(true);
-		cancel.setOnAction(event -> stage.close());
+		// The save button gets the focus, so Enter saves
+		return (Properties) GameWindow.showModal(panel, save, cancel);
+	}
 
-		VBox vb = new VBox(10);
-		vb.setPadding(new Insets(20));
-		vb.getStyleClass().add("form");
-		Label title = new Label("CONFIGURAÇÕES");
-		title.getStyleClass().add("form-title");
-		vb.getChildren().addAll(title, registrationEnabled, lblrobocodeRounds, robocodeRounds, lblwinnerCriterion, winnerCriterion, lblwebserverPort, webserverPort, lbldatabaseFile, new HBox(5, databaseFile, chooseDatabaseFile), lblrobocodeDirectory, new HBox(5, robocodeDirectory, chooseRobocodeDirectory), error, new HBox(10, save, cancel));
-
-		// Field captions
-		vb.getChildren().stream().filter(node -> node instanceof Label && node != error && node != title).forEach(node -> node.getStyleClass().add("form-label"));
-
-		stage.setScene(Theme.apply(new Scene(vb, 600, 580)));
-		// Otherwise the checkbox gets the focus and pressing Enter toggles it
-		// instead of saving
-		stage.setOnShown(event -> save.requestFocus());
-		stage.showAndWait();
-
-		return this.result;
+	/**
+	 * A caption above the field
+	 */
+	private static VBox field(String caption, Node input) {
+		Label label = new Label(caption);
+		label.getStyleClass().add("form-label");
+		return new VBox(6, label, input);
 	}
 
 	private static int parseInt(String value, int defaultValue) {

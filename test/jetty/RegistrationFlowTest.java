@@ -168,6 +168,15 @@ class RegistrationFlowTest {
 		assertTrue(page.contains("name=\"name[]\""), page);
 		assertTrue(page.contains("charset=\"utf-8\""), page);
 		assertTrue(page.contains("href=\"/style.css\""), page);
+
+		// The login page tells if robots are accepted
+		assertTrue(get(newClient(), "/").contains("Inscrições abertas"));
+		Configuration.setEnabledRegistration(false);
+		try {
+			assertTrue(get(newClient(), "/").contains("Inscrições encerradas"));
+		} finally {
+			Configuration.setEnabledRegistration(true);
+		}
 		assertTrue(get(newClient(), "/style.css").contains("--rc-bg"));
 	}
 

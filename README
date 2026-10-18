@@ -22,8 +22,13 @@ Building and running:
 	(or start.bat on Windows).
 
 	On the first run a window asks for the configuration, which is saved at
-	~/robocodeChampManager.config. The data is kept in the SQLite file
+	~/robocodeChampManager.config. The program uses the whole screen, and its
+	dialogs are panels inside it, like the menus of a game. Press C to change it at any time: the
+	changes apply at once (the web server moves to the new port and a new
+	database file is opened), no restart needed. The data is kept in the SQLite file
 	database/robochamp.db (configurable). Tables are created automatically.
+	The title and subtitle of the start screen ("CHAMPIONSHIP", "GERENCIADOR DE
+	CAMPEONATOS") are configurable too, an empty subtitle is not shown.
 
 	Teams register their robots at http://<this computer>:8080 (the port is
 	configurable). The team music must be an MP3 file.
@@ -49,7 +54,7 @@ The championship:
 	automatically. Results are stored as a list, so the last one can be
 	undone at any time.
 
-Keys:
+Keys (hold Alt on the start screen to see them):
 	i         start screen
 	ctrl + g  draws a new championship
 	ctrl + s  enables or disables new robots registration
@@ -61,7 +66,15 @@ Keys:
 	ctrl + z  undoes the last result
 	m         shows the robots of the selected match (the champion at the end)
 	x         exports the robots source code to <temp dir>/robochamp-export
-	+ / - / 0 zoom in, zoom out and fit, in the bracket screen
+	c         opens the configuration
+	ctrl + q  quits (the window is always in full screen, without a close button)
+	+ / - / 0 zoom in, zoom out and whole bracket, in the bracket screen
+	          (also ctrl + mouse wheel; drag, the wheel or the arrows move it)
+
+	After a result, the bracket shows it like a game: the camera goes to the
+	match, the winner and loser are revealed, both robots move to their next
+	matches and the camera zooms in the next battle. Any key or click skips it.
+	n also flies to the next battle.
 
 Upgrading from version 3:
 	Version 3 kept the data in H2, this version uses SQLite and the old

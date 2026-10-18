@@ -13,9 +13,6 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
-import javafx.scene.control.Dialog;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -25,7 +22,7 @@ import javafx.util.Duration;
  * This program is licensed under GPLv3 see the README file for more information
  *
  * The arcade look of the program (theme.css, fonts and small animations).
- * Every scene and dialog must go through here so they all look the same.
+ * The window goes through here (see GameWindow) so everything looks the same.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -84,24 +81,6 @@ public class Theme {
 		}
 		scene.setFill(BACKGROUND);
 		return scene;
-	}
-
-	public static <T extends Dialog<?>> T apply(T dialog) {
-		Theme.loadFonts();
-		if (!dialog.getDialogPane().getStylesheets().contains(STYLESHEET)) {
-			dialog.getDialogPane().getStylesheets().add(STYLESHEET);
-		}
-		return dialog;
-	}
-
-	/**
-	 * A themed alert, errors also make an error sound
-	 */
-	public static Alert alert(AlertType type, String message) {
-		if (type == AlertType.ERROR) {
-			Sfx.error();
-		}
-		return Theme.apply(new Alert(type, message));
 	}
 
 	// ------------------------------------------------------------- animations

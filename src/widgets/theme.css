@@ -64,41 +64,63 @@
 	-fx-background-color: linear-gradient(from 0px 0px to 0px 4px, repeat, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.22) 40%, transparent 40%, transparent 100%);
 }
 
-/* Dialogs and alerts: game menus */
+/* Dialogs: game menus shown inside the window (GameDialog, GameWindow) */
 
-.dialog-pane {
-	-fx-background-color: -rc-surface;
+.overlay-backdrop {
+	-fx-background-color: rgba(3, 4, 10, 0.72);
+	-fx-padding: 24;
+}
+
+.game-dialog {
+	-fx-background-color: rgba(22, 27, 38, 0.97);
 	-fx-border-color: -rc-info;
-	-fx-border-width: 2;
-	-fx-effect: dropshadow(gaussian, rgba(46, 196, 255, 0.55), 24, 0.2, 0, 0);
+	-fx-border-width: 3;
+	-fx-padding: 26 30 24 30;
+	-fx-pref-width: 680;
+	-fx-effect: dropshadow(gaussian, rgba(46, 196, 255, 0.55), 30, 0.25, 0, 0);
 }
 
-.dialog-pane > .header-panel {
-	-fx-background-color: linear-gradient(to right, #1d2536, #241a40);
-	-fx-border-color: transparent transparent -rc-border transparent;
-	-fx-padding: 14 18 14 18;
+.game-dialog.error {
+	-fx-border-color: -rc-danger;
+	-fx-effect: dropshadow(gaussian, rgba(255, 92, 108, 0.6), 30, 0.25, 0, 0);
 }
 
-.dialog-pane > .header-panel .label {
+.game-dialog-title {
 	-fx-font-family: "Press Start 2P";
-	-fx-font-size: 14px;
+	-fx-font-size: 18px;
 	-fx-text-fill: -rc-accent;
 	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.6), 10, 0.2, 0, 0);
 }
 
-.dialog-pane > .content.label {
+.game-dialog.error .game-dialog-title {
+	-fx-text-fill: -rc-danger;
+	-fx-effect: dropshadow(gaussian, rgba(255, 92, 108, 0.6), 10, 0.2, 0, 0);
+}
+
+.game-dialog-message {
 	-fx-text-fill: -rc-text;
+	-fx-font-size: 20px;
+}
+
+.game-dialog .check-box {
 	-fx-font-size: 18px;
-	-fx-padding: 18;
 }
 
-.dialog-pane > .button-bar > .container {
-	-fx-background-color: -rc-surface;
-	-fx-padding: 4 12 12 12;
+.game-toast.bad {
+	-fx-border-color: -rc-danger;
+	-fx-text-fill: -rc-danger;
+	-fx-effect: dropshadow(gaussian, rgba(255, 92, 108, 0.5), 18, 0.2, 0, 0);
 }
 
-.dialog-pane .graphic-container {
-	-fx-padding: 0 0 0 8;
+.game-toast {
+	-fx-background-color: rgba(11, 14, 20, 0.92);
+	-fx-border-color: -rc-success;
+	-fx-border-width: 2;
+	-fx-padding: 14 24 14 24;
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 13px;
+	-fx-text-fill: -rc-success;
+	-fx-effect: dropshadow(gaussian, rgba(90, 240, 143, 0.5), 18, 0.2, 0, 0);
 }
 
 /* Buttons: arcade keys */
@@ -123,12 +145,12 @@
 	-fx-background-color: -rc-accent, linear-gradient(#2c3a58, #1b2233);
 }
 
-.button:default {
+.button:default, .button.primary {
 	-fx-background-color: -rc-accent, linear-gradient(#5c4d00, #3a3000);
 	-fx-text-fill: -rc-accent;
 }
 
-.button:default:hover {
+.button:default:hover, .button.primary:hover, .button:focused {
 	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.6), 14, 0.25, 0, 0);
 }
 
@@ -263,6 +285,12 @@
 .shortcuts {
 	-fx-hgap: 14;
 	-fx-vgap: 7;
+}
+
+.hold-hint {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 9px;
+	-fx-text-fill: -rc-faint;
 }
 
 .shortcut-description {

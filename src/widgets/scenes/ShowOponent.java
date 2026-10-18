@@ -134,6 +134,24 @@ public class ShowOponent extends StackPane {
 		scanlines.setMouseTransparent(true);
 
 		this.getChildren().setAll(new ArcadeBackground(champion ? Color.web("#ffd400") : Color.web("#5af08f")), sourcePane, content, scanlines);
+
+		// After a result the bracket shows where the robots go
+		if (title != null) {
+			Label key = new Label("R");
+			key.getStyleClass().add("keycap");
+			Label before = new Label("PRESSIONE");
+			before.getStyleClass().add("press-start");
+			Label after = new Label("PARA O CHAVEAMENTO");
+			after.getStyleClass().add("press-start");
+			HBox prompt = new HBox(16, before, key, after);
+			prompt.setAlignment(Pos.CENTER);
+			prompt.setMaxHeight(Region.USE_PREF_SIZE);
+			prompt.setMouseTransparent(true);
+			StackPane.setAlignment(prompt, Pos.BOTTOM_CENTER);
+			StackPane.setMargin(prompt, new Insets(0, 0, 36, 0));
+			Theme.blink(prompt);
+			this.getChildren().add(prompt);
+		}
 		if (champion) {
 			this.getChildren().add(new Confetti());
 		}

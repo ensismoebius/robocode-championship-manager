@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import utils.text.TextTemplate;
+import utils.configuration.Configuration;
 import utils.web.Html;
 import utils.web.ServletAuthenticator;
 
@@ -52,6 +53,9 @@ public class Login extends HttpServlet {
 		 */
 		TextTemplate template = new TextTemplate(getClass().getResourceAsStream("/jetty/htmlTemplates/main.html"));
 		template.assign("message", Html.escape(message));
+		boolean open = Configuration.isEnabledRegistration();
+		template.assign("registrationClass", open ? "open" : "closed");
+		template.assign("registrationStatus", open ? "● Inscrições abertas: cadastre seu robô" : "■ Inscrições encerradas: novos robôs não são aceitos");
 		template.parse("main");
 
 		resp.setContentType("text/html; charset=UTF-8");

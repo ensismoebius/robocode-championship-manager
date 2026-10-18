@@ -8,8 +8,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import utils.robocode.BattleControl.WinnerCriterion;
 
@@ -23,6 +25,8 @@ public class Configuration {
 	public static final String DEFAULT_DATABASE_FILE = "database/robochamp.db";
 	public static final int DEFAULT_ROBOCODE_ROUNDS = 5;
 	public static final int DEFAULT_WEBSERVER_PORT = 8080;
+	public static final String DEFAULT_TITLE = "CHAMPIONSHIP";
+	public static final String DEFAULT_SUBTITLE = "GERENCIADOR DE CAMPEONATOS";
 
 	private static final Path CONFIG_FILE = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
 
@@ -33,6 +37,25 @@ public class Configuration {
 	 * to create new properties
 	 */
 	private static INewConfigurationHandle newConfigurationHandle;
+
+	/**
+	 * Called after the configuration changes, so who shows or uses it can update
+	 */
+	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
+
+	public static void addListener(Runnable listener) {
+		Configuration.listeners.add(listener);
+	}
+
+	public static void removeListener(Runnable listener) {
+		Configuration.listeners.remove(listener);
+	}
+
+	private static void notifyListeners() {
+		for (Runnable listener : Configuration.listeners) {
+			listener.run();
+		}
+	}
 
 	/**
 	 * Sets the implementation of {@link INewConfigurationHandle} to create new
@@ -59,6 +82,9 @@ public class Configuration {
 		if (answer != null) {
 			Configuration.configurations = answer;
 			Configuration.saveConfigurations();
+			if (!answer.equals(current)) {
+				Configuration.notifyListeners();
+			}
 		} else {
 			Configuration.configurations = current;
 		}
@@ -126,8 +152,11 @@ public class Configuration {
 		if (Configuration.configurations == null) {
 			throw new IllegalStateException("Configuration not loaded, call askForProperties() first");
 		}
-		Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
+		Object old = Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
 		Configuration.saveConfigurations();
+		if (!String.valueOf(b).equals(old)) {
+			Configuration.notifyListeners();
+		}
 	}
 
 	public static String getTempDir() {
@@ -169,6 +198,23 @@ public class Configuration {
 		} catch (IllegalArgumentException e) {
 			return WinnerCriterion.RANK;
 		}
+	}
+
+	/**
+	 * Title of the start screen, the default one if blank
+	 */
+	public static String getTitle() {
+		String title = Configuration.getConfiguration(INewConfigurationHandle.TITLE);
+		return title == null || title.isBlank() ? DEFAULT_TITLE : title.strip();
+	}
+
+	/**
+	 * Subtitle of the start screen, the default one if not configured, empty to
+	 * hide it
+	 */
+	public static String getSubtitle() {
+		String subtitle = Configuration.getConfiguration(INewConfigurationHandle.SUBTITLE);
+		return subtitle == null ? DEFAULT_SUBTITLE : subtitle.strip();
 	}
 
 	public static String getStartBattleScript() {

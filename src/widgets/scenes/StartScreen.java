@@ -3,13 +3,16 @@ package widgets.scenes;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javafx.animation.FadeTransition;
+import javafx.beans.InvalidationListener;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -18,9 +21,11 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import utils.configuration.Configuration;
 import utils.network.Network;
 import widgets.ArcadeBackground;
+import widgets.GameDialog;
 import widgets.Sound;
 import widgets.Theme;
 
@@ -44,11 +49,43 @@ public class StartScreen extends StackPane {
 			{ "^Z", "Desfaz o último resultado" }, //
 			{ "^S", "Abre/fecha as inscrições" }, //
 			{ "X", "Exporta o código fonte" }, //
+			{ "C", "Configurações" }, //
+			{ "^Q", "Sair" }, //
 			{ "I", "Esta tela" } };
 
 	private Sound music;
 
-	public StartScreen() {
+	private final Label title = new Label();
+	private final Label subtitle = new Label();
+	private final Label badge = new Label();
+	private VBox controls;
+	private HBox controlsHint;
+	private FadeTransition controlsFade;
+
+	/**
+	 * Shows the controls while Alt is held. It watches the whole scene, so it
+	 * works wherever the focus is.
+	 */
+	/**
+	 * Alt released in another window never arrives here
+	 */
+	private final InvalidationListener focusWatcher = observable -> this.showControls(false);
+
+	private final EventHandler<KeyEvent> altWatcher = event -> {
+		if (event.getEventType() == KeyEvent.KEY_PRESSED || event.getEventType() == KeyEvent.KEY_RELEASED) {
+			this.showControls(event.isAltDown() && event.getEventType() == KeyEvent.KEY_PRESSED);
+		}
+	};
+	private final Label address = new Label();
+	private final VBox registration;
+	private final BorderPane layout;
+
+	/**
+	 * @param serverPort
+	 *            port where the registration web server is listening, 0 if it is
+	 *            not running
+	 */
+	public StartScreen(int serverPort) {
 		super();
 
 		// Center: logo and title
@@ -56,19 +93,19 @@ public class StartScreen extends StackPane {
 		try (InputStream logo = getClass().getResourceAsStream("robocodeLogo.png")) {
 			robocodeLogo.setImage(new Image(logo));
 		} catch (IOException e) {
-			Theme.alert(AlertType.ERROR, e.getMessage()).showAndWait();
+			GameDialog.error(e.getMessage());
 		}
 		robocodeLogo.setPreserveRatio(true);
 		robocodeLogo.setSmooth(true);
 		// The logo has a black background, this blends it with the sky
 		robocodeLogo.setBlendMode(BlendMode.LIGHTEN);
 
-		Label title = new Label("CHAMPIONSHIP");
-		title.getStyleClass().add("game-title");
-		Theme.pulseGlow(title, Theme.ACCENT);
+		this.title.getStyleClass().add("game-title");
+		Theme.pulseGlow(this.title, Theme.ACCENT);
 
-		Label subtitle = new Label("GERENCIADOR DE CAMPEONATOS");
-		subtitle.getStyleClass().add("game-subtitle");
+		this.subtitle.getStyleClass().add("game-subtitle");
+		// An empty subtitle takes no space
+		this.subtitle.managedProperty().bind(this.subtitle.textProperty().isNotEmpty());
 
 		Label key = new Label("R");
 		key.getStyleClass().add("keycap");
@@ -80,7 +117,7 @@ public class StartScreen extends StackPane {
 		pressStart.setAlignment(Pos.CENTER);
 		Theme.blink(pressStart);
 
-		VBox titleBlock = new VBox(14, title, subtitle, new Region(), pressStart);
+		VBox titleBlock = new VBox(14, this.title, this.subtitle, new Region(), pressStart);
 		titleBlock.setAlignment(Pos.CENTER);
 
 		// The logo stays in the sky, the title on the grid
@@ -97,8 +134,14 @@ public class StartScreen extends StackPane {
 				double logoHeight = robocodeLogo.getLayoutBounds().getHeight();
 				robocodeLogo.relocate((width - logoWidth) / 2, horizon - logoHeight - 24);
 
+				// Long titles shrink to fit the screen
 				titleBlock.autosize();
-				titleBlock.relocate((width - titleBlock.getWidth()) / 2, horizon + 28);
+				double scale = Math.min(1, width * 0.92 / titleBlock.getWidth());
+				titleBlock.setScaleX(scale);
+				titleBlock.setScaleY(scale);
+				// Scaling is around the center, keeps the top right below the horizon
+				double shrunk = titleBlock.getHeight() * (1 - scale) / 2;
+				titleBlock.relocate((width - titleBlock.getWidth()) / 2, horizon + 28 - shrunk);
 			}
 		};
 		horizonLayout.setMouseTransparent(true);
@@ -115,44 +158,116 @@ public class StartScreen extends StackPane {
 		}
 		Label controlsTitle = new Label("CONTROLES");
 		controlsTitle.getStyleClass().add("panel-title");
-		VBox controls = new VBox(controlsTitle, shortcuts);
-		controls.getStyleClass().add("panel");
-		controls.setMaxHeight(Region.USE_PREF_SIZE);
+		this.controls = new VBox(controlsTitle, shortcuts);
+		this.controls.getStyleClass().add("panel");
+		this.controls.setMaxHeight(Region.USE_PREF_SIZE);
+		this.controls.setVisible(false);
 
-		boolean open = Configuration.isEnabledRegistration();
-		Label badge = new Label(open ? "● INSCRIÇÕES ABERTAS" : "■ INSCRIÇÕES ENCERRADAS");
-		badge.getStyleClass().add(open ? "badge-open" : "badge-closed");
+		// The controls only show while Alt is held, this tells it
+		Label holdBefore = new Label("SEGURE");
+		Label holdKey = new Label("ALT");
+		holdKey.getStyleClass().add("keycap");
+		Label holdAfter = new Label("PARA VER OS CONTROLES");
+		holdBefore.getStyleClass().add("hold-hint");
+		holdAfter.getStyleClass().add("hold-hint");
+		this.controlsHint = new HBox(10, holdBefore, holdKey, holdAfter);
+		this.controlsHint.setAlignment(Pos.CENTER_LEFT);
+		this.controlsHint.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+		StackPane controlsArea = new StackPane(this.controlsHint, this.controls);
+		controlsArea.setAlignment(Pos.TOP_LEFT);
+
+		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
+			if (oldScene != null) {
+				oldScene.removeEventFilter(KeyEvent.ANY, this.altWatcher);
+				if (oldScene.getWindow() != null) {
+					oldScene.getWindow().focusedProperty().removeListener(this.focusWatcher);
+				}
+			}
+			if (newScene != null) {
+				newScene.addEventFilter(KeyEvent.ANY, this.altWatcher);
+				if (newScene.getWindow() != null) {
+					newScene.getWindow().focusedProperty().addListener(this.focusWatcher);
+				}
+			}
+		});
 
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
-		HBox top = new HBox(controls, spacer, badge);
+		HBox top = new HBox(controlsArea, spacer, this.badge);
 		top.setAlignment(Pos.TOP_LEFT);
 
 		// Bottom: where the teams register their robots
 		Label caption = new Label("CADASTRE SEU ROBÔ EM");
 		caption.getStyleClass().add("address-caption");
-		Label address = new Label("http://" + Network.getLocalIpAddress() + ":" + Configuration.getWebserverPort());
-		address.getStyleClass().add("address");
-		address.setEffect(Theme.glow(Theme.ACCENT, 14));
-		VBox registration = new VBox(caption, address);
-		registration.getStyleClass().add("address-box");
-		registration.setMaxWidth(Region.USE_PREF_SIZE);
-		BorderPane.setAlignment(registration, Pos.CENTER);
+		this.address.getStyleClass().add("address");
+		this.address.setEffect(Theme.glow(Theme.ACCENT, 14));
+		this.registration = new VBox(caption, this.address);
+		this.registration.getStyleClass().add("address-box");
+		this.registration.setMaxWidth(Region.USE_PREF_SIZE);
+		BorderPane.setAlignment(this.registration, Pos.CENTER);
 
-		BorderPane layout = new BorderPane(null, top, null, open ? registration : null, null);
-		layout.setPadding(new Insets(28));
+		this.layout = new BorderPane(null, top, null, null, null);
+		this.layout.setPadding(new Insets(28));
+		this.refresh(serverPort);
 
 		Region scanlines = new Region();
 		scanlines.getStyleClass().add("scanlines");
 		scanlines.setMouseTransparent(true);
 
-		this.getChildren().setAll(new ArcadeBackground(), horizonLayout, layout, scanlines);
+		this.getChildren().setAll(new ArcadeBackground(), horizonLayout, this.layout, scanlines);
 
 		this.music = Sound.fromResource(getClass(), "versusMusic.mp3");
 		if (this.music != null) {
 			this.music.setVolume(0.15);
 			this.music.setLoop(true);
 		}
+	}
+
+	/**
+	 * Shows the current registration status and web server address
+	 *
+	 * @param serverPort
+	 *            port where the registration web server is listening, 0 if it is
+	 *            not running
+	 */
+	public void refresh(int serverPort) {
+		this.title.setText(Configuration.getTitle());
+		this.subtitle.setText(Configuration.getSubtitle());
+
+		boolean running = serverPort > 0;
+		boolean open = running && Configuration.isEnabledRegistration();
+
+		this.badge.getStyleClass().removeAll("badge-open", "badge-closed");
+		if (!running) {
+			this.badge.setText("■ SERVIDOR DE INSCRIÇÕES PARADO");
+		} else {
+			this.badge.setText(open ? "● INSCRIÇÕES ABERTAS" : "■ INSCRIÇÕES ENCERRADAS");
+		}
+		this.badge.getStyleClass().add(open ? "badge-open" : "badge-closed");
+
+		this.address.setText("http://" + Network.getLocalIpAddress() + ":" + serverPort);
+		this.layout.setBottom(open ? this.registration : null);
+	}
+
+	private void showControls(boolean show) {
+		if (show == this.controls.isVisible()) {
+			return;
+		}
+		if (this.controlsFade != null) {
+			this.controlsFade.stop();
+		}
+		this.controlsHint.setVisible(!show);
+		if (show) {
+			this.controls.setOpacity(0);
+			this.controls.setVisible(true);
+			this.controlsFade = new FadeTransition(Duration.millis(150), this.controls);
+			this.controlsFade.setToValue(1);
+		} else {
+			this.controlsFade = new FadeTransition(Duration.millis(120), this.controls);
+			this.controlsFade.setToValue(0);
+			this.controlsFade.setOnFinished(event -> this.controls.setVisible(false));
+		}
+		this.controlsFade.play();
 	}
 
 	public void playBackgroundMusic() {

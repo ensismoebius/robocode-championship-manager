@@ -87,6 +87,26 @@ h1 {
 	}
 }
 
+.registration {
+	display: inline-block;
+	margin: 0 0 16px;
+	padding: 6px 12px;
+	border: 2px solid;
+	font-family: "Press Start 2P", monospace;
+	font-size: 11px;
+	line-height: 1.6;
+}
+
+.registration.open {
+	color: var(--rc-success);
+	border-color: var(--rc-success);
+}
+
+.registration.closed {
+	color: var(--rc-danger);
+	border-color: var(--rc-danger);
+}
+
 .message {
 	min-height: 0;
 	margin: 0 0 16px;

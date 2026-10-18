@@ -16,7 +16,6 @@ import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Label;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Reflection;
@@ -32,6 +31,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import model.Opponent;
 import widgets.ArcadeBackground;
+import widgets.GameDialog;
 import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
@@ -59,7 +59,7 @@ public class BattleViewer extends StackPane {
 		try (InputStream vs = getClass().getResourceAsStream("vs.gif")) {
 			this.vsImage.setImage(new Image(vs));
 		} catch (IOException e) {
-			Theme.alert(AlertType.ERROR, e.getMessage()).showAndWait();
+			GameDialog.error(e.getMessage());
 		}
 		this.vsImage.setPreserveRatio(true);
 		this.vsImage.fitWidthProperty().bind(this.widthProperty().multiply(0.16));
