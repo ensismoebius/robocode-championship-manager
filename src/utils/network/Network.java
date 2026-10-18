@@ -21,11 +21,11 @@ public class Network {
 			en = NetworkInterface.getNetworkInterfaces();
 
 			while (en.hasMoreElements()) {
-				NetworkInterface ni = (NetworkInterface) en.nextElement();
+				NetworkInterface ni = en.nextElement();
 				Enumeration<InetAddress> ee = ni.getInetAddresses();
 
 				while (ee.hasMoreElements()) {
-					InetAddress ia = (InetAddress) ee.nextElement();
+					InetAddress ia = ee.nextElement();
 
 					if (ia.isSiteLocalAddress()) {
 						return ia.getHostAddress();
@@ -35,6 +35,6 @@ public class Network {
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
-		return null;
+		return "localhost";
 	}
 }

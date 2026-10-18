@@ -1,33 +1,54 @@
 package jetty.server;
 
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.SessionIdManager;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.session.DefaultSessionIdManager;
-import org.eclipse.jetty.server.session.HouseKeeper;
-import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.server.ServerConnector;
 
-import jetty.contexts.ServletContextsHandler;
+import jakarta.servlet.MultipartConfigElement;
+import jetty.servlets.Login;
+import jetty.servlets.RobotEditor;
+import utils.configuration.Configuration;
 
+/**
+ * This program is licensed under GPLv3 see the README file for more information
+ *
+ * The web server where the teams register their robots
+ *
+ * @author André Furlan - ensismoebius@gmail.com
+ */
 public class HttpServer {
 
-	private Server server;
+	/**
+	 * Biggest accepted upload, the four files of the robot editor together
+	 */
+	private static final long MAX_REQUEST_SIZE = 10L * 1024 * 1024;
 
-	public HttpServer() {
-		try {
-			this.server = new Server(8080);
+	private final Server server;
 
-			this.server.setSessionIdManager(this.generateIdManager(server));
+	/**
+	 * Starts the server, does not block
+	 */
+	public HttpServer(int port) throws Exception {
+		this.server = new Server(port);
 
-			ContextHandlerCollection contexts = new ContextHandlerCollection();
-			contexts.addHandler(new ServletContextsHandler(server, new SessionHandler()));
+		ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+		context.setContextPath("/");
 
-			this.server.setHandler(contexts);
-			this.server.start();
-			this.server.join();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		context.addServlet(Login.class, "/");
+
+		ServletHolder robotEditor = context.addServlet(RobotEditor.class, "/robotEditor");
+		robotEditor.getRegistration().setMultipartConfig(new MultipartConfigElement(Configuration.getTempDir(), MAX_REQUEST_SIZE, MAX_REQUEST_SIZE, 0));
+
+		this.server.setHandler(context);
+		this.server.start();
+	}
+
+	/**
+	 * The port the server is listening, useful when it was started on port 0
+	 */
+	public int getPort() {
+		return ((ServerConnector) this.server.getConnectors()[0]).getLocalPort();
 	}
 
 	public void stop() {
@@ -36,12 +57,5 @@ public class HttpServer {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	private SessionIdManager generateIdManager(Server server) {
-		HouseKeeper houseKeeper = new HouseKeeper();
-		SessionIdManager idmanager = new DefaultSessionIdManager(server);
-		idmanager.setSessionHouseKeeper(houseKeeper);
-		return idmanager;
 	}
 }

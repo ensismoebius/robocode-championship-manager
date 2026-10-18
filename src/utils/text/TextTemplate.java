@@ -51,8 +51,10 @@ public class TextTemplate {
 	public void parse(String blockName) {
 		List<Object> indexes = this.getBlockIndexes(this.template, blockName, null);
 
-		// TODO BUG here!!!
-		List<Object> block = (List<Object>) accessBlock(indexes, this.template);
+		List<Object> block = accessBlock(indexes, this.template);
+		if (block == null) {
+			throw new IllegalArgumentException("Block not found: " + blockName);
+		}
 		this.parseBlockElements(block);
 	}
 
@@ -85,7 +87,7 @@ public class TextTemplate {
 					continue;
 
 				if (object instanceof String) {
-					finalText.append(object);
+					finalText.append(object).append(System.lineSeparator());
 				} else {
 
 					ArrayList<HashMap<String, Object>> mapList = new ArrayList<HashMap<String, Object>>();
@@ -106,7 +108,7 @@ public class TextTemplate {
 	@SuppressWarnings("unchecked")
 	private List<Object> parseBlockElements(List<Object> itens) {
 
-		Pattern placeHoldersPattern = Pattern.compile("\\{(.*)\\}", Pattern.CASE_INSENSITIVE);
+		Pattern placeHoldersPattern = Pattern.compile("\\{(\\w+)\\}");
 
 		List<Object> tempItens = new ArrayList<Object>();
 
@@ -124,18 +126,15 @@ public class TextTemplate {
 					break;
 				}
 
+				// Replaces every placeholder of the line by its assigned value
 				Matcher m = placeHoldersPattern.matcher(line);
-
-				if (m.find()) {
-
-					String placeholder = m.group(1);
-					String value = this.assignments.get(placeholder) == null ? ""
-							: this.assignments.get(placeholder).toString();
-
-					tempItens.add(m.replaceAll((String) value).trim());
-				} else {
-					tempItens.add(line);
+				StringBuilder replaced = new StringBuilder();
+				while (m.find()) {
+					Object value = this.assignments.get(m.group(1));
+					m.appendReplacement(replaced, Matcher.quoteReplacement(value == null ? "" : value.toString()));
 				}
+				m.appendTail(replaced);
+				tempItens.add(replaced.toString());
 			} else {
 
 				HashMap<String, Object> hashMap = (HashMap<String, Object>) itens.get(i);

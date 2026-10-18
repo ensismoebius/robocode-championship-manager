@@ -1,25 +1,94 @@
 --- Robocode Championship Manager ---
 This program is licensed under GPLv3.
 
-I had organized the program in the folowing way:
+Requirements:
+	Java 21 or newer (JDK to build) and Maven. JavaFX, Jetty, Hibernate, SQLite
+	and the MP3 decoder are downloaded by Maven. A Robocode installation is
+	needed to run the battles. Audio is decoded in pure Java, no system codecs
+	are needed.
+	Tested with Robocode 1.11.1. The robots are copied to <robocode>/robots as
+	team.Robot.jar before each battle.
 
-Package listeners:
-	Contains the source that updates the database and listem to changes in the list of opponents.
+Building and running:
+	mvn package                                  builds and runs the tests
+	java -jar target/RobocodeChampManager-5-all.jar
+	or
+	mvn javafx:run
+
+	Run it from this directory: the battles are started by RobocodeStarter/start.sh
+	(or start.bat on Windows).
+
+	On the first run a window asks for the configuration, which is saved at
+	~/robocodeChampManager.config. The data is kept in the SQLite file
+	database/robochamp.db (configurable). Tables are created automatically.
+
+	Teams register their robots at http://<this computer>:8080 (the port is
+	configurable). The team music must be an MP3 file.
+
+The championship:
+	Ctrl + G draws a championship with every registered robot. Any number of
+	robots (two or more) is accepted: when it is not a power of two, the first
+	drawn robots get a bye in the first round.
+
+	With repechage (double elimination, the default) whoever loses in the main
+	bracket goes to the repechage bracket and is only out after a second loss.
+	The main bracket champion and the repechage champion play the grand final.
+	With "final com revanche", if the repechage champion wins the grand final
+	it is played again, so the champion is never someone with two losses.
+	Without repechage it is a plain single elimination.
+
+	Who wins a battle is a setting: by default the Robocode rank (most rounds
+	won, total score breaks ties), or the total score (rounds won break ties).
+	They can disagree: a robot may win more rounds with fewer points.
+
+	The bracket screen (R) shows both brackets, the finals and the standings.
+	Click a playable match to select it, the next match is selected
+	automatically. Results are stored as a list, so the last one can be
+	undone at any time.
+
+Keys:
+	i         start screen
+	ctrl + g  draws a new championship
+	ctrl + s  enables or disables new robots registration
+	r         bracket screen (click a match to select it)
+	n         selects the next match to be played
+	b         "versus" screen of the selected match
+	s         runs the selected match in robocode and records the winner
+	1 / 2     declares the first / second robot of the match the winner
+	ctrl + z  undoes the last result
+	m         shows the robots of the selected match (the champion at the end)
+	x         exports the robots source code to <temp dir>/robochamp-export
+	+ / - / 0 zoom in, zoom out and fit, in the bracket screen
+
+Upgrading from version 3:
+	Version 3 kept the data in H2, this version uses SQLite and the old
+	"levels" rank was replaced by the championship brackets. The robots have
+	to be registered again (or the data copied by hand). Old plain text
+	passwords keep working if copied.
+
+Source organization:
 
 Package model:
-	Contains the POJOs we need
+	The JPA entities
+
+Package tournament:
+	The bracket rules (Bracket) and the championship storage
+
+Package jetty:
+	The web server and pages where teams register their robots
 
 Package utils:
-	Contains utilities used in the program
+	Contains utilities used in the program (configuration, database, battles...)
 
 Package widgets:
- 	Contains the controls, windows and scenes used in the program 
+	Contains the controls, windows and scenes used in the program
 
-Folder lib:
-	Contains the libraries the program needs
+Folder RobocodeStarter:
+	Contains a pre-compiled version of the program that controls the robocode
+	battles (source in the robocodebattlestarter submodule)
 
-Folder Robocode Starter:
-	Contais a pre-compiled version of the program tha controls the robocode battles
+Folder test:
+	Automated tests, run with mvn test
 
  --- --- ---
 

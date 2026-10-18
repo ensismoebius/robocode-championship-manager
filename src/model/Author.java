@@ -1,10 +1,10 @@
 package model;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -12,7 +12,7 @@ import javax.persistence.Id;
  * @author André Furlan - ensismoebius@gmail.com
  */
 @Entity
-public class Author implements Cloneable {
+public class Author {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,11 +22,14 @@ public class Author implements Cloneable {
 	private String name;
 
 	@Column(nullable = false)
-	private String observations;
+	private String observations = "";
 
 	@Column(nullable = false)
 	private String login;
 
+	/**
+	 * Password hash, see {@link utils.web.PasswordHasher}
+	 */
 	@Column(nullable = false)
 	private String password;
 
@@ -55,14 +58,6 @@ public class Author implements Cloneable {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		Author a = new Author();
-		a.setName(this.name);
-		a.setObservations(this.observations);
-		return a;
 	}
 
 	public long getId() {

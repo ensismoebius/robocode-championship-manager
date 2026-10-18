@@ -1,11 +1,7 @@
 package widgets.scenes;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-
-import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -16,13 +12,11 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import model.Author;
-import utils.configuration.Configuration;
+import widgets.Sound;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -42,18 +36,21 @@ public class ShowOponent extends Scene {
 	private Label name;
 	private Label battleCry;
 
-	private MediaPlayer mp;
+	private Sound mp;
 
-	public void setOponent(model.Opponent oponent) throws FileNotFoundException, IOException {
+	public void setOponent(model.Opponent oponent) throws IOException {
+		this.setOponent(oponent, null);
+	}
+
+	/**
+	 * @param title
+	 *            shown above the name, like "VENCEDOR" or "CAMPEÃO", may be null
+	 */
+	public void setOponent(model.Opponent oponent, String title) throws IOException {
 
 		this.mp = null;
 
-		// Create a temp music file and play it!
-		File file = new File(Configuration.getTempDir() + "/temp.mp3");
-		FileOutputStream fos = new FileOutputStream(file);
-		fos.write(oponent.getMusic());
-		fos.close();
-		this.mp = new MediaPlayer(new Media(file.toURI().toString()));
+		this.mp = Sound.fromBytes(oponent.getMusic(), oponent.getFullName());
 
 		Font f = new Font(50);
 		this.name = new Label();
@@ -79,10 +76,11 @@ public class ShowOponent extends Scene {
 		this.oponentImage = new ImageView();
 		this.oponentImage.setSmooth(true);
 		this.oponentImage.preserveRatioProperty().set(true);
-		this.oponentImage.maxWidth(this.widthProperty().divide(2).get());
 		this.oponentImage.fitHeightProperty().bind(this.heightProperty());
 		this.oponentImage.fitWidthProperty().bind(this.widthProperty().divide(2));
-		this.oponentImage.setImage(new Image(new ByteInputStream(oponent.getImage(), oponent.getImage().length)));
+		if (oponent.getImage() != null) {
+			this.oponentImage.setImage(new Image(new ByteArrayInputStream(oponent.getImage())));
+		}
 
 		this.name.setText(oponent.getName());
 		this.name.setTextFill(Color.YELLOWGREEN);
@@ -93,6 +91,13 @@ public class ShowOponent extends Scene {
 		this.battleCry.setTextAlignment(TextAlignment.CENTER);
 
 		VBox vbox = new VBox(20);
+		if (title != null) {
+			Label titleLabel = new Label(title);
+			titleLabel.setFont(Font.font(null, javafx.scene.text.FontWeight.BOLD, 70));
+			titleLabel.setTextFill(Color.GOLD);
+			titleLabel.setEffect(new javafx.scene.effect.Glow(0.8));
+			vbox.getChildren().add(titleLabel);
+		}
 		vbox.getChildren().addAll(name, battleCry);
 
 		f = new Font(30);
@@ -124,10 +129,12 @@ public class ShowOponent extends Scene {
 	}
 
 	public void play() {
-		this.mp.play();
+		if (this.mp != null)
+			this.mp.play();
 	}
 
 	public void stop() {
-		this.mp.stop();
+		if (this.mp != null)
+			this.mp.stop();
 	}
 }

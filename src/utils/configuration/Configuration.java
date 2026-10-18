@@ -1,14 +1,17 @@
 /**
- * 
+ *
  */
 package utils.configuration;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
 import java.util.Properties;
+
+import utils.robocode.BattleControl.WinnerCriterion;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -17,14 +20,13 @@ import java.util.Properties;
  */
 public class Configuration {
 
-	/**
-	 * Indicates if this is the first time the system runs
-	 */
-	private static boolean firstRun = false;
+	public static final String DEFAULT_DATABASE_FILE = "database/robochamp.db";
+	public static final int DEFAULT_ROBOCODE_ROUNDS = 5;
+	public static final int DEFAULT_WEBSERVER_PORT = 8080;
+
+	private static final Path CONFIG_FILE = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
 
 	private static Properties configurations;
-	private static String configFileLocation;
-	private static String tempDir;
 
 	/**
 	 * If there is no configuration stored call the implementation of this interface
@@ -35,7 +37,7 @@ public class Configuration {
 	/**
 	 * Sets the implementation of {@link INewConfigurationHandle} to create new
 	 * properties
-	 * 
+	 *
 	 * @see INewConfigurationHandle
 	 */
 	public static void setNewConfigurationHandle(INewConfigurationHandle newConfigurationHandle) {
@@ -43,147 +45,140 @@ public class Configuration {
 	}
 
 	/**
-	 * Initialize if need the {@link Configuration} class
+	 * Shows the current configuration (loaded from file if needed) so the user can
+	 * review or change it
+	 *
+	 * @return true if there is a usable configuration afterwards, false if the user
+	 *         cancelled and there was no configuration
 	 */
-	private static void init() {
-		Configuration.tempDir = System.getProperty("java.io.tmpdir");
-		Configuration.configFileLocation = System.getProperty("user.home") + "/robocodeChampManager.config";
+	public static synchronized boolean askForProperties() {
+		Properties current = Configuration.configurations != null ? Configuration.configurations : Configuration.loadConfigurations();
 
-		if (!Configuration.loadConfigurations()) {
-			Configuration.firstRun = true;
-			Configuration.askForProperties();
+		Properties answer = Configuration.newConfigurationHandle.askForProperties(current);
+
+		if (answer != null) {
+			Configuration.configurations = answer;
+			Configuration.saveConfigurations();
+		} else {
+			Configuration.configurations = current;
 		}
-	}
 
-	public static void askForProperties() {
-		if (Configuration.configurations == null) {
-
-			if (Configuration.firstRun)
-				return;
-			Configuration.init();
-		}
-		Configuration.configurations = Configuration.newConfigurationHandle.askForProperties(Configuration.configurations);
-		Configuration.saveConfigurations();
+		return Configuration.configurations != null;
 	}
 
 	/**
 	 * Returns any configuration if any
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
-	private static String getConfiguration(String name) {
-
-		while (Configuration.configurations == null) {
-			Configuration.init();
+	private static synchronized String getConfiguration(String name) {
+		if (Configuration.configurations == null) {
+			throw new IllegalStateException("Configuration not loaded, call askForProperties() first");
 		}
-
 		return Configuration.configurations.getProperty(name);
+	}
+
+	private static int getIntConfiguration(String name, int defaultValue) {
+		try {
+			return Integer.parseInt(Configuration.getConfiguration(name).trim());
+		} catch (NullPointerException | NumberFormatException e) {
+			return defaultValue;
+		}
 	}
 
 	/**
 	 * Loads the configurations from file
-	 * 
-	 * @return
+	 *
+	 * @return the configurations, or null if there is no configuration file
 	 */
-	private static boolean loadConfigurations() {
-		InputStream is;
-		try {
-			is = new FileInputStream(Configuration.configFileLocation);
-			Configuration.configurations = new Properties();
-			Configuration.configurations.load(is);
-			return true;
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
+	private static Properties loadConfigurations() {
+		if (!Files.exists(Configuration.CONFIG_FILE)) {
+			return null;
 		}
 
-		return false;
+		try (InputStream is = Files.newInputStream(Configuration.CONFIG_FILE)) {
+			Properties properties = new Properties();
+			properties.load(is);
+			return properties;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	/**
 	 * Save all configurations to a file
-	 * 
+	 *
 	 * @return
 	 */
-	private static boolean saveConfigurations() {
-		FileOutputStream os;
-		try {
-			os = new FileOutputStream(Configuration.configFileLocation);
+	private static synchronized boolean saveConfigurations() {
+		try (OutputStream os = Files.newOutputStream(Configuration.CONFIG_FILE)) {
 			Configuration.configurations.store(os, "RobocodeChampManagerConfiguration");
 			return true;
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+			return false;
 		}
-		return false;
 	}
 
-	public static void setEnabledRegistration(boolean b) {
-		configurations.put(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
+	public static synchronized void setEnabledRegistration(boolean b) {
+		if (Configuration.configurations == null) {
+			throw new IllegalStateException("Configuration not loaded, call askForProperties() first");
+		}
+		Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
 		Configuration.saveConfigurations();
 	}
 
-	public static boolean isFirstRun() {
-		return Configuration.firstRun;
-	}
-
 	public static String getTempDir() {
-		return Configuration.tempDir;
+		return System.getProperty("java.io.tmpdir");
 	}
 
-	public static String getDatabaseURL() {
-		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_URL);
-	}
-
-	public static String getDatabaseUser() {
-		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_USER);
-	}
-
-	public static String getDatabasePassword() {
-		return Configuration.getConfiguration(INewConfigurationHandle.DATABASE_PASSWORD);
+	/**
+	 * The SQLite database file
+	 */
+	public static String getDatabaseFile() {
+		String file = Configuration.getConfiguration(INewConfigurationHandle.DATABASE_FILE);
+		return file == null || file.isBlank() ? DEFAULT_DATABASE_FILE : file;
 	}
 
 	public static String getRobocodePath() {
-		return Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
-	}
-
-	public static String getGroupSize() {
-		return Configuration.getConfiguration(INewConfigurationHandle.GROUPS_SIZE);
+		String path = Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
+		return path == null ? "" : path;
 	}
 
 	public static boolean isEnabledRegistration() {
 		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.REGISTRATION_ENABLED));
 	}
 
-	public static String getWebserverPort() {
-		// TODO make it flexible!
-		return "8080";
+	public static int getWebserverPort() {
+		return Configuration.getIntConfiguration(INewConfigurationHandle.WEBSERVER_PORT, DEFAULT_WEBSERVER_PORT);
 	}
 
-	public static String getRobocodeRounds() {
-		// TODO make it flexible!
-		return "5";
+	public static int getRobocodeRounds() {
+		return Math.max(1, Configuration.getIntConfiguration(INewConfigurationHandle.ROBOCODE_ROUNDS, DEFAULT_ROBOCODE_ROUNDS));
+	}
+
+	/**
+	 * How the winner of a battle is chosen, robocode rank by default
+	 */
+	public static WinnerCriterion getWinnerCriterion() {
+		String value = Configuration.getConfiguration(INewConfigurationHandle.WINNER_CRITERION);
+		try {
+			return value == null ? WinnerCriterion.RANK : WinnerCriterion.valueOf(value);
+		} catch (IllegalArgumentException e) {
+			return WinnerCriterion.RANK;
+		}
 	}
 
 	public static String getStartBattleScript() {
+		String osname = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 
-		String osname = System.getProperty("os.name");
-
-		if (osname.indexOf("win") >= 0) {
+		if (osname.contains("win")) {
 			return "./RobocodeStarter/start.bat";
 		}
 
-		if (osname.indexOf("nux") >= 0) {
-			return "./RobocodeStarter/start.sh";
-		}
-
-		if (osname.indexOf("mac") >= 0) {
-			return "./RobocodeStarter/start.sh";
-		}
-
-		return "";
+		// Linux, macOS and other unixes
+		return "./RobocodeStarter/start.sh";
 	}
 }

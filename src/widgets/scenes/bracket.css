@@ -1,0 +1,194 @@
+/* Bracket screen, see BracketViewer */
+
+.bracket-root {
+	-fx-background-color: #0b0e14;
+}
+
+.scroll-pane, .scroll-pane > .viewport {
+	-fx-background-color: #0b0e14;
+}
+
+.title {
+	-fx-font-size: 34px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #ffd400;
+}
+
+.subtitle {
+	-fx-font-size: 18px;
+	-fx-text-fill: #9aa4b8;
+}
+
+.help {
+	-fx-font-size: 14px;
+	-fx-text-fill: #6c7689;
+}
+
+.warning {
+	-fx-font-size: 16px;
+	-fx-text-fill: #ff9f43;
+}
+
+.champion-banner {
+	-fx-background-color: linear-gradient(to right, #3d2f00, #6b5200, #3d2f00);
+	-fx-background-radius: 12;
+	-fx-border-color: #ffd400;
+	-fx-border-radius: 12;
+	-fx-border-width: 2;
+	-fx-padding: 12 24 12 24;
+}
+
+.champion-banner .label {
+	-fx-text-fill: #ffe766;
+	-fx-font-size: 30px;
+	-fx-font-weight: bold;
+}
+
+.section-title {
+	-fx-font-size: 26px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #e8ecf4;
+}
+
+.round-title {
+	-fx-font-size: 15px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #7f8aa3;
+}
+
+/* Match cards */
+
+.match-card {
+	-fx-background-color: #161b26;
+	-fx-background-radius: 10;
+	-fx-border-color: #2c3445;
+	-fx-border-radius: 10;
+	-fx-border-width: 1.5;
+}
+
+.match-card.ready {
+	-fx-border-color: #2ec4ff;
+	-fx-cursor: hand;
+}
+
+.match-card.selected {
+	-fx-border-color: #ffd400;
+	-fx-border-width: 3;
+}
+
+.match-card.bye {
+	-fx-opacity: 0.45;
+}
+
+.match-card.empty, .match-card.skipped {
+	-fx-opacity: 0.2;
+}
+
+.match-header {
+	-fx-padding: 3 10 3 10;
+	-fx-background-color: #1e2533;
+	-fx-background-radius: 10 10 0 0;
+}
+
+.match-code {
+	-fx-font-size: 13px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #9aa4b8;
+}
+
+.match-status {
+	-fx-font-size: 12px;
+	-fx-text-fill: #6c7689;
+}
+
+.match-card.ready .match-status {
+	-fx-text-fill: #2ec4ff;
+}
+
+.match-card.selected .match-status {
+	-fx-text-fill: #ffd400;
+	-fx-font-weight: bold;
+}
+
+.slot-row {
+	-fx-padding: 4 10 4 6;
+	-fx-spacing: 10;
+}
+
+.slot-row.winner {
+	-fx-background-color: rgba(46, 204, 113, 0.16);
+}
+
+.robot-name {
+	-fx-font-size: 17px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #e8ecf4;
+}
+
+.team-name {
+	-fx-font-size: 12px;
+	-fx-text-fill: #8a94a8;
+}
+
+.slot-row.winner .robot-name {
+	-fx-text-fill: #5af08f;
+}
+
+.slot-row.loser .robot-name, .slot-row.loser .team-name, .slot-row.loser .score {
+	-fx-text-fill: #59627a;
+}
+
+.placeholder {
+	-fx-font-size: 14px;
+	-fx-font-style: italic;
+	-fx-text-fill: #59627a;
+}
+
+.score {
+	-fx-font-size: 17px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #e8ecf4;
+}
+
+.slot-row.winner .score {
+	-fx-text-fill: #5af08f;
+}
+
+.logo-box {
+	-fx-background-color: #0b0e14;
+	-fx-background-radius: 4;
+}
+
+/* Lines between matches */
+
+.connector {
+	-fx-stroke: #2c3445;
+	-fx-stroke-width: 2;
+	-fx-fill: transparent;
+}
+
+.connector.done {
+	-fx-stroke: #3f9e66;
+	-fx-stroke-width: 2.5;
+}
+
+/* Standings */
+
+.standings {
+	-fx-background-color: #121722;
+	-fx-background-radius: 12;
+	-fx-padding: 16 24 16 24;
+	-fx-hgap: 24;
+	-fx-vgap: 6;
+}
+
+.place {
+	-fx-font-size: 18px;
+	-fx-font-weight: bold;
+	-fx-text-fill: #ffd400;
+}
+
+.place-name {
+	-fx-font-size: 18px;
+	-fx-text-fill: #e8ecf4;
+}

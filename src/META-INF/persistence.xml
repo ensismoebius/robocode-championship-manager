@@ -1,20 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<persistence version="2.1"
-	xmlns="http://xmlns.jcp.org/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
+<persistence version="3.0"
+	xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
 	<persistence-unit name="PURobocode" transaction-type="RESOURCE_LOCAL">
 		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<!-- Listed explicitly so it also works inside the fat jar, where class scanning is unreliable -->
+		<class>model.Author</class>
+		<class>model.Opponent</class>
+		<class>model.Championship</class>
+		<class>model.MatchResult</class>
+		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		<properties>
-			<property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
-			<property name="javax.persistence.jdbc.url" value="jdbc:h2:database/./test" />
-			<property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
-			<property name="hibernate.cache.use_second_level_cache" value="false"/>
-<!--             <property name="hibernate.show_sql" value="true" /> -->
-<!--             <property name="hibernate.format_sql" value="true" /> -->
-<!-- 				none, create, drop, drop-and-create, update -->
-<!-- 			<property name="hibernate.hbm2ddl.auto" value="update" />
-			<property name="hibernate.cache.use_second_level_cache" value="false" /> -->
-			<property name="javax.persistence.schema-generation.database.action" value="none"/>
+			<property name="jakarta.persistence.jdbc.driver" value="org.sqlite.JDBC" />
+			<!-- The URL comes from the database file in the configuration, see utils.database.Database -->
+			<property name="hibernate.dialect" value="org.hibernate.community.dialect.SQLiteDialect" />
+			<!-- Passed to the SQLite driver: the web server and the screen write at the same time -->
+			<property name="hibernate.connection.busy_timeout" value="10000" />
+			<property name="hibernate.connection.journal_mode" value="WAL" />
+			<property name="hibernate.connection.foreign_keys" value="true" />
+			<!-- Creates missing tables/columns and never drops data -->
+			<property name="hibernate.hbm2ddl.auto" value="update" />
+			<!-- <property name="hibernate.show_sql" value="true" /> -->
+			<!-- <property name="hibernate.format_sql" value="true" /> -->
 		</properties>
 	</persistence-unit>
 </persistence>

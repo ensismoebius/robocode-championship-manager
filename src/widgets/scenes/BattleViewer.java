@@ -1,9 +1,7 @@
 package widgets.scenes;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
-
-import com.sun.xml.messaging.saaj.util.ByteInputStream;
 
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -14,9 +12,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import javafx.stage.Screen;
+import widgets.Sound;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
@@ -28,7 +25,7 @@ public class BattleViewer extends Scene {
 	private ImageView oponentImage01;
 	private ImageView oponentImage02;
 
-	private MediaPlayer versusMusic;
+	private Sound versusMusic;
 	private AnchorPane anchorPane;
 	private StackPane stackPane;
 
@@ -58,8 +55,8 @@ public class BattleViewer extends Scene {
 			this.vsImage.fitWidthProperty().bind(this.widthProperty().divide(5));
 			this.vsImage.fitHeightProperty().bind(this.heightProperty().divide(5));
 
-			this.versusMusic = new MediaPlayer(new Media(getClass().getResource("versusMusic.mp3").toURI().toString()));
-		} catch (IOException | URISyntaxException e) {
+			this.versusMusic = Sound.fromResource(getClass(), "versusMusic.mp3");
+		} catch (IOException e) {
 			new Alert(AlertType.ERROR, e.getMessage()).showAndWait();
 			return;
 		}
@@ -84,19 +81,25 @@ public class BattleViewer extends Scene {
 		this.oponentImage01.setSmooth(true);
 		this.oponentImage01.preserveRatioProperty().set(true);
 		this.oponentImage01.fitWidthProperty().bind(this.widthProperty().divide(2).subtract(this.margin * 2));
-		this.oponentImage01.setImage(new Image(new ByteInputStream(oponent01.getImage(), oponent01.getImage().length)));
+		this.oponentImage01.setImage(toImage(oponent01.getImage()));
 
 		this.oponentImage02.setSmooth(true);
 		this.oponentImage02.preserveRatioProperty().set(true);
 		this.oponentImage02.fitWidthProperty().bind(this.widthProperty().divide(2).subtract(this.margin * 2));
-		this.oponentImage02.setImage(new Image(new ByteInputStream(oponent02.getImage(), oponent02.getImage().length)));
+		this.oponentImage02.setImage(toImage(oponent02.getImage()));
+	}
+
+	private static Image toImage(byte[] bytes) {
+		return bytes == null ? null : new Image(new ByteArrayInputStream(bytes));
 	}
 
 	public void play() {
-		this.versusMusic.play();
+		if (this.versusMusic != null)
+			this.versusMusic.play();
 	}
 
 	public void stop() {
-		this.versusMusic.stop();
+		if (this.versusMusic != null)
+			this.versusMusic.stop();
 	}
 }

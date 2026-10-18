@@ -1,13 +1,17 @@
 package utils.database;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.Query;
-
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
 import utils.configuration.Configuration;
 
 /**
@@ -19,20 +23,20 @@ public class Database {
 
 	private static EntityManagerFactory entityManagerFactory;
 
-	public static EntityManager getEntityManager() {
+	public static synchronized EntityManager getEntityManager() {
 
 		if (Database.entityManagerFactory == null) {
 
-			// Loads the database configuration from config file
-			Map<String, String> persistenceMap = new HashMap<String, String>();
-			persistenceMap.put("javax.persistence.jdbc.url", Configuration.getDatabaseURL());
-			persistenceMap.put("javax.persistence.jdbc.user", Configuration.getDatabaseUser());
-			persistenceMap.put("javax.persistence.jdbc.password", Configuration.getDatabasePassword());
-
-			// Creates the database, only if there is no config file
-			if (Configuration.isFirstRun()) {
-				persistenceMap.put("javax.persistence.schema-generation.database.action", "drop-and-create");
+			// SQLite creates the file but not its directory
+			Path file = Path.of(Configuration.getDatabaseFile()).toAbsolutePath();
+			try {
+				Files.createDirectories(file.getParent());
+			} catch (IOException e) {
+				throw new UncheckedIOException(e);
 			}
+
+			Map<String, Object> persistenceMap = new HashMap<String, Object>();
+			persistenceMap.put("jakarta.persistence.jdbc.url", "jdbc:sqlite:" + file);
 
 			Database.entityManagerFactory = Persistence.createEntityManagerFactory("PURobocode", persistenceMap);
 		}
@@ -40,11 +44,46 @@ public class Database {
 		return Database.entityManagerFactory.createEntityManager();
 	}
 
-	public static Query getQueryObject(String sql) {
-		return Database.entityManagerFactory.createEntityManager().createQuery(sql);
+	/**
+	 * Runs the work inside a transaction, committing on success and rolling back on
+	 * failure. The entity manager is always closed, so returned entities are
+	 * detached.
+	 */
+	public static <T> T inTransaction(Function<EntityManager, T> work) {
+		EntityManager entityManager = Database.getEntityManager();
+		EntityTransaction transaction = entityManager.getTransaction();
+		try {
+			transaction.begin();
+			T result = work.apply(entityManager);
+			transaction.commit();
+			return result;
+		} catch (RuntimeException e) {
+			if (transaction.isActive()) {
+				transaction.rollback();
+			}
+			throw e;
+		} finally {
+			entityManager.close();
+		}
 	}
 
-	public static void close() {
-		Database.entityManagerFactory.close();
+	/**
+	 * Runs a read only work. The entity manager is always closed, so returned
+	 * entities are detached.
+	 */
+	public static <T> T read(Function<EntityManager, T> work) {
+		EntityManager entityManager = Database.getEntityManager();
+		try {
+			return work.apply(entityManager);
+		} finally {
+			entityManager.close();
+		}
+	}
+
+	public static synchronized void close() {
+		if (Database.entityManagerFactory != null && Database.entityManagerFactory.isOpen()) {
+			Database.entityManagerFactory.close();
+		}
+		Database.entityManagerFactory = null;
 	}
 }

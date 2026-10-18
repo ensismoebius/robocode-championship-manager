@@ -1,7 +1,6 @@
 package widgets.scenes;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
@@ -13,12 +12,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Screen;
+import widgets.Sound;
 import utils.configuration.Configuration;
 import utils.network.Network;
 /**
@@ -32,7 +30,7 @@ public class StartScreen extends Scene {
 
 	private AnchorPane anchorPane;
 	private StackPane stackPane;
-	private MediaPlayer music;
+	private Sound music;
 
 	public StartScreen() {
 		super(new StackPane());
@@ -42,15 +40,18 @@ public class StartScreen extends Scene {
 		try {
 			this.anchorPane = new AnchorPane();
 			Label lblAtalhos = new Label(
-			"i = Mostra tela inicial\t"+
-			"ctrl + g = Cria os grupos de competição\t"+
-			"ctrl + s = Habilita ou desabilita o cadastro de novos robôs\t"+
-			"r = Mostra o ranking atual\n"+
-			"b = Mostra a tela de \"versus\"\t"+
-			"s = inicia a batalha\t"+
-			"m = Mostra os detalhes dos robos selecionados no rank\t"+
-			"x = Salva os robôs no diretório temporario"
+			"i = Tela inicial\t" +
+			"ctrl + g = Sorteia um novo campeonato\t" +
+			"ctrl + s = Habilita ou desabilita o cadastro de novos robôs\t" +
+			"r = Chaveamento\n" +
+			"b = Tela de \"versus\" da partida selecionada\t" +
+			"s = Inicia a batalha\t" +
+			"1 / 2 = Declara o vencedor\t" +
+			"ctrl + z = Desfaz o último resultado\t" +
+			"m = Detalhes dos robôs da partida\t" +
+			"x = Exporta o código fonte dos robôs"
 			);
+			lblAtalhos.setTextFill(Color.LIGHTGRAY);
 			AnchorPane.setTopAnchor(lblAtalhos, 20d);
 			AnchorPane.setLeftAnchor(lblAtalhos, 20d);
 			this.anchorPane.getChildren().add(lblAtalhos);
@@ -75,12 +76,13 @@ public class StartScreen extends Scene {
 			this.robocodeLogo.effectProperty().set(new Reflection());
 			this.robocodeLogo.setPreserveRatio(true);
 
-			this.music = new MediaPlayer(new Media(getClass().getResource("versusMusic.mp3").toURI().toString()));
+			this.music = Sound.fromResource(getClass(), "versusMusic.mp3");
 
-			// TODO Make it flexible!!
-			this.music.setVolume(0.05);
-			this.music.setCycleCount(1000);
-		} catch (IOException | URISyntaxException e) {
+			if (this.music != null) {
+				this.music.setVolume(0.15);
+				this.music.setLoop(true);
+			}
+		} catch (IOException e) {
 			new Alert(AlertType.ERROR, e.getMessage()).showAndWait();
 			return;
 		}
@@ -92,10 +94,12 @@ public class StartScreen extends Scene {
 	}
 
 	public void playBackgroundMusic() {
-		this.music.play();
+		if (this.music != null)
+			this.music.play();
 	}
 
 	public void stop() {
-		this.music.stop();
+		if (this.music != null)
+			this.music.stop();
 	}
 }

@@ -1,25 +1,21 @@
 package model;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.Lob;
-import javax.persistence.OneToMany;
-
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -27,11 +23,17 @@ import org.hibernate.annotations.FetchMode;
  * @author André Furlan - ensismoebius@gmail.com
  */
 @Entity
-public class Opponent implements Cloneable {
+public class Opponent {
+
+	public static final int MAX_BATTLE_CRY_LENGTH = 500;
+
+	/**
+	 * Column size of files. Not mapped as Lob because the SQLite driver does not
+	 * support java.sql.Blob/Clob, plain binary/text columns hold them fine
+	 */
+	private static final int MAX_FILE_LENGTH = 16 * 1024 * 1024;
 
 	private long id;
-
-	private List<Integer> levels;
 
 	private String name;
 
@@ -52,51 +54,30 @@ public class Opponent implements Cloneable {
 	private List<Author> authors;
 
 	public Opponent() {
-		this.levels = new ArrayList<Integer>();
 		this.authors = new ArrayList<Author>();
 	}
 
-	public Opponent(String name, URI image) {
-		this();
-		this.name = name;
-		this.setImage(image);
+	/**
+	 * The robot class name as robocode knows it: team.RobotName
+	 */
+	@Transient
+	public String getFullName() {
+		return this.team + "." + this.name;
 	}
 
-	@Override
-	public Object clone() throws CloneNotSupportedException {
-		Opponent o = new Opponent();
-		o.setName(this.name);
-		o.setTeam(this.team);
-		o.setImage(this.image);
-		o.setLevels(this.levels);
-		o.setMusic(this.music);
-		o.setBattleCry(this.battleCry);
-		o.setSourceCode(this.sourceCode);
-		o.setCompiledRobot(this.compiledRobot);
-
-		this.authors.forEach(author -> {
-			try {
-				o.getAuthors().add((Author) author.clone());
-			} catch (CloneNotSupportedException e) {
-			}
-		});
-
-		return o;
-	}
-
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	@Fetch(FetchMode.SUBSELECT)
 	@JoinColumn(name = "opponentId")
 	public List<Author> getAuthors() {
 		return authors;
 	}
 
-	@Column(nullable = true)
+	@Column(nullable = true, length = MAX_BATTLE_CRY_LENGTH)
 	public String getBattleCry() {
 		return battleCry;
 	}
 
-	@Column(nullable = true, columnDefinition = "LONGBLOB")
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getCompiledRobot() {
 		return this.compiledRobot;
 	}
@@ -107,18 +88,12 @@ public class Opponent implements Cloneable {
 		return id;
 	}
 
-	@Column(nullable = true, columnDefinition = "LONGBLOB")
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getImage() {
 		return this.image;
 	}
 
-	@ElementCollection(fetch = FetchType.EAGER)
-	@Fetch(FetchMode.SUBSELECT)
-	public List<Integer> getLevels() {
-		return levels;
-	}
-
-	@Column(nullable = true, columnDefinition = "LONGBLOB")
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getMusic() {
 		return this.music;
 	}
@@ -133,8 +108,7 @@ public class Opponent implements Cloneable {
 		return name;
 	}
 
-	@Lob
-	@Column(nullable = true)
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public String getSourceCode() {
 		return sourceCode;
 	}
@@ -156,22 +130,6 @@ public class Opponent implements Cloneable {
 		this.compiledRobot = jarBytes;
 	}
 
-	public void setCompiledRobot(URI compiledRobot) {
-
-		File file = new File(compiledRobot);
-		byte[] jarBytes = new byte[(int) file.length()];
-
-		try {
-			FileInputStream fileInputStream = new FileInputStream(file);
-			fileInputStream.read(jarBytes);
-			fileInputStream.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		this.compiledRobot = jarBytes;
-	}
-
 	public void setId(long id) {
 		this.id = id;
 	}
@@ -180,43 +138,7 @@ public class Opponent implements Cloneable {
 		this.image = pictureBytes;
 	}
 
-	public void setImage(URI image) {
-
-		File file = new File(image);
-		byte[] pictureBytes = new byte[(int) file.length()];
-
-		try {
-			FileInputStream fileInputStream = new FileInputStream(file);
-			fileInputStream.read(pictureBytes);
-			fileInputStream.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		this.image = pictureBytes;
-	}
-
-	public void setLevels(List<Integer> levels) {
-		this.levels = levels;
-	}
-
 	public void setMusic(byte[] musicBytes) {
-		this.music = musicBytes;
-	}
-
-	public void setMusic(URI music) {
-
-		File file = new File(music);
-		byte[] musicBytes = new byte[(int) file.length()];
-
-		try {
-			FileInputStream fileInputStream = new FileInputStream(file);
-			fileInputStream.read(musicBytes);
-			fileInputStream.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
 		this.music = musicBytes;
 	}
 
