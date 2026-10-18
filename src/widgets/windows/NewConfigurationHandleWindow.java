@@ -53,9 +53,14 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		TextField robocodeRounds = new TextField(old.getProperty(ROBOCODE_ROUNDS, String.valueOf(Configuration.DEFAULT_ROBOCODE_ROUNDS)));
 
 		ChoiceBox<String> winnerCriterion = new ChoiceBox<String>();
-		winnerCriterion.getItems().addAll("Rank do robocode (mais rounds vencidos), pontuação desempata", "Pontuação total, rounds vencidos desempatam");
+		winnerCriterion.getItems().addAll("Mais rounds vencidos, pontuação total desempata", "Pontuação total, rounds vencidos desempatam");
 		winnerCriterion.getSelectionModel().select(WinnerCriterion.SCORE.name().equals(old.getProperty(WINNER_CRITERION)) ? 1 : 0);
 		winnerCriterion.setMaxWidth(Double.MAX_VALUE);
+
+		ChoiceBox<String> battleView = new ChoiceBox<String>();
+		battleView.getItems().addAll("3D, no gerenciador", "Janela clássica do robocode");
+		battleView.getSelectionModel().select("CLASSIC".equals(old.getProperty(BATTLE_VIEW)) ? 1 : 0);
+		battleView.setMaxWidth(Double.MAX_VALUE);
 
 		TextField webserverPort = new TextField(old.getProperty(WEBSERVER_PORT, String.valueOf(Configuration.DEFAULT_WEBSERVER_PORT)));
 
@@ -103,9 +108,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		form.add(field("Vencedor da batalha", winnerCriterion), 1, 1);
 		form.add(field("Porta do servidor web de cadastro", webserverPort), 0, 2);
 		form.add(field("Inscrições", registrationEnabled), 1, 2);
-		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 3, 2, 1);
-		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 4, 2, 1);
-		form.add(error, 0, 5, 2, 1);
+		form.add(field("Exibição da batalha", battleView), 0, 3);
+		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 4, 2, 1);
+		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 5, 2, 1);
+		form.add(error, 0, 6, 2, 1);
 
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
@@ -144,6 +150,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(REGISTRATION_ENABLED, String.valueOf(registrationEnabled.isSelected()));
 			properties.setProperty(TITLE, title.getText().isBlank() ? Configuration.DEFAULT_TITLE : title.getText().strip());
 			properties.setProperty(SUBTITLE, subtitle.getText().strip());
+			properties.setProperty(BATTLE_VIEW, battleView.getSelectionModel().getSelectedIndex() == 1 ? "CLASSIC" : "3D");
 
 			GameWindow.close(panel, properties);
 		});

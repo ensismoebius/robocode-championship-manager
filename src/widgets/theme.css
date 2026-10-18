@@ -442,3 +442,130 @@
 	-fx-font-size: 24px;
 	-fx-opacity: 0.10;
 }
+
+/* 3D battle (BattleArena3D) */
+
+.arena-banner {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 64px;
+	-fx-text-fill: -rc-accent;
+	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.9), 22, 0.4, 0, 0);
+}
+
+.arena-sub-banner {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 16px;
+	-fx-text-fill: -rc-text;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 8, 0.6, 0, 0);
+}
+
+.arena-round {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 16px;
+	-fx-text-fill: -rc-accent;
+	-fx-padding: 8 16 8 16;
+	-fx-background-color: rgba(11, 14, 20, 0.8);
+	-fx-border-color: -rc-accent;
+	-fx-border-width: 2;
+}
+
+.arena-player-name {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 18px;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 6, 0.6, 0, 0);
+}
+
+.arena-player-team {
+	-fx-font-size: 18px;
+	-fx-text-fill: -rc-muted;
+}
+
+.arena-energy-bar {
+	-fx-background-color: rgba(11, 14, 20, 0.85), #3a1020;
+	-fx-background-insets: 0, 3;
+	-fx-border-color: -rc-text;
+	-fx-border-width: 2;
+	-fx-pref-height: 26;
+	-fx-padding: 3;
+}
+
+.arena-energy {
+	-fx-pref-width: 420;
+	-fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.35), 8, 0.2, 0, 0);
+}
+
+.arena-energy-text {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 14px;
+	-fx-text-fill: -rc-text;
+	-fx-min-width: 54;
+	-fx-alignment: center;
+}
+
+.arena-pip {
+	-fx-text-fill: -rc-faint;
+	-fx-font-size: 16px;
+}
+
+.arena-pip-won {
+	-fx-text-fill: -rc-accent;
+	-fx-font-size: 16px;
+	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.8), 8, 0.3, 0, 0);
+}
+
+.arena-info {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-text-fill: -rc-text;
+	-fx-padding: 6 10 6 10;
+	-fx-background-color: rgba(11, 14, 20, 0.8);
+	-fx-border-color: -rc-border;
+	-fx-border-width: 2;
+}
+
+.arena-help {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 9px;
+	-fx-text-fill: -rc-muted;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 4, 0.6, 0, 0);
+}
+
+.arena-balloon {
+	-fx-background-color: rgba(10, 10, 26, 0.8);
+	-fx-border-width: 2;
+	-fx-padding: 4 8 6 8;
+}
+
+.arena-balloon-name {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 10px;
+}
+
+.arena-balloon-bar {
+	-fx-background-color: #3a1020;
+	-fx-pref-width: 90;
+	-fx-max-width: 90;
+	-fx-pref-height: 6;
+}
+
+.arena-balloon-energy {
+	-fx-pref-width: 90;
+	-fx-pref-height: 6;
+}
+
+.arena-replay {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 22px;
+	-fx-text-fill: white;
+}
+
+.arena-replay-dot {
+	-fx-font-size: 26px;
+	-fx-text-fill: #ff2b3a;
+}
+
+.arena-replay-slow {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-text-fill: -rc-accent;
+}

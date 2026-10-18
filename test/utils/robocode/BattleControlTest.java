@@ -58,6 +58,25 @@ class BattleControlTest {
 	}
 
 	@Test
+	void roundsWonDecideNotTheReportedRank() {
+		Opponent ramFire = opponent("foxtrot", "RamFire");
+		Opponent walls = opponent("charlie", "Walls");
+
+		// Real robocode 1.11 output: RamFire lost the only round with 0 points,
+		// and robocode still reported it as rank 1
+		List<String> output = List.of("2\tcharlie.Walls 1.0\t180\t1", "1\tfoxtrot.RamFire 1.0\t0\t0");
+
+		List<BattleControl.BattleResult> results = BattleControl.parseRanking(output, List.of(ramFire, walls), BattleControl.WinnerCriterion.RANK);
+		assertEquals(List.of(walls, ramFire), ranked(results));
+		assertEquals(1, results.get(0).roundsWon());
+		assertEquals(List.of(walls, ramFire), ranked(BattleControl.parseRanking(output, List.of(ramFire, walls), BattleControl.WinnerCriterion.SCORE)));
+
+		// More rounds won beats more points
+		List<String> moreRounds = List.of("1\tcharlie.Walls\t500\t1", "2\tfoxtrot.RamFire\t300\t2");
+		assertEquals(List.of(ramFire, walls), ranked(BattleControl.parseRanking(moreRounds, List.of(ramFire, walls), BattleControl.WinnerCriterion.RANK)));
+	}
+
+	@Test
 	void tiesAreBrokenByTheOtherCriterion() {
 		Opponent a = opponent("alpha", "A");
 		Opponent b = opponent("bravo", "B");

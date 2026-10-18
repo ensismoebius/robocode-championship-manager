@@ -20,25 +20,35 @@ import model.Opponent;
 public class BattleControl {
 
 	/**
-	 * A robot, its robocode rank and its total score
+	 * A robot, its robocode rank, its total score and the rounds it won (-1 if
+	 * the battle starter did not report it)
 	 */
-	public record BattleResult(Opponent opponent, int rank, int score) {
+	public record BattleResult(Opponent opponent, int rank, int score, int roundsWon) {
 	}
 
 	/**
-	 * How the winner of a battle is chosen. Robocode ranks by rounds won, and the
-	 * one with more rounds won may have fewer points
+	 * The results, winner first, and the turns of the battle (empty when it ran
+	 * in the robocode window)
+	 */
+	public record BattleOutcome(List<BattleResult> ranking, BattleRecording recording) {
+	}
+
+	/**
+	 * How the winner of a battle is chosen. The one with more rounds won may
+	 * have fewer points.
 	 */
 	public enum WinnerCriterion {
-		/** Robocode rank (rounds won), total score breaks ties */
+		/** Rounds won, total score breaks ties */
 		RANK,
-		/** Total score, robocode rank breaks ties */
+		/** Total score, rounds won break ties */
 		SCORE;
 
 		Comparator<BattleResult> comparator() {
-			Comparator<BattleResult> byRank = Comparator.comparingInt(BattleResult::rank);
+			// The rank robocode reports may be computed before the last round
+			// counts, so the rounds won are used when known
+			Comparator<BattleResult> byRounds = (a, b) -> a.roundsWon() >= 0 && b.roundsWon() >= 0 ? Integer.compare(b.roundsWon(), a.roundsWon()) : Integer.compare(a.rank(), b.rank());
 			Comparator<BattleResult> byScore = Comparator.comparingInt(BattleResult::score).reversed();
-			return this == RANK ? byRank.thenComparing(byScore) : byScore.thenComparing(byRank);
+			return this == RANK ? byRounds.thenComparing(byScore) : byScore.thenComparing(byRounds);
 		}
 	}
 
@@ -46,12 +56,17 @@ public class BattleControl {
 	 * Installs the robots in robocode, runs the battle and waits for it to end.
 	 * Blocks, so do not call it from the JavaFX thread.
 	 *
-	 * @return the opponents and scores sorted by the criterion, winner first
+	 * @param record
+	 *            runs without the robocode window, recording every turn to be
+	 *            shown in 3D
+	 * @return the opponents and scores sorted by the criterion, winner first, and
+	 *         the recording
 	 * @throws IOException
 	 *             if the robots could not be installed or the battle did not
 	 *             produce a result
 	 */
-	public static List<BattleResult> startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion) throws IOException, InterruptedException {
+	public static BattleOutcome startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion, boolean record)
+			throws IOException, InterruptedException {
 
 		Path robotsDir = Path.of(robocodePath, "robots");
 		if (!Files.isDirectory(robotsDir)) {
@@ -71,6 +86,9 @@ public class BattleControl {
 		command.add(startScript.toString());
 		command.add(robocodePath);
 		command.add(String.valueOf(rounds));
+		if (record) {
+			command.add("-s");
+		}
 
 		for (Opponent opponent : opponents) {
 			if (opponent.getCompiledRobot() == null || opponent.getCompiledRobot().length == 0) {
@@ -88,7 +106,10 @@ public class BattleControl {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = br.readLine()) != null) {
-				System.out.println(line);
+				// The turns are too many to log
+				if (!line.startsWith("#")) {
+					System.out.println(line);
+				}
 				output.add(line);
 			}
 		}
@@ -96,17 +117,18 @@ public class BattleControl {
 
 		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
 		if (results.size() != opponents.size()) {
-			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output));
+			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(l -> !l.startsWith("#")).toList()));
 		}
 		results.sort(criterion.comparator());
-		return results;
+		return new BattleOutcome(results, BattleRecording.parse(output));
 	}
 
 	/**
 	 * Parses the BattleStarter output. Each result line is
-	 * "rank\trobotName\tscore". The lines are not in rank order: robocode sorts
-	 * them by score while the rank counts the rounds won. Other lines (errors,
-	 * logs) are ignored.
+	 * "rank\trobotName\tscore\troundsWon" (older starters do not print the
+	 * rounds won). The lines are sorted by score, and the rank robocode reports
+	 * may be wrong, so the rounds won decide. Other lines (errors, logs, turns)
+	 * are ignored.
 	 *
 	 * @return the opponents and scores sorted by the criterion, winner first
 	 */
@@ -121,9 +143,10 @@ public class BattleControl {
 
 			String reportedName = BattleControl.robotClassName(fields[1]);
 			int score = fields.length > 2 && fields[2].trim().matches("-?[0-9]+") ? Integer.parseInt(fields[2].trim()) : 0;
+			int roundsWon = fields.length > 3 && fields[3].trim().matches("[0-9]+") ? Integer.parseInt(fields[3].trim()) : -1;
 			for (Opponent opponent : opponents) {
 				if (opponent.getFullName().equals(reportedName) && results.stream().noneMatch(r -> r.opponent() == opponent)) {
-					results.add(new BattleResult(opponent, Integer.parseInt(fields[0].trim()), score));
+					results.add(new BattleResult(opponent, Integer.parseInt(fields[0].trim()), score, roundsWon));
 					break;
 				}
 			}
@@ -136,7 +159,7 @@ public class BattleControl {
 	 * Robocode may append the version, a "*" (development robot) or an instance
 	 * number to the name, e.g. "team.Robot 1.0*" or "team.Robot (1)"
 	 */
-	private static String robotClassName(String reportedName) {
+	public static String robotClassName(String reportedName) {
 		return reportedName.trim().split("[ (]")[0].replaceAll("\\*$", "");
 	}
 

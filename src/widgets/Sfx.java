@@ -149,18 +149,20 @@ public class Sfx {
 		return pcm;
 	}
 
+	private static void write(byte[] pcm) {
+		AudioFormat format = new AudioFormat(RATE, 16, 1, true, false);
+		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
+			line.open(format);
+			line.start();
+			line.write(pcm, 0, pcm.length);
+			line.drain();
+		} catch (LineUnavailableException | IllegalArgumentException e) {
+			// Sound effects are optional
+		}
+	}
+
 	private static void play(double[] samples) {
 		byte[] pcm = Sfx.toPcm(samples);
-		PLAYER.execute(() -> {
-			AudioFormat format = new AudioFormat(RATE, 16, 1, true, false);
-			try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
-				line.open(format);
-				line.start();
-				line.write(pcm, 0, pcm.length);
-				line.drain();
-			} catch (LineUnavailableException | IllegalArgumentException e) {
-				// Sound effects are optional
-			}
-		});
+		PLAYER.execute(() -> Sfx.write(pcm));
 	}
 }

@@ -45,9 +45,21 @@ The championship:
 	it is played again, so the champion is never someone with two losses.
 	Without repechage it is a plain single elimination.
 
-	Who wins a battle is a setting: by default the Robocode rank (most rounds
-	won, total score breaks ties), or the total score (rounds won break ties).
-	They can disagree: a robot may win more rounds with fewer points.
+	Who wins a battle is a setting: by default the most rounds won (total
+	score breaks ties), or the total score (rounds won break ties). They can
+	disagree: a robot may win more rounds with fewer points. The rank Robocode
+	itself reports is not used, it can be wrong (computed before the last
+	round counts).
+
+	Battles are shown in 3D by default: Robocode runs without its window, the
+	battle is recorded and replayed in the program, with a fighting game HUD.
+	During the replay: V changes the camera (perspective, isometric, from
+	above), space pauses, left/right change the speed, Enter skips to the
+	result; drag to orbit and use the wheel to zoom. The classic Robocode
+	window can be chosen in the configuration (C).
+	RobocodeStarter/BattleStarter.java is the program that runs the battles;
+	after changing it, compile it with
+	javac --release 11 -cp "<robocode dir>/libs/*" -d RobocodeStarter RobocodeStarter/BattleStarter.java
 
 	The bracket screen (R) shows both brackets, the finals and the standings.
 	Click a playable match to select it, the next match is selected

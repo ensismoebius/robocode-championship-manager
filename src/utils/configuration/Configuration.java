@@ -217,6 +217,14 @@ public class Configuration {
 		return subtitle == null ? DEFAULT_SUBTITLE : subtitle.strip();
 	}
 
+	/**
+	 * The battle is shown in 3D by the program (default), or in the robocode
+	 * window ("CLASSIC")
+	 */
+	public static boolean isBattleView3D() {
+		return !"CLASSIC".equals(Configuration.getConfiguration(INewConfigurationHandle.BATTLE_VIEW));
+	}
+
 	public static String getStartBattleScript() {
 		String osname = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 

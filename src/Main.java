@@ -8,6 +8,8 @@ import java.util.Optional;
 
 import jakarta.persistence.PersistenceException;
 import javafx.application.Application;
+import javafx.application.ConditionalFeature;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Parent;
 import javafx.scene.control.CheckBox;
@@ -27,7 +29,10 @@ import tournament.ChampionshipService;
 import utils.configuration.Configuration;
 import utils.database.Database;
 import utils.robocode.BattleControl;
+import utils.robocode.BattleControl.BattleOutcome;
 import utils.robocode.BattleControl.BattleResult;
+import utils.robocode.BattleRecording;
+import widgets.scenes.BattleArena3D;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.ShowOponent;
@@ -421,15 +426,30 @@ public class Main extends Application {
 	 * Saves the result and shows the winner
 	 */
 	private void recordResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
+		if (this.saveResult(match, winnerId, winnerScore, loserScore)) {
+			this.showResult(winnerId);
+		}
+	}
+
+	/**
+	 * @return false if it could not be saved (the error was shown)
+	 */
+	private boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		try {
 			this.setChampionship(ChampionshipService.recordResult(this.championship, match.getCode(), winnerId, winnerScore, loserScore));
 			this.justPlayed = match.getCode();
+			return true;
 		} catch (RuntimeException e) {
 			e.printStackTrace();
 			this.showError("Falha ao salvar o resultado:\n" + rootCauseMessage(e));
-			return;
+			return false;
 		}
+	}
 
+	/**
+	 * The winner of the match, or the champion
+	 */
+	private void showResult(long winnerId) {
 		this.resetAllScenes();
 		if (this.bracket.isFinished()) {
 			this.showChampion();
@@ -518,25 +538,51 @@ public class Main extends Application {
 		String startScript = Configuration.getStartBattleScript();
 		var criterion = Configuration.getWinnerCriterion();
 
+		// In 3D robocode runs without its window and the battle is replayed here
+		boolean in3D = Configuration.isBattleView3D() && Platform.isSupported(ConditionalFeature.SCENE3D);
+		BattleArena3D arena = in3D ? new BattleArena3D(fighters) : null;
+		if (arena != null) {
+			this.resetAllScenes();
+			this.show(arena);
+		}
+
 		// Robocode runs in another process, waiting for it in the JavaFX thread
 		// would freeze the screen
-		Task<List<BattleResult>> battle = new Task<List<BattleResult>>() {
+		Task<BattleOutcome> battle = new Task<BattleOutcome>() {
 			@Override
-			protected List<BattleResult> call() throws Exception {
-				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion);
+			protected BattleOutcome call() throws Exception {
+				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
 			}
 		};
 
 		battle.setOnSucceeded(event -> {
-			this.battleRunning = false;
-			List<BattleResult> ranking = battle.getValue();
-			this.recordResult(match, ranking.get(0).opponent().getId(), ranking.get(0).score(), ranking.get(1).score());
+			List<BattleResult> ranking = battle.getValue().ranking();
+			BattleRecording recording = battle.getValue().recording();
+			long winner = ranking.get(0).opponent().getId();
+
+			// Saved at once, then shown when the replay ends
+			if (!this.saveResult(match, winner, ranking.get(0).score(), ranking.get(1).score())) {
+				this.battleRunning = false;
+				return;
+			}
+			if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
+				arena.play(recording, () -> {
+					this.battleRunning = false;
+					this.showResult(winner);
+				});
+			} else {
+				this.battleRunning = false;
+				this.showResult(winner);
+			}
 		});
 
 		battle.setOnFailed(event -> {
 			this.battleRunning = false;
 			battle.getException().printStackTrace();
 			this.showError("Falha ao executar a batalha:\n" + battle.getException().getMessage() + "\n\nVocê pode informar o vencedor com as teclas 1 ou 2.");
+			if (arena != null && GameWindow.getScreen() == arena) {
+				this.showBattle();
+			}
 		});
 
 		this.battleRunning = true;

@@ -22,6 +22,7 @@ public interface INewConfigurationHandle {
 	public static final String WINNER_CRITERION = "winnerCriterion";
 	public static final String TITLE = "title";
 	public static final String SUBTITLE = "subtitle";
+	public static final String BATTLE_VIEW = "battleView";
 
 	/**
 	 * Returns the properties for the system
