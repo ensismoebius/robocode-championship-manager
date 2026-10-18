@@ -1,25 +1,31 @@
 <!-- begin:main -->
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Login e senha</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campeonato de Robocode - Entrar</title>
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
-	<h1>{message}</h1>
-	<form action="/" method="post">
-		<fieldset>
-			<legend>Se você já cadastrou seu time entre com o login a senha</legend>
-			<input type="text" name="login" placeholder="Login" required="required">
-			<br>
-			<input type="password" name="password" placeholder="Senha" required="required">
-			<br>
-			<input type="submit" value="Entrar">
-		</fieldset>
-	</form>
-	<p>
-		Se você não tem um login e senha <a href="./robotEditor?action=new">clique aqui</a>
-	</p>
+	<main>
+		<h1>Campeonato de Robocode</h1>
+		<p class="message">{message}</p>
+		<form action="/" method="post">
+			<fieldset>
+				<legend>Se você já cadastrou seu time entre com o login e a senha</legend>
+				<label for="login">Login</label>
+				<input type="text" id="login" name="login" placeholder="Login" required="required" autofocus>
+				<label for="password">Senha</label>
+				<input type="password" id="password" name="password" placeholder="Senha" required="required">
+				<br><br>
+				<input type="submit" value="Entrar">
+			</fieldset>
+		</form>
+		<p class="info">
+			Ainda não tem login e senha? <a href="./robotEditor?action=new">Cadastre seu time</a>
+		</p>
+	</main>
 </body>
 </html>
 <!-- end:main -->

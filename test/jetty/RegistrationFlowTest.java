@@ -167,6 +167,21 @@ class RegistrationFlowTest {
 		String page = get(newClient(), "/robotEditor?action=new");
 		assertTrue(page.contains("name=\"name[]\""), page);
 		assertTrue(page.contains("charset=\"utf-8\""), page);
+		assertTrue(page.contains("href=\"/style.css\""), page);
+		assertTrue(get(newClient(), "/style.css").contains("--rc-bg"));
+	}
+
+	@Test
+	@Order(1)
+	void servesOnlyTheBundledFonts() throws Exception {
+		HttpClient client = newClient();
+		HttpResponse<byte[]> font = client.send(HttpRequest.newBuilder(URI.create(base + "/fonts/PressStart2P-Regular.ttf")).build(), HttpResponse.BodyHandlers.ofByteArray());
+		assertEquals(200, font.statusCode());
+		assertEquals("font/ttf", font.headers().firstValue("Content-Type").orElse(""));
+		assertTrue(font.body().length > 1000);
+
+		HttpResponse<String> other = client.send(HttpRequest.newBuilder(URI.create(base + "/fonts/theme.css")).build(), HttpResponse.BodyHandlers.ofString());
+		assertEquals(404, other.statusCode());
 	}
 
 	@Test

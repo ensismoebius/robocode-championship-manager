@@ -10,6 +10,9 @@ Requirements:
 	team.Robot.jar before each battle.
 
 Building and running:
+	./run.sh                                     builds when needed and runs it
+	                                             (--build forces it, --test runs the tests)
+	or
 	mvn package                                  builds and runs the tests
 	java -jar target/RobocodeChampManager-5-all.jar
 	or

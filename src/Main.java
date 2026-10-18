@@ -10,12 +10,15 @@ import jakarta.persistence.PersistenceException;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import jetty.server.HttpServer;
@@ -33,6 +36,8 @@ import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
+import widgets.Sfx;
+import widgets.Theme;
 import widgets.windows.NewConfigurationHandleWindow;
 
 /**
@@ -54,6 +59,11 @@ public class Main extends Application {
 
 	// Point to primary stage
 	private Stage primaryStage;
+
+	/**
+	 * The only scene of the window, see {@link #show(Parent)}
+	 */
+	private Scene mainScene;
 
 	// The Scenes of application
 	private BracketViewer bracketScene;
@@ -110,6 +120,9 @@ public class Main extends Application {
 		// Actions to do when closing the application
 		primaryStage.setOnCloseRequest(event -> Platform.exit());
 
+		this.mainScene = Theme.apply(new Scene(new StackPane(), 1280, 800));
+		primaryStage.setScene(this.mainScene);
+
 		// Shows everything!
 		primaryStage.setMaximized(true);
 		primaryStage.show();
@@ -158,6 +171,7 @@ public class Main extends Application {
 		case R -> this.showBracket();
 		// Selects the next match to be played
 		case N -> {
+			Sfx.blip();
 			this.selectedMatch = null;
 			this.showBracket();
 		}
@@ -198,7 +212,7 @@ public class Main extends Application {
 	private void toggleRegistration() {
 		boolean enabled = !Configuration.isEnabledRegistration();
 		Configuration.setEnabledRegistration(enabled);
-		new Alert(AlertType.INFORMATION, enabled ? "Cadastro de novos robôs liberado" : "Cadastro de novos robôs bloqueado").show();
+		Theme.alert(AlertType.INFORMATION, enabled ? "Cadastro de novos robôs liberado" : "Cadastro de novos robôs bloqueado").show();
 	}
 
 	// ----------------------------------------------------------- championship
@@ -256,7 +270,7 @@ public class Main extends Application {
 		Label message = new Label("Sortear um novo campeonato com os " + robots + " robôs cadastrados?" + warning);
 		message.setWrapText(true);
 
-		Alert dialog = new Alert(AlertType.CONFIRMATION);
+		Alert dialog = Theme.alert(AlertType.CONFIRMATION, null);
 		dialog.setTitle("Novo campeonato");
 		dialog.setHeaderText("Novo campeonato");
 		dialog.getDialogPane().setContent(new VBox(14, message, repechage, finalReset));
@@ -294,15 +308,12 @@ public class Main extends Application {
 
 		long outside = Math.max(0, ChampionshipService.countOpponents() - this.opponents.size());
 		this.bracketScene = new BracketViewer(this.championship.getName(), this.bracket, this.opponents, this.selectedMatch, code -> {
+			Sfx.blip();
 			this.selectedMatch = code;
 			this.opponentIndexIWantToShow = 0;
 		}, outside);
 
-		// A weird bug demand that we demaximize and maximize the window
-		// otherwise scroll bars vanishes
-		this.primaryStage.setMaximized(false);
-		this.primaryStage.setScene(this.bracketScene);
-		this.primaryStage.setMaximized(true);
+		this.show(this.bracketScene);
 	}
 
 	/**
@@ -341,7 +352,7 @@ public class Main extends Application {
 		if (this.bracket.isFinished()) {
 			this.showChampion();
 		} else {
-			this.showOpponent(this.opponents.get(winnerId), "VENCEU A PARTIDA " + match.getCode() + "!");
+			this.showOpponent(this.opponents.get(winnerId), "VENCEU!", false);
 		}
 	}
 
@@ -353,7 +364,7 @@ public class Main extends Application {
 		Match match = playable.get();
 		long winner = slotA ? match.getA().getParticipant() : match.getB().getParticipant();
 
-		Alert confirm = new Alert(AlertType.CONFIRMATION, "Declarar " + this.nameOf(winner) + " vencedor da partida " + match.getCode() + "?");
+		Alert confirm = Theme.alert(AlertType.CONFIRMATION, "Declarar " + this.nameOf(winner) + " vencedor da partida " + match.getCode() + "?");
 		confirm.setHeaderText("Resultado manual");
 		if (confirm.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
 			this.recordResult(match, winner, null, null);
@@ -367,7 +378,7 @@ public class Main extends Application {
 		}
 
 		var last = this.championship.getResults().get(this.championship.getResults().size() - 1);
-		Alert confirm = new Alert(AlertType.CONFIRMATION,
+		Alert confirm = Theme.alert(AlertType.CONFIRMATION,
 				"Desfazer o resultado da partida " + last.getMatchCode() + " (" + this.nameOf(last.getWinner().getId()) + " venceu " + this.nameOf(last.getLoser().getId()) + ")?");
 		confirm.setHeaderText("Desfazer resultado");
 		if (confirm.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
@@ -398,7 +409,7 @@ public class Main extends Application {
 		this.startScene = new StartScreen();
 		this.startScene.playBackgroundMusic();
 
-		this.primaryStage.setScene(this.startScene);
+		this.show(this.startScene);
 	}
 
 	protected void startsBattle() {
@@ -464,10 +475,10 @@ public class Main extends Application {
 		this.battleScene = new BattleViewer();
 
 		// Set the data!
-		this.battleScene.setOpponents(this.opponents.get(match.getA().getParticipant()), this.opponents.get(match.getB().getParticipant()));
+		this.battleScene.setOpponents(this.opponents.get(match.getA().getParticipant()), this.opponents.get(match.getB().getParticipant()), this.bracket.roundName(match), match.getCode());
+		this.show(this.battleScene);
+		// After show, so the animation knows the size of the screen
 		this.battleScene.play();
-
-		primaryStage.setScene(this.battleScene);
 	}
 
 	/**
@@ -481,7 +492,7 @@ public class Main extends Application {
 		Match match = playable.get();
 
 		Long id = this.opponentIndexIWantToShow % 2 == 0 ? match.getA().getParticipant() : match.getB().getParticipant();
-		this.showOpponent(this.opponents.get(id), null);
+		this.showOpponent(this.opponents.get(id), null, false);
 
 		// Controls the index values to circle between opponents
 		this.opponentIndexIWantToShow++;
@@ -489,19 +500,19 @@ public class Main extends Application {
 
 	private void showChampion() {
 		this.resetAllScenes();
-		this.showOpponent(this.opponents.get(this.bracket.getChampion()), "CAMPEÃO!");
+		this.showOpponent(this.opponents.get(this.bracket.getChampion()), "CAMPEÃO!", true);
 	}
 
 	/**
 	 * @param item
 	 */
-	private void showOpponent(Opponent item, String title) {
+	private void showOpponent(Opponent item, String title, boolean champion) {
 		// Show the opponent
 		try {
 			this.opponentScene = new ShowOponent();
-			this.opponentScene.setOponent(item, title);
+			this.opponentScene.setOponent(item, title, champion);
+			this.show(this.opponentScene);
 			this.opponentScene.play();
-			primaryStage.setScene(this.opponentScene);
 		} catch (IOException | RuntimeException e) {
 			e.printStackTrace();
 			this.showError("Falha ao exibir oponente");
@@ -528,7 +539,7 @@ public class Main extends Application {
 				Files.writeString(file, opponent.getSourceCode());
 			}
 
-			new Alert(AlertType.INFORMATION, all.size() + " robôs exportados para " + exportDir).show();
+			Theme.alert(AlertType.INFORMATION, all.size() + " robôs exportados para " + exportDir).show();
 
 		} catch (IOException | PersistenceException e) {
 			e.printStackTrace();
@@ -560,8 +571,19 @@ public class Main extends Application {
 		this.bracketScene = null;
 	}
 
+	/**
+	 * Changes the screen. The window keeps a single scene and only its content
+	 * changes, so the window never gets resized to the size a new scene prefers
+	 * (it happens with tiling window managers)
+	 */
+	private void show(Parent screen) {
+		this.mainScene.setRoot(screen);
+		screen.requestFocus();
+		Theme.enter(screen);
+	}
+
 	private void showError(String message) {
-		new Alert(AlertType.ERROR, message).showAndWait();
+		Theme.alert(AlertType.ERROR, message).showAndWait();
 	}
 
 	private static String rootCauseMessage(Throwable e) {

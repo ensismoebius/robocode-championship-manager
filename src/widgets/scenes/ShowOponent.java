@@ -3,132 +3,167 @@ package widgets.scenes;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.ScaleTransition;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Reflection;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.TextAlignment;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 import model.Author;
+import model.Opponent;
+import widgets.ArcadeBackground;
+import widgets.Confetti;
+import widgets.Sfx;
 import widgets.Sound;
+import widgets.Theme;
+
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
+ * Presents a robot: its profile, the winner of a match or the champion
+ *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class ShowOponent extends Scene {
-
-	public ShowOponent() {
-		super(new StackPane());
-	}
-
-	private ImageView oponentImage;
-
-	private HBox hbox;
-	private StackPane stackPane;
-
-	private Label name;
-	private Label battleCry;
+public class ShowOponent extends StackPane {
 
 	private Sound mp;
+	private ImageView oponentImage;
+	private Label titleLabel;
+	private boolean champion;
 
-	public void setOponent(model.Opponent oponent) throws IOException {
-		this.setOponent(oponent, null);
+	public ShowOponent() {
+		super();
+	}
+
+	public void setOponent(Opponent oponent) throws IOException {
+		this.setOponent(oponent, null, false);
+	}
+
+	public void setOponent(Opponent oponent, String title) throws IOException {
+		this.setOponent(oponent, title, false);
 	}
 
 	/**
 	 * @param title
-	 *            shown above the name, like "VENCEDOR" or "CAMPEÃO", may be null
+	 *            shown above the name, like "VENCEU!" or "CAMPEÃO!", may be null
+	 * @param champion
+	 *            celebrates with confetti and a fanfare
 	 */
-	public void setOponent(model.Opponent oponent, String title) throws IOException {
-
-		this.mp = null;
-
+	public void setOponent(Opponent oponent, String title, boolean champion) throws IOException {
+		this.champion = champion;
 		this.mp = Sound.fromBytes(oponent.getMusic(), oponent.getFullName());
 
-		Font f = new Font(50);
-		this.name = new Label();
-		this.name.setWrapText(true);
-		this.name.setFont(f);
-		this.name.setTextFill(Color.YELLOW);
-		this.name.setTextAlignment(TextAlignment.CENTER);
-		this.name.effectProperty().set(new Reflection());
+		Label name = new Label(oponent.getName().toUpperCase());
+		name.setWrapText(true);
+		name.getStyleClass().add("showcase-name");
+		name.setEffect(Theme.glow(Theme.PLAYER_1, 18));
 
-		f = new Font(40);
-		this.battleCry = new Label();
-		this.battleCry.setPadding(new Insets(50, 0, 100, 0));
-		this.battleCry.setWrapText(true);
-		this.battleCry.setFont(f);
-		this.battleCry.setTextFill(Color.YELLOWGREEN);
-		this.battleCry.setTextAlignment(TextAlignment.CENTER);
-		this.battleCry.effectProperty().set(new javafx.scene.effect.Lighting());
+		Label team = new Label("Time " + oponent.getTeam());
+		team.getStyleClass().add("showcase-team");
 
-		this.hbox = new HBox(20);
-		this.stackPane = new StackPane();
-		this.stackPane.prefWidthProperty().bind(this.widthProperty());
+		Label battleCry = new Label("“" + oponent.getBattleCry() + "”");
+		battleCry.setWrapText(true);
+		battleCry.getStyleClass().add("showcase-cry");
+
+		VBox info = new VBox(10);
+		info.setAlignment(Pos.CENTER_LEFT);
+		if (title != null) {
+			this.titleLabel = new Label(title);
+			this.titleLabel.getStyleClass().add("showcase-title");
+			Theme.pulseGlow(this.titleLabel, Theme.ACCENT);
+			info.getChildren().add(this.titleLabel);
+		}
+		info.getChildren().addAll(name, team, battleCry);
+
+		if (!oponent.getAuthors().isEmpty()) {
+			Label section = new Label("EQUIPE");
+			section.getStyleClass().add("showcase-section");
+			info.getChildren().add(section);
+			for (Author author : oponent.getAuthors()) {
+				Label lblAuthor = new Label("▸ " + author.getName());
+				lblAuthor.getStyleClass().add("showcase-author");
+				info.getChildren().add(lblAuthor);
+			}
+		}
 
 		this.oponentImage = new ImageView();
 		this.oponentImage.setSmooth(true);
-		this.oponentImage.preserveRatioProperty().set(true);
-		this.oponentImage.fitHeightProperty().bind(this.heightProperty());
-		this.oponentImage.fitWidthProperty().bind(this.widthProperty().divide(2));
+		this.oponentImage.setPreserveRatio(true);
+		this.oponentImage.fitHeightProperty().bind(this.heightProperty().multiply(0.6));
+		this.oponentImage.fitWidthProperty().bind(this.widthProperty().multiply(0.42));
+		this.oponentImage.setEffect(new Reflection(0, 0.35, 0.4, 0));
 		if (oponent.getImage() != null) {
 			this.oponentImage.setImage(new Image(new ByteArrayInputStream(oponent.getImage())));
 		}
 
-		this.name.setText(oponent.getName());
-		this.name.setTextFill(Color.YELLOWGREEN);
-		this.name.setTextAlignment(TextAlignment.CENTER);
+		HBox content = new HBox(60, this.oponentImage, info);
+		content.setAlignment(Pos.CENTER);
+		content.setPadding(new Insets(40, 60, 40, 60));
+		info.maxWidthProperty().bind(this.widthProperty().multiply(0.45));
 
-		this.battleCry.setText(oponent.getBattleCry());
-		this.battleCry.setTextFill(Color.YELLOWGREEN);
-		this.battleCry.setTextAlignment(TextAlignment.CENTER);
+		// The source code scrolling in the background, like a hacker screen
+		Label source = new Label(oponent.getSourceCode() == null ? "" : oponent.getSourceCode());
+		source.getStyleClass().add("showcase-source");
+		Pane sourcePane = new Pane(source);
+		sourcePane.setMouseTransparent(true);
+		Rectangle clip = new Rectangle();
+		clip.widthProperty().bind(this.widthProperty());
+		clip.heightProperty().bind(this.heightProperty());
+		sourcePane.setClip(clip);
+		source.layoutXProperty().bind(this.widthProperty().subtract(source.widthProperty()).subtract(40));
+		TranslateTransition scroll = new TranslateTransition(Duration.seconds(60), source);
+		scroll.setFromY(0);
+		scroll.setToY(-2000);
+		scroll.setCycleCount(Animation.INDEFINITE);
+		scroll.play();
 
-		VBox vbox = new VBox(20);
-		if (title != null) {
-			Label titleLabel = new Label(title);
-			titleLabel.setFont(Font.font(null, javafx.scene.text.FontWeight.BOLD, 70));
-			titleLabel.setTextFill(Color.GOLD);
-			titleLabel.setEffect(new javafx.scene.effect.Glow(0.8));
-			vbox.getChildren().add(titleLabel);
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+
+		this.getChildren().setAll(new ArcadeBackground(champion ? Color.web("#ffd400") : Color.web("#5af08f")), sourcePane, content, scanlines);
+		if (champion) {
+			this.getChildren().add(new Confetti());
 		}
-		vbox.getChildren().addAll(name, battleCry);
-
-		f = new Font(30);
-
-		for (Author author : oponent.getAuthors()) {
-			Label lblAuthor = new Label(author.getName());
-			lblAuthor.setWrapText(false);
-			lblAuthor.setFont(f);
-			lblAuthor.setTextFill(Color.YELLOWGREEN);
-			lblAuthor.setTextAlignment(TextAlignment.CENTER);
-			lblAuthor.prefWidthProperty().bind(this.widthProperty().divide(2));
-			vbox.getChildren().add(lblAuthor);
-		}
-
-		this.hbox.getChildren().addAll(this.oponentImage, vbox);
-
-		Label source = new Label(oponent.getSourceCode());
-		source.setTextFill(Color.DARKCYAN);
-		source.setFont(new Font(30));
-		source.setOpacity(.2);
-		source.setTextAlignment(TextAlignment.RIGHT);
-		source.prefWidthProperty().bind(this.widthProperty());
-		source.prefHeightProperty().bind(this.heightProperty());
-
-		this.stackPane.getChildren().addAll(source, this.hbox);
-		this.stackPane.setStyle("-fx-background-color: #000;");
-
-		this.setRoot(this.stackPane);
 	}
 
 	public void play() {
+		if (this.oponentImage != null) {
+			TranslateTransition slide = new TranslateTransition(Duration.millis(500), this.oponentImage);
+			slide.setFromX(-Math.max(this.getWidth(), 2000));
+			slide.setToX(0);
+			slide.setInterpolator(Interpolator.EASE_OUT);
+			slide.play();
+		}
+
+		if (this.titleLabel != null) {
+			ScaleTransition pop = new ScaleTransition(Duration.millis(450), this.titleLabel);
+			pop.setFromX(0);
+			pop.setFromY(0);
+			pop.setToX(1);
+			pop.setToY(1);
+			pop.setInterpolator(Theme.OVERSHOOT);
+			pop.play();
+
+			if (this.champion) {
+				Sfx.fanfare();
+			} else {
+				Sfx.victory();
+			}
+		}
+
 		if (this.mp != null)
 			this.mp.play();
 	}

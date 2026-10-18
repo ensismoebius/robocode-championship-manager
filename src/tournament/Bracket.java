@@ -478,6 +478,39 @@ public class Bracket {
 	}
 
 	/**
+	 * Name of the round of a match, like "Quartas de final" or "Repescagem 2"
+	 */
+	public String roundName(Match match) {
+		return switch (match.getSide()) {
+		case WINNERS -> this.winnersRoundName(match.getRound());
+		case LOSERS -> this.losersRoundName(match.getRound());
+		case FINAL -> match.getRound() == 1 ? "Grande final" : "Final — revanche";
+		};
+	}
+
+	/**
+	 * @param round
+	 *            1 based round of the main bracket
+	 */
+	public String winnersRoundName(int round) {
+		return switch (this.winnersRounds.size() - round) {
+		case 0 -> this.repechage ? "Final da chave principal" : "Final";
+		case 1 -> "Semifinal";
+		case 2 -> "Quartas de final";
+		case 3 -> "Oitavas de final";
+		default -> round + "ª rodada";
+		};
+	}
+
+	/**
+	 * @param round
+	 *            1 based round of the repechage
+	 */
+	public String losersRoundName(int round) {
+		return round == this.losersRounds.size() ? "Final da repescagem" : "Repescagem " + round;
+	}
+
+	/**
 	 * The next match to be played: the one that depends on fewer matches, main
 	 * bracket first
 	 */

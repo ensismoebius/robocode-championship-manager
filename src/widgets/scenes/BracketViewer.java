@@ -12,10 +12,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
@@ -36,6 +34,8 @@ import tournament.Bracket;
 import tournament.Bracket.Match;
 import tournament.Bracket.Slot;
 import tournament.Bracket.Status;
+import widgets.ArcadeBackground;
+import widgets.Theme;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -46,7 +46,7 @@ import tournament.Bracket.Status;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class BracketViewer extends Scene {
+public class BracketViewer extends StackPane {
 
 	private static final double CARD_W = 300;
 	private static final double ROW_H = 50;
@@ -85,7 +85,7 @@ public class BracketViewer extends Scene {
 	 *            registered robots that are not in the championship
 	 */
 	public BracketViewer(String title, Bracket bracket, Map<Long, Opponent> opponents, String selected, Consumer<String> onSelect, long robotsOutside) {
-		super(new StackPane());
+		super();
 		this.bracket = bracket;
 		this.opponents = opponents;
 		this.selected = selected;
@@ -134,10 +134,17 @@ public class BracketViewer extends Scene {
 			event.consume();
 		});
 
-		StackPane root = new StackPane(this.scrollPane);
-		root.getStyleClass().add("bracket-root");
-		this.setRoot(root);
-		this.setFill(Color.web("#0b0e14"));
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+
+		// Dimmed, so it does not compete with the cards
+		ArcadeBackground background = new ArcadeBackground();
+		background.setOpacity(0.45);
+
+		StackPane root = new StackPane(background, this.scrollPane, scanlines);
+		root.getStyleClass().add("screen");
+		this.getChildren().setAll(root);
 
 		// The size is only known after the scene is shown. Keeps fitting the
 		// bracket to the window until the user zooms
@@ -172,7 +179,9 @@ public class BracketViewer extends Scene {
 			if (logo != null) {
 				banner.getChildren().add(logo);
 			}
-			banner.getChildren().add(new Label("CAMPEÃO: " + this.nameOf(champion)));
+			Label championLabel = new Label("CAMPEÃO: " + this.nameOf(champion).toUpperCase());
+			banner.getChildren().add(championLabel);
+			Theme.pulseGlow(banner, Theme.ACCENT);
 			banner.setMaxWidth(Region.USE_PREF_SIZE);
 			header.getChildren().add(banner);
 		} else {
@@ -205,7 +214,7 @@ public class BracketViewer extends Scene {
 
 		this.addSectionTitle(this.bracket.hasRepechage() ? "Chave principal" : "Chave", top);
 		top += SECTION_TITLE_H;
-		double winnersHeight = this.layoutRounds(winners, top, this::winnersRoundName);
+		double winnersHeight = this.layoutRounds(winners, top, this.bracket::winnersRoundName);
 		top += ROUND_TITLE_H + winnersHeight;
 
 		double finalsY = this.positions.get(winners.get(winners.size() - 1).get(0))[1];
@@ -214,7 +223,7 @@ public class BracketViewer extends Scene {
 			top += SECTION_GAP;
 			this.addSectionTitle("Repescagem", top);
 			top += SECTION_TITLE_H;
-			double losersHeight = this.layoutRounds(losers, top, this::losersRoundName);
+			double losersHeight = this.layoutRounds(losers, top, this.bracket::losersRoundName);
 
 			double losersFinalY = this.positions.get(losers.get(losers.size() - 1).get(0))[1];
 			finalsY = (finalsY + losersFinalY) / 2;
@@ -226,7 +235,7 @@ public class BracketViewer extends Scene {
 		List<Match> finals = this.bracket.getFinals();
 		for (int i = 0; i < finals.size(); i++) {
 			double x = (columns + i) * COL_W;
-			this.addRoundTitle(i == 0 ? "Grande final" : "Final — revanche", x, finalsY - CARD_H / 2 - ROUND_TITLE_H);
+			this.addRoundTitle(this.bracket.roundName(finals.get(i)), x, finalsY - CARD_H / 2 - ROUND_TITLE_H);
 			this.positions.put(finals.get(i), new double[] { x, finalsY });
 		}
 
@@ -269,21 +278,6 @@ public class BracketViewer extends Scene {
 			}
 		}
 		return height;
-	}
-
-	private String winnersRoundName(int round) {
-		int remaining = this.bracket.getWinnersRounds().size() - round;
-		return switch (remaining) {
-		case 0 -> this.bracket.hasRepechage() ? "Final da chave principal" : "Final";
-		case 1 -> "Semifinal";
-		case 2 -> "Quartas de final";
-		case 3 -> "Oitavas de final";
-		default -> round + "ª rodada";
-		};
-	}
-
-	private String losersRoundName(int round) {
-		return round == this.bracket.getLosersRounds().size() ? "Final da repescagem" : "Repescagem " + round;
 	}
 
 	private void addSectionTitle(String text, double y) {
@@ -473,7 +467,7 @@ public class BracketViewer extends Scene {
 		card.getStyleClass().remove("selected");
 		if (selected) {
 			card.getStyleClass().add("selected");
-			card.setEffect(new DropShadow(24, Color.web("#ffd400")));
+			Theme.pulseGlow(card, Theme.ACCENT);
 		} else {
 			card.setEffect(null);
 		}

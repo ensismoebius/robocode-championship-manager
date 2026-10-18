@@ -1,0 +1,416 @@
+/*
+ * Arcade look of the whole program. Every scene and dialog gets it through
+ * widgets.Theme, which also loads the fonts. The web pages use the same
+ * colors and fonts, see jetty/htmlTemplates/style.css
+ *
+ * Fonts: "Press Start 2P" (pixel, titles and HUD) and "Rajdhani" (text)
+ */
+
+.root {
+	/* Palette */
+	-rc-bg: #0b0e14;
+	-rc-surface: #141a26;
+	-rc-surface-2: #1d2536;
+	-rc-border: #2c3a55;
+	-rc-text: #eef2fa;
+	-rc-muted: #9aa8c4;
+	-rc-faint: #5a6684;
+	-rc-accent: #ffd400;
+	-rc-info: #2ec4ff;
+	-rc-success: #5af08f;
+	-rc-danger: #ff3d6e;
+	-rc-warning: #ff9f43;
+	-rc-p1: #2ec4ff;
+	-rc-p2: #ff3d6e;
+
+	/* Makes every standard control dark */
+	-fx-base: -rc-surface-2;
+	-fx-background: -rc-bg;
+	-fx-control-inner-background: -rc-surface;
+	-fx-control-inner-background-alt: #182030;
+	-fx-accent: #1f6f94;
+	-fx-focus-color: -rc-accent;
+	-fx-faint-focus-color: #ffd40022;
+	-fx-default-button: #4d4100;
+	-fx-text-background-color: -rc-text;
+	-fx-prompt-text-fill: -rc-faint;
+	-fx-box-border: -rc-border;
+	-fx-text-box-border: -rc-border;
+
+	-fx-background-color: -rc-bg;
+	-fx-font-family: "Rajdhani SemiBold";
+	-fx-font-size: 17px;
+}
+
+.label {
+	-fx-text-fill: -rc-text;
+}
+
+/* Fonts */
+
+.pixel {
+	-fx-font-family: "Press Start 2P";
+}
+
+/* Backgrounds: scanlines over a dark vignette */
+
+.screen {
+	-fx-background-color:
+		linear-gradient(from 0px 0px to 0px 4px, repeat, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.025) 30%, transparent 30%, transparent 100%),
+		radial-gradient(center 50% 35%, radius 80%, #1b1740 0%, #0b0e14 75%);
+}
+
+.scanlines {
+	-fx-background-color: linear-gradient(from 0px 0px to 0px 4px, repeat, rgba(0, 0, 0, 0.22) 0%, rgba(0, 0, 0, 0.22) 40%, transparent 40%, transparent 100%);
+}
+
+/* Dialogs and alerts: game menus */
+
+.dialog-pane {
+	-fx-background-color: -rc-surface;
+	-fx-border-color: -rc-info;
+	-fx-border-width: 2;
+	-fx-effect: dropshadow(gaussian, rgba(46, 196, 255, 0.55), 24, 0.2, 0, 0);
+}
+
+.dialog-pane > .header-panel {
+	-fx-background-color: linear-gradient(to right, #1d2536, #241a40);
+	-fx-border-color: transparent transparent -rc-border transparent;
+	-fx-padding: 14 18 14 18;
+}
+
+.dialog-pane > .header-panel .label {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 14px;
+	-fx-text-fill: -rc-accent;
+	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.6), 10, 0.2, 0, 0);
+}
+
+.dialog-pane > .content.label {
+	-fx-text-fill: -rc-text;
+	-fx-font-size: 18px;
+	-fx-padding: 18;
+}
+
+.dialog-pane > .button-bar > .container {
+	-fx-background-color: -rc-surface;
+	-fx-padding: 4 12 12 12;
+}
+
+.dialog-pane .graphic-container {
+	-fx-padding: 0 0 0 8;
+}
+
+/* Buttons: arcade keys */
+
+.button {
+	-fx-background-color: -rc-border, linear-gradient(#26304a, #171d2b);
+	-fx-background-insets: 0, 2;
+	-fx-background-radius: 4;
+	-fx-text-fill: -rc-text;
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-padding: 10 16 10 16;
+	-fx-cursor: hand;
+}
+
+.button:hover {
+	-fx-background-color: -rc-info, linear-gradient(#2c3a58, #1b2233);
+	-fx-effect: dropshadow(gaussian, rgba(46, 196, 255, 0.5), 12, 0.2, 0, 0);
+}
+
+.button:focused {
+	-fx-background-color: -rc-accent, linear-gradient(#2c3a58, #1b2233);
+}
+
+.button:default {
+	-fx-background-color: -rc-accent, linear-gradient(#5c4d00, #3a3000);
+	-fx-text-fill: -rc-accent;
+}
+
+.button:default:hover {
+	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.6), 14, 0.25, 0, 0);
+}
+
+.button:pressed {
+	-fx-translate-y: 2;
+}
+
+/* Inputs */
+
+.text-field, .password-field, .text-area {
+	-fx-background-color: -rc-border, -rc-bg;
+	-fx-background-insets: 0, 1;
+	-fx-background-radius: 4;
+	-fx-text-fill: -rc-text;
+	-fx-padding: 8 10 8 10;
+}
+
+.text-field:focused, .password-field:focused {
+	-fx-background-color: -rc-accent, -rc-bg;
+}
+
+.choice-box {
+	-fx-background-radius: 4;
+}
+
+.check-box > .box {
+	-fx-background-color: -rc-border, -rc-bg;
+	-fx-background-radius: 2;
+}
+
+.check-box:selected > .box > .mark {
+	-fx-background-color: -rc-accent;
+}
+
+/* Scroll bars */
+
+.scroll-bar {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+	-fx-background-color: -rc-border;
+	-fx-background-radius: 2;
+}
+
+.scroll-bar .thumb:hover {
+	-fx-background-color: -rc-info;
+}
+
+.scroll-bar .increment-button, .scroll-bar .decrement-button {
+	-fx-background-color: transparent;
+	-fx-padding: 0 3 0 3;
+}
+
+.scroll-bar .increment-arrow, .scroll-bar .decrement-arrow {
+	-fx-background-color: -rc-faint;
+}
+
+/* Forms (configuration window) */
+
+.form {
+	-fx-background-color: -rc-surface;
+	-fx-padding: 24;
+	-fx-spacing: 8;
+}
+
+.form-title {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 16px;
+	-fx-text-fill: -rc-accent;
+	-fx-padding: 0 0 12 0;
+	-fx-effect: dropshadow(gaussian, rgba(255, 212, 0, 0.55), 10, 0.2, 0, 0);
+}
+
+.form-label {
+	-fx-text-fill: -rc-muted;
+	-fx-font-size: 15px;
+}
+
+.error-text {
+	-fx-text-fill: -rc-danger;
+}
+
+/* Key caps */
+
+.keycap {
+	-fx-background-color: #070a10, linear-gradient(#323d57, #1b2233);
+	-fx-background-insets: 0, 0 0 3 0;
+	-fx-background-radius: 5;
+	-fx-padding: 6 9 8 9;
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-text-fill: -rc-accent;
+	-fx-min-width: 40;
+	-fx-alignment: center;
+}
+
+/* Title screen */
+
+.game-title {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 46px;
+	-fx-text-fill: -rc-accent;
+}
+
+.game-subtitle {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 14px;
+	-fx-text-fill: -rc-info;
+}
+
+.press-start {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 20px;
+	-fx-text-fill: -rc-text;
+}
+
+.panel {
+	-fx-background-color: rgba(11, 14, 20, 0.82);
+	-fx-border-color: -rc-border;
+	-fx-border-width: 2;
+	-fx-padding: 16 20 16 20;
+}
+
+.panel-title {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 12px;
+	-fx-text-fill: -rc-info;
+	-fx-padding: 0 0 8 0;
+}
+
+.shortcuts {
+	-fx-hgap: 14;
+	-fx-vgap: 7;
+}
+
+.shortcut-description {
+	-fx-text-fill: -rc-muted;
+	-fx-font-size: 17px;
+}
+
+.address-box {
+	-fx-background-color: rgba(11, 14, 20, 0.85);
+	-fx-border-color: -rc-accent;
+	-fx-border-width: 2;
+	-fx-padding: 14 28 14 28;
+	-fx-spacing: 8;
+	-fx-alignment: center;
+}
+
+.address-caption {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 12px;
+	-fx-text-fill: -rc-muted;
+}
+
+.address {
+	-fx-font-family: "Press Start 2P";
+	-fx-text-fill: -rc-accent;
+	-fx-font-size: 30px;
+}
+
+.badge-open, .badge-closed {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 11px;
+	-fx-padding: 8 12 8 12;
+	-fx-border-width: 2;
+}
+
+.badge-open {
+	-fx-text-fill: -rc-success;
+	-fx-border-color: -rc-success;
+}
+
+.badge-closed {
+	-fx-text-fill: -rc-danger;
+	-fx-border-color: -rc-danger;
+}
+
+/* Versus screen */
+
+.versus-stage {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 18px;
+	-fx-text-fill: -rc-accent;
+}
+
+.versus-code {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 12px;
+	-fx-text-fill: -rc-muted;
+}
+
+.fighter-panel {
+	-fx-padding: 30;
+	-fx-spacing: 14;
+	-fx-alignment: center;
+}
+
+.fighter-panel.p1 {
+	-fx-background-color: linear-gradient(to right, rgba(46, 196, 255, 0.35), rgba(46, 196, 255, 0.0));
+	-fx-border-color: transparent transparent transparent -rc-p1;
+	-fx-border-width: 0 0 0 6;
+}
+
+.fighter-panel.p2 {
+	-fx-background-color: linear-gradient(to left, rgba(255, 61, 110, 0.35), rgba(255, 61, 110, 0.0));
+	-fx-border-color: transparent -rc-p2 transparent transparent;
+	-fx-border-width: 0 6 0 0;
+}
+
+.player-tag {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 14px;
+	-fx-padding: 6 10 6 10;
+	-fx-text-fill: -rc-bg;
+}
+
+.p1 .player-tag {
+	-fx-background-color: -rc-p1;
+}
+
+.p2 .player-tag {
+	-fx-background-color: -rc-p2;
+}
+
+.fighter-name {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 32px;
+	-fx-text-fill: -rc-text;
+}
+
+.fighter-team {
+	-fx-font-size: 26px;
+	-fx-text-fill: -rc-muted;
+}
+
+.flash {
+	-fx-background-color: white;
+}
+
+/* Robot presentation and winner screen */
+
+.showcase-title {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 56px;
+	-fx-text-fill: -rc-accent;
+}
+
+.showcase-name {
+	-fx-font-family: "Press Start 2P";
+	-fx-text-fill: -rc-text;
+	-fx-font-size: 40px;
+}
+
+.showcase-team {
+	-fx-text-fill: -rc-info;
+	-fx-font-size: 30px;
+}
+
+.showcase-cry {
+	-fx-text-fill: -rc-success;
+	-fx-font-size: 38px;
+	-fx-font-family: "Rajdhani";
+	-fx-font-weight: bold;
+	-fx-padding: 30 0 40 0;
+}
+
+.showcase-section {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 12px;
+	-fx-text-fill: -rc-faint;
+}
+
+.showcase-author {
+	-fx-text-fill: -rc-muted;
+	-fx-font-size: 28px;
+}
+
+.showcase-source {
+	-fx-text-fill: -rc-info;
+	-fx-font-family: monospace;
+	-fx-font-size: 24px;
+	-fx-opacity: 0.10;
+}

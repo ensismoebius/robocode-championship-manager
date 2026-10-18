@@ -18,7 +18,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
@@ -26,6 +25,7 @@ import javafx.stage.Stage;
 import utils.configuration.Configuration;
 import utils.configuration.INewConfigurationHandle;
 import utils.robocode.BattleControl.WinnerCriterion;
+import widgets.Theme;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -93,7 +93,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		Label lblrobocodeDirectory = new Label("Diretório do robocode");
 
 		Label error = new Label();
-		error.setTextFill(Color.RED);
+		error.getStyleClass().add("error-text");
 		error.setWrapText(true);
 
 		Button save = new Button("Salvar");
@@ -137,10 +137,16 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		cancel.setOnAction(event -> stage.close());
 
 		VBox vb = new VBox(10);
-		vb.setPadding(new Insets(10));
-		vb.getChildren().addAll(registrationEnabled, lblrobocodeRounds, robocodeRounds, lblwinnerCriterion, winnerCriterion, lblwebserverPort, webserverPort, lbldatabaseFile, new HBox(5, databaseFile, chooseDatabaseFile), lblrobocodeDirectory, new HBox(5, robocodeDirectory, chooseRobocodeDirectory), error, new HBox(10, save, cancel));
+		vb.setPadding(new Insets(20));
+		vb.getStyleClass().add("form");
+		Label title = new Label("CONFIGURAÇÕES");
+		title.getStyleClass().add("form-title");
+		vb.getChildren().addAll(title, registrationEnabled, lblrobocodeRounds, robocodeRounds, lblwinnerCriterion, winnerCriterion, lblwebserverPort, webserverPort, lbldatabaseFile, new HBox(5, databaseFile, chooseDatabaseFile), lblrobocodeDirectory, new HBox(5, robocodeDirectory, chooseRobocodeDirectory), error, new HBox(10, save, cancel));
 
-		stage.setScene(new Scene(vb, 560, 540));
+		// Field captions
+		vb.getChildren().stream().filter(node -> node instanceof Label && node != error && node != title).forEach(node -> node.getStyleClass().add("form-label"));
+
+		stage.setScene(Theme.apply(new Scene(vb, 600, 580)));
 		// Otherwise the checkbox gets the focus and pressing Enter toggles it
 		// instead of saving
 		stage.setOnShown(event -> save.requestFocus());
