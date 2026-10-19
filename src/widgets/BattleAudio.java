@@ -26,7 +26,6 @@ import javax.sound.sampled.SourceDataLine;
  */
 public final class BattleAudio {
 
-	private static final float RATE = 44100;
 	private static final int CHUNK = 512;
 	private static final double MUSIC_GAIN = 0.42;
 	private static final double SFX_GAIN = 0.9;
@@ -60,7 +59,7 @@ public final class BattleAudio {
 	private double padFrequency = ROOTS[0];
 	private double padFilter;
 	private double sfxFilter;
-	private final double[] echo = new double[(int) (RATE * 0.13)];
+	private final double[] echo = new double[(int) (Synth.RATE * 0.13)];
 	private int echoPosition;
 
 	// Ready made sounds
@@ -138,9 +137,9 @@ public final class BattleAudio {
 	 */
 	public void shot(double power) {
 		double weight = Math.max(0, Math.min(1, (power - 0.1) / 2.9));
-		double[] crack = mix(lowpass(noise(0.09, 3), 0.55), sweep(1800 - 900 * weight, 160, 0.12, true), 0.7);
-		double[] thump = sineSweep(110 - 40 * weight, 45, 0.22);
-		this.sfx(mix(crack, thump, 0.5 + 0.5 * weight), 0.45 + 0.4 * weight, this.vary());
+		double[] crack = Synth.mix(Synth.lowpass(Synth.noise(0.09, 3), 0.55), Synth.sweep(1800 - 900 * weight, 160, 0.12, true), 0.7);
+		double[] thump = Synth.sineSweep(110 - 40 * weight, 45, 0.22);
+		this.sfx(Synth.mix(crack, thump, 0.5 + 0.5 * weight), 0.45 + 0.4 * weight, this.vary());
 	}
 
 	/**
@@ -148,10 +147,10 @@ public final class BattleAudio {
 	 */
 	public void hit(double power) {
 		double weight = Math.max(0, Math.min(1, power / 3));
-		double[] crunch = lowpass(noise(0.35, 2.2), 0.35);
-		double[] ring = mix(sine(930, 0.4, 7), sine(1395, 0.4, 9), 0.5);
-		double[] boom = sineSweep(90, 35, 0.5);
-		this.sfx(mix(mix(crunch, ring, 0.25), boom, 0.6), 0.7 + 0.3 * weight, this.vary());
+		double[] crunch = Synth.lowpass(Synth.noise(0.35, 2.2), 0.35);
+		double[] ring = Synth.mix(Synth.sine(930, 0.4, 7), Synth.sine(1395, 0.4, 9), 0.5);
+		double[] boom = Synth.sineSweep(90, 35, 0.5);
+		this.sfx(Synth.mix(Synth.mix(crunch, ring, 0.25), boom, 0.6), 0.7 + 0.3 * weight, this.vary());
 		this.duck = Math.min(this.duck, 0.75);
 	}
 
@@ -159,59 +158,59 @@ public final class BattleAudio {
 	 * Bullets hitting each other or a wall
 	 */
 	public void spark() {
-		this.sfx(mix(lowpass(noise(0.12, 4), 0.6), sine(2200, 0.12, 25), 0.3), 0.35, this.vary());
+		this.sfx(Synth.mix(Synth.lowpass(Synth.noise(0.12, 4), 0.6), Synth.sine(2200, 0.12, 25), 0.3), 0.35, this.vary());
 	}
 
 	/**
 	 * A robot blowing up: a long and deep explosion with a second blast
 	 */
 	public void destroyed() {
-		double[] blast = mix(lowpass(noise(2.6, 1.1), 0.12), sineSweep(75, 22, 2.2), 0.65);
-		double[] crackle = crackle(1.8);
-		double[] second = concat(silence(0.35), mix(lowpass(noise(1.4, 1.6), 0.2), sineSweep(60, 25, 1.2), 0.6));
-		this.sfx(mix(mix(blast, crackle, 0.25), second, 0.45), 1.0, 1);
+		double[] blast = Synth.mix(Synth.lowpass(Synth.noise(2.6, 1.1), 0.12), Synth.sineSweep(75, 22, 2.2), 0.65);
+		double[] crackle = Synth.crackle(1.8);
+		double[] second = Synth.concat(Synth.silence(0.35), Synth.mix(Synth.lowpass(Synth.noise(1.4, 1.6), 0.2), Synth.sineSweep(60, 25, 1.2), 0.6));
+		this.sfx(Synth.mix(Synth.mix(blast, crackle, 0.25), second, 0.45), 1.0, 1);
 		this.duck = 0.25;
 	}
 
 	/** A robot hitting a wall or another robot */
 	public void thud() {
-		this.sfx(sineSweep(70, 40, 0.18), 0.5, this.vary());
+		this.sfx(Synth.sineSweep(70, 40, 0.18), 0.5, this.vary());
 	}
 
 	/** Alarm when a robot is about to die */
 	public void lowEnergy() {
-		this.sfx(concat(square(1320, 0.08), silence(0.06), square(1320, 0.08)), 0.22, 1);
+		this.sfx(Synth.concat(Synth.square(1320, 0.08), Synth.silence(0.06), Synth.square(1320, 0.08)), 0.22, 1);
 	}
 
 	/** "ROUND N": an impact */
 	public void roundCall() {
-		this.sfx(mix(sineSweep(120, 40, 0.9), lowpass(noise(0.9, 2.5), 0.15), 0.6), 0.8, 1);
+		this.sfx(Synth.mix(Synth.sineSweep(120, 40, 0.9), Synth.lowpass(Synth.noise(0.9, 2.5), 0.15), 0.6), 0.8, 1);
 	}
 
 	/** "FIGHT!": a brass like stab */
 	public void fight() {
-		double[] stab = new double[(int) (RATE * 0.9)];
+		double[] stab = new double[(int) (Synth.RATE * 0.9)];
 		for (double frequency : new double[] { 220, 261.63, 329.63, 440, 523.25 }) {
-			stab = mix(stab, saw(frequency, 0.9, 2.5), 0.85);
+			stab = Synth.mix(stab, Synth.saw(frequency, 0.9, 2.5), 0.85);
 		}
-		this.sfx(mix(stab, sineSweep(100, 40, 0.6), 0.5), 0.75, 1);
+		this.sfx(Synth.mix(stab, Synth.sineSweep(100, 40, 0.6), 0.5), 0.75, 1);
 		this.duck = 0.5;
 	}
 
 	/** "K.O.!": a big hit and a falling tone */
 	public void knockOut() {
-		this.sfx(mix(mix(sineSweep(80, 20, 1.6), lowpass(noise(1.5, 1.4), 0.15), 0.6), saw(110, 1.5, 1.2), 0.3), 1.0, 1);
+		this.sfx(Synth.mix(Synth.mix(Synth.sineSweep(80, 20, 1.6), Synth.lowpass(Synth.noise(1.5, 1.4), 0.15), 0.6), Synth.saw(110, 1.5, 1.2), 0.3), 1.0, 1);
 		this.duck = 0.2;
 	}
 
 	/** Entering the replay: a reversed rising whoosh */
 	public void whoosh() {
-		double[] rise = lowpass(noise(0.9, 0), 0.25);
+		double[] rise = Synth.lowpass(Synth.noise(0.9, 0), 0.25);
 		for (int i = 0; i < rise.length; i++) {
 			double t = (double) i / rise.length;
 			rise[i] *= t * t;
 		}
-		this.sfx(mix(rise, sineSweep(200, 900, 0.9), 0.3), 0.6, 1);
+		this.sfx(Synth.mix(rise, Synth.sineSweep(200, 900, 0.9), 0.3), 0.6, 1);
 	}
 
 	private double vary() {
@@ -225,7 +224,7 @@ public final class BattleAudio {
 	// -------------------------------------------------------------------- mixer
 
 	private void run() {
-		AudioFormat format = new AudioFormat(RATE, 16, 1, true, false);
+		AudioFormat format = new AudioFormat(Synth.RATE, 16, 1, true, false);
 		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
 			// Small buffer: the effects must sound with the images
 			line.open(format, CHUNK * 2 * 6);
@@ -294,7 +293,7 @@ public final class BattleAudio {
 		if (this.slow > 0.5) {
 			bpm = 52;
 		}
-		this.beat += bpm / 60 / RATE;
+		this.beat += bpm / 60 / Synth.RATE;
 		int step = (int) Math.floor(this.beat * 4);
 		if (step != this.lastStep) {
 			this.lastStep = step;
@@ -305,9 +304,9 @@ public final class BattleAudio {
 		int bar = (int) Math.floor(this.beat / 4) % ROOTS.length;
 		this.padFrequency += (ROOTS[bar] - this.padFrequency) * 0.0005;
 		double third = MINOR[bar] ? 1.189 : 1.26;
-		this.padPhase1 = (this.padPhase1 + this.padFrequency / RATE) % 1;
-		this.padPhase2 = (this.padPhase2 + this.padFrequency * 1.004 * 1.498 / RATE) % 1;
-		this.padPhase3 = (this.padPhase3 + this.padFrequency * 0.997 * third * 2 / RATE) % 1;
+		this.padPhase1 = (this.padPhase1 + this.padFrequency / Synth.RATE) % 1;
+		this.padPhase2 = (this.padPhase2 + this.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
+		this.padPhase3 = (this.padPhase3 + this.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
 		double raw = (this.padPhase1 * 2 - 1) + (this.padPhase2 * 2 - 1) * 0.7 + (this.padPhase3 * 2 - 1) * 0.5;
 		double cutoff = (0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
 		this.padFilter += (raw - this.padFilter) * cutoff;
@@ -355,32 +354,32 @@ public final class BattleAudio {
 		if (tension > 0.25 && inBar % 2 == 0) {
 			double[] pattern = { 1, 1, 2, 1, 1.5, 1, 2, 1.5 };
 			double frequency = root * pattern[(inBar / 2) % pattern.length];
-			this.musicVoices.add(new Voice(lowpass(saw(frequency, 0.16, 6), 0.25), 0.5, 1));
+			this.musicVoices.add(new Voice(Synth.lowpass(Synth.saw(frequency, 0.16, 6), 0.25), 0.5, 1));
 		}
 		if (tension > 0.65) {
 			double[] chord = MINOR[bar] ? new double[] { 1, 1.189, 1.498, 2, 2.378, 2.997 } : new double[] { 1, 1.26, 1.498, 2, 2.52, 2.997 };
 			double frequency = root * 4 * chord[(step * (tension > 0.85 ? 3 : 1)) % chord.length];
-			this.musicVoices.add(new Voice(square(frequency, 0.09), 0.13, 1));
+			this.musicVoices.add(new Voice(Synth.square(frequency, 0.09), 0.13, 1));
 		}
 		if (tension > 0.88 && (inBar == 0 || inBar == 8)) {
-			this.musicVoices.add(new Voice(sweep(880, 1320, 0.35, false), 0.12, 1));
+			this.musicVoices.add(new Voice(Synth.sweep(880, 1320, 0.35, false), 0.12, 1));
 		}
 	}
 
 	// ---------------------------------------------------------------- synthesis
 
 	private static double[] kick() {
-		return mix(sineSweep(150, 42, 0.32), lowpass(noise(0.02, 8), 0.5), 0.15);
+		return Synth.mix(Synth.sineSweep(150, 42, 0.32), Synth.lowpass(Synth.noise(0.02, 8), 0.5), 0.15);
 	}
 
 	private static double[] snare() {
-		return mix(lowpass(noise(0.2, 3.5), 0.6), sine(190, 0.12, 20), 0.35);
+		return Synth.mix(Synth.lowpass(Synth.noise(0.2, 3.5), 0.6), Synth.sine(190, 0.12, 20), 0.35);
 	}
 
 	private static double[] hat() {
-		double[] noise = noise(0.05, 6);
+		double[] noise = Synth.noise(0.05, 6);
 		// High pass: noise minus its low pass
-		double[] low = lowpass(noise.clone(), 0.3);
+		double[] low = Synth.lowpass(noise.clone(), 0.3);
 		for (int i = 0; i < noise.length; i++) {
 			noise[i] -= low[i];
 		}
@@ -388,147 +387,6 @@ public final class BattleAudio {
 	}
 
 	private static double[] heartbeat() {
-		return concat(sineSweep(70, 40, 0.16), silence(0.1), sineSweep(60, 35, 0.2));
-	}
-
-	/** Decaying sine */
-	private static double[] sine(double frequency, double seconds, double decay) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double t = i / RATE;
-			samples[i] = Math.sin(2 * Math.PI * frequency * t) * Math.exp(-decay * t);
-		}
-		return samples;
-	}
-
-	/** Sine gliding down exponentially, the body of kicks and explosions */
-	private static double[] sineSweep(double from, double to, double seconds) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		double phase = 0;
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			double frequency = to + (from - to) * Math.exp(-6 * t);
-			phase += frequency / RATE;
-			samples[i] = Math.sin(2 * Math.PI * phase) * (1 - t) * (1 - t) * Math.min(1, i / (RATE * 0.002));
-		}
-		return samples;
-	}
-
-	/** Square wave, decaying */
-	private static double[] square(double frequency, double seconds) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double phase = (i * frequency / RATE) % 1;
-			samples[i] = (phase < 0.5 ? 1 : -1) * envelope(i, samples.length);
-		}
-		return samples;
-	}
-
-	/** Saw wave, decaying */
-	private static double[] saw(double frequency, double seconds, double decay) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double phase = (i * frequency / RATE) % 1;
-			samples[i] = (phase * 2 - 1) * Math.exp(-decay * i / RATE) * Math.min(1, i / (RATE * 0.004));
-		}
-		return samples;
-	}
-
-	/** Square wave gliding, optionally with a decay */
-	private static double[] sweep(double from, double to, double seconds, boolean decay) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		double phase = 0;
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			phase = (phase + (from + (to - from) * t) / RATE) % 1;
-			samples[i] = (phase < 0.5 ? 1 : -1) * (decay ? (1 - t) * (1 - t) : envelope(i, samples.length));
-		}
-		return samples;
-	}
-
-	/** White noise with an exponential decay (0: flat) */
-	private static double[] noise(double seconds, double decay) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		Random random = new Random();
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = (random.nextDouble() * 2 - 1) * Math.exp(-decay * i / RATE) * Math.min(1, (samples.length - i) / (RATE * 0.02));
-		}
-		return samples;
-	}
-
-	/** Random pops, like debris and fire */
-	private static double[] crackle(double seconds) {
-		double[] samples = new double[(int) (RATE * seconds)];
-		Random random = new Random();
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			if (random.nextDouble() < 0.004 * (1 - t)) {
-				int length = 40 + random.nextInt(200);
-				double amplitude = 0.6 + random.nextDouble() * 0.4;
-				for (int j = 0; j < length && i + j < samples.length; j++) {
-					samples[i + j] += (random.nextDouble() * 2 - 1) * amplitude * (1 - (double) j / length);
-				}
-			}
-		}
-		return samples;
-	}
-
-	/** One pole low pass, alpha from 0 (closed) to 1 (open) */
-	private static double[] lowpass(double[] samples, double alpha) {
-		double state = 0;
-		for (int i = 0; i < samples.length; i++) {
-			state += (samples[i] - state) * alpha;
-			samples[i] = state;
-		}
-		// Low pass makes it quieter, gets the level back
-		double peak = 1e-9;
-		for (double sample : samples) {
-			peak = Math.max(peak, Math.abs(sample));
-		}
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] /= peak;
-		}
-		return samples;
-	}
-
-	private static double[] silence(double seconds) {
-		return new double[(int) (RATE * seconds)];
-	}
-
-	private static double[] concat(double[]... parts) {
-		int length = 0;
-		for (double[] part : parts) {
-			length += part.length;
-		}
-		double[] all = new double[length];
-		int position = 0;
-		for (double[] part : parts) {
-			System.arraycopy(part, 0, all, position, part.length);
-			position += part.length;
-		}
-		return all;
-	}
-
-	/**
-	 * a + b * gain
-	 */
-	private static double[] mix(double[] a, double[] b, double gain) {
-		double[] mixed = new double[Math.max(a.length, b.length)];
-		for (int i = 0; i < mixed.length; i++) {
-			mixed[i] = (i < a.length ? a[i] : 0) + (i < b.length ? b[i] * gain : 0);
-		}
-		return mixed;
-	}
-
-	private static double envelope(int i, int length) {
-		int attack = (int) (RATE * 0.003);
-		int release = Math.min(length / 3, (int) (RATE * 0.03));
-		if (i < attack) {
-			return (double) i / attack;
-		}
-		if (i > length - release) {
-			return (double) (length - i) / release;
-		}
-		return 1;
+		return Synth.concat(Synth.sineSweep(70, 40, 0.16), Synth.silence(0.1), Synth.sineSweep(60, 35, 0.2));
 	}
 }

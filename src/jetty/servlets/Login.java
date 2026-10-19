@@ -58,6 +58,8 @@ public class Login extends HttpServlet {
 		template.assign("registrationStatus", open ? "● Inscrições abertas: cadastre seu robô" : "■ Inscrições encerradas: novos robôs não são aceitos");
 		template.parse("main");
 
+		// The registration status changes at any time, a cached page would lie about it
+		resp.setHeader("Cache-Control", "no-store");
 		resp.setContentType("text/html; charset=UTF-8");
 		resp.getWriter().write(template.out("main"));
 	}

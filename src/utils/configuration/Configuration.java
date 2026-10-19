@@ -106,8 +106,15 @@ public class Configuration {
 	}
 
 	private static int getIntConfiguration(String name, int defaultValue) {
+		return Configuration.parseInt(Configuration.getConfiguration(name), defaultValue);
+	}
+
+	/**
+	 * Parses a trimmed integer, the default if null, blank or not a number
+	 */
+	public static int parseInt(String value, int defaultValue) {
 		try {
-			return Integer.parseInt(Configuration.getConfiguration(name).trim());
+			return Integer.parseInt(value.trim());
 		} catch (NullPointerException | NumberFormatException e) {
 			return defaultValue;
 		}

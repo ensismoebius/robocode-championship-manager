@@ -120,8 +120,8 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		panel.setStyle("-fx-pref-width: 940;");
 
 		save.setOnAction(event -> {
-			int rounds = parseInt(robocodeRounds.getText(), -1);
-			int port = parseInt(webserverPort.getText(), -1);
+			int rounds = Configuration.parseInt(robocodeRounds.getText(), -1);
+			int port = Configuration.parseInt(webserverPort.getText(), -1);
 			String robocodePath = robocodeDirectory.getText().trim();
 
 			if (databaseFile.getText().isBlank() || Files.isDirectory(Path.of(databaseFile.getText().trim()))) {
@@ -167,13 +167,5 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		Label label = new Label(caption);
 		label.getStyleClass().add("form-label");
 		return new VBox(6, label, input);
-	}
-
-	private static int parseInt(String value, int defaultValue) {
-		try {
-			return Integer.parseInt(value.trim());
-		} catch (NullPointerException | NumberFormatException e) {
-			return defaultValue;
-		}
 	}
 }

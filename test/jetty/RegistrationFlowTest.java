@@ -177,6 +177,12 @@ class RegistrationFlowTest {
 		} finally {
 			Configuration.setEnabledRegistration(true);
 		}
+
+		// The status changes at any time, browsers must not cache these pages
+		HttpResponse<String> loginPage = newClient().send(HttpRequest.newBuilder(URI.create(base + "/")).build(), HttpResponse.BodyHandlers.ofString());
+		assertEquals("no-store", loginPage.headers().firstValue("Cache-Control").orElse(""));
+		HttpResponse<String> editorPage = newClient().send(HttpRequest.newBuilder(URI.create(base + "/robotEditor?action=new")).build(), HttpResponse.BodyHandlers.ofString());
+		assertEquals("no-store", editorPage.headers().firstValue("Cache-Control").orElse(""));
 		assertTrue(get(newClient(), "/style.css").contains("--rc-bg"));
 	}
 

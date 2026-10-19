@@ -100,6 +100,7 @@ public class BattleArena3D extends StackPane {
 	private static final double REPLAY_AFTER_SPEED = 0.22;
 
 	private static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
+	private static final Color FENCE_BASE = Color.web("#ff3d6e", 0.22);
 
 	private enum ViewMode {
 		CINEMATIC("CINEMATOGRÁFICA", -30, 45), FREE("LIVRE", -38, 38), ISOMETRIC("ISOMÉTRICA", -35.26, 12), TOP_DOWN("VISTA DE CIMA", -89.5, 12);
@@ -133,6 +134,8 @@ public class BattleArena3D extends StackPane {
 	private final Group world = new Group();
 	private final Group arena = new Group();
 	private final Group effects = new Group();
+	/** Translucent panels of the cage, each one with its own material to flash */
+	private final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
 	private final PerspectiveCamera camera = new PerspectiveCamera(true);
 	private final Translate cameraLook = new Translate();
@@ -333,6 +336,7 @@ public class BattleArena3D extends StackPane {
 	 * Floor with a neon grid and a cage of lines as walls
 	 */
 	private void buildArena() {
+		this.fenceSegments.clear();
 		double w = this.fieldWidth;
 		double h = this.fieldHeight;
 
@@ -370,6 +374,22 @@ public class BattleArena3D extends StackPane {
 			this.arena.getChildren().add(box(2, 2, h, -w / 2, -level, 0, wallMaterial));
 			this.arena.getChildren().add(box(2, 2, h, w / 2, -level, 0, wallMaterial));
 		}
+
+		// Translucent panels between the posts: the cage is not solid, and
+		// every panel has its own material so an impact lights only its panel
+		for (int wall = 0; wall < 4; wall++) {
+			double span = wall <= 1 ? w : h;
+			int count = (int) Math.round(span / 100);
+			for (int index = 0; index < count; index++) {
+				double along = index * 100 + 50 - span / 2;
+				double normal = wall <= 1 ? h / 2 : w / 2;
+				PhongMaterial panelMaterial = material(FENCE_BASE);
+				Box panel = wall <= 1 ? box(96, wallHeight - 6, 1.5, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
+						: box(1.5, wallHeight - 6, 96, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);
+				this.arena.getChildren().add(panel);
+				this.fenceSegments.add(new FenceSegment(wall, index, panel, panelMaterial));
+			}
+		}
 	}
 
 	private static PhongMaterial material(Color color) {
@@ -386,6 +406,13 @@ public class BattleArena3D extends StackPane {
 		box.setTranslateZ(z);
 		box.setMaterial(material);
 		return box;
+	}
+
+	/**
+	 * One translucent panel of the cage, walls are 0=north 1=south 2=west
+	 * 3=east. It has its own material so an impact lights only this panel.
+	 */
+	private record FenceSegment(int wall, int index, Box box, PhongMaterial material) {
 	}
 
 	/**
@@ -764,6 +791,7 @@ public class BattleArena3D extends StackPane {
 		this.lowEnergyWarned.clear();
 		this.clearBullets();
 		this.effects.getChildren().clear();
+		this.resetFence();
 		for (RobotView view : this.robots.values()) {
 			view.reset();
 		}
@@ -922,6 +950,9 @@ public class BattleArena3D extends StackPane {
 					this.impactCut(bullet.victim(), bullet.power());
 				} else {
 					this.audio.spark();
+					if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
+						this.flashFence(bullet.x(), bullet.y());
+					}
 				}
 			}
 		}
@@ -934,6 +965,9 @@ public class BattleArena3D extends StackPane {
 			if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
 				this.audio.thud();
 				this.shake += 1.5;
+				if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
+					this.flashFence(state.x(), state.y());
+				}
 			}
 			if (!state.isDead() && state.energy() < 20 && this.lowEnergyWarned.add(state.index())) {
 				this.audio.lowEnergy();
@@ -972,6 +1006,73 @@ public class BattleArena3D extends StackPane {
 		flash.setFromValue(0.75);
 		flash.setToValue(0);
 		flash.play();
+	}
+
+	/**
+	 * The cage lights up where a robot or a bullet hit it, the glow spreads to
+	 * the neighboring panels like a shockwave
+	 */
+	private void flashFence(double x, double y) {
+		double w = this.fieldWidth;
+		double h = this.fieldHeight;
+		double cx = Math.max(0, Math.min(w, x));
+		double cy = Math.max(0, Math.min(h, y));
+
+		double[] distances = { cy, h - cy, cx, w - cx };
+		int wall = 0;
+		for (int i = 1; i < distances.length; i++) {
+			if (distances[i] < distances[wall]) {
+				wall = i;
+			}
+		}
+
+		double along = wall <= 1 ? cx : cy;
+		int count = (int) Math.round((wall <= 1 ? w : h) / 100);
+		int index = Math.max(0, Math.min(count - 1, (int) Math.floor(along / 100)));
+
+		this.flashSegment(wall, index, 1.0, Duration.ZERO);
+		this.flashSegment(wall, index - 1, 0.6, Duration.millis(60));
+		this.flashSegment(wall, index + 1, 0.6, Duration.millis(60));
+		this.flashSegment(wall, index - 2, 0.3, Duration.millis(120));
+		this.flashSegment(wall, index + 2, 0.3, Duration.millis(120));
+	}
+
+	private void flashSegment(int wall, int index, double intensity, Duration delay) {
+		for (FenceSegment segment : this.fenceSegments) {
+			if (segment.wall() != wall || segment.index() != index) {
+				continue;
+			}
+			Color bright = FENCE_BASE.interpolate(Color.WHITE, intensity);
+			Timeline flash = new Timeline();
+			flash.getKeyFrames().addAll(new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), bright)),
+					new KeyFrame(delay.add(Duration.millis(80)), new KeyValue(segment.material().diffuseColorProperty(), bright)),
+					new KeyFrame(delay.add(Duration.millis(250)), new KeyValue(segment.material().diffuseColorProperty(), FENCE_BASE)));
+			flash.play();
+
+			if (intensity >= 1.0) {
+				ScaleTransition pulse = new ScaleTransition(Duration.millis(90), segment.box());
+				pulse.setFromX(1);
+				pulse.setToX(1.05);
+				pulse.setFromY(1);
+				pulse.setToY(1.05);
+				pulse.setFromZ(1);
+				pulse.setToZ(1.05);
+				pulse.setCycleCount(2);
+				pulse.setAutoReverse(true);
+				pulse.play();
+			}
+			return;
+		}
+	}
+
+	/** Back to the base look when a new round starts */
+	private void resetFence() {
+		for (FenceSegment segment : this.fenceSegments) {
+			segment.material().setDiffuseColor(FENCE_BASE);
+			segment.box().setScaleX(1);
+			segment.box().setScaleY(1);
+			segment.box().setScaleZ(1);
+		}
 	}
 
 	// ---------------------------------------------------------------- effects

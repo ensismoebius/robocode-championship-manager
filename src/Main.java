@@ -299,7 +299,11 @@ public class Main extends Application {
 	private void toggleRegistration() {
 		boolean enabled = !Configuration.isEnabledRegistration();
 		Configuration.setEnabledRegistration(enabled);
-		GameDialog.toast(enabled ? "● INSCRIÇÕES ABERTAS: CADASTRO DE ROBÔS LIBERADO" : "■ INSCRIÇÕES ENCERRADAS: CADASTRO DE ROBÔS BLOQUEADO", enabled);
+		GameDialog.toast(enabled ? "● INSCRIÇÕES ABERTAS: CADASTRO DE ROBÔS LIBERADO" : "■ INSCRIÇÕES ENCERRADAS: CADASTRO DE ROBOTS BLOQUEADO", enabled);
+		// Refresh start screen if it is currently displayed
+		if (this.startScene != null && GameWindow.getScreen() == this.startScene) {
+			this.startScene.refresh(this.runningWebserverPort());
+		}
 	}
 
 	// ----------------------------------------------------------- championship

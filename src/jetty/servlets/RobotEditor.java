@@ -212,6 +212,8 @@ public class RobotEditor extends HttpServlet {
 
 		template.parse("main");
 
+		// The registration status changes at any time, a cached page would lie about it
+		resp.setHeader("Cache-Control", "no-store");
 		resp.setContentType("text/html; charset=UTF-8");
 		resp.getWriter().write(template.out("main"));
 	}
