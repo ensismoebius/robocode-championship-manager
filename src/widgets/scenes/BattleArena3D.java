@@ -19,6 +19,7 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
@@ -52,8 +53,15 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.scene.shape.MeshView;
+import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.CullFace;
+import javafx.scene.transform.Scale;
+import javafx.scene.image.WritableImage;
 import javafx.util.Duration;
+import model.Author;
 import model.Opponent;
+import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;
 import utils.robocode.BattleRecording.Bullet;
@@ -61,6 +69,7 @@ import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import widgets.BattleAudio;
 import widgets.Sfx;
+import widgets.Sound;
 import widgets.Theme;
 
 /**
@@ -84,10 +93,12 @@ public class BattleArena3D extends StackPane {
 
 	/** Robocode's default speed, turns per second */
 	private static final double TPS = 30;
-	private static final double[] SPEEDS = { 0.5, 1, 2, 4, 8 };
-	private static final int NORMAL_SPEED = 1;
+	private static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
 	private static final double INTRO_SECONDS = 2.4;
+	/** Each robot is presented alone before the battle, then the versus */
+	private static final double SHOWCASE_SECONDS = 7;
+	private static final double VERSUS_SECONDS = 2.6;
 	private static final double ROUND_END_SECONDS = 2.8;
 	/** The action stops for a moment when a robot dies, then the replay */
 	private static final double FREEZE_SECONDS = 1.3;
@@ -122,7 +133,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private enum Phase {
-		LOADING, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
+		LOADING, SHOWCASE, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
 	}
 
 	private final List<Opponent> fighters;
@@ -142,6 +153,10 @@ public class BattleArena3D extends StackPane {
 	 * panels must come last for the robots to be seen through them
 	 */
 	private final Group fence = new Group();
+	/** Flame, spark and smoke sprites, sorted back to front every frame */
+	private final Group fireLayer = new Group();
+	private final List<Particle> particles = new ArrayList<Particle>();
+	private final List<Particle> particlePool = new ArrayList<Particle>();
 	/** Translucent panels of the cage, each one with its own material to flash */
 	private final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -153,6 +168,11 @@ public class BattleArena3D extends StackPane {
 	private final Translate cameraDistance = new Translate();
 	/** Lights up the explosions */
 	private final PointLight flashLight = new PointLight(Color.BLACK);
+	/**
+	 * Lights only the flames, so they glow. Its scope never gets empty, an empty
+	 * scope would light everything.
+	 */
+	private final AmbientLight fireGlow = new AmbientLight(Color.WHITE);
 
 	// Camera: what it sees now and what it wants to see, eased every frame
 	private ViewMode viewMode = ViewMode.CINEMATIC;
@@ -202,6 +222,8 @@ public class BattleArena3D extends StackPane {
 	private final Rectangle letterboxTop = new Rectangle();
 	private final Rectangle letterboxBottom = new Rectangle();
 	private final HBox replayTag = new HBox(14);
+	/** The card of the robot being presented */
+	private final StackPane showcaseLayer = new StackPane();
 	private final Region whiteFlash = new Region();
 
 	// Playback
@@ -219,7 +241,11 @@ public class BattleArena3D extends StackPane {
 	private int round = 0;
 	private double turnPosition = 0;
 	private int lastTurnProcessed = -1;
-	private int speed = NORMAL_SPEED;
+	/** Index in SPEEDS, starts with the configured one */
+	private int speed;
+	/** Shown when the round starts, configurable */
+	private final String fightText = Configuration.getFightText();
+	private boolean fightShown = false;
 	private boolean paused = false;
 	private double hitTension = 0;
 	/** Animations of effects run slower in the replay */
@@ -233,6 +259,11 @@ public class BattleArena3D extends StackPane {
 	private int fatalBullet = -1;
 	private int impactTurn = -1;
 	private boolean replayed = false;
+
+	// The presentation of the robots
+	private int showcaseOrder = 0;
+	private boolean versus = false;
+	private Sound showcaseMusic;
 
 	private final AnimationTimer timer = new AnimationTimer() {
 		private long last = -1;
@@ -251,8 +282,9 @@ public class BattleArena3D extends StackPane {
 	 */
 	public BattleArena3D(List<Opponent> fighters) {
 		this.fighters = fighters;
+		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
 
-		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.fence);
+		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.fireLayer, this.fence);
 		this.buildLights();
 		this.buildArena();
 
@@ -280,7 +312,10 @@ public class BattleArena3D extends StackPane {
 		this.whiteFlash.setMouseTransparent(true);
 
 		this.getStyleClass().add("arena-3d");
-		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.buildHud(), this.whiteFlash, scanlines);
+		this.showcaseLayer.setMouseTransparent(true);
+		this.showcaseLayer.setPickOnBounds(false);
+
+		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.buildHud(), this.whiteFlash, scanlines);
 
 		this.installControls();
 		this.showBanner("", null);
@@ -293,6 +328,7 @@ public class BattleArena3D extends StackPane {
 			if (newScene == null) {
 				this.timer.stop();
 				this.audio.stop();
+				this.stopShowcaseMusic();
 			} else {
 				this.timer.start();
 			}
@@ -324,7 +360,7 @@ public class BattleArena3D extends StackPane {
 		this.loading.setVisible(false);
 
 		this.audio.start();
-		this.startRound(0);
+		this.startShowcase();
 	}
 
 	private Opponent opponentOf(BattleRecording.Robot robot) {
@@ -338,7 +374,8 @@ public class BattleArena3D extends StackPane {
 		AmbientLight ambient = new AmbientLight(Color.gray(0.5));
 		PointLight key = new PointLight(Color.gray(0.8));
 		key.getTransforms().add(new Translate(-300, -900, -500));
-		this.world.getChildren().addAll(ambient, key, this.flashLight);
+		this.fireGlow.getScope().add(this.fireLayer);
+		this.world.getChildren().addAll(ambient, key, this.flashLight, this.fireGlow);
 	}
 
 	/**
@@ -517,11 +554,19 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private void showLetterbox(boolean show) {
+		this.showLetterbox(show, show);
+	}
+
+	/**
+	 * @param tag
+	 *            shows the replay tag
+	 */
+	private void showLetterbox(boolean show, boolean tag) {
 		double height = show ? this.getHeight() * 0.12 : 0;
 		Timeline bars = new Timeline(new KeyFrame(Duration.millis(450), new KeyValue(this.letterboxTop.heightProperty(), height, Interpolator.EASE_BOTH),
 				new KeyValue(this.letterboxBottom.heightProperty(), height, Interpolator.EASE_BOTH)));
 		bars.play();
-		this.replayTag.setVisible(show);
+		this.replayTag.setVisible(tag);
 		this.hudTop.setVisible(!show);
 	}
 
@@ -652,7 +697,8 @@ public class BattleArena3D extends StackPane {
 			}
 			case RIGHT, PLUS, EQUALS, ADD -> this.speed = Math.min(SPEEDS.length - 1, this.speed + 1);
 			case LEFT, MINUS, SUBTRACT -> this.speed = Math.max(0, this.speed - 1);
-			case ENTER, ESCAPE -> this.skip();
+			case ENTER -> this.skip(false);
+			case ESCAPE -> this.skip(true);
 			default -> {
 			}
 			}
@@ -713,10 +759,20 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * Enter: ends the replay, or the whole battle
+	 * Enter: the next robot of the presentation, ends the replay, or the whole
+	 * battle. Escape skips the whole presentation.
+	 *
+	 * @param all
+	 *            skips the whole presentation
 	 */
-	private void skip() {
-		if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
+	private void skip(boolean all) {
+		if (this.phase == Phase.SHOWCASE) {
+			if (all || this.versus) {
+				this.endShowcase();
+			} else {
+				this.showcaseRobot(this.showcaseOrder + 1);
+			}
+		} else if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
 			this.endReplay();
 		} else if (this.phase != Phase.LOADING && this.phase != Phase.FINISHED) {
 			this.finish();
@@ -727,6 +783,7 @@ public class BattleArena3D extends StackPane {
 		this.phase = Phase.FINISHED;
 		this.timer.stop();
 		this.audio.stop();
+		this.stopShowcaseMusic();
 		if (this.onFinished != null) {
 			Runnable callback = this.onFinished;
 			this.onFinished = null;
@@ -742,9 +799,22 @@ public class BattleArena3D extends StackPane {
 		switch (this.phase) {
 		case LOADING -> {
 		}
+		case SHOWCASE -> {
+			if (this.versus) {
+				if (this.phaseTime > VERSUS_SECONDS) {
+					this.endShowcase();
+				}
+			} else {
+				this.turntable();
+				if (this.phaseTime > SHOWCASE_SECONDS) {
+					this.showcaseRobot(this.showcaseOrder + 1);
+				}
+			}
+		}
 		case INTRO -> {
-			if (this.phaseTime > INTRO_SECONDS * 0.55 && !"FIGHT!".equals(this.banner.getText())) {
-				this.showBanner("FIGHT!", null);
+			if (this.phaseTime > INTRO_SECONDS * 0.55 && !this.fightShown) {
+				this.fightShown = true;
+				this.showBanner(this.fightText, null);
 				this.audio.fight();
 				this.audio.setMusicOn(true);
 			}
@@ -800,6 +870,7 @@ public class BattleArena3D extends StackPane {
 
 		this.updateTension(dt);
 		this.updateCamera(dt);
+		this.updateFire(dt * this.effectRate);
 		this.placeBalloons();
 	}
 
@@ -817,6 +888,7 @@ public class BattleArena3D extends StackPane {
 		this.lowEnergyWarned.clear();
 		this.clearBullets();
 		this.effects.getChildren().clear();
+		this.clearFire();
 		this.resetFence();
 		for (RobotView view : this.robots.values()) {
 			view.reset();
@@ -832,6 +904,7 @@ public class BattleArena3D extends StackPane {
 		this.showTurn(turns);
 		this.phase = Phase.INTRO;
 		this.phaseTime = 0;
+		this.fightShown = false;
 		this.showBanner("ROUND " + (round + 1), round + 1 == this.recording.getRounds().size() && round > 0 ? "ROUND DECISIVO" : null);
 		this.audio.roundCall();
 		this.audio.setMusicOn(true);
@@ -889,7 +962,7 @@ public class BattleArena3D extends StackPane {
 		double progress = Math.min(1, this.turnPosition / Math.max(1, this.turns().size()));
 		boolean deciding = this.round + 1 == this.recording.getRounds().size() && this.recording.getRounds().size() > 1;
 		double tension = 0.12 + 0.55 * (1 - Math.max(0, Math.min(100, lowest)) / 100) + 0.15 * progress + (deciding ? 0.15 : 0) + this.hitTension;
-		if (this.phase == Phase.INTRO) {
+		if (this.phase == Phase.INTRO || this.phase == Phase.SHOWCASE) {
 			tension = 0.1;
 		}
 		this.audio.setIntensity(tension);
@@ -1232,6 +1305,218 @@ public class BattleArena3D extends StackPane {
 		this.effect(new Timeline(new KeyFrame(Duration.seconds(seconds), new KeyValue(this.flashLight.colorProperty(), Color.BLACK)))).play();
 	}
 
+	// --------------------------------------------------------------- showcase
+
+	/**
+	 * Before the first round each robot is presented alone in the arena, like
+	 * the fighters of a fighting game, then both face each other
+	 */
+	private void startShowcase() {
+		this.phase = Phase.SHOWCASE;
+		this.hudTop.setVisible(false);
+		this.showLetterbox(true, false);
+		this.audio.setMusicOn(false);
+		this.showcaseRobot(0);
+	}
+
+	/**
+	 * Presents the robot at this position of the battle, or the versus after the
+	 * last one
+	 */
+	private void showcaseRobot(int order) {
+		this.stopShowcaseMusic();
+		List<BattleRecording.Robot> list = this.recording.getRobots();
+		if (order >= list.size()) {
+			this.startVersus();
+			return;
+		}
+		this.showcaseOrder = order;
+		this.phaseTime = 0;
+
+		BattleRecording.Robot robot = list.get(order);
+		RobotView view = this.robots.get(robot.getIndex());
+		for (RobotView other : this.robots.values()) {
+			other.root.setVisible(other == view);
+		}
+		this.shotSubject = robot.getIndex();
+		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
+		this.turntable();
+
+		// A spotlight in the color of the player
+		this.flashLight.setTranslateX(0);
+		this.flashLight.setTranslateY(-160);
+		this.flashLight.setTranslateZ(0);
+		this.flashLight.setColor(view.playerColor.deriveColor(0, 0.8, 0.9, 1));
+
+		Opponent opponent = this.opponentOf(robot);
+		Node card = this.showcaseCard(robot, opponent, view.playerColor, order);
+		this.showcaseLayer.getChildren().setAll(card);
+		TranslateTransition slide = new TranslateTransition(Duration.millis(550), card);
+		double side = order % 2 == 0 ? -1 : 1;
+		slide.setFromX(side * Math.max(1200, this.getWidth()));
+		slide.setToX(0);
+		slide.setDelay(Duration.millis(700));
+		slide.setInterpolator(Interpolator.EASE_OUT);
+		slide.setOnFinished(event -> Sfx.slam());
+		card.setTranslateX(slide.getFromX());
+		slide.play();
+
+		this.audio.whoosh();
+		this.showcaseMusic = opponent == null ? null : Sound.fromBytes(opponent.getMusic(), opponent.getFullName());
+		if (this.showcaseMusic != null) {
+			this.showcaseMusic.play();
+		}
+		this.cut();
+	}
+
+	/**
+	 * Both robots where the battle starts, and the VS
+	 */
+	private void startVersus() {
+		this.versus = true;
+		this.phaseTime = 0;
+		this.showcaseLayer.getChildren().clear();
+		this.flashLight.setColor(Color.BLACK);
+		for (RobotView view : this.robots.values()) {
+			view.root.setVisible(true);
+		}
+		this.turnPosition = 0;
+		this.lastTurnProcessed = -1;
+		this.showTurn(this.turns());
+
+		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
+		this.showBanner("VS", names);
+		this.audio.whoosh();
+		Sfx.slam();
+		this.shot = Shot.WIDE;
+		this.shotTime = 0;
+		this.cut();
+	}
+
+	private void endShowcase() {
+		this.stopShowcaseMusic();
+		this.versus = false;
+		this.showcaseLayer.getChildren().clear();
+		this.flashLight.setColor(Color.BLACK);
+		for (RobotView view : this.robots.values()) {
+			view.root.setVisible(true);
+		}
+		this.hideBanner();
+		this.showLetterbox(false);
+		this.startRound(0);
+	}
+
+	private void stopShowcaseMusic() {
+		if (this.showcaseMusic != null) {
+			this.showcaseMusic.stop();
+			this.showcaseMusic = null;
+		}
+	}
+
+	/**
+	 * The presented robot turns slowly in the center of the arena, aiming its gun
+	 * and spinning the radar
+	 */
+	private void turntable() {
+		RobotView view = this.robots.get(this.shotSubject);
+		if (view == null) {
+			return;
+		}
+		double t = this.phaseTime;
+		double body = this.shotSeed + t * 0.35;
+		view.place(0, 0, body, body + 0.7 * Math.sin(t * 1.4), t * 5);
+	}
+
+	/**
+	 * Comes down from above to a low hero angle, circling and getting closer. The
+	 * robot stays on the side opposite to its card.
+	 */
+	private void showcaseShot(double[] robot) {
+		double t = this.phaseTime;
+		double crane = Math.max(0, 1 - t / 2.5);
+		crane = crane * crane;
+		double angle = this.shotSeed + Math.PI - t * 0.3;
+		double radius = 175 - Math.min(30, t * 4.5) + 120 * crane;
+		double ex = robot[0] + Math.cos(angle) * radius;
+		double ez = robot[2] + Math.sin(angle) * radius;
+		double ey = -30 - 150 * crane;
+
+		// Screen right of the camera, the look point moves to the side of the card
+		double fx = robot[0] - ex;
+		double fz = robot[2] - ez;
+		double length = Math.max(1, Math.hypot(fx, fz));
+		double rightX = fz / length;
+		double rightZ = -fx / length;
+		double offset = (this.showcaseOrder % 2 == 0 ? -1 : 1) * 34;
+		this.setShot(ex, ey, ez, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
+		this.rollTarget = (this.showcaseOrder % 2 == 0 ? 1 : -1) * 2.5 * crane;
+	}
+
+	/**
+	 * Logo, name, team, battle cry and authors of the robot
+	 */
+	private Node showcaseCard(BattleRecording.Robot robot, Opponent opponent, Color color, int order) {
+		boolean left = order % 2 == 0;
+		Pos alignment = left ? Pos.CENTER_LEFT : Pos.CENTER_RIGHT;
+		VBox card = new VBox(10);
+		card.setAlignment(alignment);
+
+		Label tag = new Label("JOGADOR " + (order + 1));
+		tag.getStyleClass().add("showcase-section");
+		tag.setTextFill(color);
+		card.getChildren().add(tag);
+
+		if (opponent != null && opponent.getImage() != null) {
+			ImageView logo = new ImageView(new Image(new ByteArrayInputStream(opponent.getImage()), 260, 180, true, true));
+			card.getChildren().add(logo);
+		}
+
+		Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
+		name.setWrapText(true);
+		name.getStyleClass().add("showcase-name");
+		name.setTextFill(color);
+		name.setEffect(Theme.glow(color, 18));
+		card.getChildren().add(name);
+
+		if (opponent != null) {
+			Label team = new Label("Time " + opponent.getTeam());
+			team.getStyleClass().add("showcase-team");
+			card.getChildren().add(team);
+
+			if (opponent.getBattleCry() != null && !opponent.getBattleCry().isBlank()) {
+				Label cry = new Label("“" + opponent.getBattleCry() + "”");
+				cry.setWrapText(true);
+				cry.getStyleClass().add("showcase-cry");
+				card.getChildren().add(cry);
+			}
+
+			if (!opponent.getAuthors().isEmpty()) {
+				Label section = new Label("EQUIPE");
+				section.getStyleClass().add("showcase-section");
+				card.getChildren().add(section);
+				for (Author author : opponent.getAuthors()) {
+					Label label = new Label("▸ " + author.getName());
+					label.getStyleClass().add("showcase-author");
+					card.getChildren().add(label);
+				}
+			}
+		}
+		for (Node node : card.getChildren()) {
+			if (node instanceof Label label) {
+				label.setAlignment(alignment);
+				label.setTextAlignment(left ? javafx.scene.text.TextAlignment.LEFT : javafx.scene.text.TextAlignment.RIGHT);
+			}
+		}
+
+		card.setStyle("-fx-background-color: rgba(8, 10, 20, 0.72); -fx-padding: 28 36 28 36; -fx-border-color: " + toCss(color) + "; -fx-border-width: "
+				+ (left ? "0 0 0 6" : "0 6 0 0") + ";");
+		card.maxWidthProperty().bind(this.widthProperty().multiply(0.36));
+		card.setMaxHeight(Region.USE_PREF_SIZE);
+		StackPane.setAlignment(card, alignment);
+		StackPane.setMargin(card, new Insets(0, 70, 0, 70));
+		return card;
+	}
+
 	// ----------------------------------------------------------------- replay
 
 	/**
@@ -1396,7 +1681,7 @@ public class BattleArena3D extends StackPane {
 
 	private void updateCamera(double dt) {
 		this.shotTime += dt;
-		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE) {
+		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE || this.phase == Phase.SHOWCASE) {
 			if (this.shotTime > this.shotDuration && this.phase == Phase.PLAYING) {
 				this.pickShot(false);
 			}
@@ -1494,6 +1779,11 @@ public class BattleArena3D extends StackPane {
 		double px = -uz * this.shotSide;
 		double pz = ux * this.shotSide;
 		this.rollTarget = 0;
+
+		if (this.phase == Phase.SHOWCASE && !this.versus) {
+			this.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
+			return;
+		}
 
 		if (this.shot == Shot.FATAL) {
 			this.fatalShot(a);
@@ -1644,7 +1934,7 @@ public class BattleArena3D extends StackPane {
 	 * The name and energy balloons follow their robots on the screen
 	 */
 	private void placeBalloons() {
-		boolean show = this.phase != Phase.LOADING && this.phase != Phase.REPLAY;
+		boolean show = this.phase != Phase.LOADING && this.phase != Phase.REPLAY && this.phase != Phase.SHOWCASE;
 		for (RobotView view : this.robots.values()) {
 			Point3D scene = view.root.localToScene(new Point3D(0, -62, 0), true);
 			if (scene == null || !show) {
@@ -1699,6 +1989,15 @@ public class BattleArena3D extends StackPane {
 		final Label nameLabel;
 		final String displayName;
 		final List<Animation> running = new ArrayList<Animation>();
+		/** Particles still owed by the emitters */
+		double flameDebt;
+		double smokeDebt;
+		double sparkDebt;
+		/** Where it was in the last frame and how fast it goes, for the flames */
+		double lastX = Double.NaN;
+		double lastZ;
+		double speedX;
+		double speedZ;
 		boolean dead = false;
 		double energy = 100;
 
@@ -1785,6 +2084,68 @@ public class BattleArena3D extends StackPane {
 		void setEnergy(double energy) {
 			this.energy = energy;
 			this.energyFill.setMaxWidth(90 * Math.max(0, Math.min(1, energy / 100)));
+		}
+
+		/**
+		 * Below half of the energy the robot catches fire. The less energy, the more
+		 * burning spots, the stronger the flames and the thicker the smoke.
+		 *
+		 * @param dt
+		 *            seconds, slower in the replay
+		 */
+		void burn(double dt) {
+			double damage = this.dead ? 0 : Math.max(0, Math.min(1, (BURN_ENERGY - this.energy) / BURN_ENERGY));
+			if (damage <= 0 || !this.root.isVisible()) {
+				this.flameDebt = this.smokeDebt = this.sparkDebt = 0;
+				this.lastX = Double.NaN;
+				return;
+			}
+			// The flames go with the robot, the smoke stays behind as a trail
+			double x = this.root.getTranslateX();
+			double z = this.root.getTranslateZ();
+			if (dt > 0) {
+				double sx = Double.isNaN(this.lastX) ? 0 : (x - this.lastX) / dt;
+				double sz = Double.isNaN(this.lastX) ? 0 : (z - this.lastZ) / dt;
+				// A jump (new round, replay) is not a movement
+				if (Math.hypot(sx, sz) * dt > 60) {
+					sx = sz = 0;
+				}
+				double ease = 1 - Math.exp(-12 * dt);
+				this.speedX += (sx - this.speedX) * ease;
+				this.speedZ += (sz - this.speedZ) * ease;
+			}
+			this.lastX = x;
+			this.lastZ = z;
+
+			Random random = BattleArena3D.this.random;
+			int spots = damage < 0.3 ? 1 : damage < 0.6 ? 2 : 3;
+			double heading = Math.toRadians(this.bodyRotate.getAngle());
+			double cos = Math.cos(heading);
+			double sin = Math.sin(heading);
+
+			this.flameDebt += dt * (40 + 70 * damage);
+			this.smokeDebt += dt * (5 + 16 * damage);
+			this.sparkDebt += dt * (1.5 + 7 * damage);
+			while (this.flameDebt >= 1 || this.smokeDebt >= 1 || this.sparkDebt >= 1) {
+				// A burning spot of the hull, turning with the body
+				double[] spot = BURN_SPOTS[random.nextInt(spots)];
+				double lx = spot[0] + (random.nextDouble() - 0.5) * 6;
+				double lz = spot[2] + (random.nextDouble() - 0.5) * 6;
+				double wx = x + lx * cos + lz * sin;
+				double wz = z - lx * sin + lz * cos;
+				if (this.flameDebt >= 1) {
+					this.flameDebt--;
+					// Anchored to the robot, its position is relative to it
+					Particle flame = BattleArena3D.this.spawn(ParticleKind.FLAME, wx - x, spot[1], wz - z, damage);
+					flame.anchor = this;
+				} else if (this.smokeDebt >= 1) {
+					this.smokeDebt--;
+					BattleArena3D.this.spawn(ParticleKind.SMOKE, wx, spot[1] - 6, wz, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
+				} else {
+					this.sparkDebt--;
+					BattleArena3D.this.spawn(ParticleKind.SPARK, wx, spot[1], wz, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
+				}
+			}
 		}
 
 		/**
@@ -1943,6 +2304,291 @@ public class BattleArena3D extends StackPane {
 			}
 			this.nameLabel.setText(this.displayName);
 			this.balloon.setOpacity(1);
+		}
+	}
+
+	/** Robots catch fire below this energy */
+	private static final double BURN_ENERGY = 50;
+	/** Where the hull burns, in the body coordinates: engine, side, turret */
+	private static final double[][] BURN_SPOTS = { { 0, -15, -11 }, { 8, -15, 3 }, { -5, -23, 1 } };
+
+	private enum ParticleKind {
+		FLAME, SMOKE, SPARK
+	}
+
+	/** A quad of size 1 facing -Z, shared by all the sprites */
+	private static final TriangleMesh SPRITE = sprite();
+	private static final Image FLAME_TEXTURE = flameTexture();
+	private static final Image SMOKE_TEXTURE = smokeTexture();
+
+	private static TriangleMesh sprite() {
+		TriangleMesh mesh = new TriangleMesh();
+		mesh.getPoints().addAll(-0.5f, -0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0.5f, 0, -0.5f, 0.5f, 0);
+		mesh.getTexCoords().addAll(0, 0, 1, 0, 1, 1, 0, 1);
+		mesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
+		return mesh;
+	}
+
+	/**
+	 * A tongue of fire: white hot at the base, round at the bottom and pointed at
+	 * the top, soft borders
+	 */
+	private static Image flameTexture() {
+		int size = 64;
+		WritableImage image = new WritableImage(size, size);
+		for (int py = 0; py < size; py++) {
+			for (int px = 0; px < size; px++) {
+				double u = (px + 0.5) / size * 2 - 1;
+				// 1 at the top, -1 at the bottom
+				double v = 1 - (py + 0.5) / size * 2;
+				// Narrower going up
+				double width = 0.62 * Math.pow(Math.max(0, (1 - v) / 2), 0.55) + 0.04;
+				double center = -0.25;
+				double dx = u / width;
+				double dy = v < center ? (v - center) / 0.75 : (v - center) / 1.2;
+				double distance = Math.sqrt(dx * dx + dy * dy);
+				double alpha = Math.max(0, 1 - distance);
+				alpha = alpha * alpha * (3 - 2 * alpha);
+				double heat = Math.max(0, 1 - distance * 1.4);
+				image.getPixelWriter().setColor(px, py, Color.color(1, 0.75 + 0.25 * heat, 0.45 + 0.55 * heat, Math.min(1, alpha)));
+			}
+		}
+		return image;
+	}
+
+	/**
+	 * A puff: soft round blob with some noise, so it does not look like a ball
+	 */
+	private static Image smokeTexture() {
+		int size = 64;
+		WritableImage image = new WritableImage(size, size);
+		Random random = new Random(7);
+		double[] phase = new double[6];
+		for (int i = 0; i < phase.length; i++) {
+			phase[i] = random.nextDouble() * Math.PI * 2;
+		}
+		for (int py = 0; py < size; py++) {
+			for (int px = 0; px < size; px++) {
+				double u = (px + 0.5) / size * 2 - 1;
+				double v = (py + 0.5) / size * 2 - 1;
+				double angle = Math.atan2(v, u);
+				double radius = Math.hypot(u, v);
+				// Bumpy border
+				double border = 0.78 + 0.08 * Math.sin(3 * angle + phase[0]) + 0.06 * Math.sin(5 * angle + phase[1]) + 0.04 * Math.sin(9 * angle + phase[2]);
+				double alpha = Math.max(0, 1 - radius / border);
+				alpha = Math.pow(alpha, 0.8);
+				// Darker and lighter spots inside
+				double grain = 0.85 + 0.15 * Math.sin(u * 7 + phase[3]) * Math.sin(v * 6 + phase[4]) + 0.08 * Math.sin((u + v) * 11 + phase[5]);
+				double gray = Math.max(0, Math.min(1, grain));
+				image.getPixelWriter().setColor(px, py, Color.color(gray, gray, gray, Math.min(1, alpha * (0.75 + 0.25 * grain))));
+			}
+		}
+		return image;
+	}
+
+	/**
+	 * A flame, a spark or a puff of smoke: a sprite that always faces the camera.
+	 * It lives in the world, so a moving robot leaves a trail of smoke.
+	 */
+	private static final class Particle {
+		final MeshView view = new MeshView(SPRITE);
+		final PhongMaterial material = new PhongMaterial();
+		final Rotate yaw = new Rotate(0, Rotate.Y_AXIS);
+		final Rotate pitch = new Rotate(0, Rotate.X_AXIS);
+		final Rotate spin = new Rotate(0, Rotate.Z_AXIS);
+		final Scale scale = new Scale(1, 1, 1);
+		ParticleKind kind;
+		double x, y, z;
+		double vx, vy, vz;
+		double age, life;
+		double size, spinSpeed, shade;
+		double distance;
+		/** Flames go with the robot: x and z are relative to it */
+		RobotView anchor;
+
+		/**
+		 * Moves along with what emitted it
+		 */
+		void inherit(double speedX, double speedZ) {
+			this.vx += speedX;
+			this.vz += speedZ;
+		}
+
+		Particle() {
+			this.view.setMaterial(this.material);
+			this.view.setCullFace(CullFace.NONE);
+			this.view.getTransforms().addAll(this.yaw, this.pitch, this.spin, this.scale);
+		}
+	}
+
+	private Particle spawn(ParticleKind kind, double x, double y, double z, double damage) {
+		Particle p = this.particlePool.isEmpty() ? new Particle() : this.particlePool.remove(this.particlePool.size() - 1);
+		p.kind = kind;
+		p.anchor = null;
+		p.x = x;
+		p.y = y;
+		p.z = z;
+		p.age = 0;
+		p.spin.setAngle(this.random.nextDouble() * 360);
+		switch (kind) {
+		case FLAME -> {
+			p.life = 0.35 + this.random.nextDouble() * 0.35;
+			p.size = 9 + this.random.nextDouble() * 6 + damage * 8;
+			p.vx = (this.random.nextDouble() - 0.5) * 10;
+			p.vz = (this.random.nextDouble() - 0.5) * 10;
+			p.vy = -(32 + this.random.nextDouble() * 22 + damage * 25);
+			// Flames stay upright, only a little sway
+			p.spin.setAngle((this.random.nextDouble() - 0.5) * 16);
+			p.spinSpeed = (this.random.nextDouble() - 0.5) * 30;
+			p.material.setDiffuseMap(FLAME_TEXTURE);
+		}
+		case SMOKE -> {
+			p.life = 1.6 + this.random.nextDouble() * 1.4;
+			p.size = 9 + this.random.nextDouble() * 6;
+			p.vx = (this.random.nextDouble() - 0.5) * 8 + 6;
+			p.vz = (this.random.nextDouble() - 0.5) * 8 + 3;
+			p.vy = -(20 + this.random.nextDouble() * 14);
+			p.spinSpeed = (this.random.nextDouble() - 0.5) * 70;
+			// Thicker and blacker when almost destroyed
+			p.shade = 0.16 - 0.1 * damage + this.random.nextDouble() * 0.06;
+			p.material.setDiffuseMap(SMOKE_TEXTURE);
+		}
+		case SPARK -> {
+			p.life = 0.5 + this.random.nextDouble() * 0.5;
+			p.size = 1.6 + this.random.nextDouble() * 1.4;
+			double angle = this.random.nextDouble() * Math.PI * 2;
+			double speed = 30 + this.random.nextDouble() * 50;
+			p.vx = Math.cos(angle) * speed;
+			p.vz = Math.sin(angle) * speed;
+			p.vy = -(60 + this.random.nextDouble() * 70);
+			p.spinSpeed = 0;
+			p.material.setDiffuseMap(FLAME_TEXTURE);
+		}
+		}
+		// Too many: it is made, but not shown
+		if (this.particles.size() < 700) {
+			this.particles.add(p);
+		} else {
+			this.particlePool.add(p);
+		}
+		return p;
+	}
+
+	/**
+	 * Moves, fades and sorts the particles, and lets the robots emit new ones
+	 */
+	private void updateFire(double dt) {
+		for (RobotView view : this.robots.values()) {
+			view.burn(dt);
+		}
+
+		double eyeX = this.eye[0];
+		double eyeY = this.eye[1];
+		double eyeZ = this.eye[2];
+		double yaw = this.cameraYaw.getAngle();
+		double pitch = this.cameraPitch.getAngle();
+
+		for (int i = this.particles.size() - 1; i >= 0; i--) {
+			Particle p = this.particles.get(i);
+			p.age += dt;
+			if (p.age >= p.life || p.anchor != null && (p.anchor.dead || !p.anchor.root.isVisible())) {
+				this.particles.remove(i);
+				this.particlePool.add(p);
+				continue;
+			}
+			double t = p.age / p.life;
+			double drag = Math.exp(-(p.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * dt);
+			p.vx *= drag;
+			p.vz *= drag;
+			if (p.kind == ParticleKind.SPARK) {
+				// Thrown up, then falls
+				p.vy += 160 * dt;
+			} else if (p.kind == ParticleKind.FLAME) {
+				// Flames speed up going up
+				p.vy -= 30 * dt;
+			}
+			p.x += p.vx * dt;
+			p.y = Math.min(-1, p.y + p.vy * dt);
+			// Sparks go out on the floor
+			if (p.kind == ParticleKind.SPARK && p.y >= -1 && p.vy > 0) {
+				p.age = p.life;
+			}
+			p.z += p.vz * dt;
+			p.spin.setAngle(p.spin.getAngle() + p.spinSpeed * dt);
+
+			double width;
+			double height;
+			Color color;
+			switch (p.kind) {
+			case FLAME -> {
+				// Grows fast, then thins out to a tip
+				double grow = Math.min(1, t * 5);
+				width = p.size * grow * (1 - 0.5 * t);
+				height = width * 1.7;
+				double flicker = 0.85 + 0.15 * this.random.nextDouble();
+				if (t < 0.3) {
+					color = Color.web("#fff6c8").interpolate(Color.web("#ffb12a"), t / 0.3);
+				} else {
+					color = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (t - 0.3) / 0.7);
+				}
+				color = Color.color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(1, (1 - t) * 1.6) * flicker);
+			}
+			case SMOKE -> {
+				// Born in the fire, grows and fades
+				width = p.size * (0.6 + 2.6 * Math.sqrt(t));
+				height = width;
+				double alpha = Math.min(1, t * 6) * Math.pow(1 - t, 1.4) * 0.7;
+				Color ember = Color.web("#ff7a2a");
+				Color gray = Color.gray(p.shade);
+				color = t < 0.12 ? ember.interpolate(gray, t / 0.12) : gray.interpolate(Color.gray(Math.min(0.4, p.shade + 0.12)), (t - 0.12) / 0.88);
+				color = Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+			}
+			default -> {
+				width = p.size * (1 - 0.5 * t);
+				height = width;
+				color = Color.color(1, 0.85 - 0.4 * t, 0.4 - 0.3 * t, 1 - t * t);
+			}
+			}
+			p.material.setDiffuseColor(color);
+			double px = p.x;
+			double pz = p.z;
+			if (p.anchor != null) {
+				px += p.anchor.root.getTranslateX();
+				pz += p.anchor.root.getTranslateZ();
+			}
+			p.view.setTranslateX(px);
+			p.view.setTranslateY(p.y);
+			p.view.setTranslateZ(pz);
+			p.yaw.setAngle(yaw);
+			p.pitch.setAngle(pitch);
+			p.scale.setX(Math.max(0.01, width));
+			p.scale.setY(Math.max(0.01, height));
+			// Flames are drawn from their base
+			if (p.kind == ParticleKind.FLAME) {
+				p.view.setTranslateY(p.y - height * 0.3);
+			}
+			double dx = px - eyeX;
+			double dy = p.y - eyeY;
+			double dz = pz - eyeZ;
+			p.distance = dx * dx + dy * dy + dz * dz;
+		}
+
+		// No depth sorting in JavaFX: the farthest first, so the nearest blend
+		// over them
+		this.particles.sort((a, b) -> Double.compare(b.distance, a.distance));
+		List<Node> views = new ArrayList<Node>(this.particles.size());
+		for (Particle p : this.particles) {
+			views.add(p.view);
+		}
+		this.fireLayer.getChildren().setAll(views);
+	}
+
+	private void clearFire() {
+		this.particlePool.addAll(this.particles);
+		this.particles.clear();
+		this.fireLayer.getChildren().clear();
+		for (RobotView view : this.robots.values()) {
+			view.flameDebt = view.smokeDebt = view.sparkDebt = 0;
 		}
 	}
 

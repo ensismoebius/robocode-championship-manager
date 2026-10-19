@@ -27,6 +27,10 @@ public class Configuration {
 	public static final int DEFAULT_WEBSERVER_PORT = 8080;
 	public static final String DEFAULT_TITLE = "CHAMPIONSHIP";
 	public static final String DEFAULT_SUBTITLE = "GERENCIADOR DE CAMPEONATOS";
+	public static final String DEFAULT_FIGHT_TEXT = "FIGHT!";
+	/** Speeds of the 3D battle, times robocode's normal speed */
+	public static final double[] BATTLE_SPEEDS = { 0.5, 1, 2, 4, 8 };
+	public static final double DEFAULT_BATTLE_SPEED = 1;
 
 	private static final Path CONFIG_FILE = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
 
@@ -222,6 +226,35 @@ public class Configuration {
 	public static String getSubtitle() {
 		String subtitle = Configuration.getConfiguration(INewConfigurationHandle.SUBTITLE);
 		return subtitle == null ? DEFAULT_SUBTITLE : subtitle.strip();
+	}
+
+	/**
+	 * Shown when a round starts, the default one if blank
+	 */
+	public static String getFightText() {
+		String text = Configuration.getConfiguration(INewConfigurationHandle.FIGHT_TEXT);
+		return text == null || text.isBlank() ? DEFAULT_FIGHT_TEXT : text.strip();
+	}
+
+	/**
+	 * The speed the 3D battle starts with, one of {@link #BATTLE_SPEEDS}: the
+	 * closest one to the configured value, normal speed if not configured
+	 */
+	public static double getBattleSpeed() {
+		double wanted;
+		try {
+			String value = Configuration.getConfiguration(INewConfigurationHandle.BATTLE_SPEED);
+			wanted = value == null ? DEFAULT_BATTLE_SPEED : Double.parseDouble(value.trim().replace(',', '.'));
+		} catch (NumberFormatException e) {
+			wanted = DEFAULT_BATTLE_SPEED;
+		}
+		double best = DEFAULT_BATTLE_SPEED;
+		for (double speed : BATTLE_SPEEDS) {
+			if (Math.abs(speed - wanted) < Math.abs(best - wanted)) {
+				best = speed;
+			}
+		}
+		return best;
 	}
 
 	/**

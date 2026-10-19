@@ -23,6 +23,8 @@ public interface INewConfigurationHandle {
 	public static final String TITLE = "title";
 	public static final String SUBTITLE = "subtitle";
 	public static final String BATTLE_VIEW = "battleView";
+	public static final String BATTLE_SPEED = "battleSpeed";
+	public static final String FIGHT_TEXT = "fightText";
 
 	/**
 	 * Returns the properties for the system

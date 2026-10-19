@@ -89,6 +89,31 @@ class ConfigurationTest {
 	}
 
 	@Test
+	void battleSpeedAndFightTextHaveDefaults() {
+		// Configurations saved before these options existed
+		assertEquals(Configuration.DEFAULT_FIGHT_TEXT, Configuration.getFightText());
+		assertEquals(Configuration.DEFAULT_BATTLE_SPEED, Configuration.getBattleSpeed());
+
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.FIGHT_TEXT, "  LUTEM!  ");
+		this.answer.setProperty(INewConfigurationHandle.BATTLE_SPEED, "4.0");
+		assertTrue(Configuration.askForProperties());
+		assertEquals("LUTEM!", Configuration.getFightText());
+		assertEquals(4, Configuration.getBattleSpeed());
+
+		// Blank text is the default one, an odd speed the closest one
+		this.answer.setProperty(INewConfigurationHandle.FIGHT_TEXT, " ");
+		this.answer.setProperty(INewConfigurationHandle.BATTLE_SPEED, "3");
+		assertTrue(Configuration.askForProperties());
+		assertEquals(Configuration.DEFAULT_FIGHT_TEXT, Configuration.getFightText());
+		assertEquals(2, Configuration.getBattleSpeed());
+
+		this.answer.setProperty(INewConfigurationHandle.BATTLE_SPEED, "rápido");
+		assertTrue(Configuration.askForProperties());
+		assertEquals(Configuration.DEFAULT_BATTLE_SPEED, Configuration.getBattleSpeed());
+	}
+
+	@Test
 	void notifiesWhenRegistrationIsToggled() {
 		Configuration.setEnabledRegistration(false);
 		assertFalse(Configuration.isEnabledRegistration());

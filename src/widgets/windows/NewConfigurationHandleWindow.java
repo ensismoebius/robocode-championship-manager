@@ -62,6 +62,16 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		battleView.getSelectionModel().select("CLASSIC".equals(old.getProperty(BATTLE_VIEW)) ? 1 : 0);
 		battleView.setMaxWidth(Double.MAX_VALUE);
 
+		TextField fightText = new TextField(old.getProperty(FIGHT_TEXT, Configuration.DEFAULT_FIGHT_TEXT));
+		fightText.setPromptText(Configuration.DEFAULT_FIGHT_TEXT);
+
+		ChoiceBox<String> battleSpeed = new ChoiceBox<String>();
+		for (double speed : Configuration.BATTLE_SPEEDS) {
+			battleSpeed.getItems().add(formatSpeed(speed) + "x" + (speed == Configuration.DEFAULT_BATTLE_SPEED ? " (normal)" : ""));
+		}
+		battleSpeed.getSelectionModel().select(speedIndex(old.getProperty(BATTLE_SPEED)));
+		battleSpeed.setMaxWidth(Double.MAX_VALUE);
+
 		TextField webserverPort = new TextField(old.getProperty(WEBSERVER_PORT, String.valueOf(Configuration.DEFAULT_WEBSERVER_PORT)));
 
 		TextField databaseFile = new TextField(old.getProperty(DATABASE_FILE, Configuration.DEFAULT_DATABASE_FILE));
@@ -109,9 +119,11 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		form.add(field("Porta do servidor web de cadastro", webserverPort), 0, 2);
 		form.add(field("Inscrições", registrationEnabled), 1, 2);
 		form.add(field("Exibição da batalha", battleView), 0, 3);
-		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 4, 2, 1);
-		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 5, 2, 1);
-		form.add(error, 0, 6, 2, 1);
+		form.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 3);
+		form.add(field("Texto do início do round", fightText), 0, 4);
+		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 5, 2, 1);
+		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 6, 2, 1);
+		form.add(error, 0, 7, 2, 1);
 
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
@@ -150,6 +162,8 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(REGISTRATION_ENABLED, String.valueOf(registrationEnabled.isSelected()));
 			properties.setProperty(TITLE, title.getText().isBlank() ? Configuration.DEFAULT_TITLE : title.getText().strip());
 			properties.setProperty(SUBTITLE, subtitle.getText().strip());
+			properties.setProperty(BATTLE_SPEED, String.valueOf(Configuration.BATTLE_SPEEDS[Math.max(0, battleSpeed.getSelectionModel().getSelectedIndex())]));
+			properties.setProperty(FIGHT_TEXT, fightText.getText().isBlank() ? Configuration.DEFAULT_FIGHT_TEXT : fightText.getText().strip());
 			properties.setProperty(BATTLE_VIEW, battleView.getSelectionModel().getSelectedIndex() == 1 ? "CLASSIC" : "3D");
 
 			GameWindow.close(panel, properties);
@@ -158,6 +172,29 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 		// The save button gets the focus, so Enter saves
 		return (Properties) GameWindow.showModal(panel, save, cancel);
+	}
+
+	/**
+	 * The position of the configured speed in {@link Configuration#BATTLE_SPEEDS}
+	 */
+	private static int speedIndex(String configured) {
+		double speed = Configuration.DEFAULT_BATTLE_SPEED;
+		try {
+			speed = configured == null ? speed : Double.parseDouble(configured.trim());
+		} catch (NumberFormatException e) {
+			// The default one
+		}
+		int best = 0;
+		for (int i = 0; i < Configuration.BATTLE_SPEEDS.length; i++) {
+			if (Math.abs(Configuration.BATTLE_SPEEDS[i] - speed) < Math.abs(Configuration.BATTLE_SPEEDS[best] - speed)) {
+				best = i;
+			}
+		}
+		return best;
+	}
+
+	private static String formatSpeed(double speed) {
+		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
 	}
 
 	/**
