@@ -100,7 +100,7 @@ public class BattleArena3D extends StackPane {
 	private static final double REPLAY_AFTER_SPEED = 0.22;
 
 	private static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
-	private static final Color FENCE_BASE = Color.web("#ff3d6e", 0.22);
+	private static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
 	private enum ViewMode {
 		CINEMATIC("CINEMATOGRÁFICA", -30, 45), FREE("LIVRE", -38, 38), ISOMETRIC("ISOMÉTRICA", -35.26, 12), TOP_DOWN("VISTA DE CIMA", -89.5, 12);
@@ -134,6 +134,14 @@ public class BattleArena3D extends StackPane {
 	private final Group world = new Group();
 	private final Group arena = new Group();
 	private final Group effects = new Group();
+	private final Group robotLayer = new Group();
+	private final Group bulletLayer = new Group();
+	/**
+	 * The cage panels. JavaFX does not sort translucent shapes: they are drawn in
+	 * the order of the scene graph and hide what is drawn after them, so the
+	 * panels must come last for the robots to be seen through them
+	 */
+	private final Group fence = new Group();
 	/** Translucent panels of the cage, each one with its own material to flash */
 	private final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -158,6 +166,7 @@ public class BattleArena3D extends StackPane {
 	private double rollTarget = 0;
 	private double follow = 4;
 	private double shake = 0;
+	private double cinematicOrbitAngle = 0;
 
 	// Free, isometric and top views
 	private double yaw = 0;
@@ -243,7 +252,7 @@ public class BattleArena3D extends StackPane {
 	public BattleArena3D(List<Opponent> fighters) {
 		this.fighters = fighters;
 
-		this.world.getChildren().addAll(this.arena, this.effects);
+		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.fence);
 		this.buildLights();
 		this.buildArena();
 
@@ -307,7 +316,7 @@ public class BattleArena3D extends StackPane {
 		for (BattleRecording.Robot robot : recording.getRobots()) {
 			RobotView view = new RobotView(robot, this.opponentOf(robot), this.robots.size());
 			this.robots.put(robot.getIndex(), view);
-			this.world.getChildren().add(view.root);
+			this.robotLayer.getChildren().add(view.root);
 			this.balloons.getChildren().add(view.balloon);
 			this.roundWins.put(robot.getIndex(), 0);
 		}
@@ -337,6 +346,7 @@ public class BattleArena3D extends StackPane {
 	 */
 	private void buildArena() {
 		this.fenceSegments.clear();
+		this.fence.getChildren().clear();
 		double w = this.fieldWidth;
 		double h = this.fieldHeight;
 
@@ -357,26 +367,14 @@ public class BattleArena3D extends StackPane {
 			this.arena.getChildren().add(box(w, 0.5, 1.5, 0, -0.3, y - h / 2, gridMaterial));
 		}
 
-		// Walls: posts and rails, like a cage
-		PhongMaterial wallMaterial = material(Color.web("#ff3d6e"));
-		double wallHeight = 60;
-		for (double x = 0; x <= w; x += 100) {
-			this.arena.getChildren().add(box(3, wallHeight, 3, x - w / 2, -wallHeight / 2, -h / 2, wallMaterial));
-			this.arena.getChildren().add(box(3, wallHeight, 3, x - w / 2, -wallHeight / 2, h / 2, wallMaterial));
-		}
-		for (double y = 100; y < h; y += 100) {
-			this.arena.getChildren().add(box(3, wallHeight, 3, -w / 2, -wallHeight / 2, y - h / 2, wallMaterial));
-			this.arena.getChildren().add(box(3, wallHeight, 3, w / 2, -wallHeight / 2, y - h / 2, wallMaterial));
-		}
-		for (double level : new double[] { 20, 40, 60 }) {
-			this.arena.getChildren().add(box(w, 2, 2, 0, -level, -h / 2, wallMaterial));
-			this.arena.getChildren().add(box(w, 2, 2, 0, -level, h / 2, wallMaterial));
-			this.arena.getChildren().add(box(2, 2, h, -w / 2, -level, 0, wallMaterial));
-			this.arena.getChildren().add(box(2, 2, h, w / 2, -level, 0, wallMaterial));
-		}
+		// Floor boundary lines (flat on the ground, zero obstruction to camera views)
+		this.arena.getChildren().add(box(w, 0.5, 2, 0, -0.3, -h / 2, gridMaterial));
+		this.arena.getChildren().add(box(w, 0.5, 2, 0, -0.3, h / 2, gridMaterial));
+		this.arena.getChildren().add(box(2, 0.5, h, -w / 2, -0.3, 0, gridMaterial));
+		this.arena.getChildren().add(box(2, 0.5, h, w / 2, -0.3, 0, gridMaterial));
 
-		// Translucent panels between the posts: the cage is not solid, and
-		// every panel has its own material so an impact lights only its panel
+		// Force field panels: 100% transparent/invisible until hit
+		double wallHeight = 80;
 		for (int wall = 0; wall < 4; wall++) {
 			double span = wall <= 1 ? w : h;
 			int count = (int) Math.round(span / 100);
@@ -384,9 +382,10 @@ public class BattleArena3D extends StackPane {
 				double along = index * 100 + 50 - span / 2;
 				double normal = wall <= 1 ? h / 2 : w / 2;
 				PhongMaterial panelMaterial = material(FENCE_BASE);
-				Box panel = wall <= 1 ? box(96, wallHeight - 6, 1.5, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
-						: box(1.5, wallHeight - 6, 96, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);
-				this.arena.getChildren().add(panel);
+				Box panel = wall <= 1 ? box(98, wallHeight, 1.0, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
+						: box(1.0, wallHeight, 98, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);
+				panel.setVisible(false);
+				this.fence.getChildren().add(panel);
 				this.fenceSegments.add(new FenceSegment(wall, index, panel, panelMaterial));
 			}
 		}
@@ -409,10 +408,37 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * One translucent panel of the cage, walls are 0=north 1=south 2=west
-	 * 3=east. It has its own material so an impact lights only this panel.
+	 * One segment of the invisible force field. It only appears when struck.
 	 */
-	private record FenceSegment(int wall, int index, Box box, PhongMaterial material) {
+	private static class FenceSegment {
+		final int wall;
+		final int index;
+		final Box box;
+		final PhongMaterial material;
+		Timeline animation;
+
+		FenceSegment(int wall, int index, Box box, PhongMaterial material) {
+			this.wall = wall;
+			this.index = index;
+			this.box = box;
+			this.material = material;
+		}
+
+		int wall() {
+			return wall;
+		}
+
+		int index() {
+			return index;
+		}
+
+		Box box() {
+			return box;
+		}
+
+		PhongMaterial material() {
+			return material;
+		}
 	}
 
 	/**
@@ -837,7 +863,6 @@ public class BattleArena3D extends StackPane {
 			this.shotDuration = ROUND_END_SECONDS + 1;
 			this.shotSide = this.random.nextBoolean() ? 1 : -1;
 			this.closeDistance = 110;
-			this.cut();
 		} else {
 			this.showBanner("FIM DO ROUND", null);
 		}
@@ -914,7 +939,7 @@ public class BattleArena3D extends StackPane {
 		}
 		this.bullets.entrySet().removeIf(entry -> {
 			if (!flying.contains(entry.getKey())) {
-				this.world.getChildren().remove(entry.getValue());
+				this.bulletLayer.getChildren().remove(entry.getValue());
 				return true;
 			}
 			return false;
@@ -990,13 +1015,13 @@ public class BattleArena3D extends StackPane {
 		glow.setSpecularColor(Color.WHITE);
 		sphere.setMaterial(glow);
 		sphere.setTranslateY(-22);
-		this.world.getChildren().add(sphere);
+		this.bulletLayer.getChildren().add(sphere);
 		return sphere;
 	}
 
 	private void clearBullets() {
 		for (Sphere bullet : this.bullets.values()) {
-			this.world.getChildren().remove(bullet);
+			this.bulletLayer.getChildren().remove(bullet);
 		}
 		this.bullets.clear();
 	}
@@ -1042,21 +1067,43 @@ public class BattleArena3D extends StackPane {
 			if (segment.wall() != wall || segment.index() != index) {
 				continue;
 			}
-			Color bright = FENCE_BASE.interpolate(Color.WHITE, intensity);
+			if (segment.animation != null) {
+				segment.animation.stop();
+				segment.animation = null;
+			}
+
+			segment.box().setVisible(true);
+
+			// Electric force field energy flare: transparent translucent barrier
+			double peakAlpha = 0.20 + 0.08 * Math.min(1.0, intensity);
+			Color shieldBright = Color.color(0.20, 0.88, 1.0, peakAlpha);
+			Color shieldMid = Color.color(0.10, 0.70, 1.0, peakAlpha * 0.45);
+			Color shieldFade = Color.color(0.0, 0.70, 1.0, 0.0);
+
+			segment.material().setSpecularColor(Color.color(0.25, 0.85, 1.0, 0.20));
+
 			Timeline flash = new Timeline();
-			flash.getKeyFrames().addAll(new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), bright)),
-					new KeyFrame(delay.add(Duration.millis(80)), new KeyValue(segment.material().diffuseColorProperty(), bright)),
-					new KeyFrame(delay.add(Duration.millis(250)), new KeyValue(segment.material().diffuseColorProperty(), FENCE_BASE)));
+			flash.getKeyFrames().addAll(
+					new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), shieldBright)),
+					new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(segment.material().diffuseColorProperty(), shieldMid)),
+					new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(segment.material().diffuseColorProperty(), shieldFade)));
+			flash.setOnFinished(e -> {
+				segment.box().setVisible(false);
+				segment.material().setDiffuseColor(FENCE_BASE);
+				segment.material().setSpecularColor(Color.TRANSPARENT);
+				segment.animation = null;
+			});
+			segment.animation = flash;
 			flash.play();
 
-			if (intensity >= 1.0) {
+			if (intensity >= 0.8) {
 				ScaleTransition pulse = new ScaleTransition(Duration.millis(90), segment.box());
 				pulse.setFromX(1);
-				pulse.setToX(1.05);
+				pulse.setToX(1.04);
 				pulse.setFromY(1);
-				pulse.setToY(1.05);
+				pulse.setToY(1.04);
 				pulse.setFromZ(1);
-				pulse.setToZ(1.05);
+				pulse.setToZ(1.04);
 				pulse.setCycleCount(2);
 				pulse.setAutoReverse(true);
 				pulse.play();
@@ -1068,7 +1115,13 @@ public class BattleArena3D extends StackPane {
 	/** Back to the base look when a new round starts */
 	private void resetFence() {
 		for (FenceSegment segment : this.fenceSegments) {
+			if (segment.animation != null) {
+				segment.animation.stop();
+				segment.animation = null;
+			}
+			segment.box().setVisible(false);
 			segment.material().setDiffuseColor(FENCE_BASE);
+			segment.material().setSpecularColor(Color.TRANSPARENT);
 			segment.box().setScaleX(1);
 			segment.box().setScaleY(1);
 			segment.box().setScaleZ(1);
@@ -1212,7 +1265,6 @@ public class BattleArena3D extends StackPane {
 		this.shotTime = 0;
 		this.shotDuration = FREEZE_SECONDS + 1;
 		this.closeDistance = 190;
-		this.cut();
 		this.shotSide = this.random.nextBoolean() ? 1 : -1;
 	}
 
@@ -1340,15 +1392,13 @@ public class BattleArena3D extends StackPane {
 		this.shotTime = 0;
 		this.shotDuration = 1.6;
 		this.closeDistance = 90;
-		this.shotSide = this.random.nextBoolean() ? 1 : -1;
-		this.cut();
 	}
 
 	private void updateCamera(double dt) {
 		this.shotTime += dt;
 		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE) {
 			if (this.shotTime > this.shotDuration && this.phase == Phase.PLAYING) {
-				this.pickShot(true);
+				this.pickShot(false);
 			}
 			this.directShot(dt);
 		} else {
@@ -1434,57 +1484,99 @@ public class BattleArena3D extends StackPane {
 		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
 		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
 		double[] b = other == null ? a : other.position();
-		double[] mid = { (a[0] + b[0]) / 2, 0, (a[2] + b[2]) / 2 };
+		double[] mid = { (a[0] + b[0]) / 2, -16, (a[2] + b[2]) / 2 };
 		double dx = b[0] - a[0];
 		double dz = b[2] - a[2];
-		double separation = Math.max(1, Math.hypot(dx, dz));
+		double separation = Math.max(10, Math.hypot(dx, dz));
 		double ux = dx / separation;
 		double uz = dz / separation;
 		// Perpendicular to the line between them
 		double px = -uz * this.shotSide;
 		double pz = ux * this.shotSide;
-		double progress = Math.min(1, this.shotTime / Math.max(0.1, this.shotDuration));
 		this.rollTarget = 0;
 
-		switch (this.shot) {
-		case WIDE -> {
-			double angle = this.shotSeed + this.shotTime * 0.12;
-			double radius = Math.max(this.fieldWidth, this.fieldHeight) * 0.85;
-			this.setShot(Math.cos(angle) * radius, -radius * 0.55, Math.sin(angle) * radius, mid[0] * 0.6, -10, mid[2] * 0.6, 40, 2.5);
+		if (this.shot == Shot.FATAL) {
+			this.fatalShot(a);
+			this.keepClear();
+			this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
+			return;
 		}
-		case CHASE -> {
-			// Over the shoulder of the subject, looking at the other
-			this.setShot(a[0] - ux * 95 + px * 38, -42, a[2] - uz * 95 + pz * 38, b[0] * 0.65 + a[0] * 0.35, -18, b[2] * 0.65 + a[2] * 0.35, 52, 5);
+
+		// When a bot wins, focus the camera directly on the victor!
+		List<RobotView> livingRobots = this.robots.values().stream().filter(v -> !v.dead).toList();
+		boolean roundOver = this.phase == Phase.ROUND_END || this.phase == Phase.FINISHED;
+		RobotView winner = null;
+		if (this.robots.size() >= 2 && livingRobots.size() == 1) {
+			winner = livingRobots.get(0);
+		} else if (roundOver && this.robots.containsKey(this.shotSubject)) {
+			winner = this.robots.get(this.shotSubject);
 		}
-		case LOW_TRACK -> {
-			// From the floor, sideways, sliding along: the hero shot
-			double reach = separation * 0.55 + 150;
-			double slide = (progress - 0.5) * 160;
-			this.setShot(mid[0] + px * reach + ux * slide, -9, mid[2] + pz * reach + uz * slide, mid[0], -26, mid[2], 46, 3);
+
+		if (winner != null) {
+			this.cinematicOrbitAngle += dt * 0.35;
+			double[] winPos = winner.position();
+			double winDist = 175.0; // Heroic victory framing
+			double winHeight = -42.0; // Elevated view looking proud at the victor
+			double winAngle = this.cinematicOrbitAngle;
+
+			this.setShot(winPos[0] + Math.cos(winAngle) * winDist, winHeight, winPos[2] + Math.sin(winAngle) * winDist,
+					winPos[0], -18, winPos[2], 44.0, 3.5);
+			this.rollTarget = 0;
+			this.keepClear();
+			this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
+			return;
 		}
-		case CLOSE, IMPACT -> {
-			// From the front, low and tilted
-			double heading = subject == null ? 0 : Math.toRadians(subject.bodyRotate.getAngle());
-			double hx = Math.sin(heading);
-			double hz = Math.cos(heading);
-			double distance = this.closeDistance * (1 - 0.12 * progress);
-			double height = -22 - this.closeDistance * 0.08;
-			this.setShot(a[0] + hx * distance + hz * distance * 0.4 * this.shotSide, height, a[2] + hz * distance - hx * distance * 0.4 * this.shotSide, a[0], -17, a[2], this.shot == Shot.IMPACT ? 36 : 32, 7);
-			this.rollTarget = 7 * this.shotSide;
+
+		this.cinematicOrbitAngle += dt * 0.25;
+
+		// Calculate distance required to guarantee both robots are comfortably inside the field of view
+		// Fit the bounding circle encompassing both combatants to the horizontal field of view
+		double aspect = Math.max(0.5, this.getWidth() / Math.max(1.0, this.getHeight()));
+		double fovVal = 48.0;
+		double vFovRad = Math.toRadians(fovVal);
+		double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspect);
+
+		// Boxing referee camera: continuously seeks the best angle of the fight,
+		// circling the combatants on the flank to keep both clearly in sight.
+		double curDx = this.eye[0] - mid[0];
+		double curDz = this.eye[2] - mid[2];
+		double curAngle = Math.atan2(curDz, curDx);
+
+		// The two flanks perpendicular to the combat line
+		double flankAngle1 = Math.atan2(pz, px);
+		double flankAngle2 = Math.atan2(-pz, -px);
+
+		// Maintain continuity with the referee's current position around the fighters
+		double diff1 = Math.abs(Math.atan2(Math.sin(flankAngle1 - curAngle), Math.cos(flankAngle1 - curAngle)));
+		double diff2 = Math.abs(Math.atan2(Math.sin(flankAngle2 - curAngle), Math.cos(flankAngle2 - curAngle)));
+		double baseFlank = diff1 <= diff2 ? flankAngle1 : flankAngle2;
+
+		// Dynamic 3/4 angle & referee footwork: gently pacing to keep an unobstructed view
+		double pacing = Math.sin(this.cinematicOrbitAngle) * 0.16;
+		double bestAngle = baseFlank + pacing;
+
+		// Frame both combatants with generous margins so neither leaves the view nor feels cramped
+		double sphereRadius = separation * 0.5 + 80.0;
+		double fitDist = sphereRadius / Math.tan(hFovRad * 0.35);
+
+		// Well-balanced ringside distance: neither too zoomed out nor right in the robot treads
+		double targetDist = Math.max(420.0, fitDist);
+		if (this.shot == Shot.IMPACT || this.hitTension > 0.15) {
+			targetDist *= 0.95;
 		}
-		case CRANE -> {
-			// From high above down to the fight, turning around it
-			double eased = progress * progress * (3 - 2 * progress);
-			double angle = this.shotSeed + eased * 0.9;
-			double radius = 420 - 190 * eased;
-			double height = -560 + 430 * eased;
-			this.setShot(mid[0] + Math.cos(angle) * radius, height, mid[2] + Math.sin(angle) * radius, mid[0], -12, mid[2], 44, 3.5);
-		}
-		case FATAL -> this.fatalShot(a);
-		}
+
+		// Elevation: ringside referee perspective looking slightly down into the arena
+		double eyeY = -Math.max(65.0, targetDist * 0.23);
+
+		// Roll target: subtle dynamic tilt on impacts, otherwise level
+		this.rollTarget = (this.shot == Shot.IMPACT ? 2.0 : 0.5) * Math.sin(this.cinematicOrbitAngle);
+
+		// Aim directly at the midpoint between the fighters
+		this.setShot(mid[0] + Math.cos(bestAngle) * targetDist, eyeY, mid[2] + Math.sin(bestAngle) * targetDist,
+				mid[0], -16, mid[2], fovVal, 3.5);
 		this.keepClear();
 		// Never under the floor
-		this.eyeTarget[1] = Math.min(this.eyeTarget[1], -5);
+		this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
 	}
 
 	/**
