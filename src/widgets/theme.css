@@ -452,6 +452,32 @@
 	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.9), 22, 0.4, 0, 0);
 }
 
+.arena-callout {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 30px;
+}
+
+.arena-comment {
+	-fx-background-color: rgba(8, 10, 20, 0.85);
+	-fx-border-color: -rc-accent;
+	-fx-border-width: 0 0 0 5;
+	-fx-padding: 10 22 10 16;
+}
+
+.arena-comment-tag {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 10px;
+	-fx-text-fill: -rc-danger;
+	-fx-min-width: -fx-pref-width;
+}
+
+.arena-comment-text {
+	-fx-font-family: "Rajdhani";
+	-fx-font-weight: bold;
+	-fx-font-size: 26px;
+	-fx-text-fill: -rc-text;
+}
+
 .arena-sub-banner {
 	-fx-font-family: "Press Start 2P";
 	-fx-font-size: 16px;

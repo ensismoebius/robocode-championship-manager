@@ -18,6 +18,7 @@ import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
+import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
@@ -100,6 +101,13 @@ public class BattleArena3D extends StackPane {
 	private static final double SHOWCASE_SECONDS = 7;
 	private static final double VERSUS_SECONDS = 2.6;
 	private static final double ROUND_END_SECONDS = 2.8;
+	/** The headline of a special battle, after the last round */
+	private static final double HEADLINE_SECONDS = 3.4;
+	/** How long a comment stays, and how long it may wait to be shown */
+	private static final double COMMENT_SECONDS = 3.2;
+	private static final double COMMENT_MAX_WAIT = 4;
+	/** Callouts shown at the same time on each side */
+	private static final int MAX_CALLOUTS = 3;
 	/** The action stops for a moment when a robot dies, then the replay */
 	private static final double FREEZE_SECONDS = 1.3;
 	/** Turns of the replay before and after the death */
@@ -260,6 +268,24 @@ public class BattleArena3D extends StackPane {
 	private int impactTurn = -1;
 	private boolean replayed = false;
 
+	// Callouts and comments
+	private BattleCommentary commentary;
+	private final StackPane commentaryLayer = new StackPane();
+	private final VBox calloutsLeft = new VBox(8);
+	private final VBox calloutsRight = new VBox(8);
+	private final VBox calloutsCenter = new VBox(8);
+	private final HBox ticker = new HBox(14);
+	private final Label commentText = new Label();
+	private BattleCommentary.Message comment;
+	private double commentAge;
+	private double commentClock;
+	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
+	private BattleCommentary.Headline headline;
+	private boolean headlineShown = false;
+
+	private record QueuedComment(BattleCommentary.Message message, double since) {
+	}
+
 	// The presentation of the robots
 	private int showcaseOrder = 0;
 	private boolean versus = false;
@@ -315,7 +341,7 @@ public class BattleArena3D extends StackPane {
 		this.showcaseLayer.setMouseTransparent(true);
 		this.showcaseLayer.setPickOnBounds(false);
 
-		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.buildHud(), this.whiteFlash, scanlines);
+		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.buildCommentary(), this.buildHud(), this.whiteFlash, scanlines);
 
 		this.installControls();
 		this.showBanner("", null);
@@ -358,6 +384,12 @@ public class BattleArena3D extends StackPane {
 		}
 		this.buildHudPlayers();
 		this.loading.setVisible(false);
+
+		Map<Integer, String> names = new HashMap<Integer, String>();
+		for (BattleRecording.Robot robot : recording.getRobots()) {
+			names.put(robot.getIndex(), this.robots.get(robot.getIndex()).displayName);
+		}
+		this.commentary = new BattleCommentary(names, this.random);
 
 		this.audio.start();
 		this.startShowcase();
@@ -544,8 +576,8 @@ public class BattleArena3D extends StackPane {
 		slow.getStyleClass().add("arena-replay-slow");
 		this.replayTag.getChildren().addAll(dot, replay, slow);
 		this.replayTag.setAlignment(Pos.CENTER_LEFT);
+		// Managed, so the pane gives it its size (unmanaged, the texts were cut)
 		this.replayTag.relocate(36, 26);
-		this.replayTag.setManaged(false);
 		this.replayTag.setVisible(false);
 
 		Pane frame = new Pane(this.letterboxTop, this.letterboxBottom, this.replayTag);
@@ -662,6 +694,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private void showBanner(String text, String sub) {
+		this.banner.setStyle("");
 		this.banner.setText(text);
 		this.subBanner.setText(sub == null ? "" : sub);
 		this.banner.setVisible(!text.isEmpty());
@@ -856,9 +889,16 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		case ROUND_END -> {
-			if (this.phaseTime > ROUND_END_SECONDS) {
+			if (this.phaseTime > (this.headlineShown ? HEADLINE_SECONDS : ROUND_END_SECONDS)) {
 				if (this.round + 1 < this.recording.getRounds().size()) {
 					this.startRound(this.round + 1);
+				} else if (this.headline != null && !this.headlineShown) {
+					// A special battle gets its headline
+					this.headlineShown = true;
+					this.phaseTime = 0;
+					this.showBanner(this.headline.title(), this.headline.subtitle());
+					this.banner.setStyle("-fx-font-size: 46px;");
+					Sfx.fanfare();
 				} else {
 					this.finish();
 				}
@@ -869,6 +909,7 @@ public class BattleArena3D extends StackPane {
 		}
 
 		this.updateTension(dt);
+		this.tickComments(dt);
 		this.updateCamera(dt);
 		this.updateFire(dt * this.effectRate);
 		this.placeBalloons();
@@ -890,6 +931,13 @@ public class BattleArena3D extends StackPane {
 		this.effects.getChildren().clear();
 		this.clearFire();
 		this.resetFence();
+		if (this.commentary != null) {
+			this.commentary.startRound();
+			if (round > 0 && round + 1 == this.recording.getRounds().size()) {
+				this.commentary.lastRoundStarts();
+			}
+		}
+		this.commentQueue.clear();
 		for (RobotView view : this.robots.values()) {
 			view.reset();
 		}
@@ -923,6 +971,10 @@ public class BattleArena3D extends StackPane {
 		this.phaseTime = 0;
 
 		List<RobotState> alive = turns.get(turns.size() - 1).robots().stream().filter(r -> !r.isDead()).toList();
+		this.say(this.commentary.roundEnd(alive.size() == 1 ? alive.get(0).index() : -1));
+		if (this.round + 1 == this.recording.getRounds().size()) {
+			this.headline = this.commentary.battleEnd();
+		}
 		if (alive.size() == 1) {
 			int winner = alive.get(0).index();
 			this.roundWins.merge(winner, 1, Integer::sum);
@@ -1032,6 +1084,7 @@ public class BattleArena3D extends StackPane {
 	 * Shots, hits and deaths happen once, when their turn is reached
 	 */
 	private void turnEvents(Turn turn, Turn previous, int turnIndex) {
+		this.say(this.commentary.turn(turn, previous));
 		for (Bullet bullet : turn.bullets()) {
 			if (this.bulletsSeen.add(bullet.id()) && !bullet.isHit()) {
 				this.audio.shot(bullet.power());
@@ -1303,6 +1356,176 @@ public class BattleArena3D extends StackPane {
 		this.flashLight.setTranslateY(-60);
 		this.flashLight.setColor(color);
 		this.effect(new Timeline(new KeyFrame(Duration.seconds(seconds), new KeyValue(this.flashLight.colorProperty(), Color.BLACK)))).play();
+	}
+
+	// ------------------------------------------------------------- commentary
+
+	/**
+	 * Callouts on the side of each player, under the energy bars, and the
+	 * commentator at the bottom
+	 */
+	private Node buildCommentary() {
+		this.calloutsLeft.setAlignment(Pos.TOP_LEFT);
+		this.calloutsRight.setAlignment(Pos.TOP_RIGHT);
+		this.calloutsCenter.setAlignment(Pos.TOP_CENTER);
+		for (VBox column : List.of(this.calloutsLeft, this.calloutsRight, this.calloutsCenter)) {
+			column.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+		}
+		StackPane.setAlignment(this.calloutsLeft, Pos.TOP_LEFT);
+		StackPane.setMargin(this.calloutsLeft, new Insets(130, 0, 0, 40));
+		StackPane.setAlignment(this.calloutsRight, Pos.TOP_RIGHT);
+		StackPane.setMargin(this.calloutsRight, new Insets(130, 40, 0, 0));
+		StackPane.setAlignment(this.calloutsCenter, Pos.TOP_CENTER);
+		StackPane.setMargin(this.calloutsCenter, new Insets(130, 0, 0, 0));
+
+		Label tag = new Label("● AO VIVO");
+		tag.getStyleClass().add("arena-comment-tag");
+		this.commentText.getStyleClass().add("arena-comment-text");
+		this.commentText.setWrapText(true);
+		this.ticker.getChildren().addAll(tag, this.commentText);
+		this.ticker.setAlignment(Pos.CENTER_LEFT);
+		this.ticker.getStyleClass().add("arena-comment");
+		this.ticker.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+		this.ticker.maxWidthProperty().bind(this.widthProperty().multiply(0.7));
+		this.ticker.setOpacity(0);
+		StackPane.setAlignment(this.ticker, Pos.BOTTOM_CENTER);
+		StackPane.setMargin(this.ticker, new Insets(0, 0, 64, 0));
+
+		this.commentaryLayer.getChildren().addAll(this.calloutsLeft, this.calloutsRight, this.calloutsCenter, this.ticker);
+		this.commentaryLayer.setMouseTransparent(true);
+		this.commentaryLayer.setPickOnBounds(false);
+		return this.commentaryLayer;
+	}
+
+	/**
+	 * Shows what the commentary said, nothing during the replay: it was said
+	 * already
+	 */
+	private void say(List<BattleCommentary.Message> messages) {
+		if (this.phase == Phase.REPLAY) {
+			return;
+		}
+		for (BattleCommentary.Message message : messages) {
+			if (message.callout()) {
+				this.callout(message);
+			} else {
+				this.queueComment(message);
+			}
+		}
+	}
+
+	/**
+	 * Position of the robot in the battle: 0 is on the left, 1 on the right
+	 */
+	private int orderOf(int robot) {
+		List<BattleRecording.Robot> list = this.recording.getRobots();
+		for (int i = 0; i < list.size(); i++) {
+			if (list.get(i).getIndex() == robot) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	private Color toneColor(BattleCommentary.Message message) {
+		return switch (message.tone()) {
+		case DANGER -> Color.web("#ff2a2a");
+		case GOLD -> Theme.ACCENT;
+		case NEUTRAL -> Color.web("#eef2fa");
+		case PLAYER -> {
+			int order = this.orderOf(message.robot());
+			yield order < 0 ? Theme.ACCENT : PLAYER_COLORS[order % PLAYER_COLORS.length];
+		}
+		};
+	}
+
+	/**
+	 * A big word that pops on the side of the robot and goes away
+	 */
+	private void callout(BattleCommentary.Message message) {
+		int order = this.orderOf(message.robot());
+		VBox column = order == 0 ? this.calloutsLeft : order == 1 ? this.calloutsRight : this.calloutsCenter;
+		Color color = this.toneColor(message);
+
+		Label label = new Label(message.text());
+		label.getStyleClass().add("arena-callout");
+		label.setTextFill(color);
+		label.setEffect(Theme.glow(color, 16));
+		label.setRotate(order == 0 ? -4 : order == 1 ? 4 : 0);
+		// The same callout again pops again, it is not repeated
+		column.getChildren().removeIf(node -> node instanceof Label other && other.getText().equals(message.text()));
+		if (column.getChildren().size() >= MAX_CALLOUTS) {
+			column.getChildren().remove(0);
+		}
+		column.getChildren().add(label);
+
+		ScaleTransition pop = new ScaleTransition(Duration.millis(280), label);
+		pop.setFromX(2.2);
+		pop.setFromY(2.2);
+		pop.setToX(1);
+		pop.setToY(1);
+		pop.setInterpolator(Theme.OVERSHOOT);
+		FadeTransition fade = new FadeTransition(Duration.millis(400), label);
+		fade.setToValue(0);
+		TranslateTransition rise = new TranslateTransition(Duration.millis(400), label);
+		rise.setByY(-18);
+		SequentialTransition life = new SequentialTransition(pop, new PauseTransition(Duration.millis(message.tone() == BattleCommentary.Tone.DANGER ? 2200 : 1500)),
+				new ParallelTransition(fade, rise));
+		life.setOnFinished(event -> column.getChildren().remove(label));
+		life.play();
+		if (message.tone() == BattleCommentary.Tone.DANGER) {
+			Timeline blink = new Timeline(new KeyFrame(Duration.millis(160), event -> label.setVisible(!label.isVisible())));
+			blink.setCycleCount(12);
+			blink.setOnFinished(event -> label.setVisible(true));
+			blink.play();
+		}
+	}
+
+	/**
+	 * A more important comment cuts the current one, the others wait their turn
+	 */
+	private void queueComment(BattleCommentary.Message message) {
+		if (this.comment == null || message.priority() > this.comment.priority() && this.commentAge > 0.6) {
+			this.showComment(message);
+			return;
+		}
+		this.commentQueue.add(new QueuedComment(message, this.commentClock));
+		this.commentQueue.sort((a, b) -> Integer.compare(b.message().priority(), a.message().priority()));
+		while (this.commentQueue.size() > 3) {
+			this.commentQueue.remove(this.commentQueue.size() - 1);
+		}
+	}
+
+	private void showComment(BattleCommentary.Message message) {
+		this.comment = message;
+		this.commentAge = 0;
+		this.commentText.setText(message.text());
+		Color color = message.robot() < 0 ? Theme.ACCENT : this.toneColor(message);
+		this.ticker.setStyle("-fx-border-color: " + toCss(color) + ";");
+		this.ticker.setOpacity(1);
+		TranslateTransition slide = new TranslateTransition(Duration.millis(220), this.ticker);
+		slide.setFromX(-60);
+		slide.setToX(0);
+		slide.setInterpolator(Interpolator.EASE_OUT);
+		slide.play();
+	}
+
+	private void tickComments(double dt) {
+		this.commentClock += dt;
+		if (this.comment != null) {
+			this.commentAge += dt;
+			if (this.commentAge > COMMENT_SECONDS) {
+				this.comment = null;
+				FadeTransition fade = new FadeTransition(Duration.millis(250), this.ticker);
+				fade.setToValue(0);
+				fade.play();
+			}
+		}
+		// Old news are not told
+		this.commentQueue.removeIf(queued -> this.commentClock - queued.since() > COMMENT_MAX_WAIT);
+		if (this.comment == null && !this.commentQueue.isEmpty() && this.phase != Phase.REPLAY) {
+			this.showComment(this.commentQueue.remove(0).message());
+		}
 	}
 
 	// --------------------------------------------------------------- showcase
