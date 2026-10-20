@@ -17,6 +17,7 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
@@ -82,6 +83,10 @@ public class Podium extends StackPane {
 			return 7.5625 * u * u + 0.984375;
 		}
 	};
+
+	/** How much of the width of the screen a column of the podium takes: a step, a picture and the names. The columns are farther apart than this, so nothing of one touches another. */
+	private static final double COLUMN_WIDTH = 0.19;
+	private static final double COLUMN_SPACING = 0.215;
 
 	private final Random random = new Random();
 	/** The robots by place, 1 to 3, null if there is none */
@@ -270,7 +275,7 @@ public class Podium extends StackPane {
 		glow.setSpread(0.3);
 		title.setEffect(glow);
 
-		ImageView image = this.image(champion, 0.30, true);
+		ImageView image = this.image(champion, 0.30, 0.5, true);
 		image.setEffect(new DropShadow(50, GOLD));
 
 		Label name = new Label(champion.getName().toUpperCase());
@@ -396,12 +401,12 @@ public class Podium extends StackPane {
 	/**
 	 * The robot picture, a fit of the height of the screen
 	 */
-	private ImageView image(Opponent opponent, double heightFactor, boolean reflection) {
+	private ImageView image(Opponent opponent, double heightFactor, double widthFactor, boolean reflection) {
 		ImageView view = new ImageView();
 		view.setSmooth(true);
 		view.setPreserveRatio(true);
 		view.fitHeightProperty().bind(this.heightProperty().multiply(heightFactor));
-		view.fitWidthProperty().bind(this.widthProperty().multiply(0.3));
+		view.fitWidthProperty().bind(this.widthProperty().multiply(widthFactor));
 		if (reflection) {
 			view.setEffect(new Reflection(0, 0.3, 0.35, 0));
 		}
@@ -630,12 +635,12 @@ public class Podium extends StackPane {
 				Label number = new Label(String.valueOf(place));
 				number.getStyleClass().add("podium-number");
 				number.setTextFill(color.interpolate(Color.BLACK, 0.55));
-				number.styleProperty().bind(Podium.this.heightProperty().multiply(place == 1 ? 0.14 : 0.11).asString("-fx-font-size: %.0fpx;"));
+				number.styleProperty().bind(Podium.this.heightProperty().multiply(place == 1 ? 0.14 : place == 2 ? 0.1 : 0.075).asString("-fx-font-size: %.0fpx;"));
 				this.numbers[place] = number;
 
 				Opponent opponent = Podium.this.places[place];
 				if (opponent != null) {
-					ImageView image = Podium.this.image(opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, false);
+					ImageView image = Podium.this.image(opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, COLUMN_WIDTH, false);
 					image.setEffect(new DropShadow(30, color));
 					this.images[place] = image;
 					Label name = new Label(opponent.getName().toUpperCase());
@@ -643,12 +648,19 @@ public class Podium extends StackPane {
 					name.setWrapText(true);
 					name.setAlignment(Pos.CENTER);
 					name.setTextFill(Color.WHITE);
-					name.styleProperty().bind(Podium.this.heightProperty().multiply(place == 1 ? 0.038 : 0.032).asString("-fx-font-size: %.0fpx;"));
-					name.maxWidthProperty().bind(Podium.this.widthProperty().multiply(0.27));
-					Label team = new Label("TIME " + opponent.getTeam().toUpperCase());
+					// The letters shrink to fit the column: a long name never reaches the next one
+					double heightFactor = place == 1 ? 0.038 : 0.032;
+					name.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(Podium.this.getHeight() * heightFactor, Podium.this.getWidth() * COLUMN_WIDTH / Math.max(1, opponent.getName().length() * 0.9)))), Podium.this.heightProperty(), Podium.this.widthProperty()));
+					String teamText = "TIME " + opponent.getTeam().toUpperCase();
+					Label team = new Label(teamText);
 					team.getStyleClass().add("podium-team");
-					team.styleProperty().bind(Podium.this.heightProperty().multiply(0.026).asString("-fx-font-size: %.0fpx;"));
+					team.setAlignment(Pos.CENTER);
+					team.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(Podium.this.getHeight() * 0.026, Podium.this.getWidth() * COLUMN_WIDTH / Math.max(1, teamText.length() * 0.9)))), Podium.this.heightProperty(), Podium.this.widthProperty()));
 					VBox figure = new VBox(4, name, team, image);
+					// The whole figure, names and picture, fits its column
+					figure.prefWidthProperty().bind(Podium.this.widthProperty().multiply(COLUMN_WIDTH));
+					figure.minWidthProperty().bind(figure.prefWidthProperty());
+					figure.maxWidthProperty().bind(figure.prefWidthProperty());
 					figure.setAlignment(Pos.BOTTOM_CENTER);
 					figure.setVisible(false);
 					this.figures[place] = figure;
@@ -680,7 +692,7 @@ public class Podium extends StackPane {
 
 		/** Where the center of the column of the place is, from 0 to 1 */
 		double columnCenter(int place) {
-			return place == 1 ? 0.5 : place == 2 ? 0.5 - 0.215 : 0.5 + 0.215;
+			return place == 1 ? 0.5 : place == 2 ? 0.5 - COLUMN_SPACING : 0.5 + COLUMN_SPACING;
 		}
 
 		private double stepHeight(int place) {
@@ -692,7 +704,7 @@ public class Podium extends StackPane {
 			double width = this.getWidth();
 			double height = this.getHeight();
 			double baseline = height * 0.9;
-			double stepWidth = width * 0.2;
+			double stepWidth = width * COLUMN_WIDTH;
 			for (int place = 1; place <= 3; place++) {
 				double cx = this.columnCenter(place) * width;
 				double top = baseline - this.stepHeight(place);
@@ -707,7 +719,7 @@ public class Podium extends StackPane {
 				VBox figure = this.figures[place];
 				if (figure != null) {
 					figure.autosize();
-					figure.relocate(cx - figure.getWidth() / 2, top - figure.getHeight() + 6);
+					figure.relocate(cx - figure.getWidth() / 2, top - figure.getHeight());
 				}
 			}
 			double top1 = baseline - this.stepHeight(1);

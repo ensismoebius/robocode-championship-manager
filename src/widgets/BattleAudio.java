@@ -196,14 +196,35 @@ public final class BattleAudio {
 
 	// ------------------------------------------------------------------ effects
 
+	/** Lowers the whole sound of the shots: the base frequency */
+	private static final double SHOT_BASE = 0.65;
+
 	/**
-	 * A cannon shot, heavier with more power (0.1 to 3)
+	 * How high a shot sounds: robocode bullets fly at 20 - 3 * power, so the
+	 * pitch goes with their speed. A quick bullet (little power, 19.7) is high, a
+	 * slow one (the most power, 11) is low, about an octave and a half apart.
+	 *
+	 * @param power
+	 *            0.1 to 3
+	 */
+	static double shotPitch(double power) {
+		double speed = 20 - 3 * Math.max(0.1, Math.min(3, power));
+		return SHOT_BASE * Math.pow(speed / 15, 1.8);
+	}
+
+	/**
+	 * A cannon shot, heavier with more power (0.1 to 3). It is higher the faster
+	 * the bullet goes (see {@link #shotPitch(double)}) and lower the slower: the
+	 * same sound played faster or slower.
 	 */
 	public void shot(double power) {
 		double weight = Math.max(0, Math.min(1, (power - 0.1) / 2.9));
-		double[] crack = Synth.mix(Synth.lowpass(Synth.noise(0.09, 3), 0.55), Synth.sweep(1800 - 900 * weight, 160, 0.12, true), 0.7);
-		double[] thump = Synth.sineSweep(110 - 40 * weight, 45, 0.22);
-		this.sfx(Synth.mix(crack, thump, 0.5 + 0.5 * weight), 0.45 + 0.4 * weight, this.vary());
+		double[] crack = Synth.mix(Synth.lowpass(Synth.noise(0.09, 3), 0.45), Synth.sweep(1500, 200, 0.12, true), 0.7);
+		double[] thump = Synth.sineSweep(100, 45, 0.22);
+		// The bullet whistling out of the barrel
+		double[] whistle = Synth.sineSweep(900, 500, 0.14);
+		double[] sound = Synth.mix(Synth.mix(crack, thump, 0.45 + 0.4 * weight), whistle, 0.25);
+		this.sfx(sound, 0.45 + 0.4 * weight, shotPitch(power) * this.vary());
 	}
 
 	/**

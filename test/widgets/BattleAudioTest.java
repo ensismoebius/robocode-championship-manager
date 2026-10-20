@@ -48,4 +48,16 @@ class BattleAudioTest {
 			assertTrue(Song.resolve(configured, random) != null);
 		}
 	}
+
+	@Test
+	void quickBulletsSoundHigherAndSlowOnesLower() {
+		// Bullets fly at 20 - 3 * power
+		assertTrue(BattleAudio.shotPitch(0.1) > BattleAudio.shotPitch(1));
+		assertTrue(BattleAudio.shotPitch(1) > BattleAudio.shotPitch(2));
+		assertTrue(BattleAudio.shotPitch(2) > BattleAudio.shotPitch(3));
+		// Neither silly high nor a growl
+		assertTrue(BattleAudio.shotPitch(0.1) < 2 && BattleAudio.shotPitch(3) > 0.25);
+		// Out of range powers are kept in range
+		assertEquals(BattleAudio.shotPitch(3), BattleAudio.shotPitch(9), 1e-9);
+	}
 }
