@@ -2066,22 +2066,193 @@ public class BattleArena3D extends StackPane {
 		}
 		this.updateHud(energies);
 
-		// Bullets in flight
-		Set<Integer> flying = new HashSet<Integer>();
-		for (Bullet bullet : current.bullets()) {
-			if (bullet.isHit() || bullet.state() > BattleRecording.BULLET_HIT_WALL) {
-				continue;
+		this.showBullets(turns, index, fraction);
+	}
+
+	/**
+	 * Where a robot is drawn at a moment (in turns, with the fraction) and its
+	 * heading, as showTurn places it
+	 */
+	private static double[] pose(List<Turn> turns, int robot, double time) {
+		int index = Math.max(0, Math.min((int) Math.floor(time), turns.size() - 1));
+		double fraction = Math.max(0, Math.min(1, time - index));
+		RobotState state = find(turns.get(index).robots(), robot, null);
+		if (state == null) {
+			return null;
+		}
+		RobotState after = find(turns.get(Math.min(index + 1, turns.size() - 1)).robots(), robot, state);
+		return new double[] { lerp(state.x(), after.x(), fraction), lerp(state.y(), after.y(), fraction), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction) };
+	}
+
+	private static Bullet findBullet(Turn turn, int id) {
+		for (Bullet bullet : turn.bullets()) {
+			if (bullet.id() == id) {
+				return bullet;
 			}
-			flying.add(bullet.id());
-			Bullet after = next.bullets().stream().filter(b -> b.id() == bullet.id()).findFirst().orElse(bullet);
-			Group shot = this.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
-			shot.setTranslateX(this.worldX(lerp(bullet.x(), after.x(), fraction)));
-			shot.setTranslateZ(this.worldZ(lerp(bullet.y(), after.y(), fraction)));
-			// The bolt points to where it goes
-			double dx = this.worldX(after.x()) - this.worldX(bullet.x());
-			double dz = this.worldZ(after.y()) - this.worldZ(bullet.y());
-			if (Math.abs(dx) + Math.abs(dz) > 1e-6) {
-				shot.setRotate(Math.toDegrees(Math.atan2(dx, dz)));
+		}
+		return null;
+	}
+
+	/**
+	 * The whole flight of a bullet, from the muzzle of the gun to where it hits.
+	 *
+	 * @param born
+	 *            the turn (and fraction) when it left the shooter
+	 * @param duration
+	 *            turns until it arrives
+	 * @param hit
+	 *            the record of the hit, null if it flies until the records end
+	 */
+	private record Flight(double sx, double sy, double ux, double uy, double total, double born, double duration, Bullet hit, double side, double ahead) {
+	}
+
+	/**
+	 * Robocode hits with a square of 36 that does not turn with the robot, the
+	 * tank is narrower (and longer): a bullet that grazes a corner of the square
+	 * would pass by the side of the tank. The point of the hit is brought well
+	 * inside the hull (13.5 to each side, 22 to the front and to the back), so
+	 * the bolt always goes into it.
+	 */
+	private static final double HULL_SIDE = 8;
+	private static final double HULL_AHEAD = 15;
+	/** The height of the gun, where the bolts leave */
+	private static final double BARREL_HEIGHT = -17.2;
+	/**
+	 * The height of the middle of the hull (from -7 to -13.5): the tank is low,
+	 * at the height of the gun a bolt would pass over it
+	 */
+	private static final double HULL_HEIGHT = -10.5;
+
+	/** How far the end of the gun is from the center of the tank */
+	private static final double MUZZLE = 44;
+
+	private final Map<Integer, Flight> flights = new HashMap<Integer, Flight>();
+
+	/**
+	 * The records only say where a bullet is at the end of each turn, one step
+	 * after it left the center of the shooter, and the last one is the point of
+	 * the hit (that follows the victim). So the flight is made from the whole
+	 * path: the bolt comes out of the muzzle of the gun and goes straight to the
+	 * point of the hit, always at the same pace, and explodes when it gets there.
+	 */
+	private Flight flight(List<Turn> turns, int index, Bullet seen) {
+		Flight known = this.flights.get(seen.id());
+		if (known != null) {
+			return known;
+		}
+		int first = index;
+		while (first > 0 && findBullet(turns.get(first - 1), seen.id()) != null) {
+			first--;
+		}
+		Bullet start = findBullet(turns.get(first), seen.id());
+		if (start == null) {
+			first = index + 1;
+			start = seen;
+		}
+		Bullet last = start;
+		Bullet previous = start;
+		Bullet hit = null;
+		int end = first;
+		for (int k = first + 1; k < turns.size(); k++) {
+			Bullet now = findBullet(turns.get(k), seen.id());
+			if (now == null) {
+				break;
+			}
+			end = k;
+			if (now.isHit()) {
+				hit = now;
+				last = now;
+				break;
+			}
+			previous = now;
+			last = now;
+		}
+		double speed = 20 - 3 * start.power();
+		double dx = last.x() - start.x();
+		double dy = last.y() - start.y();
+		double length = Math.hypot(dx, dy);
+		Flight flight = null;
+		if (length > 1e-6 && !start.isHit()) {
+			dx /= length;
+			dy /= length;
+			double born = first - 1;
+			// Gets there when the last step is done
+			double duration = hit != null ? end - 1 - born + Math.hypot(hit.x() - previous.x(), hit.y() - previous.y()) / speed : end - born;
+			duration = Math.max(0.01, duration);
+			double sx = start.x() - dx * speed;
+			double sy = start.y() - dy * speed;
+			double ex = last.x();
+			double ey = last.y();
+			// Where it hits the victim, in the frame of the tank (across and ahead),
+			// and where that point of the hull is drawn when the bolt gets there: the
+			// bolt flies straight to it
+			double side = 0;
+			double ahead = 0;
+			if (hit != null && hit.state() == BattleRecording.BULLET_HIT_VICTIM) {
+				RobotState victim = find(turns.get(end).robots(), hit.victim(), null);
+				double[] pose = pose(turns, hit.victim(), born + duration);
+				if (victim != null && pose != null) {
+					double ox = hit.x() - victim.x();
+					double oy = hit.y() - victim.y();
+					double heading = victim.bodyHeading();
+					side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, ox * Math.cos(heading) - oy * Math.sin(heading)));
+					ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, ox * Math.sin(heading) + oy * Math.cos(heading)));
+					ex = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
+					ey = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
+				}
+			}
+			double total = Math.hypot(ex - sx, ey - sy);
+			if (total > 1e-6) {
+				flight = new Flight(sx, sy, (ex - sx) / total, (ey - sy) / total, total, born, duration, hit, side, ahead);
+			}
+		}
+		// A bullet with no flight is never drawn: it was born hitting
+		this.flights.put(seen.id(), flight == null ? new Flight(0, 0, 0, 0, 0, 0, 0, null, 0, 0) : flight);
+		return this.flights.get(seen.id());
+	}
+
+	private void showBullets(List<Turn> turns, int index, double fraction) {
+		Turn current = turns.get(index);
+		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
+		Set<Integer> flying = new HashSet<Integer>();
+		for (Turn turn : next == current ? List.of(current) : List.of(current, next)) {
+			for (Bullet bullet : turn.bullets()) {
+				if (bullet.isHit() || bullet.state() > BattleRecording.BULLET_HIT_WALL || flying.contains(bullet.id())) {
+					continue;
+				}
+				Flight flight = this.flight(turns, turn == current ? index : index + 1, bullet);
+				if (flight.total() <= 0) {
+					continue;
+				}
+				double progress = (this.turnPosition - flight.born()) / flight.duration();
+				if (progress < 0) {
+					continue;
+				}
+				if (progress >= 1) {
+					if (flight.hit() != null) {
+						double[] target = this.target(flight);
+						this.bulletHit(flight.hit(), target[0], target[1]);
+						continue;
+					}
+					progress = 1;
+				}
+				// From the muzzle to the end, the speed is the same all the way
+				double distance = flight.total() > MUZZLE ? MUZZLE + (flight.total() - MUZZLE) * progress : flight.total() * progress;
+				double x = flight.sx() + flight.ux() * distance;
+				double y = flight.sy() + flight.uy() * distance;
+				// The ones that hit a tank come down, little by little, from the height of
+				// the gun to the middle of the hull
+				double height = BARREL_HEIGHT;
+				if (flight.hit() != null && flight.hit().state() == BattleRecording.BULLET_HIT_VICTIM) {
+					double along = flight.total() > MUZZLE ? (distance - MUZZLE) / (flight.total() - MUZZLE) : progress;
+					height += (HULL_HEIGHT - BARREL_HEIGHT) * Math.max(0, Math.min(1, along));
+				}
+				if (distance >= MUZZLE) {
+					this.bulletFired(bullet, flight.sx() + flight.ux() * MUZZLE, flight.sy() + flight.uy() * MUZZLE);
+				} else if (this.bulletsSeen.contains(bullet.id()) == false) {
+					this.bulletFired(bullet, flight.sx() + flight.ux() * Math.min(MUZZLE, flight.total()), flight.sy() + flight.uy() * Math.min(MUZZLE, flight.total()));
+				}
+				this.placeBullet(bullet, flying, x, y, flight.ux(), flight.uy(), height);
 			}
 		}
 		this.bullets.entrySet().removeIf(entry -> {
@@ -2091,6 +2262,66 @@ public class BattleArena3D extends StackPane {
 			}
 			return false;
 		});
+	}
+
+	private void placeBullet(Bullet bullet, Set<Integer> flying, double x, double y, double dx, double dy, double height) {
+		flying.add(bullet.id());
+		Group shot = this.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
+		shot.setTranslateX(this.worldX(x));
+		shot.setTranslateZ(this.worldZ(y));
+		shot.setTranslateY(height);
+		// The bolt points to where it goes, turned around its head
+		((Rotate) shot.getTransforms().get(0)).setAngle(Math.toDegrees(Math.atan2(dx, dy)));
+	}
+
+	/**
+	 * Where the flight ends now: the point of the hit on the victim as it is drawn
+	 * at this moment, or the end of the path
+	 */
+	private double[] target(Flight flight) {
+		Bullet hit = flight.hit();
+		RobotView victim = hit == null || hit.state() != BattleRecording.BULLET_HIT_VICTIM ? null : this.robots.get(hit.victim());
+		if (victim == null) {
+			return new double[] { flight.sx() + flight.ux() * flight.total(), flight.sy() + flight.uy() * flight.total() };
+		}
+		double x = victim.root.getTranslateX() + this.fieldWidth / 2;
+		double y = victim.root.getTranslateZ() + this.fieldHeight / 2;
+		double heading = Math.toRadians(victim.bodyRotate.getAngle());
+		return new double[] { x + flight.side() * Math.cos(heading) + flight.ahead() * Math.sin(heading), y - flight.side() * Math.sin(heading) + flight.ahead() * Math.cos(heading) };
+	}
+
+	/**
+	 * The shot, once: the sound and the flash at the gun
+	 */
+	private void bulletFired(Bullet bullet, double x, double y) {
+		if (this.bulletsSeen.add(bullet.id())) {
+			this.audio.shot(bullet.power());
+			this.muzzleFlash(this.worldX(x), this.worldZ(y), this.shooterColor(bullet));
+		}
+	}
+
+	/**
+	 * The hit, once: the explosion where the bullet stopped and what the victim
+	 * feels
+	 */
+	private void bulletHit(Bullet bullet, double x, double y) {
+		if (!this.bulletsExploded.add(bullet.id())) {
+			return;
+		}
+		this.explosion(this.worldX(x), this.worldZ(y), 8 + bullet.power() * 6, this.shooterColor(bullet));
+		RobotView victim = this.robots.get(bullet.victim());
+		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
+			victim.flash();
+			this.audio.hit(bullet.power());
+			this.hitTension = Math.min(0.25, this.hitTension + 0.08 + bullet.power() * 0.03);
+			this.shake += 3 + bullet.power() * 3;
+			this.impactCut(bullet.victim(), bullet.power());
+		} else {
+			this.audio.spark();
+			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
+				this.flashFence(bullet.x(), bullet.y());
+			}
+		}
 	}
 
 	private static RobotState find(List<RobotState> states, int index, RobotState fallback) {
@@ -2108,25 +2339,11 @@ public class BattleArena3D extends StackPane {
 	private void turnEvents(Turn turn, Turn previous, int turnIndex) {
 		this.say(this.commentary.turn(turn, previous));
 		for (Bullet bullet : turn.bullets()) {
-			if (this.bulletsSeen.add(bullet.id()) && !bullet.isHit()) {
-				this.audio.shot(bullet.power());
-				this.muzzleFlash(this.worldX(bullet.x()), this.worldZ(bullet.y()), this.shooterColor(bullet));
-			}
-			if (bullet.isHit() && this.bulletsExploded.add(bullet.id())) {
-				this.explosion(this.worldX(bullet.x()), this.worldZ(bullet.y()), 8 + bullet.power() * 6, this.shooterColor(bullet));
-				RobotView victim = this.robots.get(bullet.victim());
-				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
-					victim.flash();
-					this.audio.hit(bullet.power());
-					this.hitTension = Math.min(0.25, this.hitTension + 0.08 + bullet.power() * 0.03);
-					this.shake += 3 + bullet.power() * 3;
-					this.impactCut(bullet.victim(), bullet.power());
-				} else {
-					this.audio.spark();
-					if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
-						this.flashFence(bullet.x(), bullet.y());
-					}
-				}
+			if (!bullet.isHit()) {
+				this.bulletFired(bullet, bullet.x(), bullet.y());
+			} else {
+				this.bulletsSeen.add(bullet.id());
+				this.bulletHit(bullet, bullet.x(), bullet.y());
 			}
 		}
 		for (RobotState state : turn.robots()) {
@@ -2189,8 +2406,12 @@ public class BattleArena3D extends StackPane {
 		PhongMaterial tailMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.4));
 		tailMaterial.setSelfIlluminationMap(solidMap(tint));
 		Group shot = new Group(tail.view(tailMaterial), halo.view(haloMaterial), core.view(coreMaterial));
-		shot.setRotationAxis(Rotate.Y_AXIS);
-		shot.setTranslateY(-22);
+		// Turned around the head, where the bullet is. Not with setRotate: it turns
+		// around the middle of the bolt, the long tail moves it there, and the head
+		// would be drawn up to 40 units away from the bullet, to the side of the
+		// robot it hits.
+		shot.getTransforms().add(new Rotate(0, Rotate.Y_AXIS));
+		shot.setTranslateY(BARREL_HEIGHT);
 		this.bulletLayer.getChildren().add(shot);
 		return shot;
 	}
@@ -2213,6 +2434,7 @@ public class BattleArena3D extends StackPane {
 			this.bulletLayer.getChildren().remove(bullet);
 		}
 		this.bullets.clear();
+		this.flights.clear();
 	}
 
 	private void whiteFlash() {
@@ -3019,11 +3241,15 @@ public class BattleArena3D extends StackPane {
 		this.fatalBullet = -1;
 		this.impactTurn = -1;
 		List<Turn> turns = this.turns();
-		for (int t = Math.max(0, turn - 3); t <= Math.min(turns.size() - 1, turn + 1) && this.fatalBullet < 0; t++) {
+		// (a bullet stays in the records for a while after its hit, exploding: the
+		// hit is the turn it changes to HIT_VICTIM, the last one before the death)
+		for (int t = Math.min(turns.size() - 1, turn + 1); t >= Math.max(1, turn - 3) && this.fatalBullet < 0; t--) {
 			for (Bullet bullet : turns.get(t).bullets()) {
-				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && bullet.victim() == robot) {
+				Bullet before = findBullet(turns.get(t - 1), bullet.id());
+				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && bullet.victim() == robot && (before == null || !before.isHit())) {
 					this.fatalBullet = bullet.id();
 					this.impactTurn = t;
+					break;
 				}
 			}
 		}
@@ -3056,10 +3282,14 @@ public class BattleArena3D extends StackPane {
 		for (RobotView view : this.robots.values()) {
 			view.reset();
 		}
-		// Bullets already flying when the replay starts are not new shots
+		// Bullets already flying when the replay starts are not new shots, and the
+		// ones still exploding there hit before it
 		if (this.replayFrom > 0) {
 			for (Bullet bullet : this.turns().get(this.replayFrom - 1).bullets()) {
 				this.bulletsSeen.add(bullet.id());
+				if (bullet.isHit()) {
+					this.bulletsExploded.add(bullet.id());
+				}
 			}
 		}
 
