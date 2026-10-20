@@ -191,6 +191,12 @@ public class BattleArena3D extends StackPane {
 	private final List<double[]> beamSpots = new ArrayList<double[]>();
 	private double beamYaw;
 	private double beamClock;
+	/** Lights of the neon arena that breathe, with their colors and phases */
+	private final List<PhongMaterial> pulseMaterials = new ArrayList<PhongMaterial>();
+	private final List<Color> pulseColors = new ArrayList<Color>();
+	private final List<Double> pulsePhases = new ArrayList<Double>();
+	private double neonClock;
+	private Box scanner;
 	private static final double BEAM_ALPHA = 0.07;
 	private final List<Particle> particles = new ArrayList<Particle>();
 	private final List<Particle> particlePool = new ArrayList<Particle>();
@@ -473,33 +479,186 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * Dark floor with a cyan grid
+	 * A dome around everything, seen from inside, that shines by itself
+	 */
+	private static Sphere skyDome(Image picture) {
+		Sphere dome = new Sphere(14000, 48);
+		dome.setCullFace(CullFace.FRONT);
+		PhongMaterial sky = new PhongMaterial(Color.BLACK);
+		sky.setSelfIlluminationMap(picture);
+		dome.setMaterial(sky);
+		return dome;
+	}
+
+	/** A material that is the color, lit by the glow light of the arena */
+	private PhongMaterial neonGlow(Color color, boolean pulse, Random random) {
+		PhongMaterial material = new PhongMaterial(color);
+		if (pulse) {
+			this.pulseMaterials.add(material);
+			this.pulseColors.add(color);
+			this.pulsePhases.add(random.nextDouble() * Math.PI * 2);
+		}
+		return material;
+	}
+
+	private MeshView meshView(TriangleMesh mesh, PhongMaterial material) {
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		return view;
+	}
+
+	/**
+	 * Night city: a circuit floor with a grid, pads in the corners and pylons; around it, towers with lit windows, a grid to the horizon
+	 * and a setting sun under a violet sky
 	 */
 	private void buildNeon(double w, double h) {
+		Random random = new Random(8);
+		this.pulseMaterials.clear();
+		this.pulseColors.clear();
+		this.pulsePhases.clear();
 
-		Box floor = new Box(w + 40, 4, h + 40);
-		floor.setMaterial(material(Color.web("#0d1020")));
-		floor.setTranslateY(2);
+		this.arena.getChildren().add(skyDome(NeonTexture.SKY));
 
-		Box ground = new Box(w * 6, 2, h * 6);
+		// The sun, far away, facing the middle
+		double sunX = -0.78 * 7200;
+		double sunZ = -0.62 * 7200;
+		double sunSize = 1250;
+		double rightX = 0.62;
+		double rightZ = -0.78;
+		PhongMaterial sun = new PhongMaterial(Color.BLACK);
+		sun.setDiffuseMap(NeonTexture.SUN);
+		sun.setSelfIlluminationMap(NeonTexture.SUN);
+		TriangleMesh sunMesh = new TriangleMesh();
+		sunMesh.getPoints().addAll((float) (sunX - rightX * sunSize), (float) (-950 - sunSize), (float) (sunZ - rightZ * sunSize), (float) (sunX + rightX * sunSize),
+				(float) (-950 - sunSize), (float) (sunZ + rightZ * sunSize), (float) (sunX + rightX * sunSize), (float) (-950 + sunSize), (float) (sunZ + rightZ * sunSize),
+				(float) (sunX - rightX * sunSize), (float) (-950 + sunSize), (float) (sunZ - rightZ * sunSize));
+		sunMesh.getTexCoords().addAll(0, 0, 1, 0, 1, 1, 0, 1);
+		sunMesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
+		this.arena.getChildren().add(this.meshView(sunMesh, sun));
+
+		Box ground = new Box(9000, 2, 9000);
 		ground.setMaterial(material(Color.web("#07080f")));
 		ground.setTranslateY(6);
-		this.arena.getChildren().addAll(ground, floor);
+		this.arena.getChildren().add(ground);
 
-		PhongMaterial gridMaterial = material(Color.web("#2ec4ff"));
+		// The floor: a slab with a panel texture over it
+		Box floor = new Box(w + 40, 4.4, h + 40);
+		floor.setMaterial(material(Color.web("#0d1020")));
+		floor.setTranslateY(2.8);
+		this.arena.getChildren().add(floor);
+		PhongMaterial panels = textured(NeonTexture.FLOOR, Color.gray(0.3));
+		panels.setSpecularPower(34);
+		this.arena.getChildren().add(this.tiledQuad(new double[][] { { -w / 2 - 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, h / 2 + 20 },
+				{ -w / 2 - 20, 0, h / 2 + 20 } }, panels, NeonTexture.FLOOR_TILE));
+
+		// The grid: thin lines every 50, brighter every 200
+		TriangleMesh minor = new TriangleMesh();
+		TriangleMesh major = new TriangleMesh();
 		for (double x = 0; x <= w; x += 50) {
-			this.arena.getChildren().add(box(1.5, 0.5, h, x - w / 2, -0.3, 0, gridMaterial));
+			NeonCity.box(x % 200 == 0 ? major : minor, x - w / 2, -0.3, 0, x % 200 == 0 ? 2.6 : 1.2, 0.5, h);
 		}
 		for (double y = 0; y <= h; y += 50) {
-			this.arena.getChildren().add(box(w, 0.5, 1.5, 0, -0.3, y - h / 2, gridMaterial));
+			NeonCity.box(y % 200 == 0 ? major : minor, 0, -0.3, y - h / 2, w, 0.5, y % 200 == 0 ? 2.6 : 1.2);
 		}
+		this.glowing.getChildren().add(this.meshView(minor, this.neonGlow(Color.web("#157fae"), false, random)));
+		this.glowing.getChildren().add(this.meshView(major, this.neonGlow(Color.web("#2ec4ff"), true, random)));
 
-		// Floor boundary lines (flat on the ground, zero obstruction to camera views)
-		this.arena.getChildren().add(box(w, 0.5, 2, 0, -0.3, -h / 2, gridMaterial));
-		this.arena.getChildren().add(box(w, 0.5, 2, 0, -0.3, h / 2, gridMaterial));
-		this.arena.getChildren().add(box(2, 0.5, h, -w / 2, -0.3, 0, gridMaterial));
-		this.arena.getChildren().add(box(2, 0.5, h, w / 2, -0.3, 0, gridMaterial));
+		// The edge of the field and a strip of light just outside it
+		TriangleMesh edge = new TriangleMesh();
+		NeonCity.box(edge, 0, -0.4, -h / 2, w + 6, 0.6, 5);
+		NeonCity.box(edge, 0, -0.4, h / 2, w + 6, 0.6, 5);
+		NeonCity.box(edge, -w / 2, -0.4, 0, 5, 0.6, h + 6);
+		NeonCity.box(edge, w / 2, -0.4, 0, 5, 0.6, h + 6);
+		this.glowing.getChildren().add(this.meshView(edge, this.neonGlow(Color.web("#bff3ff"), true, random)));
+		TriangleMesh curb = new TriangleMesh();
+		NeonCity.box(curb, 0, -1.5, -h / 2 - 14, w + 40, 3, 4);
+		NeonCity.box(curb, 0, -1.5, h / 2 + 14, w + 40, 3, 4);
+		NeonCity.box(curb, -w / 2 - 14, -1.5, 0, 4, 3, h + 40);
+		NeonCity.box(curb, w / 2 + 14, -1.5, 0, 4, 3, h + 40);
+		this.glowing.getChildren().add(this.meshView(curb, this.neonGlow(Color.web("#ff3fa4"), true, random)));
 
+		// Pads in the corners: a square and a corner mark inside
+		TriangleMesh pads = new TriangleMesh();
+		for (int sx = -1; sx <= 1; sx += 2) {
+			for (int sz = -1; sz <= 1; sz += 2) {
+				double cx = sx * (w / 2 - 55);
+				double cz = sz * (h / 2 - 55);
+				NeonCity.box(pads, cx, -0.5, cz - 36, 72, 0.6, 2);
+				NeonCity.box(pads, cx, -0.5, cz + 36, 72, 0.6, 2);
+				NeonCity.box(pads, cx - 36, -0.5, cz, 2, 0.6, 72);
+				NeonCity.box(pads, cx + 36, -0.5, cz, 2, 0.6, 72);
+				NeonCity.box(pads, cx - sx * 14, -0.5, cz - sz * 14, 24, 0.6, 3);
+				NeonCity.box(pads, cx - sx * 14, -0.5, cz - sz * 14, 3, 0.6, 24);
+			}
+		}
+		this.glowing.getChildren().add(this.meshView(pads, this.neonGlow(Color.web("#2ec4ff"), true, random)));
+
+		// A scanner: a line of light that sweeps the field
+		this.scanner = box(5, 0.6, h, -w / 2, -0.6, 0, this.neonGlow(Color.web("#ff3fa4"), false, random));
+		this.glowing.getChildren().add(this.scanner);
+
+		// Pylons in the corners, with a light on top and a vertical strip
+		PhongMaterial metal = material(Color.web("#171c32"));
+		TriangleMesh pylonLights = new TriangleMesh();
+		for (int sx = -1; sx <= 1; sx += 2) {
+			for (int sz = -1; sz <= 1; sz += 2) {
+				double px = sx * (w / 2 + 16);
+				double pz = sz * (h / 2 + 16);
+				this.arena.getChildren().add(box(18, 74, 18, px, -37, pz, metal));
+				NeonCity.box(pylonLights, px, -77, pz, 24, 6, 24);
+				NeonCity.box(pylonLights, px - sx * 9.5, -37, pz - sz * 9.5, 3, 60, 3);
+			}
+		}
+		this.glowing.getChildren().add(this.meshView(pylonLights, this.neonGlow(Color.web("#ff3fa4"), true, random)));
+
+		// A dim grid out to the horizon
+		TriangleMesh far = new TriangleMesh();
+		double reach = 3600;
+		for (int j = 1; j <= 35; j++) {
+			for (int sign = -1; sign <= 1; sign += 2) {
+				NeonCity.box(far, sign * (w / 2 + 100 * j), 4.6, 0, 3, 0.8, reach * 2);
+				NeonCity.box(far, 0, 4.6, sign * (h / 2 + 100 * j), reach * 2, 0.8, 3);
+			}
+		}
+		double continuation = reach - h / 2;
+		for (double x = -w / 2; x <= w / 2 + 1; x += 100) {
+			NeonCity.box(far, x, 4.6, -(h / 2 + continuation / 2), 3, 0.8, continuation);
+			NeonCity.box(far, x, 4.6, h / 2 + continuation / 2, 3, 0.8, continuation);
+		}
+		double continuationX = reach - w / 2;
+		for (double z = -h / 2; z <= h / 2 + 1; z += 100) {
+			NeonCity.box(far, -(w / 2 + continuationX / 2), 4.6, z, continuationX, 0.8, 3);
+			NeonCity.box(far, w / 2 + continuationX / 2, 4.6, z, continuationX, 0.8, 3);
+		}
+		this.glowing.getChildren().add(this.meshView(far, this.neonGlow(Color.web("#0d4f73"), false, random)));
+
+		// The skyline: towers with lit windows and neon crowns
+		NeonCity city = new NeonCity();
+		city.skyline(48, random);
+		PhongMaterial facade = new PhongMaterial(Color.gray(0.6));
+		facade.setDiffuseMap(NeonTexture.FACADE);
+		facade.setSelfIlluminationMap(NeonTexture.FACADE_GLOW);
+		this.arena.getChildren().add(this.meshView(city.facades, facade));
+		this.glowing.getChildren().add(this.meshView(city.cyan, this.neonGlow(Color.web("#2ec4ff"), false, random)));
+		this.glowing.getChildren().add(this.meshView(city.magenta, this.neonGlow(Color.web("#ff3fa4"), false, random)));
+	}
+
+	/**
+	 * The lights of the neon arena breathe, out of step, and the scanner sweeps
+	 */
+	private void updateNeon(double dt) {
+		if (this.pulseMaterials.isEmpty()) {
+			return;
+		}
+		this.neonClock += dt;
+		for (int i = 0; i < this.pulseMaterials.size(); i++) {
+			double breath = 0.5 + 0.5 * Math.sin(this.neonClock * 1.3 + this.pulsePhases.get(i));
+			this.pulseMaterials.get(i).setDiffuseColor(this.pulseColors.get(i).deriveColor(0, 1, 0.45 + 0.55 * breath, 1));
+		}
+		if (this.scanner != null) {
+			this.scanner.setTranslateX(((this.neonClock / 7) % 1 - 0.5) * (this.fieldWidth + 20));
+		}
 	}
 
 	/** The lava breathes between these tints of its texture */
@@ -931,13 +1090,8 @@ public class BattleArena3D extends StackPane {
 		PhongMaterial bark = textured(JungleTexture.BARK, Color.gray(0.05));
 		PhongMaterial leaves = textured(JungleTexture.LEAVES, Color.gray(0.1));
 
-		// The sky: a green dome seen from inside, lit by itself
-		Sphere dome = new Sphere(14000, 48);
-		dome.setCullFace(CullFace.FRONT);
-		PhongMaterial sky = new PhongMaterial(Color.BLACK);
-		sky.setSelfIlluminationMap(JungleTexture.SKY);
-		dome.setMaterial(sky);
-		this.arena.getChildren().add(dome);
+		// The sky: a green dome seen from inside
+		this.arena.getChildren().add(skyDome(JungleTexture.SKY));
 		this.buildSunbeams(w, h, wild);
 
 		// Ground: moss everywhere, a bit darker far away (it is the same texture,
@@ -1571,6 +1725,7 @@ public class BattleArena3D extends StackPane {
 		}
 		this.updateFire(dt * this.effectRate);
 		this.updateSunbeams(dt);
+		this.updateNeon(dt);
 		this.placeBalloons();
 	}
 
