@@ -33,6 +33,7 @@ import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
+import javafx.scene.effect.Bloom;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -161,6 +162,16 @@ public class BattleArena3D extends StackPane {
 	 * panels must come last for the robots to be seen through them
 	 */
 	private final Group fence = new Group();
+	/** The looks of the arena */
+	private final ArenaStyle style;
+	/** Parts of the arena that glow, like lava: lit by the fire glow */
+	private final Group glowing = new Group();
+	/** The lava of the volcano arena, pulsing */
+	private PhongMaterial lava;
+	private final List<Flow> flows = new ArrayList<Flow>();
+	private double clock = 0;
+	/** Embers or snow still owed */
+	private double ambientDebt = 0;
 	/** Flame, spark and smoke sprites, sorted back to front every frame */
 	private final Group fireLayer = new Group();
 	private final List<Particle> particles = new ArrayList<Particle>();
@@ -309,6 +320,8 @@ public class BattleArena3D extends StackPane {
 	public BattleArena3D(List<Opponent> fighters) {
 		this.fighters = fighters;
 		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
+		this.style = ArenaStyle.resolve(Configuration.getArena(), this.random);
+		this.audio.setSong(BattleAudio.Song.resolve(Configuration.getBattleMusic(), this.random));
 
 		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.fireLayer, this.fence);
 		this.buildLights();
@@ -323,7 +336,11 @@ public class BattleArena3D extends StackPane {
 		this.subScene.setCamera(this.camera);
 		// A solid color: with a gradient the 3D frames are not cleared and leave
 		// trails
-		this.subScene.setFill(Color.web("#0a0b18"));
+		this.subScene.setFill(this.style.sky);
+		if (this.style == ArenaStyle.VOLCANO) {
+			// The hottest lava bleeds light around it
+			this.subScene.setEffect(new Bloom(0.6));
+		}
 		this.subScene.widthProperty().bind(this.widthProperty());
 		this.subScene.heightProperty().bind(this.heightProperty());
 
@@ -403,21 +420,37 @@ public class BattleArena3D extends StackPane {
 	// ------------------------------------------------------------------ scene
 
 	private void buildLights() {
-		AmbientLight ambient = new AmbientLight(Color.gray(0.5));
-		PointLight key = new PointLight(Color.gray(0.8));
+		AmbientLight ambient = new AmbientLight(this.style.ambient);
+		PointLight key = new PointLight(this.style.key);
 		key.getTransforms().add(new Translate(-300, -900, -500));
-		this.fireGlow.getScope().add(this.fireLayer);
+		this.fireGlow.getScope().addAll(this.fireLayer, this.glowing);
 		this.world.getChildren().addAll(ambient, key, this.flashLight, this.fireGlow);
 	}
 
 	/**
-	 * Floor with a neon grid and a cage of lines as walls
+	 * The floor and the scenery of the style, and the force field
 	 */
 	private void buildArena() {
 		this.fenceSegments.clear();
 		this.fence.getChildren().clear();
+		this.glowing.getChildren().clear();
+		this.lava = null;
+		this.flows.clear();
 		double w = this.fieldWidth;
 		double h = this.fieldHeight;
+		switch (this.style) {
+		case NEON -> this.buildNeon(w, h);
+		case VOLCANO -> this.buildVolcano(w, h);
+		case ICE -> this.buildIce(w, h);
+		}
+		this.arena.getChildren().add(this.glowing);
+		this.buildFence(w, h);
+	}
+
+	/**
+	 * Dark floor with a cyan grid
+	 */
+	private void buildNeon(double w, double h) {
 
 		Box floor = new Box(w + 40, 4, h + 40);
 		floor.setMaterial(material(Color.web("#0d1020")));
@@ -442,6 +475,313 @@ public class BattleArena3D extends StackPane {
 		this.arena.getChildren().add(box(2, 0.5, h, -w / 2, -0.3, 0, gridMaterial));
 		this.arena.getChildren().add(box(2, 0.5, h, w / 2, -0.3, 0, gridMaterial));
 
+	}
+
+	/** The lava breathes between these tints of its texture */
+	private static final Color LAVA_DIM = Color.gray(0.72);
+	private static final Color LAVA_FULL = Color.WHITE;
+	private static final Image LAVA_TEXTURE = LavaTexture.create(0);
+	/** Far away the lava has cooled, only its veins glow */
+	private static final Image CRUST_TEXTURE = LavaTexture.create(0.45);
+	/** Units of the world one tile of the lava texture covers */
+	private static final double LAVA_TILE = 150;
+
+	/**
+	 * A surface of lava whose texture slides: its texture coordinates move every
+	 * frame
+	 */
+	private record Flow(TriangleMesh mesh, float[] base, double du, double dv) {
+	}
+
+	/**
+	 * A quad of flowing lava
+	 *
+	 * @param corners
+	 *            four {x, y, z}, in order around the quad: the texture goes from
+	 *            the first to the second (u) and from the first to the fourth (v)
+	 * @param du
+	 *            tiles per second the texture slides along u, negative goes from
+	 *            the first corner to the second
+	 */
+	private void flow(double[][] corners, double du, double dv) {
+		this.flow(corners, du, dv, this.lava, LAVA_TILE);
+	}
+
+	/**
+	 * @param tile
+	 *            units of the world one tile of the texture covers
+	 */
+	private void flow(double[][] corners, double du, double dv, PhongMaterial material, double tile) {
+		double uLength = Math.sqrt(distance2(corners[0], corners[1])) / tile;
+		double vLength = Math.sqrt(distance2(corners[0], corners[3])) / tile;
+		TriangleMesh mesh = new TriangleMesh();
+		for (double[] corner : corners) {
+			mesh.getPoints().addAll((float) corner[0], (float) corner[1], (float) corner[2]);
+		}
+		float[] base = { 0, 0, (float) uLength, 0, (float) uLength, (float) vLength, 0, (float) vLength };
+		mesh.getTexCoords().addAll(base);
+		mesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		this.glowing.getChildren().add(view);
+		this.flows.add(new Flow(mesh, base, du, dv));
+	}
+
+	/**
+	 * A flat strip of lava from one point to another, flowing that way
+	 */
+	private void flowStrip(double x1, double z1, double x2, double z2, double width, double y, double speed) {
+		double length = Math.hypot(x2 - x1, z2 - z1);
+		double px = -(z2 - z1) / length * width / 2;
+		double pz = (x2 - x1) / length * width / 2;
+		this.flow(new double[][] { { x1 - px, y, z1 - pz }, { x2 - px, y, z2 - pz }, { x2 + px, y, z2 + pz }, { x1 + px, y, z1 + pz } }, -speed, 0);
+	}
+
+	private static double distance2(double[] a, double[] b) {
+		return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
+	}
+
+	private void updateFlows() {
+		float[] coordinates = new float[8];
+		for (Flow flow : this.flows) {
+			// Kept small: the texture repeats every 1
+			float u = (float) ((this.clock * flow.du()) % 1);
+			float v = (float) ((this.clock * flow.dv()) % 1);
+			for (int i = 0; i < 4; i++) {
+				coordinates[2 * i] = flow.base()[2 * i] + u;
+				coordinates[2 * i + 1] = flow.base()[2 * i + 1] + v;
+			}
+			flow.mesh().getTexCoords().setAll(coordinates);
+		}
+	}
+
+	/**
+	 * Basalt plates (Voronoi cells) with glowing lava in the cracks, a moat of
+	 * lava around it and
+	 * volcanoes on the horizon
+	 */
+	private void buildVolcano(double w, double h) {
+		Random rocks = new Random(17);
+		// A plateau of rock in a sea of lava
+		double plateau = 380;
+		Box ground = new Box(w + 2 * plateau, 2, h + 2 * plateau);
+		ground.setMaterial(material(Color.web("#100706")));
+		ground.setTranslateY(6);
+
+		// Lava: its texture glows by itself (self illumination), with no light
+		this.lava = new PhongMaterial(LAVA_FULL);
+		this.lava.setDiffuseMap(LAVA_TEXTURE);
+		this.lava.setSelfIlluminationMap(LAVA_TEXTURE);
+		this.lava.setSpecularColor(Color.BLACK);
+
+		PhongMaterial basalt = new PhongMaterial(Color.web("#2a1c18"));
+		basalt.setSpecularColor(Color.web("#4a3028"));
+		basalt.setSpecularPower(10);
+		Box floor = new Box(w + 40, 4, h + 40);
+		floor.setMaterial(basalt);
+		floor.setTranslateY(2);
+		this.arena.getChildren().addAll(ground, floor);
+
+		// Lava under the whole field, slowly moving, it shows in the cracks
+		this.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025);
+
+		// Basalt plates over it: Voronoi cells of jittered seeds, each shrunk a
+		// bit so the lava glows between them, in cracks of different widths
+		double cell = 68;
+		List<double[]> seeds = new ArrayList<double[]>();
+		for (double x = cell / 2; x < w; x += cell) {
+			for (double z = cell / 2; z < h; z += cell) {
+				seeds.add(new double[] { x - w / 2 + (rocks.nextDouble() - 0.5) * cell * 0.9, z - h / 2 + (rocks.nextDouble() - 0.5) * cell * 0.9 });
+			}
+		}
+		double[] gaps = new double[seeds.size()];
+		for (int i = 0; i < gaps.length; i++) {
+			gaps[i] = 0.9 + rocks.nextDouble() * rocks.nextDouble() * 2.6;
+		}
+		List<double[][]> cells = Voronoi.cells(seeds.toArray(new double[0][]), gaps, -w / 2, -h / 2, w / 2, h / 2);
+
+		// One mesh for each tone of basalt
+		String[] tones = { "#2a1c18", "#221613", "#33231e" };
+		TriangleMesh[] plates = new TriangleMesh[tones.length];
+		for (int i = 0; i < plates.length; i++) {
+			plates[i] = new TriangleMesh();
+			plates[i].getTexCoords().addAll(0, 0);
+		}
+		for (double[][] polygon : cells) {
+			if (polygon.length < 3) {
+				continue;
+			}
+			TriangleMesh mesh = plates[rocks.nextInt(plates.length)];
+			int first = mesh.getPoints().size() / 3;
+			for (double[] point : polygon) {
+				mesh.getPoints().addAll((float) point[0], -0.6f, (float) point[1]);
+			}
+			// A fan, so the normal points up (to -Y)
+			for (int k = 1; k + 1 < polygon.length; k++) {
+				mesh.getFaces().addAll(first, 0, first + k + 1, 0, first + k, 0);
+			}
+		}
+		for (int i = 0; i < plates.length; i++) {
+			PhongMaterial basaltTone = new PhongMaterial(Color.web(tones[i]));
+			basaltTone.setSpecularColor(Color.web("#4a3028"));
+			basaltTone.setSpecularPower(10);
+			MeshView view = new MeshView(plates[i]);
+			view.setMaterial(basaltTone);
+			view.setCullFace(CullFace.NONE);
+			this.arena.getChildren().add(view);
+		}
+
+		PhongMaterial crack = new PhongMaterial(Color.web("#ff5a14"));
+		crack.setSpecularColor(Color.web("#ffb070"));
+
+		// The field border
+		this.glowing.getChildren().addAll(box(w, 0.5, 2, 0, -0.3, -h / 2, crack), box(w, 0.5, 2, 0, -0.3, h / 2, crack), box(2, 0.5, h, -w / 2, -0.3, 0, crack),
+				box(2, 0.5, h, w / 2, -0.3, 0, crack));
+
+		// A moat of lava, a bit lower than the floor
+		double edge = 20;
+		double moat = 70;
+		// It flows around the field, clockwise seen from above
+		double outerX = w / 2 + edge + moat;
+		double outerZ = h / 2 + edge + moat;
+		double middleX = w / 2 + edge + moat / 2;
+		double middleZ = h / 2 + edge + moat / 2;
+		this.flowStrip(-outerX, -middleZ, outerX, -middleZ, moat, 3, 0.18);
+		this.flowStrip(middleX, -outerZ, middleX, outerZ, moat, 3, 0.18);
+		this.flowStrip(outerX, middleZ, -outerX, middleZ, moat, 3, 0.18);
+		this.flowStrip(-middleX, outerZ, -middleX, -outerZ, moat, 3, 0.18);
+
+		// Rivers from the moat to the sea, with a bend
+		double[][] rivers = { { -w / 4, -1, 0 }, { w / 3, 1, 0 }, { h / 5, 1, 1 }, { -h / 4, -1, 1 } };
+		for (double[] river : rivers) {
+			boolean alongX = river[2] == 1;
+			double side = river[1];
+			double start = (alongX ? outerX : outerZ) - 4;
+			double end = (alongX ? w : h) / 2 + plateau + 20;
+			double middle = (start + end) / 2;
+			double bend = river[0] + (rocks.nextDouble() - 0.5) * 140;
+			double[][] points = { { river[0], start }, { bend, middle }, { bend + (rocks.nextDouble() - 0.5) * 120, end } };
+			for (int k = 0; k + 1 < points.length; k++) {
+				double[] a = points[k];
+				double[] b = points[k + 1];
+				if (alongX) {
+					this.flowStrip(side * a[1], a[0], side * b[1], b[0], 34, 4.6, 0.35);
+				} else {
+					this.flowStrip(a[0], side * a[1], b[0], side * b[1], 34, 4.6, 0.35);
+				}
+			}
+		}
+
+		// The sea of lava, drifting, with a cooler crust: bright, it would steal the
+		// show and shimmer far away
+		PhongMaterial crust = new PhongMaterial(Color.WHITE);
+		crust.setDiffuseMap(CRUST_TEXTURE);
+		crust.setSelfIlluminationMap(CRUST_TEXTURE);
+		crust.setSpecularColor(Color.BLACK);
+		double sea = 5000;
+		this.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
+
+		// Volcanoes on the horizon: stacked tiers make a cone, glowing on the top
+		PhongMaterial rock = new PhongMaterial(Color.web("#1c110e"));
+		rock.setSpecularColor(Color.web("#2c1a14"));
+		for (int i = 0; i < 9; i++) {
+			double angle = i * Math.PI * 2 / 9 + rocks.nextDouble() * 0.4;
+			double distance = 1400 + rocks.nextDouble() * 700;
+			double height = 220 + rocks.nextDouble() * 420;
+			double radius = 110 + rocks.nextDouble() * 130;
+			double x = Math.cos(angle) * distance;
+			double z = Math.sin(angle) * distance;
+			int tiers = 8;
+			for (int tier = 0; tier < tiers; tier++) {
+				Cylinder part = new Cylinder(radius * (1 - tier * 0.1), height / tiers, 9);
+				part.setMaterial(rock);
+				part.setTranslateX(x);
+				part.setTranslateZ(z);
+				part.setTranslateY(5 - height / tiers * (tier + 0.5));
+				this.arena.getChildren().add(part);
+			}
+			// Lava falls down the slopes, a bit off them so the tiers do not cover them
+			for (int fall = 0; fall < 3; fall++) {
+				double side = (fall + rocks.nextDouble() * 0.6) * Math.PI * 2 / 3;
+				double dx = Math.cos(side);
+				double dz = Math.sin(side);
+				double top = radius * 0.3 * 1.12;
+				double bottom = radius * 1.12;
+				double topWidth = radius * 0.15;
+				double bottomWidth = radius * 0.42;
+				this.flow(new double[][] { //
+						{ x + dx * top - dz * topWidth, 5 - height, z + dz * top + dx * topWidth }, //
+						{ x + dx * top + dz * topWidth, 5 - height, z + dz * top - dx * topWidth }, //
+						{ x + dx * bottom + dz * bottomWidth, 5, z + dz * bottom - dx * bottomWidth }, //
+						{ x + dx * bottom - dz * bottomWidth, 5, z + dz * bottom + dx * bottomWidth } }, 0, -0.4);
+			}
+			Cylinder crater = new Cylinder(radius * 0.3, 4, 7);
+			crater.setMaterial(this.lava);
+			crater.setTranslateX(x);
+			crater.setTranslateZ(z);
+			crater.setTranslateY(5 - height - 1);
+			this.glowing.getChildren().add(crater);
+		}
+	}
+
+	/**
+	 * Plates of ice with bright seams, and crystals of ice on the horizon
+	 */
+	private void buildIce(double w, double h) {
+		Random crystals = new Random(23);
+		Box ground = new Box(w * 6, 2, h * 6);
+		ground.setMaterial(material(Color.web("#8ea4b8")));
+		ground.setTranslateY(6);
+
+		// The seams: a light floor under the plates
+		Box seams = new Box(w + 40, 4, h + 40);
+		seams.setMaterial(material(Color.web("#e4f3ff")));
+		seams.setTranslateY(2.6);
+		this.arena.getChildren().addAll(ground, seams);
+
+		PhongMaterial[] ice = new PhongMaterial[3];
+		String[] tones = { "#5b83a6", "#6990b3", "#5276a0" };
+		for (int i = 0; i < ice.length; i++) {
+			ice[i] = new PhongMaterial(Color.web(tones[i]));
+			ice[i].setSpecularColor(Color.WHITE);
+			ice[i].setSpecularPower(90);
+		}
+		for (double x = 0; x < w; x += 100) {
+			for (double z = 0; z < h; z += 100) {
+				Box plate = box(Math.min(100, w - x) - 2, 4, Math.min(100, h - z) - 2, x + Math.min(100, w - x) / 2 - w / 2, 2, z + Math.min(100, h - z) / 2 - h / 2,
+						ice[crystals.nextInt(ice.length)]);
+				this.arena.getChildren().add(plate);
+			}
+		}
+
+		// Clusters of crystals far away
+		PhongMaterial crystal = new PhongMaterial(Color.web("#a9dcf5"));
+		crystal.setSpecularColor(Color.WHITE);
+		crystal.setSpecularPower(100);
+		for (int i = 0; i < 12; i++) {
+			double angle = i * Math.PI * 2 / 12 + crystals.nextDouble() * 0.3;
+			double distance = 900 + crystals.nextDouble() * 800;
+			double cx = Math.cos(angle) * distance;
+			double cz = Math.sin(angle) * distance;
+			int count = 3 + crystals.nextInt(3);
+			for (int k = 0; k < count; k++) {
+				double height = 90 + crystals.nextDouble() * 240;
+				Cylinder spike = new Cylinder(18 + crystals.nextDouble() * 28, height, 6);
+				spike.setMaterial(crystal);
+				spike.setTranslateX(cx + (crystals.nextDouble() - 0.5) * 120);
+				spike.setTranslateZ(cz + (crystals.nextDouble() - 0.5) * 120);
+				spike.setTranslateY(5 - height / 2 + 10);
+				spike.getTransforms().addAll(new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.Z_AXIS), new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.X_AXIS));
+				this.arena.getChildren().add(spike);
+			}
+		}
+	}
+
+	/**
+	 * Invisible panels around the field, they flash when hit
+	 */
+	private void buildFence(double w, double h) {
 		// Force field panels: 100% transparent/invisible until hit
 		double wallHeight = 80;
 		for (int wall = 0; wall < 4; wall++) {
@@ -911,6 +1251,11 @@ public class BattleArena3D extends StackPane {
 		this.updateTension(dt);
 		this.tickComments(dt);
 		this.updateCamera(dt);
+		this.clock += dt * this.effectRate;
+		if (this.lava != null) {
+			this.lava.setDiffuseColor(LAVA_DIM.interpolate(LAVA_FULL, 0.5 + 0.5 * Math.sin(this.clock * 2.1) * Math.sin(this.clock * 0.7 + 1)));
+			this.updateFlows();
+		}
 		this.updateFire(dt * this.effectRate);
 		this.placeBalloons();
 	}
@@ -1202,11 +1547,12 @@ public class BattleArena3D extends StackPane {
 
 			// Electric force field energy flare: transparent translucent barrier
 			double peakAlpha = 0.20 + 0.08 * Math.min(1.0, intensity);
-			Color shieldBright = Color.color(0.20, 0.88, 1.0, peakAlpha);
-			Color shieldMid = Color.color(0.10, 0.70, 1.0, peakAlpha * 0.45);
-			Color shieldFade = Color.color(0.0, 0.70, 1.0, 0.0);
+			Color tint = this.style.fence;
+			Color shieldBright = Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), peakAlpha);
+			Color shieldMid = Color.color(tint.getRed() * 0.6, tint.getGreen() * 0.8, tint.getBlue(), peakAlpha * 0.45);
+			Color shieldFade = Color.color(tint.getRed() * 0.4, tint.getGreen() * 0.8, tint.getBlue(), 0.0);
 
-			segment.material().setSpecularColor(Color.color(0.25, 0.85, 1.0, 0.20));
+			segment.material().setSpecularColor(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.20));
 
 			Timeline flash = new Timeline();
 			flash.getKeyFrames().addAll(
@@ -1608,7 +1954,7 @@ public class BattleArena3D extends StackPane {
 		this.showTurn(this.turns());
 
 		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
-		this.showBanner("VS", names);
+		this.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
 		this.audio.whoosh();
 		Sfx.slam();
 		this.shot = Shot.WIDE;
@@ -2536,13 +2882,30 @@ public class BattleArena3D extends StackPane {
 	private static final double[][] BURN_SPOTS = { { 0, -15, -11 }, { 8, -15, 3 }, { -5, -23, 1 } };
 
 	private enum ParticleKind {
-		FLAME, SMOKE, SPARK
+		FLAME, SMOKE, SPARK, EMBER, SNOW
 	}
 
 	/** A quad of size 1 facing -Z, shared by all the sprites */
 	private static final TriangleMesh SPRITE = sprite();
 	private static final Image FLAME_TEXTURE = flameTexture();
 	private static final Image SMOKE_TEXTURE = smokeTexture();
+	private static final Image SOFT_TEXTURE = softTexture();
+
+	/**
+	 * A soft white dot, for embers and snow
+	 */
+	private static Image softTexture() {
+		int size = 32;
+		WritableImage image = new WritableImage(size, size);
+		for (int py = 0; py < size; py++) {
+			for (int px = 0; px < size; px++) {
+				double radius = Math.hypot((px + 0.5) / size * 2 - 1, (py + 0.5) / size * 2 - 1);
+				double alpha = Math.max(0, 1 - radius);
+				image.getPixelWriter().setColor(px, py, Color.color(1, 1, 1, Math.min(1, alpha * alpha * 1.6)));
+			}
+		}
+		return image;
+	}
 
 	private static TriangleMesh sprite() {
 		TriangleMesh mesh = new TriangleMesh();
@@ -2676,6 +3039,26 @@ public class BattleArena3D extends StackPane {
 			p.shade = 0.16 - 0.1 * damage + this.random.nextDouble() * 0.06;
 			p.material.setDiffuseMap(SMOKE_TEXTURE);
 		}
+		case EMBER -> {
+			p.life = 2.5 + this.random.nextDouble() * 2;
+			p.size = 1.3 + this.random.nextDouble() * 1.2;
+			p.vx = (this.random.nextDouble() - 0.5) * 12;
+			p.vz = (this.random.nextDouble() - 0.5) * 12;
+			p.vy = -(18 + this.random.nextDouble() * 24);
+			p.spinSpeed = 0;
+			p.shade = this.random.nextDouble();
+			p.material.setDiffuseMap(SOFT_TEXTURE);
+		}
+		case SNOW -> {
+			p.life = 12;
+			p.size = 2.6 + this.random.nextDouble() * 2.2;
+			p.vx = 5 + this.random.nextDouble() * 5;
+			p.vz = (this.random.nextDouble() - 0.5) * 6;
+			p.vy = 36 + this.random.nextDouble() * 26;
+			p.spinSpeed = 0;
+			p.shade = this.random.nextDouble();
+			p.material.setDiffuseMap(SOFT_TEXTURE);
+		}
 		case SPARK -> {
 			p.life = 0.5 + this.random.nextDouble() * 0.5;
 			p.size = 1.6 + this.random.nextDouble() * 1.4;
@@ -2689,7 +3072,7 @@ public class BattleArena3D extends StackPane {
 		}
 		}
 		// Too many: it is made, but not shown
-		if (this.particles.size() < 700) {
+		if (this.particles.size() < 900) {
 			this.particles.add(p);
 		} else {
 			this.particlePool.add(p);
@@ -2703,6 +3086,23 @@ public class BattleArena3D extends StackPane {
 	private void updateFire(double dt) {
 		for (RobotView view : this.robots.values()) {
 			view.burn(dt);
+		}
+
+		// Embers rise from the lava, snow falls on the ice. Below a limit, so the
+		// fire of the robots is never left out.
+		double rate = this.style == ArenaStyle.VOLCANO ? 26 : this.style == ArenaStyle.ICE ? 95 : 0;
+		this.ambientDebt += dt * rate;
+		while (this.ambientDebt >= 1) {
+			this.ambientDebt--;
+			if (this.particles.size() > 550) {
+				continue;
+			}
+			if (this.style == ArenaStyle.VOLCANO) {
+				this.spawn(ParticleKind.EMBER, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 260), -2, (this.random.nextDouble() - 0.5) * (this.fieldHeight + 260), 0);
+			} else {
+				this.spawn(ParticleKind.SNOW, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 800), -240 - this.random.nextDouble() * 120,
+						(this.random.nextDouble() - 0.5) * (this.fieldHeight + 800), 0);
+			}
 		}
 
 		double eyeX = this.eye[0];
@@ -2720,7 +3120,7 @@ public class BattleArena3D extends StackPane {
 				continue;
 			}
 			double t = p.age / p.life;
-			double drag = Math.exp(-(p.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * dt);
+			double drag = p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW ? 1 : Math.exp(-(p.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * dt);
 			p.vx *= drag;
 			p.vz *= drag;
 			if (p.kind == ParticleKind.SPARK) {
@@ -2733,8 +3133,12 @@ public class BattleArena3D extends StackPane {
 			p.x += p.vx * dt;
 			p.y = Math.min(-1, p.y + p.vy * dt);
 			// Sparks go out on the floor
-			if (p.kind == ParticleKind.SPARK && p.y >= -1 && p.vy > 0) {
+			if ((p.kind == ParticleKind.SPARK || p.kind == ParticleKind.SNOW) && p.y >= -1 && p.vy > 0) {
 				p.age = p.life;
+			}
+			// Embers and snow sway
+			if (p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW) {
+				p.x += Math.sin(p.age * (p.kind == ParticleKind.EMBER ? 3 : 1.7) + p.shade * 6) * 9 * dt;
 			}
 			p.z += p.vz * dt;
 			p.spin.setAngle(p.spin.getAngle() + p.spinSpeed * dt);
@@ -2765,6 +3169,18 @@ public class BattleArena3D extends StackPane {
 				Color gray = Color.gray(p.shade);
 				color = t < 0.12 ? ember.interpolate(gray, t / 0.12) : gray.interpolate(Color.gray(Math.min(0.4, p.shade + 0.12)), (t - 0.12) / 0.88);
 				color = Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+			}
+			case EMBER -> {
+				double flicker = 0.7 + 0.3 * this.random.nextDouble();
+				width = p.size * (1 - 0.3 * t) * flicker;
+				height = width;
+				double alpha = (t < 0.1 ? t * 10 : 1 - (t - 0.1) / 0.9) * 0.95;
+				color = Color.color(1, 0.62 - 0.4 * t, 0.15 - 0.1 * t, Math.max(0, alpha));
+			}
+			case SNOW -> {
+				width = p.size;
+				height = width;
+				color = Color.color(0.94, 0.97, 1, Math.min(0.9, p.age * 1.5));
 			}
 			default -> {
 				width = p.size * (1 - 0.5 * t);

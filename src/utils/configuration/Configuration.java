@@ -31,6 +31,8 @@ public class Configuration {
 	/** Speeds of the 3D battle, times robocode's normal speed */
 	public static final double[] BATTLE_SPEEDS = { 0.5, 1, 2, 4, 8 };
 	public static final double DEFAULT_BATTLE_SPEED = 1;
+	/** A different arena or song in each battle */
+	public static final String RANDOM = "RANDOM";
 
 	private static final Path CONFIG_FILE = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
 
@@ -226,6 +228,24 @@ public class Configuration {
 	public static String getSubtitle() {
 		String subtitle = Configuration.getConfiguration(INewConfigurationHandle.SUBTITLE);
 		return subtitle == null ? DEFAULT_SUBTITLE : subtitle.strip();
+	}
+
+	/**
+	 * The arena of the 3D battle (a name of widgets.scenes.ArenaStyle), or
+	 * {@link #RANDOM}
+	 */
+	public static String getArena() {
+		String arena = Configuration.getConfiguration(INewConfigurationHandle.ARENA);
+		return arena == null || arena.isBlank() ? RANDOM : arena.strip();
+	}
+
+	/**
+	 * The song of the 3D battle (a name of widgets.BattleAudio.Song), or
+	 * {@link #RANDOM}
+	 */
+	public static String getBattleMusic() {
+		String music = Configuration.getConfiguration(INewConfigurationHandle.BATTLE_MUSIC);
+		return music == null || music.isBlank() ? RANDOM : music.strip();
 	}
 
 	/**

@@ -18,9 +18,10 @@ import javax.sound.sampled.SourceDataLine;
  * mixed together in real time in a single audio line, everything synthesized.
  *
  * The music follows the {@link #setIntensity(double) intensity} of the fight:
- * calm it is a dark pad, then come the kick, the bass, the snare and hats, a
- * fast arpeggio and at last an alarm, while the tempo grows. In slow motion the
- * music becomes a muffled heartbeat and the effects sound deep and slow.
+ * calm it is a dark pad, then come the drums, the bass, the melody and at last
+ * an alarm, while the tempo grows. There are three {@link Song songs}. In slow
+ * motion the music becomes a muffled heartbeat and the effects sound deep and
+ * slow.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -30,9 +31,43 @@ public final class BattleAudio {
 	private static final double MUSIC_GAIN = 0.42;
 	private static final double SFX_GAIN = 0.9;
 
-	/** A minor: i - VI - III - VII, a classic epic progression */
-	private static final double[] ROOTS = { 110.0, 87.31, 130.81, 98.0 };
-	private static final boolean[] MINOR = { true, false, false, false };
+	/** The adaptive songs */
+	public enum Song {
+		/** A minor, i - VI - III - VII: pad, kick, snare, arpeggio */
+		EPIC("Épica", new double[] { 110.0, 87.31, 130.81, 98.0 }, new boolean[] { true, false, false, false }, 96, 54),
+		/** E minor, i - VI - VII - v: pumping pad, bouncing bass, lead and toms */
+		SYNTHWAVE("Synthwave", new double[] { 82.41, 65.41, 73.42, 61.74 }, new boolean[] { true, false, false, true }, 108, 44),
+		/** D minor drone: taikos, small drums, a pentatonic flute and war horns */
+		WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 80, 56);
+
+		public final String label;
+		final double[] roots;
+		final boolean[] minor;
+		final double calmBpm;
+		final double tenseBpm;
+
+		Song(String label, double[] roots, boolean[] minor, double calmBpm, double moreBpm) {
+			this.label = label;
+			this.roots = roots;
+			this.minor = minor;
+			this.calmBpm = calmBpm;
+			this.tenseBpm = moreBpm;
+		}
+
+		/**
+		 * The configured song, a random one if not a song (like "RANDOM")
+		 */
+		public static Song resolve(String configured, Random random) {
+			try {
+				return Song.valueOf(configured);
+			} catch (IllegalArgumentException | NullPointerException e) {
+				return values()[random.nextInt(values().length)];
+			}
+		}
+	}
+
+	/** Pentatonic minor, for the flute */
+	private static final double[] PENTATONIC = { 1, 1.189, 1.335, 1.498, 1.782, 2, 2.378, 2.67 };
 
 	private final ConcurrentLinkedQueue<Voice> incoming = new ConcurrentLinkedQueue<Voice>();
 	private final Random random = new Random();
@@ -43,6 +78,7 @@ public final class BattleAudio {
 	private volatile double targetIntensity = 0;
 	private volatile boolean slowMotion = false;
 	private volatile boolean musicOn = true;
+	private volatile Song song = Song.EPIC;
 
 	// Mixer state, only the audio thread touches it
 	private final List<Voice> sfxVoices = new ArrayList<Voice>();
@@ -56,7 +92,7 @@ public final class BattleAudio {
 	private double padPhase1;
 	private double padPhase2;
 	private double padPhase3;
-	private double padFrequency = ROOTS[0];
+	private double padFrequency = Song.EPIC.roots[0];
 	private double padFilter;
 	private double sfxFilter;
 	private final double[] echo = new double[(int) (Synth.RATE * 0.13)];
@@ -67,6 +103,10 @@ public final class BattleAudio {
 	private final double[] snare = snare();
 	private final double[] hat = hat();
 	private final double[] heart = heartbeat();
+	private final double[] taiko = taiko();
+	private final double[] smallDrum = smallDrum();
+	private final double[] rim = rim();
+	private final double[][] toms = { Synth.sineSweep(230, 115, 0.28), Synth.sineSweep(175, 88, 0.3), Synth.sineSweep(130, 62, 0.34) };
 
 	/**
 	 * A sound being played, at a rate (pitch) and gain
@@ -128,6 +168,14 @@ public final class BattleAudio {
 
 	public void setMusicOn(boolean musicOn) {
 		this.musicOn = musicOn;
+	}
+
+	public void setSong(Song song) {
+		this.song = song;
+	}
+
+	public Song getSong() {
+		return this.song;
 	}
 
 	// ------------------------------------------------------------------ effects
@@ -213,6 +261,23 @@ public final class BattleAudio {
 		this.sfx(Synth.mix(rise, Synth.sineSweep(200, 900, 0.9), 0.3), 0.6, 1);
 	}
 
+	/**
+	 * The mix of some seconds of music at a fixed intensity, without a sound
+	 * card: for tests and previews
+	 */
+	static double[] render(Song song, double intensity, double seconds) {
+		BattleAudio audio = new BattleAudio();
+		audio.song = song;
+		audio.intensity = intensity;
+		audio.targetIntensity = intensity;
+		audio.musicVolume = 1;
+		double[] samples = new double[(int) (seconds * Synth.RATE)];
+		for (int i = 0; i < samples.length; i++) {
+			samples[i] = audio.nextSample();
+		}
+		return samples;
+	}
+
 	private double vary() {
 		return 0.92 + this.random.nextDouble() * 0.16;
 	}
@@ -289,7 +354,8 @@ public final class BattleAudio {
 	 */
 	private double music() {
 		double tension = this.intensity;
-		double bpm = 96 + 54 * tension;
+		Song current = this.song;
+		double bpm = current.calmBpm + current.tenseBpm * tension;
 		if (this.slow > 0.5) {
 			bpm = 52;
 		}
@@ -300,17 +366,23 @@ public final class BattleAudio {
 			this.onStep(step, tension);
 		}
 
-		// Pad: three detuned saws through a low pass that opens with the tension
-		int bar = (int) Math.floor(this.beat / 4) % ROOTS.length;
-		this.padFrequency += (ROOTS[bar] - this.padFrequency) * 0.0005;
-		double third = MINOR[bar] ? 1.189 : 1.26;
+		// Pad: three detuned saws through a low pass that opens with the tension.
+		// The drums have a drone instead: root, fifth and octave, darker.
+		int bar = (int) Math.floor(this.beat / 4) % current.roots.length;
+		this.padFrequency += (current.roots[bar] - this.padFrequency) * 0.0005;
+		double third = current == Song.WAR_DRUMS ? 1 : current.minor[bar] ? 1.189 : 1.26;
 		this.padPhase1 = (this.padPhase1 + this.padFrequency / Synth.RATE) % 1;
 		this.padPhase2 = (this.padPhase2 + this.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
 		this.padPhase3 = (this.padPhase3 + this.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
 		double raw = (this.padPhase1 * 2 - 1) + (this.padPhase2 * 2 - 1) * 0.7 + (this.padPhase3 * 2 - 1) * 0.5;
-		double cutoff = (0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
+		double cutoff = (current == Song.WAR_DRUMS ? 0.006 + 0.02 * tension : current == Song.SYNTHWAVE ? 0.02 + 0.05 * tension : 0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
 		this.padFilter += (raw - this.padFilter) * cutoff;
 		double pad = this.padFilter * (0.32 - 0.1 * tension);
+		if (current == Song.SYNTHWAVE && tension > 0.2 && this.slow < 0.5) {
+			// Pumps with the kick, the synthwave sound
+			double inBeat = this.beat - Math.floor(this.beat);
+			pad *= 1 - 0.65 * Math.exp(-inBeat * 7);
+		}
 
 		double voices = 0;
 		for (Iterator<Voice> it = this.musicVoices.iterator(); it.hasNext();) {
@@ -327,9 +399,11 @@ public final class BattleAudio {
 	 * The notes and drums of each 16th
 	 */
 	private void onStep(int step, double tension) {
+		Song playing = this.song;
 		int inBar = step % 16;
-		int bar = (step / 16) % ROOTS.length;
-		double root = ROOTS[bar];
+		int bar = (step / 16) % playing.roots.length;
+		double root = playing.roots[bar];
+		boolean minor = playing.minor[bar];
 
 		if (this.slow > 0.5) {
 			// Only a heartbeat
@@ -338,6 +412,14 @@ public final class BattleAudio {
 			}
 			return;
 		}
+		switch (playing) {
+		case EPIC -> this.epicStep(step, inBar, root, minor, tension);
+		case SYNTHWAVE -> this.synthwaveStep(step, inBar, root, minor, tension);
+		case WAR_DRUMS -> this.drumsStep(step, inBar, root, tension);
+		}
+	}
+
+	private void epicStep(int step, int inBar, double root, boolean minor, double tension) {
 
 		boolean fourOnFloor = tension > 0.6;
 		if (inBar == 0 || inBar == 8 || (tension > 0.15 && inBar == 10) || (fourOnFloor && inBar % 4 == 0)) {
@@ -357,7 +439,7 @@ public final class BattleAudio {
 			this.musicVoices.add(new Voice(Synth.lowpass(Synth.saw(frequency, 0.16, 6), 0.25), 0.5, 1));
 		}
 		if (tension > 0.65) {
-			double[] chord = MINOR[bar] ? new double[] { 1, 1.189, 1.498, 2, 2.378, 2.997 } : new double[] { 1, 1.26, 1.498, 2, 2.52, 2.997 };
+			double[] chord = minor ? new double[] { 1, 1.189, 1.498, 2, 2.378, 2.997 } : new double[] { 1, 1.26, 1.498, 2, 2.52, 2.997 };
 			double frequency = root * 4 * chord[(step * (tension > 0.85 ? 3 : 1)) % chord.length];
 			this.musicVoices.add(new Voice(Synth.square(frequency, 0.09), 0.13, 1));
 		}
@@ -366,7 +448,87 @@ public final class BattleAudio {
 		}
 	}
 
+	/**
+	 * Synthwave: a bass bouncing in octaves every 16th, four on the floor,
+	 * backbeat, an arpeggiated lead and tom fills at the top
+	 */
+	private void synthwaveStep(int step, int inBar, double root, boolean minor, double tension) {
+		// Bass: 8ths when calm, 16ths bouncing in octaves when the fight heats up
+		if (inBar % 2 == 0 || tension > 0.3) {
+			double frequency = root * (inBar % 2 == 1 ? 2 : 1);
+			double[] bass = Synth.lowpass(Synth.mix(Synth.saw(frequency, 0.14, 9), Synth.saw(frequency * 1.006, 0.14, 9), 0.6), 0.12 + 0.2 * tension);
+			this.musicVoices.add(new Voice(bass, 0.32 + 0.25 * Math.min(1, tension * 2), 1));
+		}
+		if (tension > 0.18 && inBar % 4 == 0) {
+			this.musicVoices.add(new Voice(this.kick, 0.85, 1));
+		}
+		if (tension > 0.35 && (inBar == 4 || inBar == 12)) {
+			// A long snare, like the gated reverb of the 80s
+			this.musicVoices.add(new Voice(Synth.mix(this.snare, Synth.lowpass(Synth.noise(0.32, 2), 0.4), 0.5), 0.55, 1));
+		}
+		if (tension > 0.3 && (inBar % 4 == 2 || tension > 0.7)) {
+			this.musicVoices.add(new Voice(this.hat, inBar % 4 == 2 ? 0.24 : 0.12, 1));
+		}
+		if (tension > 0.5 && inBar % 2 == 0) {
+			double[] chord = minor ? new double[] { 1, 1.189, 1.498, 2, 1.498, 1.189, 2, 2.378 } : new double[] { 1, 1.26, 1.498, 2, 1.498, 1.26, 2, 2.52 };
+			double frequency = root * 4 * chord[(inBar / 2) % chord.length] * (tension > 0.82 && inBar >= 8 ? 2 : 1);
+			double[] lead = Synth.lowpass(Synth.mix(Synth.saw(frequency, 0.2, 7), Synth.saw(frequency * 1.007, 0.2, 7), 0.8), 0.35);
+			this.musicVoices.add(new Voice(lead, 0.16, 1));
+		}
+		if (tension > 0.75 && (step / 16) % 2 == 1 && inBar >= 12) {
+			// High, mid and low tom going down to the next bar
+			this.musicVoices.add(new Voice(this.toms[Math.max(0, inBar - 13)], 0.5, 1));
+		}
+		if (tension > 0.9 && inBar == 0) {
+			this.musicVoices.add(new Voice(Synth.sweep(root * 8, root * 12, 0.4, false), 0.1, 1));
+		}
+	}
+
+	/**
+	 * War drums: taikos even when calm, small drums and rims as it grows, a
+	 * pentatonic flute and war horns at the top
+	 */
+	private void drumsStep(int step, int inBar, double root, double tension) {
+		if (inBar == 0 || inBar == 6 || inBar == 10 || (tension > 0.55 && inBar == 14)) {
+			this.musicVoices.add(new Voice(this.taiko, 0.45 + 0.5 * Math.min(1, tension * 1.6), inBar == 0 ? 1 : 1.12));
+		}
+		if (tension > 0.25 && (inBar == 3 || inBar == 7 || inBar == 11 || inBar == 13 || inBar == 15 || (tension > 0.65 && inBar % 2 == 1))) {
+			this.musicVoices.add(new Voice(this.smallDrum, 0.35, 0.95 + 0.1 * ((inBar * 7) % 3)));
+		}
+		if (tension > 0.4 && (inBar == 4 || inBar == 12 || (tension > 0.8 && inBar % 4 == 2))) {
+			this.musicVoices.add(new Voice(this.rim, 0.3, 1));
+		}
+		boolean phrase = tension > 0.8 ? inBar % 2 == 0 : inBar == 0 || inBar == 3 || inBar == 6 || inBar == 8 || inBar == 11 || inBar == 14;
+		if (tension > 0.45 && phrase) {
+			// A melody that walks the scale
+			int degree = Math.floorMod((int) (step * 0.75) + (step / 16) * 2 + (int) Math.round(Math.sin(step * 0.9) * 2), PENTATONIC.length);
+			double frequency = root * 4 * PENTATONIC[degree];
+			double[] flute = Synth.mix(Synth.sine(frequency, 0.32, 4), Synth.lowpass(Synth.noise(0.32, 6), 0.5), 0.04);
+			this.musicVoices.add(new Voice(flute, 0.2, 1));
+		}
+		if (tension > 0.82 && inBar == 0 && (step / 16) % 2 == 0) {
+			double[] horn = Synth.lowpass(Synth.mix(Synth.saw(root * 2, 1.5, 1.1), Synth.saw(root * 3, 1.5, 1.1), 0.6), 0.06);
+			this.musicVoices.add(new Voice(horn, 0.35, 1));
+		}
+		if (tension > 0.9) {
+			// A roll under everything
+			this.musicVoices.add(new Voice(this.smallDrum, 0.12, 1.3));
+		}
+	}
+
 	// ---------------------------------------------------------------- synthesis
+
+	private static double[] taiko() {
+		return Synth.mix(Synth.sineSweep(105, 40, 0.75), Synth.lowpass(Synth.noise(0.12, 7), 0.15), 0.6);
+	}
+
+	private static double[] smallDrum() {
+		return Synth.mix(Synth.sineSweep(260, 150, 0.16), Synth.lowpass(Synth.noise(0.08, 9), 0.4), 0.4);
+	}
+
+	private static double[] rim() {
+		return Synth.mix(Synth.sine(1650, 0.05, 45), hat(), 0.5);
+	}
 
 	private static double[] kick() {
 		return Synth.mix(Synth.sineSweep(150, 42, 0.32), Synth.lowpass(Synth.noise(0.02, 8), 0.5), 0.15);

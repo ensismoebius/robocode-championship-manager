@@ -114,6 +114,19 @@ class ConfigurationTest {
 	}
 
 	@Test
+	void arenaAndMusicAreRandomByDefault() {
+		assertEquals(Configuration.RANDOM, Configuration.getArena());
+		assertEquals(Configuration.RANDOM, Configuration.getBattleMusic());
+
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.ARENA, "ICE");
+		this.answer.setProperty(INewConfigurationHandle.BATTLE_MUSIC, "SYNTHWAVE");
+		assertTrue(Configuration.askForProperties());
+		assertEquals("ICE", Configuration.getArena());
+		assertEquals("SYNTHWAVE", Configuration.getBattleMusic());
+	}
+
+	@Test
 	void notifiesWhenRegistrationIsToggled() {
 		Configuration.setEnabledRegistration(false);
 		assertFalse(Configuration.isEnabledRegistration());

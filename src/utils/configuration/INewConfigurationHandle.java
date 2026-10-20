@@ -25,6 +25,8 @@ public interface INewConfigurationHandle {
 	public static final String BATTLE_VIEW = "battleView";
 	public static final String BATTLE_SPEED = "battleSpeed";
 	public static final String FIGHT_TEXT = "fightText";
+	public static final String ARENA = "arena";
+	public static final String BATTLE_MUSIC = "battleMusic";
 
 	/**
 	 * Returns the properties for the system

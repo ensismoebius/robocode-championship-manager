@@ -25,7 +25,9 @@ import utils.configuration.Configuration;
 import utils.configuration.INewConfigurationHandle;
 import utils.robocode.BattleControl.WinnerCriterion;
 import widgets.GameDialog;
+import widgets.BattleAudio;
 import widgets.GameWindow;
+import widgets.scenes.ArenaStyle;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -71,6 +73,23 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		}
 		battleSpeed.getSelectionModel().select(speedIndex(old.getProperty(BATTLE_SPEED)));
 		battleSpeed.setMaxWidth(Double.MAX_VALUE);
+
+		// Random first, then each one
+		ChoiceBox<String> arena = new ChoiceBox<String>();
+		arena.getItems().add("Aleatória, uma em cada batalha");
+		for (ArenaStyle style : ArenaStyle.values()) {
+			arena.getItems().add(style.label);
+		}
+		arena.getSelectionModel().select(choiceIndex(old.getProperty(ARENA), ArenaStyle.values()));
+		arena.setMaxWidth(Double.MAX_VALUE);
+
+		ChoiceBox<String> music = new ChoiceBox<String>();
+		music.getItems().add("Aleatória, uma em cada batalha");
+		for (BattleAudio.Song song : BattleAudio.Song.values()) {
+			music.getItems().add(song.label);
+		}
+		music.getSelectionModel().select(choiceIndex(old.getProperty(BATTLE_MUSIC), BattleAudio.Song.values()));
+		music.setMaxWidth(Double.MAX_VALUE);
 
 		TextField webserverPort = new TextField(old.getProperty(WEBSERVER_PORT, String.valueOf(Configuration.DEFAULT_WEBSERVER_PORT)));
 
@@ -121,9 +140,11 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		form.add(field("Exibição da batalha", battleView), 0, 3);
 		form.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 3);
 		form.add(field("Texto do início do round", fightText), 0, 4);
-		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 5, 2, 1);
-		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 6, 2, 1);
-		form.add(error, 0, 7, 2, 1);
+		form.add(field("Arena da batalha 3D", arena), 1, 4);
+		form.add(field("Música da batalha 3D", music), 0, 5);
+		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 6, 2, 1);
+		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 7, 2, 1);
+		form.add(error, 0, 8, 2, 1);
 
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
@@ -164,6 +185,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(SUBTITLE, subtitle.getText().strip());
 			properties.setProperty(BATTLE_SPEED, String.valueOf(Configuration.BATTLE_SPEEDS[Math.max(0, battleSpeed.getSelectionModel().getSelectedIndex())]));
 			properties.setProperty(FIGHT_TEXT, fightText.getText().isBlank() ? Configuration.DEFAULT_FIGHT_TEXT : fightText.getText().strip());
+			int arenaIndex = arena.getSelectionModel().getSelectedIndex();
+			properties.setProperty(ARENA, arenaIndex <= 0 ? Configuration.RANDOM : ArenaStyle.values()[arenaIndex - 1].name());
+			int musicIndex = music.getSelectionModel().getSelectedIndex();
+			properties.setProperty(BATTLE_MUSIC, musicIndex <= 0 ? Configuration.RANDOM : BattleAudio.Song.values()[musicIndex - 1].name());
 			properties.setProperty(BATTLE_VIEW, battleView.getSelectionModel().getSelectedIndex() == 1 ? "CLASSIC" : "3D");
 
 			GameWindow.close(panel, properties);
@@ -191,6 +216,18 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			}
 		}
 		return best;
+	}
+
+	/**
+	 * The position of the configured option, after the random one (0)
+	 */
+	private static int choiceIndex(String configured, Enum<?>[] options) {
+		for (int i = 0; i < options.length; i++) {
+			if (options[i].name().equals(configured)) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	private static String formatSpeed(double speed) {
