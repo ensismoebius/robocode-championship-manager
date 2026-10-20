@@ -56,12 +56,14 @@ public final class BattleCommentary {
 	 *            the robot it is about, -1 if none
 	 * @param priority
 	 *            the bigger the more important
+	 * @param topic
+	 *            what kind of event it is, so the presenter of it comments
 	 */
-	public record Message(boolean callout, String text, int robot, Tone tone, int priority) {
+	public record Message(boolean callout, String text, int robot, Tone tone, int priority, Topic topic) {
 	}
 
 	/** Shown when the battle ends, if it was special */
-	public record Headline(String title, String subtitle) {
+	public record Headline(String title, String subtitle, Topic topic) {
 	}
 
 	private static final class Stats {
@@ -139,7 +141,7 @@ public final class BattleCommentary {
 
 		if (turn.turn() - this.lastActionTurn > QUIET_TURNS) {
 			this.lastActionTurn = turn.turn();
-			messages.add(this.comment(-1, 1, "Os dois se estudam... ninguém acerta nada!", "Tiros pra todo lado e nada de acertar!", "Silêncio na arena: quem vai arriscar primeiro?"));
+			messages.add(this.comment(-1, 1, Topic.PACE, "Os dois se estudam... ninguém acerta nada!", "Tiros pra todo lado e nada de acertar!", "Silêncio na arena: quem vai arriscar primeiro?"));
 		}
 		return messages;
 	}
@@ -163,14 +165,14 @@ public final class BattleCommentary {
 				this.lastActionTurn = turn.turn();
 				// Both bullets end in the same turn, said once
 				if (messages.stream().noneMatch(m -> m.text().equals("TIROS ANULADOS!"))) {
-					messages.add(new Message(true, "TIROS ANULADOS!", -1, Tone.NEUTRAL, 2));
-					messages.add(this.comment(-1, 2, "Tiro contra tiro! Os projéteis se anularam no ar!", "Que reflexo! Bala na bala!"));
+					messages.add(new Message(true, "TIROS ANULADOS!", -1, Tone.NEUTRAL, 2, Topic.AIM));
+					messages.add(this.comment(-1, 2, Topic.AIM, "Tiro contra tiro! Os projéteis se anularam no ar!", "Que reflexo! Bala na bala!"));
 				}
 			} else {
 				owner.combo = 0;
 				owner.missStreak++;
 				if (owner.missStreak == 6 || owner.missStreak == 12) {
-					messages.add(this.comment(bullet.owner(), 1, "{A} errou " + owner.missStreak + " tiros seguidos... calibra essa mira!",
+					messages.add(this.comment(bullet.owner(), 1, Topic.AIM, "{A} errou " + owner.missStreak + " tiros seguidos... calibra essa mira!",
 							"{A} está atirando nas paredes: " + owner.missStreak + " erros seguidos!"));
 				}
 			}
@@ -192,17 +194,17 @@ public final class BattleCommentary {
 
 		if (!this.firstHit) {
 			this.firstHit = true;
-			messages.add(new Message(true, "PRIMEIRO HIT!", attacker, Tone.PLAYER, 3));
-			messages.add(this.comment(attacker, 3, "{A} abre o placar!", "{A} acerta primeiro!", "Primeiro sangue para {A}!"));
+			messages.add(new Message(true, "PRIMEIRO HIT!", attacker, Tone.PLAYER, 3, Topic.BLOWS));
+			messages.add(this.comment(attacker, 3, Topic.BLOWS, "{A} abre o placar!", "{A} acerta primeiro!", "Primeiro sangue para {A}!"));
 		}
 		if (bullet.power() >= MAX_POWER - 0.05) {
-			messages.add(new Message(true, "DANO CRÍTICO!", attacker, Tone.GOLD, 4));
-			messages.add(this.comment(attacker, 3, "Que pancada de {A}! Tiro de potência máxima!", "{B} sentiu esse golpe!", "Potência máxima! {A} não economizou energia!"));
+			messages.add(new Message(true, "DANO CRÍTICO!", attacker, Tone.GOLD, 4, Topic.BLOWS));
+			messages.add(this.comment(attacker, 3, Topic.BLOWS, "Que pancada de {A}! Tiro de potência máxima!", "{B} sentiu esse golpe!", "Potência máxima! {A} não economizou energia!"));
 		}
 		if (owner.combo >= 3 && owner.combo % 2 == 1) {
-			messages.add(new Message(true, "COMBO x" + owner.combo + "!", attacker, Tone.PLAYER, 3));
+			messages.add(new Message(true, "COMBO x" + owner.combo + "!", attacker, Tone.PLAYER, 3, Topic.BLOWS));
 			if (owner.combo == 3) {
-				messages.add(this.comment(attacker, 2, "{A} está pegando fogo!", "Sequência implacável de {A}!", "{B} não consegue sair da mira de {A}!"));
+				messages.add(this.comment(attacker, 2, Topic.BLOWS, "{A} está pegando fogo!", "Sequência implacável de {A}!", "{B} não consegue sair da mira de {A}!"));
 			}
 		}
 
@@ -211,10 +213,10 @@ public final class BattleCommentary {
 		if (shooter != null && hit != null) {
 			double distance = Math.hypot(shooter.x() - hit.x(), shooter.y() - hit.y());
 			if (distance > SNIPER_DISTANCE) {
-				messages.add(new Message(true, "SNIPER!", attacker, Tone.PLAYER, 2));
-				messages.add(this.comment(attacker, 2, "Que pontaria de {A}! Acertou do outro lado da arena!", "{A} acerta de longe, tiro de sniper!"));
+				messages.add(new Message(true, "SNIPER!", attacker, Tone.PLAYER, 2, Topic.AIM));
+				messages.add(this.comment(attacker, 2, Topic.AIM, "Que pontaria de {A}! Acertou do outro lado da arena!", "{A} acerta de longe, tiro de sniper!"));
 			} else if (distance < POINT_BLANK_DISTANCE) {
-				messages.add(new Message(true, "À QUEIMA-ROUPA!", attacker, Tone.PLAYER, 2));
+				messages.add(new Message(true, "À QUEIMA-ROUPA!", attacker, Tone.PLAYER, 2, Topic.BLOWS));
 			}
 		}
 	}
@@ -241,22 +243,22 @@ public final class BattleCommentary {
 			if (state.state() == BattleRecording.ROBOT_HIT_WALL && changed) {
 				robot.wallHits++;
 				if (robot.wallHits == 1 || robot.wallHits % 4 == 0) {
-					messages.add(this.comment(state.index(), 1, "{A} deu de cara com o campo de força!", "{A} testou a parede da arena... e perdeu.", "Cuidado com a parede, {A}!"));
+					messages.add(this.comment(state.index(), 1, Topic.FOULS, "{A} deu de cara com o campo de força!", "{A} testou a parede da arena... e perdeu.", "Cuidado com a parede, {A}!"));
 				}
 			}
 			if (state.state() == BattleRecording.ROBOT_HIT_ROBOT && changed && turn.turn() - this.lastRamTurn > 90) {
 				this.lastRamTurn = turn.turn();
-				messages.add(this.comment(state.index(), 2, "{A} e {B} se chocam! Luta corpo a corpo!", "Batida! {A} parte pra cima de {B}!"));
+				messages.add(this.comment(state.index(), 2, Topic.FOULS, "{A} e {B} se chocam! Luta corpo a corpo!", "Batida! {A} parte pra cima de {B}!"));
 			}
 			if (robot.energy < DANGER_ENERGY && !robot.danger) {
 				robot.danger = true;
-				messages.add(new Message(true, "PERIGO!", state.index(), Tone.DANGER, 4));
-				messages.add(this.comment(state.index(), 3, "{A} está por um fio! Mais um tiro forte e acabou!", "Alerta vermelho para {A}!", "{A} precisa de um milagre!"));
+				messages.add(new Message(true, "PERIGO!", state.index(), Tone.DANGER, 4, Topic.HEALTH));
+				messages.add(this.comment(state.index(), 3, Topic.HEALTH, "{A} está por um fio! Mais um tiro forte e acabou!", "Alerta vermelho para {A}!", "{A} precisa de um milagre!"));
 			}
 		}
 		if (deaths >= 2) {
-			messages.add(new Message(true, "DUPLO K.O.!", -1, Tone.GOLD, 5));
-			messages.add(this.comment(-1, 4, "Os dois caem juntos! Ninguém leva esse round!"));
+			messages.add(new Message(true, "DUPLO K.O.!", -1, Tone.GOLD, 5, Topic.HEALTH));
+			messages.add(this.comment(-1, 4, Topic.HEALTH, "Os dois caem juntos! Ninguém leva esse round!"));
 		}
 		this.deficitsAndLead(messages);
 	}
@@ -283,9 +285,9 @@ public final class BattleCommentary {
 		int ahead = a.energy - b.energy >= LEAD_MARGIN ? alive.get(0) : b.energy - a.energy >= LEAD_MARGIN ? alive.get(1) : -1;
 		if (ahead >= 0 && ahead != this.leader) {
 			if (this.leader >= 0) {
-				messages.add(this.comment(ahead, 3, "Reviravolta! {A} assume a liderança!", "{A} vira o jogo e passa à frente!", "Agora quem manda é {A}!"));
+				messages.add(this.comment(ahead, 3, Topic.PACE, "Reviravolta! {A} assume a liderança!", "{A} vira o jogo e passa à frente!", "Agora quem manda é {A}!"));
 			} else {
-				messages.add(this.comment(ahead, 1, "{A} abre vantagem!", "{A} começa a dominar a luta!"));
+				messages.add(this.comment(ahead, 1, Topic.PACE, "{A} abre vantagem!", "{A} começa a dominar a luta!"));
 			}
 			this.leader = ahead;
 		}
@@ -305,20 +307,20 @@ public final class BattleCommentary {
 			Stats won = this.stats.get(winner);
 			if (won != null) {
 				if (won.maxDeficit >= COMEBACK_DEFICIT || won.danger) {
-					messages.add(new Message(true, "VITÓRIA DE VIRADA!", winner, Tone.GOLD, 5));
-					messages.add(this.comment(winner, 4, "Que virada de {A}! Estava perdendo e deu a volta por cima!", "Inacreditável! {A} vence de virada!"));
+					messages.add(new Message(true, "VITÓRIA DE VIRADA!", winner, Tone.GOLD, 5, Topic.PACE));
+					messages.add(this.comment(winner, 4, Topic.PACE, "Que virada de {A}! Estava perdendo e deu a volta por cima!", "Inacreditável! {A} vence de virada!"));
 				} else if (!won.hitByBullet) {
-					messages.add(new Message(true, "PERFECT!", winner, Tone.GOLD, 5));
-					messages.add(this.comment(winner, 4, "{A} vence sem levar um tiro sequer!", "Atuação perfeita de {A}!"));
+					messages.add(new Message(true, "PERFECT!", winner, Tone.GOLD, 5, Topic.STATS));
+					messages.add(this.comment(winner, 4, Topic.STATS, "{A} vence sem levar um tiro sequer!", "Atuação perfeita de {A}!"));
 				}
 				if (won.energy < 10) {
-					messages.add(new Message(true, "POR UM FIO!", winner, Tone.DANGER, 4));
+					messages.add(new Message(true, "POR UM FIO!", winner, Tone.DANGER, 4, Topic.HEALTH));
 				}
 			}
 		}
 		String accuracy = this.accuracy();
 		if (accuracy != null) {
-			messages.add(new Message(false, "Precisão no round: " + accuracy, -1, Tone.NEUTRAL, 2));
+			messages.add(new Message(false, "Precisão no round: " + accuracy, -1, Tone.NEUTRAL, 2, Topic.STATS));
 		}
 
 		// Who was behind in rounds
@@ -366,13 +368,13 @@ public final class BattleCommentary {
 		String score = best + " a " + other;
 
 		if (this.wereBehind.contains(winner)) {
-			return new Headline("VIRADA HISTÓRICA!", name + " vence a batalha de virada por " + score);
+			return new Headline("VIRADA HISTÓRICA!", name + " vence a batalha de virada por " + score, Topic.SHOW);
 		}
 		if (other == 0) {
-			return new Headline("VITÓRIA ESMAGADORA!", name + " vence todos os " + best + " rounds");
+			return new Headline("VITÓRIA ESMAGADORA!", name + " vence todos os " + best + " rounds", Topic.STATS);
 		}
 		if (this.tiedBeforeLast) {
-			return new Headline("DECIDIDO NO ÚLTIMO ROUND!", name + " vence por " + score);
+			return new Headline("DECIDIDO NO ÚLTIMO ROUND!", name + " vence por " + score, Topic.STATS);
 		}
 		return null;
 	}
@@ -380,11 +382,11 @@ public final class BattleCommentary {
 	/**
 	 * One of the texts, with {A} the robot and {B} its opponent
 	 */
-	private Message comment(int robot, int priority, String... texts) {
+	private Message comment(int robot, int priority, Topic topic, String... texts) {
 		String text = texts[this.random.nextInt(texts.length)];
 		String a = robot >= 0 ? this.names.getOrDefault(robot, "?") : "";
 		String b = this.names.entrySet().stream().filter(e -> e.getKey() != robot).map(Map.Entry::getValue).findFirst().orElse("");
-		return new Message(false, text.replace("{A}", a).replace("{B}", b), robot, Tone.PLAYER, priority);
+		return new Message(false, text.replace("{A}", a).replace("{B}", b), robot, Tone.PLAYER, priority, topic);
 	}
 
 	private static RobotState find(Turn turn, int index) {

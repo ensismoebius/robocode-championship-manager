@@ -106,6 +106,13 @@ public class BattleArena3D extends StackPane {
 	private static final double HEADLINE_SECONDS = 3.4;
 	/** How long a comment stays, and how long it may wait to be shown */
 	private static final double COMMENT_SECONDS = 3.2;
+	/**
+	 * The commentary only shows up now and then, always with the presenter of the
+	 * event: the more important a comment, the sooner after the last one it may
+	 * come and the surer it is to come. The ones that do not pass are not told.
+	 */
+	private static final double[] COMMENT_COOLDOWN = { 15, 15, 12, 12, 8, 8, 8 };
+	private static final double[] COMMENT_CHANCE = { 0, 0.5, 0.7, 0.7, 1, 1, 1 };
 	private static final double COMMENT_MAX_WAIT = 4;
 	/** Callouts shown at the same time on each side */
 	private static final int MAX_CALLOUTS = 3;
@@ -281,6 +288,9 @@ public class BattleArena3D extends StackPane {
 
 	// Callouts and comments
 	private BattleCommentary commentary;
+	/** The presenter of the event being commented */
+	private final Presenter presenter = new Presenter(190);
+	private final Label liveTag = new Label("●");
 	private final StackPane commentaryLayer = new StackPane();
 	private final VBox calloutsLeft = new VBox(8);
 	private final VBox calloutsRight = new VBox(8);
@@ -290,6 +300,8 @@ public class BattleArena3D extends StackPane {
 	private BattleCommentary.Message comment;
 	private double commentAge;
 	private double commentClock;
+	/** When a presenter showed up for the last time */
+	private double lastPresented = -1000;
 	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
 	private BattleCommentary.Headline headline;
 	private boolean headlineShown = false;
@@ -1237,6 +1249,7 @@ public class BattleArena3D extends StackPane {
 					this.headlineShown = true;
 					this.phaseTime = 0;
 					this.showBanner(this.headline.title(), this.headline.subtitle());
+					this.announce(this.headline.subtitle(), 6);
 					this.banner.setStyle("-fx-font-size: 46px;");
 					Sfx.fanfare();
 				} else {
@@ -1301,6 +1314,8 @@ public class BattleArena3D extends StackPane {
 		this.showBanner("ROUND " + (round + 1), round + 1 == this.recording.getRounds().size() && round > 0 ? "ROUND DECISIVO" : null);
 		this.audio.roundCall();
 		this.audio.setMusicOn(true);
+		boolean decisive = round + 1 == this.recording.getRounds().size() && round > 0;
+		this.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (round + 1) + "! Preparem os motores!", 5);
 		this.updateInfo();
 
 		// Opens with a crane shot down to the arena
@@ -1325,6 +1340,7 @@ public class BattleArena3D extends StackPane {
 			this.roundWins.merge(winner, 1, Integer::sum);
 			RobotView view = this.robots.get(winner);
 			this.showBanner("K.O.!", (view == null ? "" : view.displayName) + " vence o round");
+			this.announce("K.O.! " + (view == null ? "" : view.displayName) + " vence o round!", 5);
 			this.audio.knockOut();
 			// The winner, from close
 			this.shot = Shot.CLOSE;
@@ -1724,7 +1740,7 @@ public class BattleArena3D extends StackPane {
 		StackPane.setAlignment(this.calloutsCenter, Pos.TOP_CENTER);
 		StackPane.setMargin(this.calloutsCenter, new Insets(130, 0, 0, 0));
 
-		Label tag = new Label("● AO VIVO");
+		Label tag = this.liveTag;
 		tag.getStyleClass().add("arena-comment-tag");
 		this.commentText.getStyleClass().add("arena-comment-text");
 		this.commentText.setWrapText(true);
@@ -1732,12 +1748,15 @@ public class BattleArena3D extends StackPane {
 		this.ticker.setAlignment(Pos.CENTER_LEFT);
 		this.ticker.getStyleClass().add("arena-comment");
 		this.ticker.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-		this.ticker.maxWidthProperty().bind(this.widthProperty().multiply(0.7));
 		this.ticker.setOpacity(0);
-		StackPane.setAlignment(this.ticker, Pos.BOTTOM_CENTER);
-		StackPane.setMargin(this.ticker, new Insets(0, 0, 64, 0));
+		// The presenter stands at the left, the comment beside it
+		StackPane.setAlignment(this.presenter, Pos.BOTTOM_LEFT);
+		StackPane.setMargin(this.presenter, new Insets(0, 0, 40, 28));
+		StackPane.setAlignment(this.ticker, Pos.BOTTOM_LEFT);
+		StackPane.setMargin(this.ticker, new Insets(0, 0, 64, 250));
+		this.ticker.maxWidthProperty().bind(this.widthProperty().subtract(300).multiply(0.9));
 
-		this.commentaryLayer.getChildren().addAll(this.calloutsLeft, this.calloutsRight, this.calloutsCenter, this.ticker);
+		this.commentaryLayer.getChildren().addAll(this.presenter, this.calloutsLeft, this.calloutsRight, this.calloutsCenter, this.ticker);
 		this.commentaryLayer.setMouseTransparent(true);
 		this.commentaryLayer.setPickOnBounds(false);
 		return this.commentaryLayer;
@@ -1832,6 +1851,7 @@ public class BattleArena3D extends StackPane {
 	 */
 	private void queueComment(BattleCommentary.Message message) {
 		if (this.comment == null || message.priority() > this.comment.priority() && this.commentAge > 0.6) {
+			// If it is not time for it, it is dropped
 			this.showComment(message);
 			return;
 		}
@@ -1842,7 +1862,35 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
-	private void showComment(BattleCommentary.Message message) {
+	/**
+	 * The presenter of a moment of the game (a round that begins, a knock out)
+	 * says a line
+	 */
+	private void announce(String text, int priority) {
+		this.queueComment(new BattleCommentary.Message(false, text, -1, BattleCommentary.Tone.NEUTRAL, priority, Topic.SHOW));
+	}
+
+	/**
+	 * Whether it is time for this comment, by its importance and the time since
+	 * the last one
+	 */
+	private boolean commentAllowed(BattleCommentary.Message message) {
+		int level = Math.max(0, Math.min(COMMENT_COOLDOWN.length - 1, message.priority()));
+		return this.commentClock - this.lastPresented >= COMMENT_COOLDOWN[level] && this.random.nextDouble() < COMMENT_CHANCE[level];
+	}
+
+	/**
+	 * Shows the comment with the presenter of its topic
+	 *
+	 * @return false if it was not time for it and it was dropped
+	 */
+	private boolean showComment(BattleCommentary.Message message) {
+		if (!this.commentAllowed(message)) {
+			return false;
+		}
+		this.lastPresented = this.commentClock;
+		this.presenter.present(message.topic(), COMMENT_SECONDS + 0.4);
+		this.liveTag.setText("● " + message.topic().presenter.toUpperCase());
 		this.comment = message;
 		this.commentAge = 0;
 		this.commentText.setText(message.text());
@@ -1854,10 +1902,12 @@ public class BattleArena3D extends StackPane {
 		slide.setToX(0);
 		slide.setInterpolator(Interpolator.EASE_OUT);
 		slide.play();
+		return true;
 	}
 
 	private void tickComments(double dt) {
 		this.commentClock += dt;
+		this.presenter.tick(dt);
 		if (this.comment != null) {
 			this.commentAge += dt;
 			if (this.commentAge > COMMENT_SECONDS) {
@@ -1870,6 +1920,7 @@ public class BattleArena3D extends StackPane {
 		// Old news are not told
 		this.commentQueue.removeIf(queued -> this.commentClock - queued.since() > COMMENT_MAX_WAIT);
 		if (this.comment == null && !this.commentQueue.isEmpty() && this.phase != Phase.REPLAY) {
+			// Not time for it: dropped, the next one may have its turn
 			this.showComment(this.commentQueue.remove(0).message());
 		}
 	}
@@ -1955,6 +2006,7 @@ public class BattleArena3D extends StackPane {
 
 		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
 		this.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
+		this.announce("Frente a frente: " + names.replace("  ×  ", " contra ") + "!", 5);
 		this.audio.whoosh();
 		Sfx.slam();
 		this.shot = Shot.WIDE;
