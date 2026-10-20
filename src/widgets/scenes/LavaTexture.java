@@ -17,7 +17,7 @@ final class LavaTexture {
 
 	static final int SIZE = 256;
 	/** Cells of the noise across the texture, it repeats after them */
-	private static final int PERIOD = 6;
+	static final int PERIOD = 6;
 
 	/** From cold crust to white hot */
 	private static final double[] STOPS = { 0, 0.22, 0.42, 0.6, 0.78, 1 };
@@ -80,7 +80,7 @@ final class LavaTexture {
 	/**
 	 * Fractal noise from 0 to 1, repeating every PERIOD
 	 */
-	private static double fbm(double u, double v, int octaves, int seed) {
+	static double fbm(double u, double v, int octaves, int seed) {
 		double sum = 0;
 		double amplitude = 0.5;
 		double total = 0;

@@ -28,7 +28,7 @@ import javax.sound.sampled.SourceDataLine;
 public final class BattleAudio {
 
 	private static final int CHUNK = 512;
-	private static final double MUSIC_GAIN = 0.42;
+	private static final double MUSIC_GAIN = 0.75;
 	private static final double SFX_GAIN = 0.9;
 
 	/** The adaptive songs */

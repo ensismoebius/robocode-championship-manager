@@ -455,6 +455,7 @@ public class BattleArena3D extends StackPane {
 		case NEON -> this.buildNeon(w, h);
 		case VOLCANO -> this.buildVolcano(w, h);
 		case ICE -> this.buildIce(w, h);
+		case JUNGLE -> this.buildJungle(w, h);
 		}
 		this.arena.getChildren().add(this.glowing);
 		this.buildFence(w, h);
@@ -537,7 +538,8 @@ public class BattleArena3D extends StackPane {
 		MeshView view = new MeshView(mesh);
 		view.setMaterial(material);
 		view.setCullFace(CullFace.NONE);
-		this.glowing.getChildren().add(view);
+		// Only the lava glows, water is lit like the rest
+		(this.style == ArenaStyle.VOLCANO ? this.glowing : this.arena).getChildren().add(view);
 		this.flows.add(new Flow(mesh, base, du, dv));
 	}
 
@@ -545,10 +547,14 @@ public class BattleArena3D extends StackPane {
 	 * A flat strip of lava from one point to another, flowing that way
 	 */
 	private void flowStrip(double x1, double z1, double x2, double z2, double width, double y, double speed) {
+		this.flowStrip(x1, z1, x2, z2, width, y, speed, this.lava, LAVA_TILE);
+	}
+
+	private void flowStrip(double x1, double z1, double x2, double z2, double width, double y, double speed, PhongMaterial material, double tile) {
 		double length = Math.hypot(x2 - x1, z2 - z1);
 		double px = -(z2 - z1) / length * width / 2;
 		double pz = (x2 - x1) / length * width / 2;
-		this.flow(new double[][] { { x1 - px, y, z1 - pz }, { x2 - px, y, z2 - pz }, { x2 + px, y, z2 + pz }, { x1 + px, y, z1 + pz } }, -speed, 0);
+		this.flow(new double[][] { { x1 - px, y, z1 - pz }, { x2 - px, y, z2 - pz }, { x2 + px, y, z2 + pz }, { x1 + px, y, z1 + pz } }, -speed, 0, material, tile);
 	}
 
 	private static double distance2(double[] a, double[] b) {
@@ -787,6 +793,214 @@ public class BattleArena3D extends StackPane {
 				spike.setTranslateY(5 - height / 2 + 10);
 				spike.getTransforms().addAll(new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.Z_AXIS), new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.X_AXIS));
 				this.arena.getChildren().add(spike);
+			}
+		}
+	}
+
+	/**
+	 * A textured material
+	 */
+	private static PhongMaterial textured(Image texture, Color specular) {
+		PhongMaterial material = new PhongMaterial(Color.WHITE);
+		material.setDiffuseMap(texture);
+		material.setSpecularColor(specular);
+		material.setSpecularPower(40);
+		return material;
+	}
+
+	/**
+	 * A flat quad with the texture repeating, not moving
+	 *
+	 * @param corners
+	 *            four {x, y, z} in order around it
+	 * @param tile
+	 *            units of the world one tile of the texture covers
+	 */
+	private MeshView tiledQuad(double[][] corners, PhongMaterial material, double tile) {
+		TriangleMesh mesh = new TriangleMesh();
+		for (double[] corner : corners) {
+			mesh.getPoints().addAll((float) corner[0], (float) corner[1], (float) corner[2]);
+		}
+		float uLength = (float) (Math.sqrt(distance2(corners[0], corners[1])) / tile);
+		float vLength = (float) (Math.sqrt(distance2(corners[0], corners[3])) / tile);
+		mesh.getTexCoords().addAll(0, 0, uLength, 0, uLength, vLength, 0, vLength);
+		mesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		return view;
+	}
+
+	/**
+	 * Mossy ground, rivers on both sides, huge trees in the distance, ferns,
+	 * rocks and waterfalls. Fireflies and mist float in the air.
+	 */
+	private void buildJungle(double w, double h) {
+		Random wild = new Random(31);
+		PhongMaterial moss = textured(JungleTexture.MOSS, Color.gray(0.05));
+		PhongMaterial water = textured(JungleTexture.WATER, Color.web("#bfffee"));
+		PhongMaterial bark = textured(JungleTexture.BARK, Color.gray(0.05));
+		PhongMaterial leaves = textured(JungleTexture.LEAVES, Color.gray(0.1));
+
+		// Ground: moss everywhere, a bit darker far away (it is the same texture,
+		// bigger tiles)
+		double far = 5000;
+		this.arena.getChildren().add(this.tiledQuad(new double[][] { { -far, 6, -far }, { far, 6, -far }, { far, 6, far }, { -far, 6, far } }, moss, 260));
+		this.arena.getChildren().add(this.tiledQuad(new double[][] { { -w / 2 - 20, 0.2, -h / 2 - 20 }, { w / 2 + 20, 0.2, -h / 2 - 20 }, { w / 2 + 20, 0.2, h / 2 + 20 }, { -w / 2 - 20, 0.2, h / 2 + 20 } }, moss, 110));
+
+		// A faint grid of lighter moss and a sandy border, so the field reads
+		PhongMaterial line = material(Color.web("#4f8a3c"));
+		for (double x = 100; x < w; x += 100) {
+			this.arena.getChildren().add(box(1.2, 0.4, h, x - w / 2, -0.2, 0, line));
+		}
+		for (double y = 100; y < h; y += 100) {
+			this.arena.getChildren().add(box(w, 0.4, 1.2, 0, -0.2, y - h / 2, line));
+		}
+		PhongMaterial sand = material(Color.web("#d6c58a"));
+		this.arena.getChildren().addAll(box(w + 4, 0.6, 3, 0, -0.3, -h / 2, sand), box(w + 4, 0.6, 3, 0, -0.3, h / 2, sand), box(3, 0.6, h, -w / 2, -0.3, 0, sand),
+				box(3, 0.6, h, w / 2, -0.3, 0, sand));
+
+		// Rivers along the long sides, flowing in opposite directions
+		double riverZ = h / 2 + 120;
+		double riverWidth = 96;
+		this.flowStrip(-3000, -riverZ, 3000, -riverZ, riverWidth, 3, 0.16, water, 120);
+		this.flowStrip(3000, riverZ, -3000, riverZ, riverWidth, 3, 0.16, water, 120);
+
+		// Waterfalls far at both ends, falling from a cliff to a pool
+		PhongMaterial rock = textured(JungleTexture.BARK, Color.gray(0.1));
+		for (int side = -1; side <= 1; side += 2) {
+			double x = side * (w / 2 + 1000);
+			double z = (wild.nextDouble() - 0.5) * 300;
+			Box cliff = box(90, 460, 420, x + side * 45, 6 - 230, z, rock);
+			this.arena.getChildren().add(cliff);
+			double face = x;
+			this.flow(new double[][] { { face, 6 - 450, z - 70 }, { face, 6 - 450, z + 70 }, { face, 5, z + 70 }, { face, 5, z - 70 } }, 0, -0.55, water, 45);
+			this.flow(new double[][] { { face - 230, 3, z - 150 }, { face + 10, 3, z - 150 }, { face + 10, 3, z + 150 }, { face - 230, 3, z + 150 } }, 0.03, 0.02, water, 120);
+		}
+
+		// Rocks covered with moss between the field and the rivers
+		for (int i = 0; i < 16; i++) {
+			double radius = 16 + wild.nextDouble() * 24;
+			double x = (wild.nextBoolean() ? 1 : -1) * (w / 2 + 40 + wild.nextDouble() * 160);
+			double z = (wild.nextDouble() - 0.5) * (h + 100);
+			Sphere stone = new Sphere(radius, 8);
+			stone.setMaterial(i % 3 == 0 ? moss : rock);
+			stone.setTranslateX(x);
+			stone.setTranslateZ(z);
+			stone.setTranslateY(6 - radius * 0.35);
+			stone.setScaleY(0.6);
+			this.arena.getChildren().add(stone);
+		}
+
+		// Ferns: all the blades in a few meshes, three tones of green
+		String[] tones = { "#2f8f2a", "#3da83a", "#25782a" };
+		TriangleMesh[] ferns = new TriangleMesh[tones.length];
+		for (int i = 0; i < ferns.length; i++) {
+			ferns[i] = new TriangleMesh();
+			ferns[i].getTexCoords().addAll(0, 0);
+		}
+		for (int cluster = 0; cluster < 170; cluster++) {
+			double x;
+			double z;
+			do {
+				x = (wild.nextDouble() - 0.5) * (w + 1700);
+				z = (wild.nextDouble() - 0.5) * (h + 1300);
+				// Not in the field, not in the rivers
+			} while (Math.abs(x) < w / 2 + 25 && Math.abs(z) < h / 2 + 25 || Math.abs(Math.abs(z) - riverZ) < riverWidth / 2 + 14);
+			this.fern(ferns[wild.nextInt(ferns.length)], x, z, wild);
+		}
+		for (int i = 0; i < ferns.length; i++) {
+			PhongMaterial tone = new PhongMaterial(Color.web(tones[i]));
+			tone.setSpecularColor(Color.gray(0.15));
+			MeshView view = new MeshView(ferns[i]);
+			view.setMaterial(tone);
+			view.setCullFace(CullFace.NONE);
+			this.arena.getChildren().add(view);
+		}
+
+		// Huge trees far away: trunk, roots, crowns and hanging vines
+		PhongMaterial vine = material(Color.web("#2a6a2a"));
+		for (int i = 0; i < 44; i++) {
+			double angle;
+			double distance;
+			double x;
+			double z;
+			do {
+				angle = wild.nextDouble() * Math.PI * 2;
+				distance = 950 + wild.nextDouble() * 1100;
+				x = Math.cos(angle) * distance * 1.15;
+				z = Math.sin(angle) * distance;
+				// Not over the rivers
+			} while (Math.abs(Math.abs(z) - riverZ) < riverWidth / 2 + 60);
+			double radius = 16 + wild.nextDouble() * 12;
+			double height = 380 + wild.nextDouble() * 320;
+			Cylinder trunk = new Cylinder(radius, height, 8);
+			trunk.setMaterial(bark);
+			trunk.setTranslateX(x);
+			trunk.setTranslateZ(z);
+			trunk.setTranslateY(6 - height / 2);
+			this.arena.getChildren().add(trunk);
+			if (i < 20) {
+				for (int root = 0; root < 3; root++) {
+					Box buttress = box(radius * 0.5, 90, radius * 2.2, 0, 0, 0, bark);
+					buttress.setTranslateX(x + Math.cos(root * 2.1 + i) * radius * 0.9);
+					buttress.setTranslateZ(z + Math.sin(root * 2.1 + i) * radius * 0.9);
+					buttress.setTranslateY(6 - 40);
+					buttress.setRotationAxis(Rotate.Y_AXIS);
+					buttress.setRotate(-Math.toDegrees(root * 2.1 + i));
+					this.arena.getChildren().add(buttress);
+				}
+			}
+			for (int crown = 0; crown < 4; crown++) {
+				double crownRadius = 90 + wild.nextDouble() * 70;
+				Sphere sphere = new Sphere(crownRadius, 12);
+				sphere.setMaterial(leaves);
+				sphere.setTranslateX(x + (wild.nextDouble() - 0.5) * 150);
+				sphere.setTranslateZ(z + (wild.nextDouble() - 0.5) * 150);
+				sphere.setTranslateY(6 - height + (wild.nextDouble() - 0.4) * 60);
+				sphere.setScaleY(0.6);
+				this.arena.getChildren().add(sphere);
+			}
+			for (int hang = 0; hang < 2; hang++) {
+				double length = 120 + wild.nextDouble() * 140;
+				Cylinder liana = new Cylinder(1.6, length, 5);
+				liana.setMaterial(vine);
+				liana.setTranslateX(x + (wild.nextDouble() - 0.5) * 120);
+				liana.setTranslateZ(z + (wild.nextDouble() - 0.5) * 120);
+				liana.setTranslateY(6 - height + 30 + length / 2);
+				this.arena.getChildren().add(liana);
+			}
+		}
+	}
+
+	/**
+	 * A fern: blades that rise from the ground and bend outwards, added to a mesh
+	 */
+	private void fern(TriangleMesh mesh, double x, double z, Random random) {
+		int blades = 8 + random.nextInt(4);
+		int segments = 4;
+		double scale = 0.8 + random.nextDouble() * 0.8;
+		for (int blade = 0; blade < blades; blade++) {
+			double angle = random.nextDouble() * Math.PI * 2;
+			double length = (30 + random.nextDouble() * 22) * scale;
+			double lift = (18 + random.nextDouble() * 14) * scale;
+			double width = (3.5 + random.nextDouble() * 2) * scale;
+			double sideX = -Math.sin(angle);
+			double sideZ = Math.cos(angle);
+			int first = mesh.getPoints().size() / 3;
+			for (int segment = 0; segment <= segments; segment++) {
+				double t = (double) segment / segments;
+				double reach = length * t;
+				// Rises, then bends down at the tip
+				double y = 6 - lift * Math.sin(t * Math.PI * 0.8);
+				double half = width * (1 - 0.85 * t);
+				double cx = x + Math.cos(angle) * reach;
+				double cz = z + Math.sin(angle) * reach;
+				mesh.getPoints().addAll((float) (cx - sideX * half), (float) y, (float) (cz - sideZ * half), (float) (cx + sideX * half), (float) y, (float) (cz + sideZ * half));
+			}
+			for (int segment = 0; segment < segments; segment++) {
+				int a = first + 2 * segment;
+				mesh.getFaces().addAll(a, 0, a + 1, 0, a + 3, 0, a, 0, a + 3, 0, a + 2, 0);
 			}
 		}
 	}
@@ -1268,6 +1482,8 @@ public class BattleArena3D extends StackPane {
 		this.clock += dt * this.effectRate;
 		if (this.lava != null) {
 			this.lava.setDiffuseColor(LAVA_DIM.interpolate(LAVA_FULL, 0.5 + 0.5 * Math.sin(this.clock * 2.1) * Math.sin(this.clock * 0.7 + 1)));
+		}
+		if (!this.flows.isEmpty()) {
 			this.updateFlows();
 		}
 		this.updateFire(dt * this.effectRate);
@@ -2935,7 +3151,7 @@ public class BattleArena3D extends StackPane {
 	private static final double[][] BURN_SPOTS = { { 0, -15, -11 }, { 8, -15, 3 }, { -5, -23, 1 } };
 
 	private enum ParticleKind {
-		FLAME, SMOKE, SPARK, EMBER, SNOW
+		FLAME, SMOKE, SPARK, EMBER, SNOW, FIREFLY, MIST
 	}
 
 	/** A quad of size 1 facing -Z, shared by all the sprites */
@@ -3102,6 +3318,27 @@ public class BattleArena3D extends StackPane {
 			p.shade = this.random.nextDouble();
 			p.material.setDiffuseMap(SOFT_TEXTURE);
 		}
+		case FIREFLY -> {
+			p.life = 5 + this.random.nextDouble() * 4;
+			p.size = 2.6 + this.random.nextDouble() * 1.6;
+			p.vx = (this.random.nextDouble() - 0.5) * 14;
+			p.vz = (this.random.nextDouble() - 0.5) * 14;
+			p.vy = (this.random.nextDouble() - 0.5) * 8;
+			p.spinSpeed = 0;
+			p.shade = this.random.nextDouble();
+			p.material.setDiffuseMap(SOFT_TEXTURE);
+		}
+		case MIST -> {
+			p.life = 9 + this.random.nextDouble() * 5;
+			p.size = 90 + this.random.nextDouble() * 60;
+			p.vx = 6 + this.random.nextDouble() * 6;
+			p.vz = (this.random.nextDouble() - 0.5) * 6;
+			p.vy = 0;
+			// Not turned: a flat, turned sprite shows its edges as wedges
+			p.spin.setAngle(0);
+			p.spinSpeed = 0;
+			p.material.setDiffuseMap(SOFT_TEXTURE);
+		}
 		case SNOW -> {
 			p.life = 12;
 			p.size = 2.6 + this.random.nextDouble() * 2.2;
@@ -3143,14 +3380,23 @@ public class BattleArena3D extends StackPane {
 
 		// Embers rise from the lava, snow falls on the ice. Below a limit, so the
 		// fire of the robots is never left out.
-		double rate = this.style == ArenaStyle.VOLCANO ? 26 : this.style == ArenaStyle.ICE ? 95 : 0;
+		double rate = this.style == ArenaStyle.VOLCANO ? 26 : this.style == ArenaStyle.ICE ? 95 : this.style == ArenaStyle.JUNGLE ? 16 : 0;
 		this.ambientDebt += dt * rate;
 		while (this.ambientDebt >= 1) {
 			this.ambientDebt--;
 			if (this.particles.size() > 550) {
 				continue;
 			}
-			if (this.style == ArenaStyle.VOLCANO) {
+			if (this.style == ArenaStyle.JUNGLE) {
+				double x = (this.random.nextDouble() - 0.5) * (this.fieldWidth + 700);
+				double z = (this.random.nextDouble() - 0.5) * (this.fieldHeight + 700);
+				// Mostly fireflies, now and then a bank of mist near the ground
+				if (this.random.nextDouble() < 0.09) {
+					this.spawn(ParticleKind.MIST, x, -6, z, 0);
+				} else {
+					this.spawn(ParticleKind.FIREFLY, x, -8 - this.random.nextDouble() * 60, z, 0);
+				}
+			} else if (this.style == ArenaStyle.VOLCANO) {
 				this.spawn(ParticleKind.EMBER, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 260), -2, (this.random.nextDouble() - 0.5) * (this.fieldHeight + 260), 0);
 			} else {
 				this.spawn(ParticleKind.SNOW, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 800), -240 - this.random.nextDouble() * 120,
@@ -3189,9 +3435,12 @@ public class BattleArena3D extends StackPane {
 			if ((p.kind == ParticleKind.SPARK || p.kind == ParticleKind.SNOW) && p.y >= -1 && p.vy > 0) {
 				p.age = p.life;
 			}
-			// Embers and snow sway
-			if (p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW) {
-				p.x += Math.sin(p.age * (p.kind == ParticleKind.EMBER ? 3 : 1.7) + p.shade * 6) * 9 * dt;
+			// Embers, snow and fireflies sway
+			if (p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW || p.kind == ParticleKind.FIREFLY) {
+				p.x += Math.sin(p.age * (p.kind == ParticleKind.EMBER ? 3 : p.kind == ParticleKind.FIREFLY ? 1.3 : 1.7) + p.shade * 6) * (p.kind == ParticleKind.FIREFLY ? 14 : 9) * dt;
+				if (p.kind == ParticleKind.FIREFLY) {
+					p.z += Math.cos(p.age * 1.1 + p.shade * 9) * 12 * dt;
+				}
 			}
 			p.z += p.vz * dt;
 			p.spin.setAngle(p.spin.getAngle() + p.spinSpeed * dt);
@@ -3229,6 +3478,19 @@ public class BattleArena3D extends StackPane {
 				height = width;
 				double alpha = (t < 0.1 ? t * 10 : 1 - (t - 0.1) / 0.9) * 0.95;
 				color = Color.color(1, 0.62 - 0.4 * t, 0.15 - 0.1 * t, Math.max(0, alpha));
+			}
+			case FIREFLY -> {
+				width = p.size;
+				height = width;
+				// Fades in and out and blinks
+				double blink = 0.5 + 0.5 * Math.sin(p.age * 4.2 + p.shade * 20);
+				double envelope = Math.min(1, Math.min(t * 6, (1 - t) * 6));
+				color = Color.color(0.78, 1, 0.35, Math.max(0, envelope * (0.35 + 0.65 * blink)));
+			}
+			case MIST -> {
+				width = p.size * (1.1 + 0.6 * t);
+				height = width * 0.5;
+				color = Color.color(0.6, 0.78, 0.68, 0.035 * Math.min(1, Math.min(t * 5, (1 - t) * 5)));
 			}
 			case SNOW -> {
 				width = p.size;
