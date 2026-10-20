@@ -91,6 +91,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		}
 		music.getSelectionModel().select(choiceIndex(old.getProperty(BATTLE_MUSIC), BattleAudio.Song.values()));
 		music.setMaxWidth(Double.MAX_VALUE);
+		CheckBox arenaMusic = new CheckBox("Usar mesma música da arena");
+		arenaMusic.setSelected(Boolean.parseBoolean(old.getProperty(ARENA_MUSIC, "false")));
+		// Each arena brings its own song, so the choice does not matter
+		music.disableProperty().bind(arenaMusic.selectedProperty());
 
 		Slider musicVolume = new Slider(0, 100, Configuration.parseInt(old.getProperty(MUSIC_VOLUME), Configuration.DEFAULT_MUSIC_VOLUME));
 		musicVolume.setBlockIncrement(5);
@@ -151,7 +155,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		form.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 3);
 		form.add(field("Texto do início do round", fightText), 0, 4);
 		form.add(field("Arena da batalha 3D", arena), 1, 4);
-		form.add(field("Música da batalha 3D", music), 0, 5);
+		form.add(field("Música da batalha 3D", new VBox(8, music, arenaMusic)), 0, 5);
 		form.add(field("Volume da música de fundo", new HBox(10, musicVolume, musicVolumeValue)), 1, 5);
 		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 6, 2, 1);
 		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 7, 2, 1);
@@ -200,6 +204,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(ARENA, arenaIndex <= 0 ? Configuration.RANDOM : ArenaStyle.values()[arenaIndex - 1].name());
 			int musicIndex = music.getSelectionModel().getSelectedIndex();
 			properties.setProperty(BATTLE_MUSIC, musicIndex <= 0 ? Configuration.RANDOM : BattleAudio.Song.values()[musicIndex - 1].name());
+			properties.setProperty(ARENA_MUSIC, String.valueOf(arenaMusic.isSelected()));
 			properties.setProperty(MUSIC_VOLUME, String.valueOf((int) Math.round(musicVolume.getValue())));
 			properties.setProperty(BATTLE_VIEW, battleView.getSelectionModel().getSelectedIndex() == 1 ? "CLASSIC" : "3D");
 

@@ -251,6 +251,13 @@ public class Configuration {
 	}
 
 	/**
+	 * If each arena plays its own song, whatever the song configured
+	 */
+	public static boolean isArenaMusic() {
+		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.ARENA_MUSIC));
+	}
+
+	/**
 	 * The volume of the background music of the battle, from 0 (mute) to 100
 	 */
 	public static int getMusicVolume() {

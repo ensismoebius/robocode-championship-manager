@@ -145,6 +145,16 @@ class ConfigurationTest {
 	}
 
 	@Test
+	void arenaMusicIsOffByDefault() {
+		assertFalse(Configuration.isArenaMusic());
+
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.ARENA_MUSIC, "true");
+		assertTrue(Configuration.askForProperties());
+		assertTrue(Configuration.isArenaMusic());
+	}
+
+	@Test
 	void notifiesWhenRegistrationIsToggled() {
 		Configuration.setEnabledRegistration(false);
 		assertFalse(Configuration.isEnabledRegistration());

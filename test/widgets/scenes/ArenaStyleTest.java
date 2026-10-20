@@ -25,4 +25,11 @@ class ArenaStyleTest {
 		}
 		assertTrue(seen.size() == ArenaStyle.values().length, seen.toString());
 	}
+
+	@Test
+	void everyArenaHasItsSong() {
+		for (ArenaStyle style : ArenaStyle.values()) {
+			assertTrue(style.song != null, style.name());
+		}
+	}
 }

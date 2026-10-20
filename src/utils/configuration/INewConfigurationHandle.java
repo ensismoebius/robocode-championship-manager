@@ -28,6 +28,7 @@ public interface INewConfigurationHandle {
 	public static final String ARENA = "arena";
 	public static final String BATTLE_MUSIC = "battleMusic";
 	public static final String MUSIC_VOLUME = "musicVolume";
+	public static final String ARENA_MUSIC = "arenaMusic";
 
 	/**
 	 * Returns the properties for the system
