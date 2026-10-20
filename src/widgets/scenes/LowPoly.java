@@ -230,4 +230,29 @@ final class LowPoly {
 					{ inner * Math.cos(b), inner * Math.sin(b) } }, y0, y1, 1);
 		}
 	}
+
+	/**
+	 * A boulder: an irregular, faceted stone. The base and the top are rings of
+	 * points that are moved at random, so no two are alike.
+	 *
+	 * @param topScale
+	 *            how much smaller the top is than the base (0.5 is a cone-ish
+	 *            stone, 0.9 a block)
+	 * @param roughness
+	 *            how far the points move, 0.3 to 0.7
+	 */
+	void rock(double cx, double cz, double baseY, double height, double radiusX, double radiusZ, int sides, double topScale, double roughness, java.util.Random random) {
+		double[][] bottom = new double[sides][];
+		double[][] top = new double[sides][];
+		double shiftX = (random.nextDouble() - 0.5) * radiusX * 0.5;
+		double shiftZ = (random.nextDouble() - 0.5) * radiusZ * 0.5;
+		for (int i = 0; i < sides; i++) {
+			double angle = Math.PI * 2 * (i + (random.nextDouble() - 0.5) * 0.5) / sides;
+			double r = 1 - roughness * 0.5 + random.nextDouble() * roughness;
+			double scale = topScale * (0.8 + random.nextDouble() * 0.4);
+			bottom[i] = new double[] { cx + Math.cos(angle) * radiusX * r, baseY, cz + Math.sin(angle) * radiusZ * r };
+			top[i] = new double[] { cx + shiftX + Math.cos(angle) * radiusX * r * scale, baseY - height * (0.8 + random.nextDouble() * 0.3), cz + shiftZ + Math.sin(angle) * radiusZ * r * scale };
+		}
+		this.solid(bottom, top);
+	}
 }

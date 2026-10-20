@@ -2,11 +2,17 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import jakarta.persistence.PersistenceException;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
@@ -19,6 +25,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import jetty.server.HttpServer;
 import model.Championship;
 import model.Opponent;
@@ -35,6 +42,7 @@ import utils.robocode.BattleRecording;
 import widgets.scenes.BattleArena3D;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
+import widgets.scenes.Podium;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
 import widgets.ArcadeBackground;
@@ -75,6 +83,9 @@ public class Main extends Application {
 	private StartScreen startScene;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
+	private Podium podiumScene;
+	/** The screen is fading to the champion: the keys wait */
+	private boolean championTransition;
 
 	/**
 	 * Which robot of the selected match the M key shows
@@ -154,6 +165,10 @@ public class Main extends Application {
 
 	private void handleKey(KeyEvent event) {
 
+		if (this.championTransition) {
+			return;
+		}
+
 		// All events with control key
 		if (event.isControlDown()) {
 			switch (event.getCode()) {
@@ -174,6 +189,22 @@ public class Main extends Application {
 			}
 			}
 			return;
+		}
+
+		// The trophies ceremony: the operator controls it
+		if (this.podiumScene != null && GameWindow.getScreen() == this.podiumScene) {
+			switch (event.getCode()) {
+			case SPACE, ENTER, RIGHT -> {
+				this.podiumScene.next();
+				return;
+			}
+			case LEFT -> {
+				this.podiumScene.previous();
+				return;
+			}
+			default -> {
+			}
+			}
 		}
 
 		switch (event.getCode()) {
@@ -415,7 +446,7 @@ public class Main extends Application {
 			return Optional.empty();
 		}
 		if (this.bracket.isFinished()) {
-			this.showChampion();
+			this.showChampion(false);
 			return Optional.empty();
 		}
 		Match match = this.selectedMatch == null ? null : this.bracket.getMatch(this.selectedMatch);
@@ -454,10 +485,10 @@ public class Main extends Application {
 	 * The winner of the match, or the champion
 	 */
 	private void showResult(long winnerId) {
-		this.resetAllScenes();
 		if (this.bracket.isFinished()) {
-			this.showChampion();
+			this.showChampion(true);
 		} else {
+			this.resetAllScenes();
 			this.showOpponent(this.opponents.get(winnerId), "VENCEU!", false);
 		}
 	}
@@ -631,9 +662,71 @@ public class Main extends Application {
 		this.opponentIndexIWantToShow++;
 	}
 
-	private void showChampion() {
+	/**
+	 * The champion, at once and with everything. The operator controls the rest:
+	 * Space shows the third place, then the second and then the first again.
+	 *
+	 * @param transition
+	 *            comes from a battle: the screen and the sound fade to black and
+	 *            silence, the default music of the program rises to the maximum and
+	 *            only then the screen fades in on the champion
+	 */
+	private void showChampion(boolean transition) {
+		Parent current = GameWindow.getScreen();
+		if (!transition || current == null) {
+			this.openPodium();
+			this.podiumScene.startMusic(1);
+			this.podiumScene.play();
+			return;
+		}
+
+		// Nothing else happens while the screen changes
+		this.championTransition = true;
+		double fadeSeconds = 1.5;
+		if (current instanceof BattleArena3D arena) {
+			arena.fadeOutAudio(fadeSeconds);
+		}
+		GameWindow.fadeCurtain(true, fadeSeconds, () -> {
+			// Black and silent: the podium is put in place, with its music on at zero
+			this.openPodium();
+			if (this.podiumScene == null) {
+				GameWindow.fadeCurtain(false, 0.6, () -> this.championTransition = false);
+				return;
+			}
+			this.podiumScene.startMusic(0);
+			Timeline rise = new Timeline(new KeyFrame(Duration.seconds(2.2), new KeyValue(this.podiumScene.musicVolumeProperty(), 1, Interpolator.EASE_OUT)));
+			rise.setOnFinished(event -> {
+				// At the maximum, the screen fades in and the champion comes in
+				GameWindow.fadeCurtain(false, 1.4, () -> this.championTransition = false);
+				PauseTransition wait = new PauseTransition(Duration.seconds(0.5));
+				wait.setOnFinished(done -> {
+					if (this.podiumScene != null) {
+						this.podiumScene.play();
+					}
+				});
+				wait.play();
+			});
+			rise.play();
+		});
+	}
+
+	/**
+	 * Shows the podium of the championship (nothing happens on it yet)
+	 */
+	private void openPodium() {
 		this.resetAllScenes();
-		this.showOpponent(this.opponents.get(this.bracket.getChampion()), "CAMPEÃO!", true);
+		try {
+			List<Opponent> podium = new ArrayList<Opponent>();
+			for (Long id : this.bracket.getPodium()) {
+				podium.add(this.opponents.get(id));
+			}
+			this.podiumScene = new Podium(podium);
+			this.show(this.podiumScene);
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			this.podiumScene = null;
+			this.showError("Falha ao exibir o campeão");
+		}
 	}
 
 	/**
@@ -684,6 +777,11 @@ public class Main extends Application {
 	 * Keep things clean an silent
 	 */
 	private void resetAllScenes() {
+
+		// Resets the podium
+		if (this.podiumScene != null)
+			this.podiumScene.stop();
+		this.podiumScene = null;
 
 		// Resets the opponents scene
 		if (this.opponentScene != null)

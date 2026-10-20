@@ -443,6 +443,46 @@
 	-fx-opacity: 0.10;
 }
 
+/* Podium and the champion */
+
+.podium-title {
+	-fx-font-family: "Press Start 2P";
+	-fx-text-fill: linear-gradient(from 0% 0% to 0% 100%, #fff6c0, #ffd400 55%, #ff9f1c);
+}
+
+.podium-hint {
+	-fx-font-family: "Rajdhani";
+	-fx-font-weight: bold;
+	-fx-text-fill: white;
+	-fx-effect: dropshadow(gaussian, black, 8, 0.6, 0, 0);
+}
+
+.podium-banner {
+	-fx-font-family: "Press Start 2P";
+}
+
+.podium-name {
+	-fx-font-family: "Press Start 2P";
+	-fx-text-fill: -rc-text;
+	-fx-text-alignment: center;
+}
+
+.podium-team {
+	-fx-text-fill: -rc-info;
+	-fx-font-weight: bold;
+}
+
+.podium-cry {
+	-fx-text-fill: -rc-success;
+	-fx-font-family: "Rajdhani";
+	-fx-font-weight: bold;
+	-fx-text-alignment: center;
+}
+
+.podium-number {
+	-fx-font-family: "Press Start 2P";
+}
+
 /* 3D battle (BattleArena3D) */
 
 .arena-banner {

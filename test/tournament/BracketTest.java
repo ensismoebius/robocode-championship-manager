@@ -197,4 +197,22 @@ class BracketTest {
 		assertThrows(IllegalArgumentException.class, () -> new Bracket(ids(1), true, true));
 		assertThrows(IllegalArgumentException.class, () -> new Bracket(new ArrayList<Long>(List.of(1L, 1L)), true, true));
 	}
+
+	@Test
+	void podiumHasTheChampionThenTheSecondAndThirdPlaces() {
+		for (int n = 3; n <= 12; n++) {
+			Bracket bracket = new Bracket(ids(n), true, true);
+			assertTrue(bracket.getPodium().isEmpty());
+			playAll(bracket, new Random(n));
+
+			List<Long> podium = bracket.getPodium();
+			assertEquals(3, podium.size(), "Robots: " + n);
+			assertEquals(bracket.getChampion(), podium.get(0));
+			assertEquals(3, new HashSet<Long>(podium).size());
+			Map<Long, Integer> placements = bracket.getPlacements();
+			assertEquals(1, placements.get(podium.get(0)));
+			assertEquals(2, placements.get(podium.get(1)));
+			assertEquals(3, placements.get(podium.get(2)));
+		}
+	}
 }

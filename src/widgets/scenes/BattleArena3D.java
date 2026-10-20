@@ -100,6 +100,8 @@ public class BattleArena3D extends StackPane {
 	private static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
+	/** The camera flies over the arena before the first round and ends where the battle starts */
+	private static final double FLYBY_SECONDS = 6.5;
 	private static final int COUNTDOWN_SECONDS = 3;
 	private static final double INTRO_SECONDS = COUNTDOWN_SECONDS + 1.1;
 	/** Each robot is presented alone before the battle, then the versus */
@@ -153,7 +155,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private enum Phase {
-		LOADING, SHOWCASE, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
+		LOADING, SHOWCASE, FLYBY, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
 	}
 
 	private final List<Opponent> fighters;
@@ -292,6 +294,12 @@ public class BattleArena3D extends StackPane {
 	/** Shown when the round starts, configurable */
 	private final String fightText = Configuration.getFightText();
 	private boolean fightShown = false;
+	/** Where the fly by ends: the camera at the start of the battle */
+	private final double[] flyEyeEnd = new double[3];
+	private final double[] flyLookEnd = new double[3];
+	private double flyFovEnd;
+	private double flyMirrorX = 1;
+	private double flyMirrorZ = 1;
 	/** The number of the countdown on the screen, 0 if none yet */
 	private int countdown;
 	private String roundTitle = "";
@@ -1131,7 +1139,7 @@ public class BattleArena3D extends StackPane {
 			double x = side * (w / 2 + 1000);
 			double z = (wild.nextDouble() - 0.5) * 300;
 			// The cliff, its face to the field at x
-			this.arena.getChildren().add(box(90, 460, 420, x + side * 45, 6 - 230, z, rock));
+			this.rockMountain(x, z, side, wild);
 			// The water in front of the face, not on it (two surfaces in the same
 			// place flicker)
 			double front = x - side * 2.5;
@@ -1204,6 +1212,86 @@ public class BattleArena3D extends StackPane {
 		crowns.setMaterial(leaves);
 		crowns.setCullFace(CullFace.BACK);
 		this.arena.getChildren().addAll(trunks, crowns);
+	}
+
+	/**
+	 * The mountain the waterfall falls from: tiers of irregular rocks, higher in
+	 * the middle, with buttresses and ledges on both sides of the water, a rock
+	 * lip over it, boulders at its foot and moss on the tops. The water is a flat
+	 * strip in front of x, so the rocks behind it stay behind x.
+	 *
+	 * @param side
+	 *            1 or -1: which end of the arena, the mountain goes away from the
+	 *            field
+	 */
+	private void rockMountain(double x, double z, int side, Random wild) {
+		Color[] tones = { Color.web("#4b4a45"), Color.web("#5d5850"), Color.web("#3f4640"), Color.web("#6b6358") };
+		LowPoly[] stones = new LowPoly[tones.length];
+		for (int i = 0; i < stones.length; i++) {
+			stones[i] = new LowPoly();
+		}
+		LowPoly moss = new LowPoly();
+		double toward = -side;
+
+		// The body: tiers side by side, tall behind the water and lower at the sides
+		for (int i = 0; i < 10; i++) {
+			double dz = -250 + i * 55 + (wild.nextDouble() - 0.5) * 30;
+			boolean channel = Math.abs(dz) < 105;
+			double rx = 55 + wild.nextDouble() * 35;
+			double rz = 55 + wild.nextDouble() * 30;
+			double height = channel ? 440 + wild.nextDouble() * 70 : 360 - Math.abs(dz) * 0.5 + wild.nextDouble() * 120;
+			// Behind the water in the middle, sticking out toward the field at the sides
+			double jut = channel ? 0 : wild.nextDouble() * 45;
+			double cx = x + side * (rx * 1.25 + 4) + toward * jut;
+			stones[wild.nextInt(stones.length)].rock(cx, z + dz, 6, height, rx, rz, 7, 0.45 + wild.nextDouble() * 0.3, 0.6, wild);
+			if (!channel) {
+				// A ledge on top of it
+				double upperHeight = 90 + wild.nextDouble() * 110;
+				stones[wild.nextInt(stones.length)].rock(cx + side * 10, z + dz, 6 - height * 0.72, upperHeight, rx * 0.65, rz * 0.65, 6, 0.55, 0.55, wild);
+				moss.rock(cx, z + dz, 6 - height * 0.88, 7, rx * 0.5, rz * 0.5, 6, 0.8, 0.4, wild);
+			}
+		}
+
+		// Buttresses: rocks coming out of the mountain to the sides of the water
+		for (int i = 0; i < 8; i++) {
+			double dz = (i % 2 == 0 ? 1 : -1) * (100 + wild.nextDouble() * 130);
+			double rx = 30 + wild.nextDouble() * 30;
+			double rz = 28 + wild.nextDouble() * 24;
+			double height = 90 + wild.nextDouble() * 200;
+			double cx = x + toward * (12 + wild.nextDouble() * 50);
+			stones[wild.nextInt(stones.length)].rock(cx, z + dz, 6, height, rx, rz, 7, 0.4 + wild.nextDouble() * 0.3, 0.6, wild);
+			if (wild.nextDouble() < 0.5) {
+				moss.rock(cx, z + dz, 6 - height * 0.85, 6, rx * 0.5, rz * 0.5, 6, 0.8, 0.4, wild);
+			}
+		}
+
+		// A lip of rock over the water: it comes out from under it
+		stones[1].rock(x + toward * 16, z, 6 - 400, 80, 70, 100, 8, 0.75, 0.45, wild);
+		stones[3].rock(x + toward * 6, z + 55, 6 - 380, 70, 40, 45, 6, 0.7, 0.5, wild);
+		stones[0].rock(x + toward * 6, z - 55, 6 - 385, 70, 40, 45, 6, 0.7, 0.5, wild);
+
+		// Boulders at the foot, on both sides of the pool
+		for (int i = 0; i < 12; i++) {
+			double dz = (wild.nextBoolean() ? 1 : -1) * (95 + wild.nextDouble() * 140);
+			double radius = 16 + wild.nextDouble() * 28;
+			double cx = x + toward * (20 + wild.nextDouble() * 230);
+			stones[wild.nextInt(stones.length)].rock(cx, z + dz, 6, radius * (0.8 + wild.nextDouble() * 0.8), radius, radius * 0.9, 6, 0.6, 0.55, wild);
+		}
+		// Stones in the water, at the edge of the pool
+		for (int i = 0; i < 4; i++) {
+			double radius = 10 + wild.nextDouble() * 12;
+			stones[wild.nextInt(stones.length)].rock(x + toward * (60 + wild.nextDouble() * 170), z + (wild.nextDouble() - 0.5) * 220, 6, radius, radius, radius, 6, 0.6, 0.5, wild);
+		}
+
+		for (int i = 0; i < stones.length; i++) {
+			PhongMaterial material = new PhongMaterial(tones[i]);
+			material.setSpecularColor(Color.gray(0.08));
+			material.setSpecularPower(14);
+			this.arena.getChildren().add(stones[i].view(material));
+		}
+		PhongMaterial mossy = new PhongMaterial(Color.web("#2f5a1f"));
+		mossy.setSpecularColor(Color.gray(0.05));
+		this.arena.getChildren().add(moss.view(mossy));
 	}
 
 	/**
@@ -1616,6 +1704,8 @@ public class BattleArena3D extends StackPane {
 			} else {
 				this.showcaseRobot(this.showcaseOrder + 1);
 			}
+		} else if (this.phase == Phase.FLYBY) {
+			this.endFlyBy();
 		} else if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
 			this.endReplay();
 		} else if (this.phase != Phase.LOADING && this.phase != Phase.FINISHED) {
@@ -1626,13 +1716,23 @@ public class BattleArena3D extends StackPane {
 	private void finish() {
 		this.phase = Phase.FINISHED;
 		this.timer.stop();
-		this.audio.stop();
 		this.stopShowcaseMusic();
 		if (this.onFinished != null) {
+			// The screen decides what comes next: the sound goes on until the arena
+			// leaves the screen, or fades out with {@link #fadeOutAudio}
 			Runnable callback = this.onFinished;
 			this.onFinished = null;
 			callback.run();
+		} else {
+			this.audio.stop();
 		}
+	}
+
+	/**
+	 * The sounds of the battle fade to silence
+	 */
+	public void fadeOutAudio(double seconds) {
+		this.audio.fadeOut(seconds);
 	}
 
 	// ----------------------------------------------------------------- update
@@ -1653,6 +1753,11 @@ public class BattleArena3D extends StackPane {
 				if (this.phaseTime > SHOWCASE_SECONDS) {
 					this.showcaseRobot(this.showcaseOrder + 1);
 				}
+			}
+		}
+		case FLYBY -> {
+			if (this.phaseTime > FLYBY_SECONDS) {
+				this.endFlyBy();
 			}
 		}
 		case INTRO -> {
@@ -1777,25 +1882,103 @@ public class BattleArena3D extends StackPane {
 			return;
 		}
 		this.showTurn(turns);
-		this.phase = Phase.INTRO;
-		this.phaseTime = 0;
-		this.fightShown = false;
-		this.countdown = 0;
-		this.roundTitle = "ROUND " + (round + 1);
-		this.roundSubtitle = round + 1 == this.recording.getRounds().size() && round > 0 ? "ROUND DECISIVO" : null;
-		this.showBanner(this.roundTitle, this.roundSubtitle);
-		this.audio.roundCall();
-		this.audio.setMusicOn(true);
-		boolean decisive = round + 1 == this.recording.getRounds().size() && round > 0;
-		this.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (round + 1) + "! Preparem os motores!", 5);
-		this.updateInfo();
 
-		// Opens with a crane shot down to the arena
+		// The camera at the start of the battle: a crane shot down to the arena
 		this.shot = Shot.CRANE;
 		this.shotTime = 0;
 		this.shotDuration = INTRO_SECONDS + 2.5;
 		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
 		this.cut();
+		if (round == 0) {
+			// Before the first battle the camera flies over the arena first
+			this.beginFlyBy();
+		} else {
+			this.beginIntro();
+		}
+	}
+
+	/**
+	 * The round title, the countdown and the fight
+	 */
+	private void beginIntro() {
+		this.phase = Phase.INTRO;
+		this.phaseTime = 0;
+		this.fightShown = false;
+		this.countdown = 0;
+		this.roundTitle = "ROUND " + (this.round + 1);
+		boolean decisive = this.round + 1 == this.recording.getRounds().size() && this.round > 0;
+		this.roundSubtitle = decisive ? "ROUND DECISIVO" : null;
+		this.showBanner(this.roundTitle, this.roundSubtitle);
+		this.audio.roundCall();
+		this.audio.setMusicOn(true);
+		this.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (this.round + 1) + "! Preparem os motores!", 5);
+		this.updateInfo();
+	}
+
+	/**
+	 * The camera flies over the arena, low and fast past the walls, and ends
+	 * where the battle starts
+	 */
+	private void beginFlyBy() {
+		System.arraycopy(this.eye, 0, this.flyEyeEnd, 0, 3);
+		System.arraycopy(this.look, 0, this.flyLookEnd, 0, 3);
+		this.flyFovEnd = this.fov;
+		this.flyMirrorX = this.random.nextBoolean() ? 1 : -1;
+		this.flyMirrorZ = this.random.nextBoolean() ? 1 : -1;
+		this.phase = Phase.FLYBY;
+		this.phaseTime = 0;
+		this.hideBanner();
+		this.showLetterbox(true, false);
+		this.audio.setMusicOn(true);
+		// Starts at the first point of the path, no sliding to it
+		this.flyByPose(0);
+		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
+		System.arraycopy(this.lookTarget, 0, this.look, 0, 3);
+		this.fov = this.fovTarget;
+		this.updateInfo();
+	}
+
+	private void endFlyBy() {
+		this.showLetterbox(false);
+		this.beginIntro();
+	}
+
+	/**
+	 * Puts the camera where the fly by is at the moment: through points around
+	 * the arena, low, that end at the camera of the start of the battle
+	 */
+	private void flyByPose(double progress) {
+		double w = this.fieldWidth;
+		double h = this.fieldHeight;
+		double mx = this.flyMirrorX;
+		double mz = this.flyMirrorZ;
+		double[][] eyes = { { -0.8 * w * mx, -120, -1.0 * h * mz }, { -0.05 * w * mx, -50, -0.85 * h * mz }, { 0.85 * w * mx, -75, -0.1 * h * mz }, this.flyEyeEnd };
+		double[][] looks = { { 0.1 * w * mx, -40, 0.2 * h * mz }, { 0.25 * w * mx, -25, 0.1 * h * mz }, { -0.2 * w * mx, -20, 0 }, this.flyLookEnd };
+		// Slow at the start and at the end, quick in the middle
+		double smooth = progress * progress * (3 - 2 * progress);
+		double u = 0.3 * progress + 0.7 * smooth;
+		catmull(eyes, u, this.eyeTarget);
+		catmull(looks, u, this.lookTarget);
+		this.fovTarget = 62 + (this.flyFovEnd - 62) * smooth;
+		this.rollTarget = 3 * Math.sin(progress * Math.PI * 2) * (1 - smooth);
+		this.follow = 40;
+	}
+
+	/**
+	 * A point along a smooth curve that goes through all the points, u from 0 to 1
+	 */
+	private static void catmull(double[][] points, double u, double[] out) {
+		int segments = points.length - 1;
+		double position = Math.max(0, Math.min(1, u)) * segments;
+		int i = Math.min(segments - 1, (int) position);
+		double t = position - i;
+		double[] p0 = points[Math.max(0, i - 1)];
+		double[] p1 = points[i];
+		double[] p2 = points[i + 1];
+		double[] p3 = points[Math.min(segments, i + 2)];
+		for (int k = 0; k < 3; k++) {
+			out[k] = 0.5 * (2 * p1[k] + (p2[k] - p0[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t * t + (3 * p1[k] - p0[k] - 3 * p2[k] + p3[k]) * t * t * t);
+		}
 	}
 
 	private void endRound(List<Turn> turns) {
@@ -1847,7 +2030,7 @@ public class BattleArena3D extends StackPane {
 		double progress = Math.min(1, this.turnPosition / Math.max(1, this.turns().size()));
 		boolean deciding = this.round + 1 == this.recording.getRounds().size() && this.recording.getRounds().size() > 1;
 		double tension = 0.12 + 0.55 * (1 - Math.max(0, Math.min(100, lowest)) / 100) + 0.15 * progress + (deciding ? 0.15 : 0) + this.hitTension;
-		if (this.phase == Phase.INTRO || this.phase == Phase.SHOWCASE) {
+		if (this.phase == Phase.INTRO || this.phase == Phase.SHOWCASE || this.phase == Phase.FLYBY) {
 			tension = 0.1;
 		}
 		this.audio.setIntensity(tension);
@@ -2982,7 +3165,7 @@ public class BattleArena3D extends StackPane {
 
 	private void updateCamera(double dt) {
 		this.shotTime += dt;
-		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE || this.phase == Phase.SHOWCASE) {
+		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE || this.phase == Phase.SHOWCASE || this.phase == Phase.FLYBY) {
 			if (this.shotTime > this.shotDuration && this.phase == Phase.PLAYING) {
 				this.pickShot(false);
 			}
@@ -3081,6 +3264,10 @@ public class BattleArena3D extends StackPane {
 		double pz = ux * this.shotSide;
 		this.rollTarget = 0;
 
+		if (this.phase == Phase.FLYBY) {
+			this.flyByPose(Math.min(1, this.phaseTime / FLYBY_SECONDS));
+			return;
+		}
 		if (this.phase == Phase.SHOWCASE && !this.versus) {
 			this.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
 			return;
@@ -3235,7 +3422,7 @@ public class BattleArena3D extends StackPane {
 	 * The name and energy balloons follow their robots on the screen
 	 */
 	private void placeBalloons() {
-		boolean show = this.phase != Phase.LOADING && this.phase != Phase.REPLAY && this.phase != Phase.SHOWCASE;
+		boolean show = this.phase != Phase.LOADING && this.phase != Phase.REPLAY && this.phase != Phase.SHOWCASE && this.phase != Phase.FLYBY;
 		for (RobotView view : this.robots.values()) {
 			Point3D scene = view.root.localToScene(new Point3D(0, -62, 0), true);
 			if (scene == null || !show) {

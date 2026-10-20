@@ -39,6 +39,8 @@ public final class GameWindow {
 
 	private static final StackPane screenLayer = new StackPane();
 	private static final StackPane overlayLayer = new StackPane();
+	/** Black, over everything: it fades in and out between two screens */
+	private static final Region curtain = new Region();
 
 	/**
 	 * Open modal panels (their backdrops), the top one first
@@ -57,9 +59,13 @@ public final class GameWindow {
 	public static void init(Stage primaryStage, String title) {
 		GameWindow.stage = primaryStage;
 
+		GameWindow.curtain.setStyle("-fx-background-color: black;");
+		GameWindow.curtain.setOpacity(0);
+		GameWindow.curtain.setMouseTransparent(true);
+
 		// When empty the overlay lets the clicks reach the screen
 		GameWindow.overlayLayer.setPickOnBounds(false);
-		Scene scene = Theme.apply(new Scene(new StackPane(GameWindow.screenLayer, GameWindow.overlayLayer), 1280, 800));
+		Scene scene = Theme.apply(new Scene(new StackPane(GameWindow.screenLayer, GameWindow.overlayLayer, GameWindow.curtain), 1280, 800));
 
 		// While a panel is open, the keys are only for it
 		scene.addEventFilter(KeyEvent.ANY, event -> {
@@ -124,6 +130,32 @@ public final class GameWindow {
 
 	public static Window getWindow() {
 		return GameWindow.stage;
+	}
+
+	/**
+	 * Fades the whole window to black, or from black back to the screen
+	 *
+	 * @param then
+	 *            runs when the fade ends, may be null
+	 */
+	public static void fadeCurtain(boolean toBlack, double seconds, Runnable then) {
+		FadeTransition fade = new FadeTransition(Duration.seconds(seconds), GameWindow.curtain);
+		fade.setFromValue(GameWindow.curtain.getOpacity());
+		fade.setToValue(toBlack ? 1 : 0);
+		fade.setInterpolator(javafx.animation.Interpolator.EASE_BOTH);
+		fade.setOnFinished(event -> {
+			if (then != null) {
+				then.run();
+			}
+		});
+		fade.play();
+	}
+
+	/**
+	 * Black at once, no animation
+	 */
+	public static void setCurtain(boolean black) {
+		GameWindow.curtain.setOpacity(black ? 1 : 0);
 	}
 
 	public static void setScreen(Parent screen) {

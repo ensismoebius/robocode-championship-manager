@@ -85,6 +85,8 @@ public final class BattleAudio {
 	private volatile Song song = Song.EPIC;
 	/** The volume of the music, from 0 to 1. The effects are not affected. */
 	private volatile double musicLevel = 1;
+	/** Seconds to reach silence, 0 while it is not fading out */
+	private volatile double fadeSeconds = 0;
 
 	// Mixer state, only the audio thread touches it
 	private final List<Voice> sfxVoices = new ArrayList<Voice>();
@@ -302,6 +304,13 @@ public final class BattleAudio {
 		return samples;
 	}
 
+	/**
+	 * Everything fades to silence, slowly (a stop is quick)
+	 */
+	public void fadeOut(double seconds) {
+		this.fadeSeconds = Math.max(0.05, seconds);
+	}
+
 	private double vary() {
 		return 0.92 + this.random.nextDouble() * 0.16;
 	}
@@ -320,12 +329,17 @@ public final class BattleAudio {
 			line.start();
 			byte[] pcm = new byte[CHUNK * 2];
 			double fadeOut = 1;
+			double faded = 1;
 			while (this.running || fadeOut > 0) {
 				if (!this.running) {
 					fadeOut = Math.max(0, fadeOut - 0.08);
 				}
+				// A slow fade out asked by the screen: everything gets quieter
+				if (this.fadeSeconds > 0) {
+					faded = Math.max(0, faded - CHUNK / (Synth.RATE * this.fadeSeconds));
+				}
 				for (int i = 0; i < CHUNK; i++) {
-					int value = (int) (this.nextSample() * fadeOut * Short.MAX_VALUE);
+					int value = (int) (this.nextSample() * fadeOut * faded * Short.MAX_VALUE);
 					pcm[2 * i] = (byte) value;
 					pcm[2 * i + 1] = (byte) (value >> 8);
 				}

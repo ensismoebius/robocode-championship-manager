@@ -567,6 +567,26 @@ public class Bracket {
 	}
 
 	/**
+	 * The best three, for the trophies: the champion, the second place and the
+	 * third, in this order. Shorter if there are fewer robots, empty if the
+	 * championship is not over. Of a tie (two robots eliminated at the same depth)
+	 * the first found is taken.
+	 */
+	public List<Long> getPodium() {
+		List<Long> podium = new ArrayList<Long>();
+		if (this.getChampion() == null) {
+			return podium;
+		}
+		Map<Long, Integer> placements = this.getPlacements();
+		podium.add(this.getChampion());
+		for (int place = 2; place <= 3; place++) {
+			final int wanted = place;
+			placements.entrySet().stream().filter(e -> e.getValue() == wanted).map(Map.Entry::getKey).findFirst().ifPresent(podium::add);
+		}
+		return podium;
+	}
+
+	/**
 	 * @return true if losing this match took the loser out of the championship
 	 */
 	private boolean isEliminatedBy(Match match) {

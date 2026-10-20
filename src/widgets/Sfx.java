@@ -57,6 +57,42 @@ public class Sfx {
 				Synth.tone(698, 0.12, 0.5), Synth.tone(784, 0.12, 0.5), Synth.tone(1047, 0.6, 0.5)));
 	}
 
+	/** Brass-like chord: saws, a bit of each note, decaying */
+	private static double[] brass(double seconds, double decay, double... frequencies) {
+		double[] chord = new double[0];
+		for (double frequency : frequencies) {
+			chord = Synth.mix(chord, Synth.saw(frequency, seconds, decay), 0.5);
+		}
+		return chord;
+	}
+
+	/**
+	 * The trophies ceremony: a fanfare that is bigger for each place, the first
+	 * one with a boom and a crash on the last chord
+	 *
+	 * @param place
+	 *            1, 2 or 3
+	 */
+	public static void ceremony(int place) {
+		double[] c = { 261.63, 329.63, 392.00, 523.25 };
+		double[] f = { 349.23, 440.00, 523.25, 698.46 };
+		double[] g = { 392.00, 493.88, 587.33, 783.99 };
+		double[] top = { 523.25, 659.25, 783.99, 1046.50 };
+		double[] sound;
+		if (place == 3) {
+			sound = Synth.concat(brass(0.12, 3, c), brass(0.12, 3, c), brass(0.5, 2.5, f));
+		} else if (place == 2) {
+			sound = Synth.concat(brass(0.12, 3, c), brass(0.12, 3, c), brass(0.12, 3, c), brass(0.3, 2.5, f), brass(0.14, 3, g), brass(0.7, 2, top));
+		} else {
+			double[] tail = Synth.mix(brass(1.8, 1.4, top), brass(1.8, 1.4, 130.81, 261.63), 0.8);
+			tail = Synth.mix(tail, Synth.sineSweep(110, 30, 1.2), 0.9);
+			tail = Synth.mix(tail, Synth.lowpass(Synth.noise(1.6, 1.8), 0.5), 0.5);
+			sound = Synth.concat(brass(0.13, 3, c), brass(0.13, 3, c), brass(0.13, 3, c), brass(0.34, 2.5, f), brass(0.13, 3, g), brass(0.13, 3, g), brass(0.13, 3, g), brass(0.4, 2.5, top),
+					tail);
+		}
+		Sfx.play(sound);
+	}
+
 	/**
 	 * 16 bit little endian mono PCM
 	 */
