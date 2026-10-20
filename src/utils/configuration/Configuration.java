@@ -251,6 +251,14 @@ public class Configuration {
 	}
 
 	/**
+	 * If the edges of the 3D battle are smoothed (antialiasing), on by default
+	 */
+	public static boolean isAntialiasing() {
+		String antialiasing = Configuration.getConfiguration(INewConfigurationHandle.ANTIALIASING);
+		return antialiasing == null || antialiasing.isBlank() || Boolean.parseBoolean(antialiasing.strip());
+	}
+
+	/**
 	 * If each arena plays its own song, whatever the song configured
 	 */
 	public static boolean isArenaMusic() {

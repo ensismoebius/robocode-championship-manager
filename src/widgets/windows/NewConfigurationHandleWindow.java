@@ -53,6 +53,9 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		CheckBox registrationEnabled = new CheckBox("Aceitar novos robôs");
 		registrationEnabled.setSelected(Boolean.parseBoolean(old.getProperty(REGISTRATION_ENABLED, "true")));
 
+		CheckBox antialiasing = new CheckBox("Suavização de bordas (antialiasing)");
+		antialiasing.setSelected(Boolean.parseBoolean(old.getProperty(ANTIALIASING, "true")));
+
 		TextField robocodeRounds = new TextField(old.getProperty(ROBOCODE_ROUNDS, String.valueOf(Configuration.DEFAULT_ROBOCODE_ROUNDS)));
 
 		ChoiceBox<String> winnerCriterion = new ChoiceBox<String>();
@@ -157,9 +160,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		form.add(field("Arena da batalha 3D", arena), 1, 4);
 		form.add(field("Música da batalha 3D", new VBox(8, music, arenaMusic)), 0, 5);
 		form.add(field("Volume da música de fundo", new HBox(10, musicVolume, musicVolumeValue)), 1, 5);
-		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 6, 2, 1);
-		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 7, 2, 1);
-		form.add(error, 0, 8, 2, 1);
+		form.add(field("Qualidade gráfica da batalha 3D", antialiasing), 0, 6);
+		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 7, 2, 1);
+		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 8, 2, 1);
+		form.add(error, 0, 9, 2, 1);
 
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
@@ -204,6 +208,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			properties.setProperty(ARENA, arenaIndex <= 0 ? Configuration.RANDOM : ArenaStyle.values()[arenaIndex - 1].name());
 			int musicIndex = music.getSelectionModel().getSelectedIndex();
 			properties.setProperty(BATTLE_MUSIC, musicIndex <= 0 ? Configuration.RANDOM : BattleAudio.Song.values()[musicIndex - 1].name());
+			properties.setProperty(ANTIALIASING, String.valueOf(antialiasing.isSelected()));
 			properties.setProperty(ARENA_MUSIC, String.valueOf(arenaMusic.isSelected()));
 			properties.setProperty(MUSIC_VOLUME, String.valueOf((int) Math.round(musicVolume.getValue())));
 			properties.setProperty(BATTLE_VIEW, battleView.getSelectionModel().getSelectedIndex() == 1 ? "CLASSIC" : "3D");

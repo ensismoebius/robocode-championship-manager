@@ -145,6 +145,20 @@ class ConfigurationTest {
 	}
 
 	@Test
+	void antialiasingIsOnByDefault() {
+		assertTrue(Configuration.isAntialiasing());
+
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.ANTIALIASING, "false");
+		assertTrue(Configuration.askForProperties());
+		assertFalse(Configuration.isAntialiasing());
+
+		this.answer.setProperty(INewConfigurationHandle.ANTIALIASING, "true");
+		assertTrue(Configuration.askForProperties());
+		assertTrue(Configuration.isAntialiasing());
+	}
+
+	@Test
 	void arenaMusicIsOffByDefault() {
 		assertFalse(Configuration.isArenaMusic());
 

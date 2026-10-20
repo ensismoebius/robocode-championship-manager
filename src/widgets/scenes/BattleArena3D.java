@@ -2,6 +2,7 @@ package widgets.scenes;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -368,7 +369,7 @@ public class BattleArena3D extends StackPane {
 		this.camera.getTransforms().setAll(this.cameraLook, this.cameraYaw, this.cameraPitch, this.cameraRoll, this.cameraDistance);
 		this.world.getChildren().add(this.camera);
 
-		this.subScene = new SubScene(this.world, 100, 100, true, SceneAntialiasing.BALANCED);
+		this.subScene = new SubScene(this.world, 100, 100, true, Configuration.isAntialiasing() ? SceneAntialiasing.BALANCED : SceneAntialiasing.DISABLED);
 		this.subScene.setCamera(this.camera);
 		// A solid color: with a gradient the 3D frames are not cleared and leave
 		// trails
@@ -3308,9 +3309,9 @@ public class BattleArena3D extends StackPane {
 			this.playerColor = PLAYER_COLORS[order % PLAYER_COLORS.length];
 			this.bodyColor = argb(robot.getBodyColor(), this.playerColor);
 			this.gunColor = argb(robot.getGunColor(), this.bodyColor);
-			this.bodyMaterial = material(this.bodyColor);
-			this.gunMaterial = material(this.gunColor);
-			PhongMaterial radarMaterial = material(argb(robot.getRadarColor(), Color.web("#ffd400")));
+			this.bodyMaterial = paint(this.bodyColor);
+			this.gunMaterial = paint(this.gunColor);
+			PhongMaterial radarMaterial = paint(argb(robot.getRadarColor(), Color.web("#ffd400")));
 			PhongMaterial dark = material(Color.web("#171b26"));
 			PhongMaterial plateMaterial = material(Color.web("#2d3345"));
 			PhongMaterial steel = material(Color.web("#6c7488"));
@@ -3813,6 +3814,115 @@ public class BattleArena3D extends StackPane {
 		return image;
 	}
 
+	/** Farthest first */
+	private static final Comparator<Particle> FARTHEST_FIRST = (a, b) -> Double.compare(b.distance, a.distance);
+	/** Reused every frame, so it does not make garbage */
+	private final List<Node> fireViews = new ArrayList<Node>();
+
+	// The colors of the particles are made once: every one is a step of its life
+	// and a level of opacity, and the particles take them from these tables
+	// instead of making new colors in every frame
+	private static final int LIFE_STEPS = 48;
+	private static final int OPACITY_LEVELS = 16;
+	private static final int SMOKE_SHADES = 8;
+	/** The darkest gray of the smoke, the shades go from 0 to this */
+	private static final double SMOKE_SHADE_MAX = 0.25;
+	private static final Color[] FLAME_COLORS = new Color[2 * LIFE_STEPS * OPACITY_LEVELS];
+	private static final Color[] SMOKE_COLORS = new Color[SMOKE_SHADES * LIFE_STEPS * OPACITY_LEVELS];
+	private static final Color[] EMBER_COLORS = new Color[LIFE_STEPS];
+	private static final Color[] SPARK_COLORS = new Color[LIFE_STEPS];
+	private static final Color[] FIREFLY_COLORS = new Color[OPACITY_LEVELS];
+	private static final Color[] SNOW_COLORS = new Color[OPACITY_LEVELS];
+
+	private static int step(double t) {
+		return Math.max(0, Math.min(LIFE_STEPS - 1, (int) (t * LIFE_STEPS)));
+	}
+
+	private static int level(double opacity) {
+		return Math.max(0, Math.min(OPACITY_LEVELS - 1, (int) Math.round(opacity * (OPACITY_LEVELS - 1))));
+	}
+
+	private static double middle(int step) {
+		return (step + 0.5) / LIFE_STEPS;
+	}
+
+	private static double opacity(int level) {
+		return (double) level / (OPACITY_LEVELS - 1);
+	}
+
+	private static Color withOpacity(Color color, double opacity) {
+		return Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity);
+	}
+
+	private static Color flameColor(boolean blue, int step, int level) {
+		int index = ((blue ? 1 : 0) * LIFE_STEPS + step) * OPACITY_LEVELS + level;
+		Color color = FLAME_COLORS[index];
+		if (color == null) {
+			double t = middle(step);
+			Color base;
+			if (blue) {
+				// A blue tongue: pale at the base, deep blue at the tip
+				base = t < 0.25 ? Color.web("#d6f1ff").interpolate(Color.web("#4aa8ff"), t / 0.25) : Color.web("#4aa8ff").interpolate(Color.web("#2a46ff"), (t - 0.25) / 0.75);
+			} else if (t < 0.14) {
+				// Every flame is blue where it is born
+				base = Color.web("#5aa9ff").interpolate(Color.web("#fff0b8"), t / 0.14);
+			} else if (t < 0.3) {
+				base = Color.web("#fff0b8").interpolate(Color.web("#ffb12a"), (t - 0.14) / 0.16);
+			} else {
+				base = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (t - 0.3) / 0.7);
+			}
+			color = FLAME_COLORS[index] = withOpacity(base, opacity(level));
+		}
+		return color;
+	}
+
+	private static Color smokeColor(int shade, int step, int level) {
+		int index = (shade * LIFE_STEPS + step) * OPACITY_LEVELS + level;
+		Color color = SMOKE_COLORS[index];
+		if (color == null) {
+			double t = middle(step);
+			double gray = (shade + 0.5) / SMOKE_SHADES * SMOKE_SHADE_MAX;
+			Color base = t < 0.12 ? Color.web("#ff7a2a").interpolate(Color.gray(gray), t / 0.12) : Color.gray(gray).interpolate(Color.gray(Math.min(0.4, gray + 0.12)), (t - 0.12) / 0.88);
+			color = SMOKE_COLORS[index] = withOpacity(base, opacity(level));
+		}
+		return color;
+	}
+
+	private static Color emberColor(int step) {
+		Color color = EMBER_COLORS[step];
+		if (color == null) {
+			double t = middle(step);
+			double alpha = (t < 0.1 ? t * 10 : 1 - (t - 0.1) / 0.9) * 0.95;
+			color = EMBER_COLORS[step] = Color.color(1, 0.62 - 0.4 * t, 0.15 - 0.1 * t, Math.max(0, alpha));
+		}
+		return color;
+	}
+
+	private static Color sparkColor(int step) {
+		Color color = SPARK_COLORS[step];
+		if (color == null) {
+			double t = middle(step);
+			color = SPARK_COLORS[step] = Color.color(1, 0.85 - 0.4 * t, 0.4 - 0.3 * t, 1 - t * t);
+		}
+		return color;
+	}
+
+	private static Color fireflyColor(int level) {
+		Color color = FIREFLY_COLORS[level];
+		if (color == null) {
+			color = FIREFLY_COLORS[level] = Color.color(0.78, 1, 0.35, opacity(level));
+		}
+		return color;
+	}
+
+	private static Color snowColor(int level) {
+		Color color = SNOW_COLORS[level];
+		if (color == null) {
+			color = SNOW_COLORS[level] = Color.color(0.94, 0.97, 1, opacity(level));
+		}
+		return color;
+	}
+
 	/**
 	 * A flame, a spark or a puff of smoke: a sprite that always faces the camera.
 	 * It lives in the world, so a moving robot leaves a trail of smoke.
@@ -3830,6 +3940,8 @@ public class BattleArena3D extends StackPane {
 		double age, life;
 		double size, spinSpeed, shade;
 		double distance;
+		/** The color on the material now */
+		Color shown;
 		/** Flames go with the robot: x and z are relative to it */
 		RobotView anchor;
 
@@ -4013,35 +4125,19 @@ public class BattleArena3D extends StackPane {
 				width = p.size * grow * (1 - 0.5 * t);
 				height = width * 1.7;
 				double flicker = 0.85 + 0.15 * this.random.nextDouble();
-				if (p.shade < 0.35) {
-					// A blue tongue: pale at the base, deep blue at the tip
-					color = t < 0.25 ? Color.web("#d6f1ff").interpolate(Color.web("#4aa8ff"), t / 0.25) : Color.web("#4aa8ff").interpolate(Color.web("#2a46ff"), (t - 0.25) / 0.75);
-				} else if (t < 0.14) {
-					// Every flame is blue where it is born
-					color = Color.web("#5aa9ff").interpolate(Color.web("#fff0b8"), t / 0.14);
-				} else if (t < 0.3) {
-					color = Color.web("#fff0b8").interpolate(Color.web("#ffb12a"), (t - 0.14) / 0.16);
-				} else {
-					color = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (t - 0.3) / 0.7);
-				}
-				color = Color.color(color.getRed(), color.getGreen(), color.getBlue(), Math.min(1, (1 - t) * 1.6) * flicker);
+				color = flameColor(p.shade < 0.35, step(t), level(Math.min(1, (1 - t) * 1.6) * flicker));
 			}
 			case SMOKE -> {
 				// Born in the fire, grows and fades
 				width = p.size * (0.6 + 2.6 * Math.sqrt(t));
 				height = width;
-				double alpha = Math.min(1, t * 6) * Math.pow(1 - t, 1.4) * 0.7;
-				Color ember = Color.web("#ff7a2a");
-				Color gray = Color.gray(p.shade);
-				color = t < 0.12 ? ember.interpolate(gray, t / 0.12) : gray.interpolate(Color.gray(Math.min(0.4, p.shade + 0.12)), (t - 0.12) / 0.88);
-				color = Color.color(color.getRed(), color.getGreen(), color.getBlue(), alpha);
+				color = smokeColor(Math.max(0, Math.min(SMOKE_SHADES - 1, (int) (p.shade / SMOKE_SHADE_MAX * SMOKE_SHADES))), step(t), level(Math.min(1, t * 6) * Math.pow(1 - t, 1.4) * 0.7));
 			}
 			case EMBER -> {
 				double flicker = 0.7 + 0.3 * this.random.nextDouble();
 				width = p.size * (1 - 0.3 * t) * flicker;
 				height = width;
-				double alpha = (t < 0.1 ? t * 10 : 1 - (t - 0.1) / 0.9) * 0.95;
-				color = Color.color(1, 0.62 - 0.4 * t, 0.15 - 0.1 * t, Math.max(0, alpha));
+				color = emberColor(step(t));
 			}
 			case FIREFLY -> {
 				width = p.size;
@@ -4049,20 +4145,24 @@ public class BattleArena3D extends StackPane {
 				// Fades in and out and blinks
 				double blink = 0.5 + 0.5 * Math.sin(p.age * 4.2 + p.shade * 20);
 				double envelope = Math.min(1, Math.min(t * 6, (1 - t) * 6));
-				color = Color.color(0.78, 1, 0.35, Math.max(0, envelope * (0.35 + 0.65 * blink)));
+				color = fireflyColor(level(Math.max(0, envelope * (0.35 + 0.65 * blink))));
 			}
 			case SNOW -> {
 				width = p.size;
 				height = width;
-				color = Color.color(0.94, 0.97, 1, Math.min(0.9, p.age * 1.5));
+				color = snowColor(level(Math.min(0.9, p.age * 1.5)));
 			}
 			default -> {
 				width = p.size * (1 - 0.5 * t);
 				height = width;
-				color = Color.color(1, 0.85 - 0.4 * t, 0.4 - 0.3 * t, 1 - t * t);
+				color = sparkColor(step(t));
 			}
 			}
-			p.material.setDiffuseColor(color);
+			// The colors come from tables, the same object again if it did not change
+			if (p.shown != color) {
+				p.material.setDiffuseColor(color);
+				p.shown = color;
+			}
 			double px = p.x;
 			double pz = p.z;
 			if (p.anchor != null) {
@@ -4088,12 +4188,14 @@ public class BattleArena3D extends StackPane {
 
 		// No depth sorting in JavaFX: the farthest first, so the nearest blend
 		// over them
-		this.particles.sort((a, b) -> Double.compare(b.distance, a.distance));
-		List<Node> views = new ArrayList<Node>(this.particles.size());
+		this.particles.sort(FARTHEST_FIRST);
+		this.fireViews.clear();
 		for (Particle p : this.particles) {
-			views.add(p.view);
+			this.fireViews.add(p.view);
 		}
-		this.fireLayer.getChildren().setAll(views);
+		if (!this.fireLayer.getChildren().equals(this.fireViews)) {
+			this.fireLayer.getChildren().setAll(this.fireViews);
+		}
 	}
 
 	private void clearFire() {
@@ -4106,16 +4208,26 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * A robocode ARGB color, or the fallback if the robot did not choose one (or
-	 * chose black, invisible on the dark arena)
+	 * A robocode ARGB color, exactly as the robot defined it (black included), or
+	 * the fallback if there is none
 	 */
 	private static Color argb(int argb, Color fallback) {
-		int r = (argb >> 16) & 0xff;
-		int g = (argb >> 8) & 0xff;
-		int b = argb & 0xff;
-		if (r + g + b < 60) {
-			return fallback.deriveColor(0, 0.8, 0.7, 1);
+		if (argb == 0) {
+			return fallback;
 		}
-		return Color.rgb(r, g, b);
+		return Color.rgb((argb >> 16) & 0xff, (argb >> 8) & 0xff, argb & 0xff);
+	}
+
+	/**
+	 * The material of a part painted in a color chosen by the robot. It is the
+	 * color itself, but a dark paint (a black tank) still shows its shape: the
+	 * light glints on it
+	 */
+	private static PhongMaterial paint(Color color) {
+		PhongMaterial material = new PhongMaterial(color);
+		double floor = 0.38;
+		material.setSpecularColor(Color.color(Math.max(floor, Math.min(1, color.getRed() * 1.3)), Math.max(floor, Math.min(1, color.getGreen() * 1.3)), Math.max(floor, Math.min(1, color.getBlue() * 1.3))));
+		material.setSpecularPower(36);
+		return material;
 	}
 }
