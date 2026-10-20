@@ -51,6 +51,7 @@ import widgets.ArcadeBackground;
 import widgets.GameDialog;
 import widgets.GameWindow;
 import widgets.Sfx;
+import widgets.Sound;
 import widgets.Theme;
 import widgets.windows.NewConfigurationHandleWindow;
 
@@ -83,6 +84,10 @@ public class Main extends Application {
 	// The Scenes of application
 	private BracketViewer bracketScene;
 	private StartScreen startScene;
+	/** The default music of the program: the start screen and the bracket play it */
+	private Sound menuMusic;
+	private static final double START_MUSIC_VOLUME = 0.15;
+	private static final double BRACKET_MUSIC_VOLUME = 0.10;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
 	private Podium podiumScene;
@@ -424,7 +429,7 @@ public class Main extends Application {
 			return;
 		}
 
-		this.resetAllScenes();
+		this.resetAllScenes(true);
 
 		long outside = Math.max(0, ChampionshipService.countOpponents() - this.opponents.size());
 		this.bracketScene = new BracketViewer(this.championship.getName(), this.bracket, this.opponents, this.selectedMatch, code -> {
@@ -437,6 +442,7 @@ public class Main extends Application {
 		}
 
 		this.show(this.bracketScene);
+		this.playMenuMusic(BRACKET_MUSIC_VOLUME);
 	}
 
 	/**
@@ -594,11 +600,37 @@ public class Main extends Application {
 	/**
 	 *
 	 */
+	/**
+	 * Plays the default music, or only changes its volume when it is already playing
+	 */
+	private void playMenuMusic(double volume) {
+		if (this.menuMusic == null) {
+			this.menuMusic = Sound.fromResource(StartScreen.class, "versusMusic.mp3");
+			if (this.menuMusic != null) {
+				this.menuMusic.setLoop(true);
+			}
+		}
+		if (this.menuMusic != null) {
+			this.menuMusic.setVolume(volume);
+			this.menuMusic.play();
+		}
+	}
+
+	/**
+	 * A stopped sound can not play again, so the next time a new one is made
+	 */
+	private void stopMenuMusic() {
+		if (this.menuMusic != null) {
+			this.menuMusic.stop();
+			this.menuMusic = null;
+		}
+	}
+
 	protected void showStartScreen() {
 		this.startScene = new StartScreen(this.runningWebserverPort());
-		this.startScene.playBackgroundMusic();
 
 		this.show(this.startScene);
+		this.playMenuMusic(START_MUSIC_VOLUME);
 	}
 
 	protected void startsBattle() {
@@ -834,6 +866,14 @@ public class Main extends Application {
 	 * Keep things clean an silent
 	 */
 	private void resetAllScenes() {
+		this.resetAllScenes(false);
+	}
+
+	/**
+	 * @param keepMenuMusic
+	 *            the default music goes on, the next screen plays it
+	 */
+	private void resetAllScenes(boolean keepMenuMusic) {
 
 		// Resets the podium
 		if (this.podiumScene != null)
@@ -851,9 +891,12 @@ public class Main extends Application {
 		this.battleScene = null;
 
 		// Resets initial screen
-		if (this.startScene != null)
-			this.startScene.stop();
 		this.startScene = null;
+
+		// The default music stops with the screen that played it, unless the next one plays it too
+		if (!keepMenuMusic) {
+			this.stopMenuMusic();
+		}
 
 		// Resets the bracket scene
 		this.bracketScene = null;

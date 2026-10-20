@@ -87,7 +87,7 @@ import widgets.Theme;
  *
  * The battle in 3D, replayed from the turns recorded by robocode: a neon arena,
  * low poly tanks with the colors the robots chose, bullets, explosions and
- * tombstones, a fighting game HUD, an adaptive soundtrack and a camera that
+ * burnt wrecks, a fighting game HUD, an adaptive soundtrack and a camera that
  * films it like an action movie. When a robot dies, the last second is
  * replayed in slow motion.
  *
@@ -3760,7 +3760,7 @@ public class BattleArena3D extends StackPane {
 			double length = Math.max(1, Math.hypot(dx, dz));
 			double ux = dx / length;
 			double uz = dz / length;
-			this.setShot(bx - ux * 60 - uz * 22 * this.shotSide, -30, bz - uz * 60 + ux * 22 * this.shotSide, bx + ux * 140, -20, bz + uz * 140, 38, 9);
+			this.setShot(bx - ux * 120 - uz * 22 * this.shotSide, -30, bz - uz * 120 + ux * 22 * this.shotSide, bx + ux * 140, -20, bz + uz * 140, 38, 9);
 			this.rollTarget = -5 * this.shotSide;
 		} else {
 			// Side view of the victim, slowly getting closer
@@ -3836,7 +3836,7 @@ public class BattleArena3D extends StackPane {
 		final Color bodyColor;
 		final Color gunColor;
 		final Color playerColor;
-		final Group tombstone;
+		final Group debris;
 		final VBox balloon = new VBox(4);
 		final Region energyFill = new Region();
 		final Label nameLabel;
@@ -3974,17 +3974,9 @@ public class BattleArena3D extends StackPane {
 
 			this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 
-			// Shown when it is destroyed
-			this.tombstone = new Group();
-			PhongMaterial stone = material(Color.web("#8a8fa3"));
-			Cylinder top = new Cylinder(11, 6, 12);
-			top.setMaterial(stone);
-			top.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
-			top.setTranslateY(-26);
-			this.tombstone.getChildren().addAll(box(22, 26, 6, 0, -13, 0, stone), top, box(30, 4, 14, 0, -2, 0, stone));
-			this.tombstone.setVisible(false);
-
-			this.root.getChildren().addAll(this.tank, this.tombstone);
+			// The pieces thrown by the blast stay here, beside the wreck
+			this.debris = new Group();
+			this.root.getChildren().addAll(this.tank, this.debris);
 
 			// Balloon over the robot
 			this.displayName = opponent == null ? robot.getName() : opponent.getName();
@@ -4105,7 +4097,7 @@ public class BattleArena3D extends StackPane {
 
 		/**
 		 * Blows up: fireballs, a shockwave, smoke, debris, the turret thrown in the
-		 * air and a burnt wreck, that becomes a tombstone
+		 * air and a burnt wreck, the pieces stay in the arena
 		 */
 		void destroy() {
 			if (this.dead) {
@@ -4173,7 +4165,7 @@ public class BattleArena3D extends StackPane {
 				Box piece = new Box(size, size, size);
 				piece.setMaterial(colors[i % colors.length]);
 				piece.setTranslateY(-15);
-				blast.getChildren().add(piece);
+				this.debris.getChildren().add(piece);
 				double reach = 60 + BattleArena3D.this.random.nextDouble() * 90;
 				all.getChildren().add(BattleArena3D.this.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 40 + BattleArena3D.this.random.nextDouble() * 90, 1300));
 			}
@@ -4207,17 +4199,6 @@ public class BattleArena3D extends StackPane {
 			this.running.add(all);
 			all.play();
 			BattleArena3D.this.lightFlash(x, z, tint, 1.4);
-
-			// Later the wreck gives place to the tombstone
-			this.tombstone.setVisible(false);
-			this.tombstone.setTranslateY(34);
-			Timeline grave = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(this.tombstone.translateYProperty(), 34)), new KeyFrame(Duration.millis(1), event -> this.tombstone.setVisible(true)),
-					new KeyFrame(Duration.millis(900), new KeyValue(this.tombstone.translateYProperty(), 0, Interpolator.EASE_OUT)));
-			grave.setDelay(Duration.millis(2300));
-			grave.setOnFinished(event -> this.tank.setVisible(false));
-			BattleArena3D.this.effect(grave);
-			this.running.add(grave);
-			grave.play();
 
 			this.nameLabel.setText("☠ " + this.displayName);
 			this.balloon.setOpacity(0.6);
@@ -4256,7 +4237,7 @@ public class BattleArena3D extends StackPane {
 			this.running.clear();
 			this.dead = false;
 			this.tank.setVisible(true);
-			this.tombstone.setVisible(false);
+			this.debris.getChildren().clear();
 			this.bodyMaterial.setDiffuseColor(this.bodyColor);
 			this.gunMaterial.setDiffuseColor(this.gunColor);
 			this.setGlowing(true);

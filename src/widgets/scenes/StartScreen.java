@@ -26,7 +26,6 @@ import utils.configuration.Configuration;
 import utils.network.Network;
 import widgets.ArcadeBackground;
 import widgets.GameDialog;
-import widgets.Sound;
 import widgets.Theme;
 
 /**
@@ -53,7 +52,6 @@ public class StartScreen extends StackPane {
 			{ "^Q", "Sair" }, //
 			{ "I", "Esta tela" } };
 
-	private Sound music;
 
 	private final Label title = new Label();
 	private final Label subtitle = new Label();
@@ -215,12 +213,6 @@ public class StartScreen extends StackPane {
 		scanlines.setMouseTransparent(true);
 
 		this.getChildren().setAll(new ArcadeBackground(), horizonLayout, this.layout, scanlines);
-
-		this.music = Sound.fromResource(getClass(), "versusMusic.mp3");
-		if (this.music != null) {
-			this.music.setVolume(0.15);
-			this.music.setLoop(true);
-		}
 	}
 
 	/**
@@ -268,15 +260,5 @@ public class StartScreen extends StackPane {
 			this.controlsFade.setOnFinished(event -> this.controls.setVisible(false));
 		}
 		this.controlsFade.play();
-	}
-
-	public void playBackgroundMusic() {
-		if (this.music != null)
-			this.music.play();
-	}
-
-	public void stop() {
-		if (this.music != null)
-			this.music.stop();
 	}
 }
