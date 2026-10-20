@@ -249,6 +249,11 @@ public final class BattleAudio {
 		this.sfx(Synth.mix(Synth.sineSweep(120, 40, 0.9), Synth.lowpass(Synth.noise(0.9, 2.5), 0.15), 0.6), 0.8, 1);
 	}
 
+	/** One number of the countdown: a beep, higher for the last */
+	public void countdown(boolean last) {
+		this.sfx(Synth.mix(Synth.sine(last ? 880 : 660, 0.25, 6), Synth.square(last ? 880 : 660, 0.2), 0.15), 0.7, 1);
+	}
+
 	/** "FIGHT!": a brass like stab */
 	public void fight() {
 		double[] stab = new double[(int) (Synth.RATE * 0.9)];

@@ -98,7 +98,9 @@ public class BattleArena3D extends StackPane {
 	private static final double TPS = 30;
 	private static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
-	private static final double INTRO_SECONDS = 2.4;
+	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
+	private static final int COUNTDOWN_SECONDS = 3;
+	private static final double INTRO_SECONDS = COUNTDOWN_SECONDS + 1.1;
 	/** Each robot is presented alone before the battle, then the versus */
 	private static final double SHOWCASE_SECONDS = 7;
 	private static final double VERSUS_SECONDS = 2.6;
@@ -289,6 +291,10 @@ public class BattleArena3D extends StackPane {
 	/** Shown when the round starts, configurable */
 	private final String fightText = Configuration.getFightText();
 	private boolean fightShown = false;
+	/** The number of the countdown on the screen, 0 if none yet */
+	private int countdown;
+	private String roundTitle = "";
+	private String roundSubtitle;
 	private boolean paused = false;
 	private double hitTension = 0;
 	/** Animations of effects run slower in the replay */
@@ -1649,7 +1655,13 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		case INTRO -> {
-			if (this.phaseTime > INTRO_SECONDS * 0.55 && !this.fightShown) {
+			int remaining = (int) Math.ceil(COUNTDOWN_SECONDS - this.phaseTime);
+			if (remaining >= 1 && remaining != this.countdown) {
+				this.countdown = remaining;
+				this.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
+				this.audio.countdown(remaining == 1);
+			}
+			if (this.phaseTime > COUNTDOWN_SECONDS && !this.fightShown) {
 				this.fightShown = true;
 				this.showBanner(this.fightText, null);
 				this.audio.fight();
@@ -1767,7 +1779,10 @@ public class BattleArena3D extends StackPane {
 		this.phase = Phase.INTRO;
 		this.phaseTime = 0;
 		this.fightShown = false;
-		this.showBanner("ROUND " + (round + 1), round + 1 == this.recording.getRounds().size() && round > 0 ? "ROUND DECISIVO" : null);
+		this.countdown = 0;
+		this.roundTitle = "ROUND " + (round + 1);
+		this.roundSubtitle = round + 1 == this.recording.getRounds().size() && round > 0 ? "ROUND DECISIVO" : null;
+		this.showBanner(this.roundTitle, this.roundSubtitle);
 		this.audio.roundCall();
 		this.audio.setMusicOn(true);
 		boolean decisive = round + 1 == this.recording.getRounds().size() && round > 0;
@@ -3157,8 +3172,7 @@ public class BattleArena3D extends StackPane {
 			top.setMaterial(stone);
 			top.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
 			top.setTranslateY(-26);
-			this.tombstone.getChildren().addAll(box(22, 26, 6, 0, -13, 0, stone), top, box(30, 4, 14, 0, -2, 0, stone), box(2, 12, 1, 0, -18, -3.5, playerMaterial),
-					box(8, 2, 1, 0, -20, -3.5, playerMaterial));
+			this.tombstone.getChildren().addAll(box(22, 26, 6, 0, -13, 0, stone), top, box(30, 4, 14, 0, -2, 0, stone));
 			this.tombstone.setVisible(false);
 
 			this.root.getChildren().addAll(this.tank, this.tombstone);
