@@ -11,6 +11,8 @@ set -e
 cd "$(dirname "$0")/.."
 command -v docker >/dev/null 2>&1 || { echo "docker not found" >&2; exit 1; }
 [ $# -gt 0 ] || set -- ubuntu debian fedora arch
+# Created here, so the host user owns it (the containers write into it)
+mkdir -p dist/linux
 
 for distro in "$@"; do
 	case "$distro" in

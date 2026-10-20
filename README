@@ -31,10 +31,15 @@ Building and running:
 	CAMPEONATOS") are configurable too, an empty subtitle is not shown.
 
 Installers:
-	Each installer is built on its own system, jpackage can not cross-build:
-	  Linux    packaging/build-installer.sh     -> dist/*.deb (Debian or Ubuntu)
-	  macOS    packaging/build-installer.sh     -> dist/*.dmg
-	  Windows  packaging\build-installer.ps1   -> dist\*.exe (needs WiX Toolset 3)
+	Linux, one package per distribution (needs Docker):
+	  packaging/build-linux-packages.sh        -> dist/linux/ubuntu/*.deb (Ubuntu 24.04)
+	                                              dist/linux/debian/*.deb (Debian 13)
+	                                              dist/linux/fedora/*.rpm (Fedora)
+	                                              dist/linux/arch/*.pkg.tar.zst (Arch)
+	  packaging/build-installer.sh             builds the one of the system it runs on
+	macOS: packaging/build-installer.sh      -> dist/*.dmg
+	Windows: packaging\build-installer.ps1   -> dist\*.exe (needs WiX Toolset 3)
+	Each system builds its own, jpackage can not cross-build.
 	The installers bring their own Java. They do not bring Robocode: on the first
 	start the program asks for the folder where Robocode is installed (the one
 	that has the robots folder). The data goes to ~/RobocodeChampManager unless

@@ -95,14 +95,29 @@ set -- --type "$JP_TYPE" \
 case "$TYPE" in
 deb)
 	set -- "$@" --linux-shortcut --linux-app-category games \
-		--linux-package-deps "libgtk-3-0t64 | libgtk-3-0, libasound2t64 | libasound2" \
+		--linux-package-deps "libgtk-3-0t64 | libgtk-3-0, libasound2t64 | libasound2, libgif7" \
 		--linux-deb-maintainer "André Furlan <ensismoebius@gmail.com>"
 	;;
 rpm)
-	set -- "$@" --linux-shortcut --linux-app-category games --linux-package-deps "gtk3, alsa-lib"
+	set -- "$@" --linux-shortcut --linux-app-category games --linux-package-deps "gtk3, alsa-lib, giflib"
 	;;
 esac
 jpackage "$@"
+
+if [ "$TYPE" = deb ]; then
+	# The post-install script of jpackage fails where there is no desktop menu (servers, containers).
+	# The menu entry is optional, so its failure must not fail the installation.
+	for deb in "$OUT"/*.deb; do
+		UNPACK=packaging/build/deb-unpack
+		rm -rf "$UNPACK"
+		dpkg-deb -R "$deb" "$UNPACK"
+		for script in "$UNPACK"/DEBIAN/postinst "$UNPACK"/DEBIAN/prerm "$UNPACK"/DEBIAN/postrm; do
+			[ -f "$script" ] && sed -i '/xdg-desktop-menu/ s/$/ || true/' "$script"
+		done
+		dpkg-deb -b --root-owner-group "$UNPACK" "$deb" >/dev/null
+		rm -rf "$UNPACK"
+	done
+fi
 
 if [ "$TYPE" = arch ]; then
 	WORK=packaging/build/arch
@@ -116,7 +131,7 @@ pkgdesc='Gerenciador de campeonatos de robocode'
 arch=('$(uname -m)')
 url='https://sourceforge.net/projects/robocode-championship-manager/'
 license=('GPL-3.0-only')
-depends=('gtk3' 'alsa-lib')
+depends=('gtk3' 'alsa-lib' 'giflib')
 options=('!strip' '!debug')
 
 package() {

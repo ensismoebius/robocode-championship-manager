@@ -12,20 +12,20 @@ trap 'chown -R "$HOST_UID:$HOST_GID" target packaging/build "$DIST_DIR" 2>/dev/n
 case "$DISTRO" in
 ubuntu | debian)
 	apt-get update -qq
-	DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openjdk-21-jdk-headless maven
+	DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openjdk-21-jdk-headless maven binutils fakeroot
 	sh packaging/build-installer.sh deb
 	;;
 fedora)
-	dnf install -y -q java-21-openjdk-devel java-21-openjdk-jmods maven rpm-build
+	dnf install -y -q java-25-openjdk-devel java-25-openjdk-jmods maven rpm-build binutils
 	sh packaging/build-installer.sh rpm
 	;;
 arch)
 	pacman-key --init >/dev/null 2>&1
 	pacman-key --populate archlinux >/dev/null 2>&1
 	pacman -Sy --noconfirm --needed jdk21-openjdk maven base-devel
-	# makepkg does not run as root
+	# makepkg does not run as root, and jdk21-openjdk does not link its tools into /usr/bin
 	useradd -m -u "$HOST_UID" builder
-	runuser -u builder -- env HOME=/home/builder DIST_DIR="$DIST_DIR" sh packaging/build-installer.sh arch
+	runuser -u builder -- env HOME=/home/builder JAVA_HOME=/usr/lib/jvm/java-21-openjdk PATH=/usr/lib/jvm/java-21-openjdk/bin:$PATH DIST_DIR="$DIST_DIR" sh packaging/build-installer.sh arch
 	;;
 *)
 	echo "Unknown distribution: $DISTRO" >&2
