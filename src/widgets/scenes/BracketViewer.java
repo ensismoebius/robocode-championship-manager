@@ -636,10 +636,12 @@ public class BracketViewer extends StackPane {
 		if (this.pendingResult != null) {
 			this.startResultAnimation(this.pendingResult);
 		} else {
-			// The whole width, looking at the selected match
+			// The whole width first, then the camera zooms in the next battle
 			double[] overview = this.overview();
-			Point2D selectedCenter = this.centerOf(this.selected);
-			this.moveTo(overview[0], selectedCenter == null ? overview[1] : selectedCenter.getY(), overview[2], null);
+			this.moveTo(overview[0], overview[1], overview[2], null);
+			PauseTransition wait = new PauseTransition(Duration.millis(400));
+			wait.setOnFinished(event -> this.focusSelected());
+			wait.play();
 		}
 	}
 

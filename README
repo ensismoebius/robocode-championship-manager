@@ -26,9 +26,22 @@ Building and running:
 	dialogs are panels inside it, like the menus of a game. Press C to change it at any time: the
 	changes apply at once (the web server moves to the new port and a new
 	database file is opened), no restart needed. The data is kept in the SQLite file
-	database/robochamp.db (configurable). Tables are created automatically.
+	~/RobocodeChampManager/robochamp.db by default (configurable). Tables are created automatically.
 	The title and subtitle of the start screen ("CHAMPIONSHIP", "GERENCIADOR DE
 	CAMPEONATOS") are configurable too, an empty subtitle is not shown.
+
+Installers:
+	Each installer is built on its own system, jpackage can not cross-build:
+	  Linux    packaging/build-installer.sh     -> dist/*.deb (Debian or Ubuntu)
+	  macOS    packaging/build-installer.sh     -> dist/*.dmg
+	  Windows  packaging\build-installer.ps1   -> dist\*.exe (needs WiX Toolset 3)
+	The installers bring their own Java. They do not bring Robocode: on the first
+	start the program asks for the folder where Robocode is installed (the one
+	that has the robots folder). The data goes to ~/RobocodeChampManager unless
+	the configuration says otherwise.
+	The macOS installer is not signed: the first start needs Open from the menu
+	of the right click. .github/workflows/installers.yml builds the three
+	installers on push of a v* tag, or by hand, and keeps them as artifacts.
 
 	Teams register their robots at http://<this computer>:8080 (the port is
 	configurable). The team music must be an MP3 file: it plays while the

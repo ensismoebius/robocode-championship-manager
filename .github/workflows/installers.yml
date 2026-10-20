@@ -1,0 +1,46 @@
+name: Installers
+
+# Builds the installer of each system on its own runner (jpackage can not cross-build)
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  installer:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Install WiX Toolset (needed by jpackage for the .exe)
+        if: runner.os == 'Windows'
+        run: choco install wixtoolset --version=3.11.2 -y --no-progress
+
+      - name: Build the installer (Linux, .deb)
+        if: runner.os == 'Linux'
+        run: sh packaging/build-installer.sh deb
+
+      - name: Build the installer (macOS, .dmg)
+        if: runner.os == 'macOS'
+        run: sh packaging/build-installer.sh dmg
+
+      - name: Build the installer (Windows, .exe)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: packaging\build-installer.ps1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ runner.os }}
+          path: dist/*
+          if-no-files-found: error

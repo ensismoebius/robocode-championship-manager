@@ -68,3 +68,7 @@ local.properties
 build/
 /target/
 /database/
+
+# Installers: packaging/build-installer.sh and build-installer.ps1
+/dist/
+/packaging/build/

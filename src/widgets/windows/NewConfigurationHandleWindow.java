@@ -125,7 +125,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		});
 
 		TextField robocodeDirectory = new TextField(old.getProperty(ROBOCODE_PATH, ""));
-		robocodeDirectory.setPromptText("Caminho do diretório do robocode");
+		robocodeDirectory.setPromptText("Obrigatório: pasta onde o robocode está instalado (a que contém robots)");
 		HBox.setHgrow(robocodeDirectory, Priority.ALWAYS);
 		Button chooseRobocodeDirectory = new Button("Escolher...");
 		chooseRobocodeDirectory.setOnAction(event -> {

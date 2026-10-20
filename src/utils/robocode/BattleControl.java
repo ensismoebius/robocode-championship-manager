@@ -100,7 +100,10 @@ public class BattleControl {
 			command.add(opponent.getFullName());
 		}
 
-		Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+		ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
+		// The script runs java: the one this program runs on, even without java in the PATH
+		builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
+		Process process = builder.start();
 
 		List<String> output = new ArrayList<String>();
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {

@@ -21,7 +21,27 @@ Simple to control with the keyboard!</description>
 		<javafx.version>21.0.12</javafx.version>
 		<jetty.version>12.1.14</jetty.version>
 		<hibernate.version>7.4.13.Final</hibernate.version>
+		<!-- JavaFX native libraries of the system being built, see the profiles below -->
+		<javafx.platform>linux</javafx.platform>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>windows</id>
+			<activation><os><family>windows</family></os></activation>
+			<properties><javafx.platform>win</javafx.platform></properties>
+		</profile>
+		<profile>
+			<id>mac</id>
+			<activation><os><family>mac</family><arch>x86_64</arch></os></activation>
+			<properties><javafx.platform>mac</javafx.platform></properties>
+		</profile>
+		<profile>
+			<id>mac-arm</id>
+			<activation><os><family>mac</family><arch>aarch64</arch></os></activation>
+			<properties><javafx.platform>mac-aarch64</javafx.platform></properties>
+		</profile>
+	</profiles>
 
 	<build>
 		<sourceDirectory>src</sourceDirectory>
@@ -117,13 +137,13 @@ Simple to control with the keyboard!</description>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
 			<version>${javafx.version}</version>
-			<classifier>linux</classifier>
+			<classifier>${javafx.platform}</classifier>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-graphics</artifactId>
 			<version>${javafx.version}</version>
-			<classifier>linux</classifier>
+			<classifier>${javafx.platform}</classifier>
 		</dependency>
 		<dependency>
 			<groupId>org.openjfx</groupId>

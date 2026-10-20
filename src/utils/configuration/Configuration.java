@@ -6,6 +6,7 @@ package utils.configuration;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -22,7 +23,8 @@ import utils.robocode.BattleControl.WinnerCriterion;
  */
 public class Configuration {
 
-	public static final String DEFAULT_DATABASE_FILE = "database/robochamp.db";
+	// In the home folder: an installed program can not write where it is installed
+	public static final String DEFAULT_DATABASE_FILE = Path.of(System.getProperty("user.home"), "RobocodeChampManager", "robochamp.db").toString();
 	public static final int DEFAULT_ROBOCODE_ROUNDS = 5;
 	public static final int DEFAULT_WEBSERVER_PORT = 8080;
 	public static final String DEFAULT_TITLE = "CHAMPIONSHIP";
@@ -311,12 +313,32 @@ public class Configuration {
 
 	public static String getStartBattleScript() {
 		String osname = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+		String script = osname.contains("win") ? "start.bat" : "start.sh";
 
-		if (osname.contains("win")) {
-			return "./RobocodeStarter/start.bat";
+		// Installed, the scripts come with the program: next to its jar, or one folder up
+		Path jarFolder = Configuration.applicationDirectory();
+		for (Path folder : new Path[] { jarFolder, jarFolder.getParent() }) {
+			if (folder != null && Files.isRegularFile(folder.resolve("RobocodeStarter").resolve(script))) {
+				return folder.resolve("RobocodeStarter").resolve(script).toString();
+			}
 		}
+		// Running from the project folder
+		return "./RobocodeStarter/" + script;
+	}
 
-		// Linux, macOS and other unixes
-		return "./RobocodeStarter/start.sh";
+	/**
+	 * The folder of the program: the one of its jar, or the working folder when
+	 * it does not run from a jar
+	 */
+	public static Path applicationDirectory() {
+		try {
+			Path location = Path.of(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			if (Files.isRegularFile(location)) {
+				return location.toAbsolutePath().getParent();
+			}
+		} catch (URISyntaxException | RuntimeException e) {
+			// No code source to tell where the program is: the working folder
+		}
+		return Path.of("").toAbsolutePath();
 	}
 }

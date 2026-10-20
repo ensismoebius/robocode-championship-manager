@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Robocode Championship Manager
+Comment=Gerenciador de campeonatos de robocode
+Exec=/usr/bin/robocodechampmanager
+Icon=robocodechampmanager
+Terminal=false
+Categories=Game;
