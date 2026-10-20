@@ -276,7 +276,7 @@ public class BattleArena3D extends StackPane {
 	private double fieldWidth = 800;
 	private double fieldHeight = 600;
 	private final Map<Integer, RobotView> robots = new HashMap<Integer, RobotView>();
-	private final Map<Integer, Sphere> bullets = new HashMap<Integer, Sphere>();
+	private final Map<Integer, Group> bullets = new HashMap<Integer, Group>();
 	private final Set<Integer> bulletsSeen = new HashSet<Integer>();
 	private final Set<Integer> bulletsExploded = new HashSet<Integer>();
 	private final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
@@ -1890,9 +1890,15 @@ public class BattleArena3D extends StackPane {
 			}
 			flying.add(bullet.id());
 			Bullet after = next.bullets().stream().filter(b -> b.id() == bullet.id()).findFirst().orElse(bullet);
-			Sphere sphere = this.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
-			sphere.setTranslateX(this.worldX(lerp(bullet.x(), after.x(), fraction)));
-			sphere.setTranslateZ(this.worldZ(lerp(bullet.y(), after.y(), fraction)));
+			Group shot = this.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
+			shot.setTranslateX(this.worldX(lerp(bullet.x(), after.x(), fraction)));
+			shot.setTranslateZ(this.worldZ(lerp(bullet.y(), after.y(), fraction)));
+			// The bolt points to where it goes
+			double dx = this.worldX(after.x()) - this.worldX(bullet.x());
+			double dz = this.worldZ(after.y()) - this.worldZ(bullet.y());
+			if (Math.abs(dx) + Math.abs(dz) > 1e-6) {
+				shot.setRotate(Math.toDegrees(Math.atan2(dx, dz)));
+			}
 		}
 		this.bullets.entrySet().removeIf(entry -> {
 			if (!flying.contains(entry.getKey())) {
@@ -1920,10 +1926,10 @@ public class BattleArena3D extends StackPane {
 		for (Bullet bullet : turn.bullets()) {
 			if (this.bulletsSeen.add(bullet.id()) && !bullet.isHit()) {
 				this.audio.shot(bullet.power());
-				this.muzzleFlash(this.worldX(bullet.x()), this.worldZ(bullet.y()));
+				this.muzzleFlash(this.worldX(bullet.x()), this.worldZ(bullet.y()), this.shooterColor(bullet));
 			}
 			if (bullet.isHit() && this.bulletsExploded.add(bullet.id())) {
-				this.explosion(this.worldX(bullet.x()), this.worldZ(bullet.y()), 8 + bullet.power() * 6, Color.web("#ffb000"));
+				this.explosion(this.worldX(bullet.x()), this.worldZ(bullet.y()), 8 + bullet.power() * 6, this.shooterColor(bullet));
 				RobotView victim = this.robots.get(bullet.victim());
 				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
 					victim.flash();
@@ -1967,18 +1973,59 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
-	private Sphere newBullet(Bullet bullet) {
-		Sphere sphere = new Sphere(2.5 + bullet.power() * 1.2, 8);
-		PhongMaterial glow = new PhongMaterial(Color.web("#fff3a0"));
-		glow.setSpecularColor(Color.WHITE);
-		sphere.setMaterial(glow);
-		sphere.setTranslateY(-22);
-		this.bulletLayer.getChildren().add(sphere);
-		return sphere;
+	/**
+	 * The color of the robot that fired the bullet
+	 */
+	private Color shooterColor(Bullet bullet) {
+		RobotView owner = this.robots.get(bullet.owner());
+		return owner == null ? Color.web("#38e6ff") : owner.playerColor;
+	}
+
+	/**
+	 * A plasma bolt: a bright spindle of facets, a halo around it and a long tail
+	 * behind, in the color of the robot that fired it. It points to +Z and is
+	 * turned to where it goes.
+	 */
+	private Group newBullet(Bullet bullet) {
+		Color tint = this.shooterColor(bullet);
+		double r = 2.2 + bullet.power() * 0.7;
+		LowPoly core = new LowPoly();
+		core.spindle(0, 0, 0, r, r * 3.4, r * 2.2, 6);
+		LowPoly halo = new LowPoly();
+		halo.spindle(0, 0, 0, r * 1.9, r * 3.8, r * 2.8, 6);
+		LowPoly tail = new LowPoly();
+		tail.spindle(0, 0, -r * 2, r * 0.9, 0, r * 12, 6);
+
+		Color hot = tint.interpolate(Color.WHITE, 0.75);
+		PhongMaterial coreMaterial = new PhongMaterial(hot);
+		coreMaterial.setSelfIlluminationMap(solidMap(hot));
+		// The halo and the tail are see through and shine by themselves
+		PhongMaterial haloMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.28));
+		haloMaterial.setSelfIlluminationMap(solidMap(tint));
+		PhongMaterial tailMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.4));
+		tailMaterial.setSelfIlluminationMap(solidMap(tint));
+		Group shot = new Group(tail.view(tailMaterial), halo.view(haloMaterial), core.view(coreMaterial));
+		shot.setRotationAxis(Rotate.Y_AXIS);
+		shot.setTranslateY(-22);
+		this.bulletLayer.getChildren().add(shot);
+		return shot;
+	}
+
+	/**
+	 * A small picture of one color, for materials that shine by themselves
+	 */
+	private static WritableImage solidMap(Color color) {
+		WritableImage map = new WritableImage(2, 2);
+		for (int y = 0; y < 2; y++) {
+			for (int x = 0; x < 2; x++) {
+				map.getPixelWriter().setColor(x, y, color);
+			}
+		}
+		return map;
 	}
 
 	private void clearBullets() {
-		for (Sphere bullet : this.bullets.values()) {
+		for (Group bullet : this.bullets.values()) {
 			this.bulletLayer.getChildren().remove(bullet);
 		}
 		this.bullets.clear();
@@ -2097,17 +2144,143 @@ public class BattleArena3D extends StackPane {
 		return animation;
 	}
 
-	private void muzzleFlash(double x, double z) {
-		Sphere flash = new Sphere(7, 8);
-		flash.setMaterial(new PhongMaterial(Color.web("#fff6c0")));
+	/** A crystal of light, built once: the flash of a shot, a spark */
+	private static final TriangleMesh CRYSTAL = spindleMesh(1, 1, 1, 4);
+
+	private static TriangleMesh spindleMesh(double radius, double front, double back, int sides) {
+		LowPoly shape = new LowPoly();
+		shape.spindle(0, 0, 0, radius, front, back, sides);
+		return shape.mesh;
+	}
+
+	/**
+	 * A see through material that shines in the color by itself
+	 */
+	private static PhongMaterial energy(Color color, double opacity) {
+		PhongMaterial material = new PhongMaterial(Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity));
+		material.setSelfIlluminationMap(solidMap(color));
+		return material;
+	}
+
+	private static MeshView shape(TriangleMesh mesh, PhongMaterial material) {
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		return view;
+	}
+
+	/**
+	 * A jagged bolt of lightning from a to b, with now and then a branch, as thin
+	 * tubes: a wide one that glows and a thin white core
+	 */
+	private void bolt(LowPoly glow, LowPoly core, double[] from, double[] to, double radius, int depth) {
+		int steps = 7;
+		double length = Math.sqrt(Math.pow(to[0] - from[0], 2) + Math.pow(to[1] - from[1], 2) + Math.pow(to[2] - from[2], 2));
+		double[] previous = from;
+		for (int i = 1; i <= steps; i++) {
+			double t = (double) i / steps;
+			double jitter = i == steps ? 0 : length * 0.11;
+			double[] point = new double[3];
+			for (int k = 0; k < 3; k++) {
+				point[k] = from[k] + (to[k] - from[k]) * t + (this.random.nextDouble() - 0.5) * 2 * jitter;
+			}
+			glow.tube(previous, point, radius * 3, 4);
+			core.tube(previous, point, radius, 4);
+			if (depth < 1 && i > 1 && i < steps && this.random.nextDouble() < 0.3) {
+				double[] branch = new double[3];
+				for (int k = 0; k < 3; k++) {
+					branch[k] = point[k] + (to[k] - from[k]) * 0.3 + (this.random.nextDouble() - 0.5) * length * 0.5;
+				}
+				this.bolt(glow, core, point, branch, radius * 0.7, depth + 1);
+			}
+			previous = point;
+		}
+	}
+
+	/**
+	 * A discharge: bolts from the center in every direction (some run along the
+	 * floor), three different shapes shown one after the other, quickly, so it
+	 * crackles
+	 *
+	 * @param floorY
+	 *            where the floor is, in the coordinates of the blast
+	 */
+	private void discharge(Group blast, ParallelTransition all, double[] center, double floorY, int bolts, double reach, double radius, Color tint, double delay) {
+		Color arc = tint.interpolate(Color.web("#8fe9ff"), 0.35);
+		PhongMaterial glowMaterial = energy(arc, 0.25);
+		PhongMaterial coreMaterial = energy(Color.WHITE, 1);
+		List<Node> frames = new ArrayList<Node>();
+		for (int frame = 0; frame < 3; frame++) {
+			LowPoly glow = new LowPoly();
+			LowPoly core = new LowPoly();
+			for (int i = 0; i < bolts; i++) {
+				double angle = this.random.nextDouble() * Math.PI * 2;
+				double rise = i % 3 == 0 ? 0.05 : this.random.nextDouble() * 1.4 - 0.3;
+				double flat = Math.sqrt(Math.max(0.05, 1 - Math.min(0.9, rise * rise * 0.5)));
+				double length = reach * (0.55 + this.random.nextDouble() * 0.6);
+				double[] end = { center[0] + Math.cos(angle) * length * flat, Math.min(floorY - 1, center[1] - rise * length * 0.8), center[2] + Math.sin(angle) * length * flat };
+				this.bolt(glow, core, center, end, radius, 0);
+			}
+			Group group = new Group(shape(glow.mesh, glowMaterial), shape(core.mesh, coreMaterial));
+			group.setVisible(false);
+			blast.getChildren().add(group);
+			frames.add(group);
+		}
+		// Rapid flicker between the shapes, then gone
+		Timeline flicker = new Timeline();
+		int[] order = { 0, 1, 2, 0, 2, 1, 0 };
+		for (int i = 0; i < order.length; i++) {
+			int shown = order[i];
+			flicker.getKeyFrames().add(new KeyFrame(Duration.millis(i * 45), event -> {
+				for (int k = 0; k < frames.size(); k++) {
+					frames.get(k).setVisible(k == shown);
+				}
+			}));
+		}
+		flicker.getKeyFrames().add(new KeyFrame(Duration.millis(order.length * 45), event -> frames.forEach(node -> node.setVisible(false))));
+		flicker.setDelay(Duration.millis(delay));
+		all.getChildren().add(flicker);
+	}
+
+	/**
+	 * Sparks thrown up and out, that fall in an arc and go out
+	 */
+	private void sparks(Group blast, ParallelTransition all, double[] center, double floorY, int count, double reach, double size, Color color, double millis) {
+		PhongMaterial material = energy(color, 1);
+		for (int i = 0; i < count; i++) {
+			MeshView spark = shape(CRYSTAL, material);
+			double scale = size * (0.5 + this.random.nextDouble() * 0.8);
+			spark.setScaleX(scale);
+			spark.setScaleY(scale);
+			spark.setScaleZ(scale * 1.6);
+			spark.setTranslateX(center[0]);
+			spark.setTranslateY(center[1]);
+			spark.setTranslateZ(center[2]);
+			blast.getChildren().add(spark);
+			double angle = this.random.nextDouble() * Math.PI * 2;
+			double distance = reach * (0.3 + this.random.nextDouble() * 0.9);
+			double height = reach * (0.3 + this.random.nextDouble() * 0.8);
+			double time = millis * (0.7 + this.random.nextDouble() * 0.5);
+			all.getChildren().add(new Timeline( //
+					new KeyFrame(Duration.millis(time * 0.4), new KeyValue(spark.translateYProperty(), center[1] - height, Interpolator.EASE_OUT)), //
+					new KeyFrame(Duration.millis(time), //
+							new KeyValue(spark.translateXProperty(), center[0] + Math.cos(angle) * distance, Interpolator.EASE_OUT), //
+							new KeyValue(spark.translateZProperty(), center[2] + Math.sin(angle) * distance, Interpolator.EASE_OUT), //
+							new KeyValue(spark.translateYProperty(), floorY - 1, Interpolator.EASE_IN), //
+							new KeyValue(spark.scaleXProperty(), 0.05), new KeyValue(spark.scaleYProperty(), 0.05), new KeyValue(spark.scaleZProperty(), 0.05))));
+		}
+	}
+
+	private void muzzleFlash(double x, double z, Color tint) {
+		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.8), 1));
 		flash.setTranslateX(x);
 		flash.setTranslateZ(z);
 		flash.setTranslateY(-21);
 		this.effects.getChildren().add(flash);
 		ScaleTransition out = this.effect(new ScaleTransition(Duration.millis(140), flash));
-		out.setFromX(1.4);
-		out.setFromY(1.4);
-		out.setFromZ(1.4);
+		out.setFromX(6);
+		out.setFromY(6);
+		out.setFromZ(6);
 		out.setToX(0);
 		out.setToY(0);
 		out.setToZ(0);
@@ -2116,32 +2289,27 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * A fireball that grows and vanishes, with flying debris
+	 * An electric blast: a flash, bolts of lightning crackling out and sparks
+	 * thrown in an arc, in the color of the shooter
 	 */
-	private void explosion(double x, double z, double size, Color color) {
+	private void explosion(double x, double z, double size, Color tint) {
 		Group blast = new Group();
 		blast.setTranslateX(x);
 		blast.setTranslateZ(z);
 		blast.setTranslateY(-18);
 
-		Sphere fire = new Sphere(size / 2, 10);
-		fire.setMaterial(new PhongMaterial(color));
-		blast.getChildren().add(fire);
-		ParallelTransition all = new ParallelTransition(grow(fire, 0.2, 1.4, 420), shrink(fire, 420, 260));
-
-		PhongMaterial debrisMaterial = new PhongMaterial(Color.web("#ffe766"));
-		int pieces = size > 30 ? 14 : 6;
-		for (int i = 0; i < pieces; i++) {
-			double angle = Math.PI * 2 * i / pieces;
-			Box debris = new Box(3, 3, 3);
-			debris.setMaterial(debrisMaterial);
-			blast.getChildren().add(debris);
-			all.getChildren().add(this.fly(debris, Math.cos(angle) * size * (0.9 + Math.random() * 0.8), Math.sin(angle) * size * (0.9 + Math.random() * 0.8), size * 0.6 * Math.random(), 650));
-		}
+		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.9), 0.6));
+		blast.getChildren().add(flash);
+		double half = size / 2;
+		ParallelTransition all = new ParallelTransition(grow(flash, 0.2 * half, 0.7 * half, 100), shrink(flash, 100, 140));
+		double[] center = { 0, 0, 0 };
+		// The floor is 18 below the center of a blast
+		this.discharge(blast, all, center, 18, size > 30 ? 8 : 5, size * 2.2, Math.max(0.3, size / 60), tint, 0);
+		this.sparks(blast, all, center, 18, size > 30 ? 26 : 14, size * 2, Math.max(0.5, size / 30), Color.web("#fff3b0"), 650);
 		this.effects.getChildren().add(blast);
 		this.effect(all).setOnFinished(event -> this.effects.getChildren().remove(blast));
 		all.play();
-		this.lightFlash(x, z, Color.web("#ffb000"), 0.6);
+		this.lightFlash(x, z, tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.5);
 	}
 
 	private static ScaleTransition grow(Node node, double from, double to, double millis) {
@@ -2990,7 +3158,7 @@ public class BattleArena3D extends StackPane {
 	 * robot explode from the side
 	 */
 	private void fatalShot(double[] victim) {
-		Sphere bullet = this.bullets.get(this.fatalBullet);
+		Group bullet = this.bullets.get(this.fatalBullet);
 		double turn = this.turnPosition;
 		if (bullet != null && this.impactTurn >= 0 && turn < this.impactTurn) {
 			double bx = bullet.getTranslateX();
@@ -3081,6 +3249,9 @@ public class BattleArena3D extends StackPane {
 		final Label nameLabel;
 		final String displayName;
 		final List<Animation> running = new ArrayList<Animation>();
+		/** Parts that shine by themselves, and the pictures that make them shine */
+		final List<PhongMaterial> glows = new ArrayList<PhongMaterial>();
+		final List<Image> glowMaps = new ArrayList<Image>();
 		/** Particles still owed by the emitters */
 		double flameDebt;
 		double smokeDebt;
@@ -3100,68 +3271,112 @@ public class BattleArena3D extends StackPane {
 			this.bodyMaterial = material(this.bodyColor);
 			this.gunMaterial = material(this.gunColor);
 			PhongMaterial radarMaterial = material(argb(robot.getRadarColor(), Color.web("#ffd400")));
-			PhongMaterial treadMaterial = material(Color.web("#22252e"));
-			PhongMaterial playerMaterial = material(this.playerColor);
+			PhongMaterial dark = material(Color.web("#171b26"));
+			PhongMaterial plateMaterial = material(Color.web("#2d3345"));
+			PhongMaterial steel = material(Color.web("#6c7488"));
+			steel.setSpecularPower(50);
+			PhongMaterial cyan = this.glow(Color.web("#38e6ff"));
+			PhongMaterial identity = this.glow(this.playerColor);
+			PhongMaterial lamp = this.glow(Color.web("#fff6c8"));
+			PhongMaterial warning = this.glow(Color.web("#ff3b3b"));
 
-			// Body, pointing to +Z (north when the heading is 0)
+			// A modern tank of angular armor, pointing to +Z (north when the heading
+			// is 0): a low wedge hull, tracks hidden by skirts of hexagonal plates, a
+			// long flat turret and a very long gun. Flat facets, a few meshes.
 			this.body.getTransforms().add(this.bodyRotate);
-			this.body.getChildren().addAll( //
-					box(7, 12, 38, -15, -6, 0, treadMaterial), //
-					box(7, 12, 38, 15, -6, 0, treadMaterial), //
-					box(24, 10, 32, 0, -10, 0, this.bodyMaterial), //
-					box(18, 3, 6, 0, -16, 13, playerMaterial)); // front marker in the player color
-
-			PhongMaterial metal = material(Color.web("#2c303b"));
-			PhongMaterial steel = material(Color.web("#7a8296"));
-			PhongMaterial lamp = new PhongMaterial(Color.web("#fff0a8"));
-			lamp.setSpecularColor(Color.WHITE);
-			PhongMaterial tail = new PhongMaterial(Color.web("#ff2d2d"));
-			tail.setSpecularColor(Color.web("#ff9090"));
+			LowPoly hull = new LowPoly();
+			LowPoly tracks = new LowPoly();
+			LowPoly wheels = new LowPoly();
+			LowPoly plates = new LowPoly();
+			LowPoly glowCyan = new LowPoly();
+			LowPoly glowIdentity = new LowPoly();
+			LowPoly glowWarning = new LowPoly();
+			LowPoly glowLamp = new LowPoly();
+			// The hull: a wedge, sloped in front and behind, with a deck over it
+			hull.prismZY(new double[][] { { -21, -7 }, { -22.5, -9.5 }, { -20, -13 }, { 14, -13.5 }, { 22, -10 }, { 23, -7.5 } }, -13.5, 13.5);
+			hull.frustum(new double[][] { { -11.5, -17 }, { 11.5, -17 }, { 11.5, 9 }, { -11.5, 9 } }, -13.4, -15.2, 0.9);
+			tracks.box(0, -14.5, -17.5, 14, 2.2, 6); // engine deck, dark
 			for (int side = -1; side <= 1; side += 2) {
-				// Tread: wheels on the outside and ridges on the top
-				for (double z = -15; z <= 15; z += 7.5) {
-					this.body.getChildren().add(cylinder(4.8, 1.4, 10, side * 18.6, -6, z, Rotate.Z_AXIS, 90, steel));
-					this.body.getChildren().add(cylinder(2, 1.9, 6, side * 18.7, -6, z, Rotate.Z_AXIS, 90, metal));
+				// Track with chamfered ends, hidden above by the skirt
+				tracks.prismZY(new double[][] { { -20, -1 }, { -21.5, -4 }, { -19.5, -9 }, { 18.5, -9 }, { 21.5, -4 }, { 20, -1 } }, Math.min(side * 12.5, side * 19), Math.max(side * 12.5, side * 19));
+				for (double z = -18; z <= 18; z += 3.6) {
+					tracks.box(side * 19.3, -3, z, 0.6, 3.6, 1.4);
 				}
-				for (double z = -16; z <= 16; z += 4) {
-					this.body.getChildren().add(box(7.6, 1, 2.2, side * 15, -12.3, z, metal));
+				// Road wheels, seen under the skirt
+				for (double z = -15; z <= 15; z += 6) {
+					wheels.hexPlate(z, -3, 2.6, 2.6, Math.min(side * 18.9, side * 19.9), Math.max(side * 18.9, side * 19.9));
 				}
-				// Side skirt and air intakes
-				this.body.getChildren().add(box(1.4, 6.5, 26, side * 12.8, -8.5, 0, this.gunMaterial));
-				for (double z = -9; z <= -3; z += 3) {
-					this.body.getChildren().add(box(0.5, 3.4, 1.2, side * 12.2, -11, z, metal));
+				// The skirt leans out at the top
+				hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
+				// Hexagonal plates on it, in two rows
+				for (int row = 0; row < 2; row++) {
+					double y = row == 0 ? -10 : -7.2;
+					double face = 17.5 + (-5 - y) / 7.5 * 2;
+					for (double z = row == 0 ? -15 : -12; z <= 16; z += 6) {
+						plates.hexPlate(z, y, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
+					}
 				}
-				// Lights and exhaust
-				this.body.getChildren().add(box(3.2, 2.2, 1.2, side * 8, -10, 16.3, lamp));
-				this.body.getChildren().add(box(2.6, 1.8, 1, side * 9, -9, -16.4, tail));
-				this.body.getChildren().add(cylinder(1.7, 7, 8, side * 6, -11.5, -18.5, Rotate.X_AXIS, 90, metal));
-				this.body.getChildren().add(cylinder(2.1, 1, 8, side * 6, -11.5, -22.2, Rotate.X_AXIS, 90, steel));
+				// A strip of light in the color of the player, lamps and rear lights
+				glowIdentity.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
+				glowLamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
+				glowWarning.box(side * 9, -10, -22.6, 3, 1.2, 1);
 			}
-			// Sloped front plate, top plate and a sensor
-			Box glacis = box(22, 2.2, 9, 0, -14.6, 15, this.bodyMaterial);
-			glacis.setRotationAxis(Rotate.X_AXIS);
-			glacis.setRotate(-20);
-			this.body.getChildren().addAll(glacis, box(15, 1, 13, 0, -15.4, -5, metal), box(4, 1.6, 4, 5, -16.6, -7, steel));
+			glowCyan.box(0, -9, 22.9, 14, 0.9, 0.6); // visor on the front
+			for (double x = -4; x <= 4; x += 4) {
+				glowCyan.box(x, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
+			}
+			this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(dark), wheels.view(steel), plates.view(plateMaterial), glowCyan.view(cyan), glowIdentity.view(identity),
+					glowWarning.view(warning), glowLamp.view(lamp));
 
-			// Turret and gun turn on their own
+			// Turret and the gun turn on their own: a long wedge, a flat wing over the
+			// gun, a remote weapon station and antennas
 			this.turret.getTransforms().add(this.gunRotate);
-			Cylinder dome = new Cylinder(10, 8, 8);
-			dome.setMaterial(this.gunMaterial);
-			dome.setTranslateY(-19);
-			this.turret.getChildren().addAll(dome, box(4, 4, 24, 0, -20, 14, this.gunMaterial), //
-					cylinder(11.2, 2, 12, 0, -15.5, 0, Rotate.X_AXIS, 0, metal), // ring of the turret
-					box(8, 7, 8, 0, -20, 8, this.gunMaterial), // mantle of the gun
-					cylinder(2.6, 1.3, 8, 0, -20, 19, Rotate.X_AXIS, 90, steel), // ring on the barrel
-					cylinder(2.9, 5, 8, 0, -20, 27.5, Rotate.X_AXIS, 90, metal), // muzzle brake
-					box(2, 2, 10, 5.8, -18, 12, metal), // coaxial gun
-					box(6, 1.4, 6, -3.2, -23.6, -2, metal), // hatch
-					cylinder(0.8, 4, 6, -3.2, -24.8, -2, Rotate.Z_AXIS, 90, steel)); // its handle
+			LowPoly shell = new LowPoly();
+			LowPoly barrel = new LowPoly();
+			LowPoly turretPlates = new LowPoly();
+			LowPoly turretCyan = new LowPoly();
+			LowPoly turretWarning = new LowPoly();
+			shell.frustum(new double[][] { { -9, -12 }, { 9, -12 }, { 12, -3 }, { 10, 6 }, { 4, 12 }, { -4, 12 }, { -10, 6 }, { -12, -3 } }, -14.8, -19.5, 0.72);
+			shell.prismZY(new double[][] { { -9, -19.5 }, { -9, -21 }, { 2, -21.4 }, { 11, -19.5 } }, -5, 5);
+			shell.frustum(new double[][] { { -3.6, 6 }, { 3.6, 6 }, { 0.9, 36 }, { -0.9, 36 } }, -20.2, -21.2, 1); // wing over the gun
+			shell.box(0, -17.4, 12, 7, 4.6, 5); // gun mantlet
+			// The flanks, with plates like the skirts
+			for (int side = -1; side <= 1; side += 2) {
+				for (int i = 0; i < 3; i++) {
+					double z = -4.5 + i * 4.5;
+					double y = i == 1 ? -16.2 : -17.9;
+					double t = (y + 14.8) / -4.7;
+					double edge = z < -3 ? 9 + (z + 12) / 3 : 12 - (z + 3) * 2 / 9;
+					double face = edge * (1 - 0.28 * t);
+					turretPlates.hexPlate(z, y, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
+				}
+				turretCyan.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1); // sensors on the cheeks
+				turretWarning.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5); // lights on the antennas
+				barrel.cylinderY(side * 7, -9, 0.3, -19, -26, 5);
+			}
+			// The gun: a very long barrel with a fume extractor and a muzzle ring
+			barrel.cylinderZ(0, -17.2, 1.35, 12, 43, 6);
+			barrel.cylinderZ(0, -17.2, 1.95, 21, 27, 6);
+			barrel.cylinderZ(0, -17.2, 1.8, 40, 43.6, 6);
+			turretCyan.cylinderZ(0, -17.2, 2, 43.6, 44.1, 6);
+			// Remote weapon station on the roof and a commander sight
+			shell.box(-4.6, -22.4, -4, 4.4, 2.2, 4.4);
+			barrel.cylinderZ(-4.6, -22.6, 0.5, -1.5, 3.5, 5);
+			turretCyan.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
+			shell.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
+			turretCyan.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
+			this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(dark), turretPlates.view(plateMaterial), turretCyan.view(cyan), turretWarning.view(warning));
 
+			// The radar: a flat panel on a mast, turning over the roof
 			this.radar.getTransforms().add(this.radarRotate);
-			Cylinder dish = cylinder(7.5, 1.6, 14, 0, -33, 3, Rotate.X_AXIS, 80, radarMaterial);
-			this.radar.getChildren().addAll(box(2, 8, 2, 0, -27, 0, radarMaterial), dish, //
-					cylinder(1.8, 3, 6, 0, -32.6, 4.6, Rotate.X_AXIS, 80, lamp), // the feed in front of the dish
-					cylinder(0.6, 14, 6, 4, -35, -2, Rotate.X_AXIS, 0, steel)); // antenna
+			LowPoly panel = new LowPoly();
+			LowPoly panelCyan = new LowPoly();
+			LowPoly mast = new LowPoly();
+			mast.cylinderY(0, 0, 0.8, -24, -21, 6);
+			panel.box(0, -26, 0, 8, 3.6, 1.2);
+			panelCyan.box(0, -26, 0.7, 6, 0.6, 0.3);
+			mast.cylinderY(3, 0, 0.25, -31, -27.8, 5);
+			this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(dark), panelCyan.view(cyan));
 
 			this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 
@@ -3310,35 +3525,27 @@ public class BattleArena3D extends StackPane {
 			blast.setTranslateZ(z);
 			ParallelTransition all = new ParallelTransition();
 
-			// Core, fireball and a second blast
-			Sphere core = new Sphere(16, 12);
-			core.setMaterial(new PhongMaterial(Color.web("#fffbe0")));
+			// An overload: a flash, a bolt from the sky, then discharges of lightning
+			// crackling out of the wreck and showers of sparks
+			Color tint = this.playerColor;
+			Color hot = tint.interpolate(Color.WHITE, 0.85);
+			MeshView core = shape(CRYSTAL, energy(Color.WHITE, 0.85));
 			core.setTranslateY(-20);
-			Sphere fire = new Sphere(34, 14);
-			fire.setMaterial(new PhongMaterial(Color.web("#ff7a1a")));
-			fire.setTranslateY(-26);
-			Sphere second = new Sphere(26, 12);
-			second.setMaterial(new PhongMaterial(Color.web("#ff3d2e")));
-			second.setTranslateY(-40);
-			second.setScaleX(0);
-			second.setScaleY(0);
-			second.setScaleZ(0);
-			blast.getChildren().addAll(fire, second, core);
-			all.getChildren().addAll(grow(core, 0.1, 1.6, 180), shrink(core, 180, 200), grow(fire, 0.2, 1.8, 600), shrink(fire, 650, 500));
-			ScaleTransition secondGrow = grow(second, 0, 1.7, 450);
-			secondGrow.setDelay(Duration.millis(260));
-			all.getChildren().addAll(secondGrow, shrink(second, 750, 450));
-
-			// Shockwave on the floor
-			Cylinder ring = new Cylinder(12, 1.5, 32);
-			ring.setMaterial(new PhongMaterial(Color.web("#ffe766")));
-			ring.setTranslateY(-1);
-			blast.getChildren().add(ring);
-			ScaleTransition wave = new ScaleTransition(Duration.millis(700), ring);
-			wave.setToX(14);
-			wave.setToZ(14);
-			wave.setInterpolator(Interpolator.EASE_OUT);
-			all.getChildren().addAll(wave, shrink(ring, 600, 250));
+			blast.getChildren().add(core);
+			all.getChildren().addAll(grow(core, 2, 9, 140), shrink(core, 140, 180));
+			double[] center = { 0, -20, 0 };
+			// The bolt from the sky strikes first
+			LowPoly strikeGlow = new LowPoly();
+			LowPoly strikeCore = new LowPoly();
+			BattleArena3D.this.bolt(strikeGlow, strikeCore, new double[] { 0, -420, 0 }, center, 0.6, 0);
+			Group strike = new Group(shape(strikeGlow.mesh, energy(tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.45)), shape(strikeCore.mesh, energy(Color.WHITE, 1)));
+			blast.getChildren().add(strike);
+			all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(120), event -> strike.setVisible(false))));
+			BattleArena3D.this.discharge(blast, all, center, -1, 9, 110, 0.4, tint, 60);
+			BattleArena3D.this.discharge(blast, all, center, -1, 7, 90, 0.35, tint, 400);
+			BattleArena3D.this.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
+			BattleArena3D.this.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
+			BattleArena3D.this.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
 
 			// Smoke rising
 			PhongMaterial smoke = new PhongMaterial(Color.web("#2b2b33"));
@@ -3392,6 +3599,7 @@ public class BattleArena3D extends StackPane {
 			// Burnt wreck, a bit tilted
 			this.bodyMaterial.setDiffuseColor(Color.web("#262626"));
 			this.gunMaterial.setDiffuseColor(Color.web("#303030"));
+			this.setGlowing(false);
 			this.body.setRotationAxis(Rotate.Z_AXIS);
 			all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(300), new KeyValue(this.body.rotateProperty(), 9, Interpolator.EASE_OUT))));
 
@@ -3399,7 +3607,7 @@ public class BattleArena3D extends StackPane {
 			BattleArena3D.this.effect(all).setOnFinished(event -> BattleArena3D.this.effects.getChildren().remove(blast));
 			this.running.add(all);
 			all.play();
-			BattleArena3D.this.lightFlash(x, z, Color.web("#ff8a2a"), 1.4);
+			BattleArena3D.this.lightFlash(x, z, tint, 1.4);
 
 			// Later the wreck gives place to the tombstone
 			this.tombstone.setVisible(false);
@@ -3417,6 +3625,29 @@ public class BattleArena3D extends StackPane {
 		}
 
 		/**
+		 * A material that shines in the color by itself
+		 */
+		PhongMaterial glow(Color color) {
+			WritableImage map = new WritableImage(2, 2);
+			for (int y = 0; y < 2; y++) {
+				for (int x = 0; x < 2; x++) {
+					map.getPixelWriter().setColor(x, y, color);
+				}
+			}
+			PhongMaterial material = new PhongMaterial(color.darker().darker());
+			material.setSelfIlluminationMap(map);
+			this.glows.add(material);
+			this.glowMaps.add(map);
+			return material;
+		}
+
+		void setGlowing(boolean on) {
+			for (int i = 0; i < this.glows.size(); i++) {
+				this.glows.get(i).setSelfIlluminationMap(on ? this.glowMaps.get(i) : null);
+			}
+		}
+
+		/**
 		 * Back to a whole tank, for a new round or the replay
 		 */
 		void reset() {
@@ -3429,6 +3660,7 @@ public class BattleArena3D extends StackPane {
 			this.tombstone.setVisible(false);
 			this.bodyMaterial.setDiffuseColor(this.bodyColor);
 			this.gunMaterial.setDiffuseColor(this.gunColor);
+			this.setGlowing(true);
 			for (Node part : List.of(this.turret, this.radar, this.body)) {
 				part.setTranslateX(0);
 				part.setTranslateY(0);
