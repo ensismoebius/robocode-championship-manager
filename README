@@ -31,7 +31,8 @@ Building and running:
 	CAMPEONATOS") are configurable too, an empty subtitle is not shown.
 
 	Teams register their robots at http://<this computer>:8080 (the port is
-	configurable). The team music must be an MP3 file.
+	configurable). The team music must be an MP3 file: it plays while the
+	robot is presented before a battle.
 
 The championship:
 	Ctrl + G draws a championship with every registered robot. Any number of
@@ -53,10 +54,30 @@ The championship:
 
 	Battles are shown in 3D by default: Robocode runs without its window, the
 	battle is recorded and replayed in the program, with a fighting game HUD.
-	During the replay: V changes the camera (perspective, isometric, from
-	above), space pauses, left/right change the speed, Enter skips to the
-	result; drag to orbit and use the wheel to zoom. The classic Robocode
-	window can be chosen in the configuration (C).
+	Each battle takes place in one of four arenas, chosen at random in each
+	battle by default: Grade Neon (a neon city over a cyan grid), Forja Vulcânica
+	(lava, basalt and volcanoes), Tundra Glacial (ice and falling snow) and
+	Floresta Tropical (a jungle with rivers and waterfalls).
+	Before a battle each robot is presented with its team music, then both face
+	each other. Before the first round the camera flies over the arena and ends
+	where the battle starts. Every round begins with a 3 second countdown.
+	The tanks wear the colors the robot chose in its code. The bullets are plasma
+	bolts and the hits are electric explosions, in the color of the robot that
+	fired. The shots sound higher the faster the bullet goes. When a robot is
+	destroyed, the moments before its death are replayed in slow motion, following
+	the bullet that killed it.
+	The camera has four modes, changed with V: CINEMATOGRÁFICA (the camera follows
+	the action by itself), LIVRE (drag to orbit, the wheel zooms), ISOMÉTRICA and
+	VISTA DE CIMA. Dragging in the cinematic mode switches to the free one. The
+	classic Robocode window can be chosen in the configuration (C).
+	The 3D battle has its own settings (C): the arena and the song, each one
+	random by default or one of them chosen; with "Usar mesma música da arena"
+	every arena plays its own song, whatever song is chosen. Also the volume of
+	the music, the speed the battle starts at (normal by default), the text shown
+	when the fight starts ("FIGHT!" by default) and the graphic quality: the
+	smoothing of the edges (antialiasing) can be turned off if the battle runs
+	slowly.
+
 	RobocodeStarter/BattleStarter.java is the program that runs the battles;
 	after changing it, compile it with
 	javac --release 11 -cp "<robocode dir>/libs/*" -d RobocodeStarter RobocodeStarter/BattleStarter.java
@@ -65,6 +86,15 @@ The championship:
 	Click a playable match to select it, the next match is selected
 	automatically. Results are stored as a list, so the last one can be
 	undone at any time.
+
+	When the last battle of the championship is over, the champion is shown in
+	a ceremony on the podium. The champion appears at once; then SPACE, ENTER or
+	the right arrow reveal the third, the second and the first places, one at a
+	time, each with its robot, team and battle cry. The left arrow goes back a
+	place and R opens the bracket. The screen fades to black (the battle music,
+	if one is playing, fades out), the default music of the program starts from
+	silence and rises to full volume, and then the podium fades in. Once the
+	championship is over, S, 1, 2, B and M open the podium again.
 
 Keys (hold Alt on the start screen to see them):
 	i         start screen
@@ -87,6 +117,21 @@ Keys (hold Alt on the start screen to see them):
 	match, the winner and loser are revealed, both robots move to their next
 	matches and the camera zooms in the next battle. Any key or click skips it.
 	n also flies to the next battle.
+
+During the 3D battle:
+	v            changes the camera
+	space        pauses
+	left, right  slower and faster (also - and +)
+	enter        skips what is being shown (a robot presented, the fly-by or the
+	             replay); otherwise it goes to the result
+	esc          the same, and skips the presentation of all the robots
+	drag         orbits the camera (free camera)
+	wheel        zooms
+
+On the champion ceremony:
+	space, enter, right  reveals the next place
+	left                 goes back a place
+	r                    bracket screen
 
 Upgrading from version 3:
 	Version 3 kept the data in H2, this version uses SQLite and the old
