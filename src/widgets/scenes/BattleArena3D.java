@@ -1,6 +1,9 @@
 package widgets.scenes;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -9,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import javax.imageio.ImageIO;
 
 import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
@@ -37,6 +42,7 @@ import javafx.scene.DepthTest;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -124,6 +130,15 @@ public class BattleArena3D extends StackPane {
 	private static final int MAX_CALLOUTS = 3;
 	/** The action stops for a moment when a robot dies, then the replay */
 	private static final double FREEZE_SECONDS = 1.3;
+	/** The photos of the key moments are kept small, as JPEG */
+	private static final int PHOTO_WIDTH = 640;
+	private static final int PHOTO_HEIGHT = 360;
+	/** A hit this strong (power) makes a photo: the first one of each round */
+	private static final double PHOTO_HIT_POWER = 2.5;
+	/** Seconds from a hit to its photo, so the flash of the impact has grown */
+	private static final double PHOTO_HIT_DELAY = 0.2;
+	/** Seconds from a destruction to its photo: the tank is falling, the battle is held (see freezeForReplay) */
+	private static final double PHOTO_DESTRUCTION_DELAY = 1.0;
 	/** Turns of the replay before and after the death */
 	private static final int REPLAY_BEFORE = 30;
 	private static final int REPLAY_AFTER = 10;
@@ -317,6 +332,10 @@ public class BattleArena3D extends StackPane {
 	private int fatalBullet = -1;
 	private int impactTurn = -1;
 	private boolean replayed = false;
+	// The photos of the key moments of the battle, see takePhoto
+	private final List<BattlePhoto> photos = new ArrayList<BattlePhoto>();
+	private final List<PendingPhoto> pendingPhotos = new ArrayList<PendingPhoto>();
+	private boolean hitPhotoTaken = false;
 
 	// Callouts and comments
 	private BattleCommentary commentary;
@@ -1845,6 +1864,88 @@ public class BattleArena3D extends StackPane {
 		this.updateSunbeams(dt);
 		this.updateNeon(dt);
 		this.placeBalloons();
+		this.flushPhotos(dt);
+	}
+
+	/**
+	 * The photos of the key moments taken so far, in order
+	 */
+	public List<BattlePhoto> photos() {
+		return List.copyOf(this.photos);
+	}
+
+	/**
+	 * Takes the photos that are due, at the end of the frame: the robots and the
+	 * camera are then where they are drawn
+	 */
+	private void flushPhotos(double dt) {
+		if (this.pendingPhotos.isEmpty()) {
+			return;
+		}
+		List<PendingPhoto> waiting = new ArrayList<PendingPhoto>();
+		for (PendingPhoto pending : this.pendingPhotos) {
+			double remaining = pending.remaining() - dt;
+			if (remaining > 0) {
+				waiting.add(new PendingPhoto(remaining, pending.round(), pending.destruction(), pending.subject(), pending.power()));
+			} else if (this.phase != Phase.FINISHED && this.phase != Phase.LOADING) {
+				this.takePhoto(pending);
+			}
+		}
+		this.pendingPhotos.clear();
+		this.pendingPhotos.addAll(waiting);
+	}
+
+	private void takePhoto(PendingPhoto pending) {
+		if (pending.subject() == null) {
+			return;
+		}
+		try {
+			this.photos.add(new BattlePhoto(pending.round(), pending.destruction(), pending.subject(), pending.power(), encodePhoto(this.subScene.snapshot(null, null))));
+		} catch (IOException | RuntimeException e) {
+			// A photo is a bonus: the battle goes on without it
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * The picture as a small JPEG: each of its pixels is the average of the ones it
+	 * covers
+	 */
+	private static byte[] encodePhoto(WritableImage view) throws IOException {
+		int width = (int) view.getWidth();
+		int height = (int) view.getHeight();
+		int[] pixels = new int[width * height];
+		view.getPixelReader().getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
+		int[] small = new int[PHOTO_WIDTH * PHOTO_HEIGHT];
+		for (int y = 0; y < PHOTO_HEIGHT; y++) {
+			int top = y * height / PHOTO_HEIGHT;
+			int bottom = Math.max(top + 1, (y + 1) * height / PHOTO_HEIGHT);
+			for (int x = 0; x < PHOTO_WIDTH; x++) {
+				int left = x * width / PHOTO_WIDTH;
+				int right = Math.max(left + 1, (x + 1) * width / PHOTO_WIDTH);
+				int red = 0;
+				int green = 0;
+				int blue = 0;
+				int count = 0;
+				for (int sy = top; sy < bottom; sy++) {
+					for (int sx = left; sx < right; sx++) {
+						int argb = pixels[sy * width + sx];
+						red += argb >> 16 & 0xff;
+						green += argb >> 8 & 0xff;
+						blue += argb & 0xff;
+						count++;
+					}
+				}
+				small[y * PHOTO_WIDTH + x] = (red / count) << 16 | (green / count) << 8 | blue / count;
+			}
+		}
+		BufferedImage photo = new BufferedImage(PHOTO_WIDTH, PHOTO_HEIGHT, BufferedImage.TYPE_INT_RGB);
+		photo.setRGB(0, 0, PHOTO_WIDTH, PHOTO_HEIGHT, small, 0, PHOTO_WIDTH);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		if (!ImageIO.write(photo, "jpg", out)) {
+			throw new IOException("No JPEG writer");
+		}
+		return out.toByteArray();
 	}
 
 	private List<Turn> turns() {
@@ -1856,6 +1957,7 @@ public class BattleArena3D extends StackPane {
 		this.turnPosition = 0;
 		this.lastTurnProcessed = -1;
 		this.replayed = false;
+		this.hitPhotoTaken = false;
 		this.bulletsSeen.clear();
 		this.bulletsExploded.clear();
 		this.lowEnergyWarned.clear();
@@ -2103,6 +2205,28 @@ public class BattleArena3D extends StackPane {
 	 * @param hit
 	 *            the record of the hit, null if it flies until the records end
 	 */
+	/**
+	 * A photo of a key moment of the battle, as JPEG: a hit that hurts or a robot
+	 * destroyed
+	 *
+	 * @param round
+	 *            the round of the battle, from 1
+	 * @param destruction
+	 *            true when the subject was destroyed, false when it hit
+	 * @param subject
+	 *            the robot that fired the hit, or the robot destroyed
+	 * @param power
+	 *            the power of the hit, zero for a destruction
+	 * @param jpeg
+	 *            the picture of the 3D view
+	 */
+	public record BattlePhoto(int round, boolean destruction, Opponent subject, double power, byte[] jpeg) {
+	}
+
+	/** A photo waiting for its moment: the seconds left, then it is taken */
+	private record PendingPhoto(double remaining, int round, boolean destruction, Opponent subject, double power) {
+	}
+
 	private record Flight(double sx, double sy, double ux, double uy, double total, double born, double duration, Bullet hit, double side, double ahead) {
 	}
 
@@ -2316,6 +2440,12 @@ public class BattleArena3D extends StackPane {
 			this.hitTension = Math.min(0.25, this.hitTension + 0.08 + bullet.power() * 0.03);
 			this.shake += 3 + bullet.power() * 3;
 			this.impactCut(bullet.victim(), bullet.power());
+			// The first hit that hurts of the round is kept as a photo
+			RobotView shooter = this.robots.get(bullet.owner());
+			if (this.phase == Phase.PLAYING && !this.hitPhotoTaken && bullet.power() >= PHOTO_HIT_POWER && shooter != null) {
+				this.hitPhotoTaken = true;
+				this.pendingPhotos.add(new PendingPhoto(PHOTO_HIT_DELAY, this.round + 1, false, shooter.opponent, bullet.power()));
+			}
 		} else {
 			this.audio.spark();
 			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
@@ -2367,6 +2497,9 @@ public class BattleArena3D extends StackPane {
 				this.audio.destroyed();
 				this.shake += 22;
 				this.whiteFlash();
+				if (this.phase == Phase.PLAYING) {
+					this.pendingPhotos.add(new PendingPhoto(PHOTO_DESTRUCTION_DELAY, this.round + 1, true, view.opponent, 0));
+				}
 				if (this.phase == Phase.PLAYING && !this.replayed) {
 					this.freezeForReplay(state.index(), turnIndex);
 				}
@@ -3514,7 +3647,8 @@ public class BattleArena3D extends StackPane {
 		List<RobotView> livingRobots = this.robots.values().stream().filter(v -> !v.dead).toList();
 		boolean roundOver = this.phase == Phase.ROUND_END || this.phase == Phase.FINISHED;
 		RobotView winner = null;
-		if (this.robots.size() >= 2 && livingRobots.size() == 1) {
+		// Not while a death is held on screen: the wreck is framed then, see freezeForReplay
+		if (this.robots.size() >= 2 && livingRobots.size() == 1 && this.phase != Phase.FREEZE) {
 			winner = livingRobots.get(0);
 		} else if (roundOver && this.robots.containsKey(this.shotSubject)) {
 			winner = this.robots.get(this.shotSubject);
@@ -3698,6 +3832,7 @@ public class BattleArena3D extends StackPane {
 		final Rotate radarRotate = new Rotate(0, Rotate.Y_AXIS);
 		final PhongMaterial bodyMaterial;
 		final PhongMaterial gunMaterial;
+		final Opponent opponent;
 		final Color bodyColor;
 		final Color gunColor;
 		final Color playerColor;
@@ -3723,6 +3858,7 @@ public class BattleArena3D extends StackPane {
 		double energy = 100;
 
 		RobotView(BattleRecording.Robot robot, Opponent opponent, int order) {
+			this.opponent = opponent;
 			this.playerColor = PLAYER_COLORS[order % PLAYER_COLORS.length];
 			this.bodyColor = argb(robot.getBodyColor(), this.playerColor);
 			this.gunColor = argb(robot.getGunColor(), this.bodyColor);

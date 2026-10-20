@@ -27,8 +27,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import jetty.server.HttpServer;
+import model.BattleMoment;
 import model.Championship;
 import model.Opponent;
+import tournament.BattleMomentService;
 import tournament.Bracket;
 import tournament.Bracket.Match;
 import tournament.Bracket.Status;
@@ -482,6 +484,58 @@ public class Main extends Application {
 	}
 
 	/**
+	 * Keeps the photos of the key moments of a 3D battle with its match. They are
+	 * a bonus: when they fail, the battle still counts
+	 */
+	private void keepPhotos(BattleArena3D arena, Match match, List<Opponent> fighters) {
+		List<BattleMoment> moments = new ArrayList<BattleMoment>();
+		for (BattleArena3D.BattlePhoto photo : arena.photos()) {
+			if (photo.subject() == null) {
+				continue;
+			}
+			BattleMoment moment = new BattleMoment();
+			moment.setChampionshipId(this.championship.getId());
+			moment.setMatchCode(match.getCode());
+			moment.setRoundNumber(photo.round());
+			moment.setDestruction(photo.destruction());
+			moment.setSubjectId(photo.subject().getId());
+			moment.setPower(photo.power());
+			moment.setFirstId(fighters.get(0).getId());
+			moment.setSecondId(fighters.get(1).getId());
+			moment.setImage(photo.jpeg());
+			moments.add(moment);
+		}
+		try {
+			BattleMomentService.save(this.championship.getId(), match.getCode(), moments);
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Removes the photos of a match whose result was undone
+	 */
+	private void forgetPhotos(String matchCode) {
+		try {
+			BattleMomentService.delete(this.championship.getId(), matchCode);
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * The photos of the battles of the robots, when they can be read
+	 */
+	private List<BattleMoment> photosOf(List<Long> robots) {
+		try {
+			return BattleMomentService.of(this.championship.getId(), robots);
+		} catch (RuntimeException e) {
+			e.printStackTrace();
+			return List.of();
+		}
+	}
+
+	/**
 	 * The winner of the match, or the champion
 	 */
 	private void showResult(long winnerId) {
@@ -522,6 +576,7 @@ public class Main extends Application {
 			this.selectedMatch = last.getMatchCode();
 			this.justPlayed = null;
 			this.setChampionship(ChampionshipService.undoLastResult(this.championship));
+			this.forgetPhotos(last.getMatchCode());
 			this.showBracket();
 		} catch (RuntimeException e) {
 			e.printStackTrace();
@@ -603,6 +658,7 @@ public class Main extends Application {
 			if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
 				arena.play(recording, () -> {
 					this.battleRunning = false;
+					this.keepPhotos(arena, match, fighters);
 					this.showResult(winner);
 				});
 			} else {
@@ -717,10 +773,11 @@ public class Main extends Application {
 		this.resetAllScenes();
 		try {
 			List<Opponent> podium = new ArrayList<Opponent>();
-			for (Long id : this.bracket.getPodium()) {
+			List<Long> ids = this.bracket.getPodium();
+			for (Long id : ids) {
 				podium.add(this.opponents.get(id));
 			}
-			this.podiumScene = new Podium(podium);
+			this.podiumScene = new Podium(podium, this.photosOf(ids), this.opponents);
 			this.show(this.podiumScene);
 		} catch (RuntimeException e) {
 			e.printStackTrace();

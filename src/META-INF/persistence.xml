@@ -9,6 +9,7 @@
 		<class>model.Opponent</class>
 		<class>model.Championship</class>
 		<class>model.MatchResult</class>
+		<class>model.BattleMoment</class>
 		<exclude-unlisted-classes>true</exclude-unlisted-classes>
 		<properties>
 			<property name="jakarta.persistence.jdbc.driver" value="org.sqlite.JDBC" />
