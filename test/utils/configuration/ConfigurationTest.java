@@ -114,6 +114,24 @@ class ConfigurationTest {
 	}
 
 	@Test
+	void musicVolumeIsFullByDefaultAndKeptInRange() {
+		assertEquals(100, Configuration.getMusicVolume());
+
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.MUSIC_VOLUME, "35");
+		assertTrue(Configuration.askForProperties());
+		assertEquals(35, Configuration.getMusicVolume());
+
+		this.answer.setProperty(INewConfigurationHandle.MUSIC_VOLUME, "250");
+		assertTrue(Configuration.askForProperties());
+		assertEquals(100, Configuration.getMusicVolume());
+
+		this.answer.setProperty(INewConfigurationHandle.MUSIC_VOLUME, "-5");
+		assertTrue(Configuration.askForProperties());
+		assertEquals(0, Configuration.getMusicVolume());
+	}
+
+	@Test
 	void arenaAndMusicAreRandomByDefault() {
 		assertEquals(Configuration.RANDOM, Configuration.getArena());
 		assertEquals(Configuration.RANDOM, Configuration.getBattleMusic());

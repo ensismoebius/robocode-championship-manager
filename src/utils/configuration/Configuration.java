@@ -31,6 +31,8 @@ public class Configuration {
 	/** Speeds of the 3D battle, times robocode's normal speed */
 	public static final double[] BATTLE_SPEEDS = { 0.5, 1, 2, 4, 8 };
 	public static final double DEFAULT_BATTLE_SPEED = 1;
+	/** Volume of the background music, in percent */
+	public static final int DEFAULT_MUSIC_VOLUME = 100;
 	/** A different arena or song in each battle */
 	public static final String RANDOM = "RANDOM";
 
@@ -246,6 +248,13 @@ public class Configuration {
 	public static String getBattleMusic() {
 		String music = Configuration.getConfiguration(INewConfigurationHandle.BATTLE_MUSIC);
 		return music == null || music.isBlank() ? RANDOM : music.strip();
+	}
+
+	/**
+	 * The volume of the background music of the battle, from 0 (mute) to 100
+	 */
+	public static int getMusicVolume() {
+		return Math.max(0, Math.min(100, Configuration.getIntConfiguration(INewConfigurationHandle.MUSIC_VOLUME, DEFAULT_MUSIC_VOLUME)));
 	}
 
 	/**

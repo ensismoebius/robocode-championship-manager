@@ -3,6 +3,7 @@ package widgets.scenes;
 import java.util.Random;
 
 import javafx.scene.paint.Color;
+import widgets.Rotation;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -37,14 +38,18 @@ public enum ArenaStyle {
 		this.fence = fence;
 	}
 
+	/** Random arenas do not repeat until all were used */
+	private static final Rotation<ArenaStyle> ROTATION = new Rotation<ArenaStyle>(values());
+
 	/**
-	 * The configured arena, a random one if not an arena (like "RANDOM")
+	 * The configured arena, the next of the rotation if not an arena (like
+	 * "RANDOM")
 	 */
 	public static ArenaStyle resolve(String configured, Random random) {
 		try {
 			return ArenaStyle.valueOf(configured);
 		} catch (IllegalArgumentException | NullPointerException e) {
-			return values()[random.nextInt(values().length)];
+			return ROTATION.next(random);
 		}
 	}
 }

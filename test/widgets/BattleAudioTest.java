@@ -33,6 +33,14 @@ class BattleAudioTest {
 	}
 
 	@Test
+	void musicLevelScalesTheMusic() {
+		double full = rms(BattleAudio.render(Song.EPIC, 0.8, 3, 1));
+		double half = rms(BattleAudio.render(Song.EPIC, 0.8, 3, 0.5));
+		assertTrue(Math.abs(half / full - 0.5) < 0.05, full + " -> " + half);
+		assertEquals(0, rms(BattleAudio.render(Song.EPIC, 0.8, 3, 0)), 1e-12);
+	}
+
+	@Test
 	void configuredOrRandomSong() {
 		Random random = new Random(3);
 		assertEquals(Song.WAR_DRUMS, Song.resolve("WAR_DRUMS", random));

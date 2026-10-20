@@ -54,14 +54,18 @@ public final class BattleAudio {
 			this.tenseBpm = moreBpm;
 		}
 
+		/** Random songs do not repeat until all were played */
+		private static final Rotation<Song> ROTATION = new Rotation<Song>(values());
+
 		/**
-		 * The configured song, a random one if not a song (like "RANDOM")
+		 * The configured song, the next of the rotation if not a song (like
+		 * "RANDOM")
 		 */
 		public static Song resolve(String configured, Random random) {
 			try {
 				return Song.valueOf(configured);
 			} catch (IllegalArgumentException | NullPointerException e) {
-				return values()[random.nextInt(values().length)];
+				return ROTATION.next(random);
 			}
 		}
 	}
@@ -79,6 +83,8 @@ public final class BattleAudio {
 	private volatile boolean slowMotion = false;
 	private volatile boolean musicOn = true;
 	private volatile Song song = Song.EPIC;
+	/** The volume of the music, from 0 to 1. The effects are not affected. */
+	private volatile double musicLevel = 1;
 
 	// Mixer state, only the audio thread touches it
 	private final List<Voice> sfxVoices = new ArrayList<Voice>();
@@ -168,6 +174,14 @@ public final class BattleAudio {
 
 	public void setMusicOn(boolean musicOn) {
 		this.musicOn = musicOn;
+	}
+
+	/**
+	 * @param level
+	 *            from 0 (no music) to 1
+	 */
+	public void setMusicLevel(double level) {
+		this.musicLevel = Math.max(0, Math.min(1, level));
 	}
 
 	public void setSong(Song song) {
@@ -266,8 +280,13 @@ public final class BattleAudio {
 	 * card: for tests and previews
 	 */
 	static double[] render(Song song, double intensity, double seconds) {
+		return render(song, intensity, seconds, 1);
+	}
+
+	static double[] render(Song song, double intensity, double seconds, double musicLevel) {
 		BattleAudio audio = new BattleAudio();
 		audio.song = song;
+		audio.musicLevel = musicLevel;
 		audio.intensity = intensity;
 		audio.targetIntensity = intensity;
 		audio.musicVolume = 1;
@@ -325,7 +344,7 @@ public final class BattleAudio {
 		this.musicVolume += ((this.musicOn ? 1 : 0) - this.musicVolume) * 0.00005;
 		this.duck += (1 - this.duck) * 0.00004;
 
-		double music = this.music() * this.musicVolume * this.duck * MUSIC_GAIN;
+		double music = this.music() * this.musicVolume * this.duck * MUSIC_GAIN * this.musicLevel;
 
 		double effects = 0;
 		for (Iterator<Voice> it = this.sfxVoices.iterator(); it.hasNext();) {
