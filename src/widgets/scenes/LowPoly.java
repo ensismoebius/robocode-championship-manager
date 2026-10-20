@@ -218,4 +218,16 @@ final class LowPoly {
 		}
 		this.solid(bottom, top);
 	}
+
+	/**
+	 * A flat ring on the floor plane, from y0 to y1
+	 */
+	void ring(double inner, double outer, double y0, double y1, int segments) {
+		for (int i = 0; i < segments; i++) {
+			double a = Math.PI * 2 * i / segments;
+			double b = Math.PI * 2 * (i + 1) / segments;
+			this.frustum(new double[][] { { inner * Math.cos(a), inner * Math.sin(a) }, { outer * Math.cos(a), outer * Math.sin(a) }, { outer * Math.cos(b), outer * Math.sin(b) },
+					{ inner * Math.cos(b), inner * Math.sin(b) } }, y0, y1, 1);
+		}
+	}
 }

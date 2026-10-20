@@ -2271,6 +2271,46 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
+	/** A thin flat ring, one unit across, that spreads as a shock wave */
+	private static final TriangleMesh RING = ringMesh();
+
+	private static TriangleMesh ringMesh() {
+		LowPoly shape = new LowPoly();
+		shape.ring(0.9, 1, -0.5, 0.5, 40);
+		return shape.mesh;
+	}
+
+	/**
+	 * A shock wave: a ring that spreads on the floor and fades
+	 *
+	 * @param floorY
+	 *            where the floor is, in the coordinates of the blast
+	 */
+	private void shockwave(Group blast, ParallelTransition all, double floorY, double radius, double delay, double millis, Color color) {
+		MeshView ring = shape(RING, energy(color, 0.8));
+		ring.setTranslateY(floorY - 0.5);
+		ring.setScaleY(1.5);
+		ring.setVisible(false);
+		blast.getChildren().add(ring);
+		ParallelTransition spread = new ParallelTransition();
+		ScaleTransition ringSpread = new ScaleTransition(Duration.millis(millis), ring);
+		ringSpread.setFromX(radius * 0.05);
+		ringSpread.setFromZ(radius * 0.05);
+		ringSpread.setToX(radius);
+		ringSpread.setToZ(radius);
+		ringSpread.setInterpolator(Interpolator.EASE_OUT);
+		FadeTransition ringFade = new FadeTransition(Duration.millis(millis), ring);
+		ringFade.setFromValue(1);
+		ringFade.setToValue(0);
+		ringFade.setInterpolator(Interpolator.EASE_IN);
+		spread.getChildren().addAll(ringSpread, ringFade);
+		spread.setDelay(Duration.millis(delay));
+		spread.statusProperty().addListener((observable, before, now) -> {
+			ring.setVisible(now == Animation.Status.RUNNING);
+		});
+		all.getChildren().add(spread);
+	}
+
 	private void muzzleFlash(double x, double z, Color tint) {
 		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.8), 1));
 		flash.setTranslateX(x);
@@ -3541,6 +3581,11 @@ public class BattleArena3D extends StackPane {
 			Group strike = new Group(shape(strikeGlow.mesh, energy(tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.45)), shape(strikeCore.mesh, energy(Color.WHITE, 1)));
 			blast.getChildren().add(strike);
 			all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(120), event -> strike.setVisible(false))));
+			// The shock wave: rings spreading on the floor from the wreck
+			Color air = tint.interpolate(Color.WHITE, 0.7);
+			BattleArena3D.this.shockwave(blast, all, -1, 300, 0, 900, air);
+			BattleArena3D.this.shockwave(blast, all, -1, 210, 160, 750, Color.web("#8fe9ff"));
+			BattleArena3D.this.shockwave(blast, all, -1, 130, 0, 500, Color.WHITE);
 			BattleArena3D.this.discharge(blast, all, center, -1, 9, 110, 0.4, tint, 60);
 			BattleArena3D.this.discharge(blast, all, center, -1, 7, 90, 0.35, tint, 400);
 			BattleArena3D.this.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
@@ -3815,6 +3860,8 @@ public class BattleArena3D extends StackPane {
 		switch (kind) {
 		case FLAME -> {
 			p.life = 0.35 + this.random.nextDouble() * 0.35;
+			// Some tongues burn blue all the way, the others only at the base
+			p.shade = this.random.nextDouble();
 			p.size = 9 + this.random.nextDouble() * 6 + damage * 8;
 			p.vx = (this.random.nextDouble() - 0.5) * 10;
 			p.vz = (this.random.nextDouble() - 0.5) * 10;
@@ -3966,8 +4013,14 @@ public class BattleArena3D extends StackPane {
 				width = p.size * grow * (1 - 0.5 * t);
 				height = width * 1.7;
 				double flicker = 0.85 + 0.15 * this.random.nextDouble();
-				if (t < 0.3) {
-					color = Color.web("#fff6c8").interpolate(Color.web("#ffb12a"), t / 0.3);
+				if (p.shade < 0.35) {
+					// A blue tongue: pale at the base, deep blue at the tip
+					color = t < 0.25 ? Color.web("#d6f1ff").interpolate(Color.web("#4aa8ff"), t / 0.25) : Color.web("#4aa8ff").interpolate(Color.web("#2a46ff"), (t - 0.25) / 0.75);
+				} else if (t < 0.14) {
+					// Every flame is blue where it is born
+					color = Color.web("#5aa9ff").interpolate(Color.web("#fff0b8"), t / 0.14);
+				} else if (t < 0.3) {
+					color = Color.web("#fff0b8").interpolate(Color.web("#ffb12a"), (t - 0.14) / 0.16);
 				} else {
 					color = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (t - 0.3) / 0.7);
 				}
