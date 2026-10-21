@@ -4840,6 +4840,10 @@ public class BattleArena3D extends StackPane {
 		return p;
 	}
 
+	/** The size and the color of a particle at a moment */
+	private record Look(double width, double height, Color color) {
+	}
+
 	/**
 	 * Moves, fades and sorts the particles, and lets the robots emit new ones
 	 */
@@ -4848,26 +4852,7 @@ public class BattleArena3D extends StackPane {
 			view.burn(dt);
 		}
 
-		// Embers rise from the lava, snow falls on the ice. Below a limit, so the
-		// fire of the robots is never left out.
-		double rate = this.style == ArenaStyle.VOLCANO ? 26 : this.style == ArenaStyle.ICE ? 95 : this.style == ArenaStyle.JUNGLE ? 16 : 0;
-		this.ambientDebt += dt * rate;
-		while (this.ambientDebt >= 1) {
-			this.ambientDebt--;
-			if (this.particles.size() > 550) {
-				continue;
-			}
-			if (this.style == ArenaStyle.JUNGLE) {
-				double x = (this.random.nextDouble() - 0.5) * (this.fieldWidth + 700);
-				double z = (this.random.nextDouble() - 0.5) * (this.fieldHeight + 700);
-				this.spawn(ParticleKind.FIREFLY, x, -8 - this.random.nextDouble() * 60, z, 0);
-			} else if (this.style == ArenaStyle.VOLCANO) {
-				this.spawn(ParticleKind.EMBER, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 260), -2, (this.random.nextDouble() - 0.5) * (this.fieldHeight + 260), 0);
-			} else {
-				this.spawn(ParticleKind.SNOW, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 800), -240 - this.random.nextDouble() * 120,
-						(this.random.nextDouble() - 0.5) * (this.fieldHeight + 800), 0);
-			}
-		}
+		this.spawnAmbient(dt);
 
 		double eyeX = this.eye[0];
 		double eyeY = this.eye[1];
@@ -4884,101 +4869,9 @@ public class BattleArena3D extends StackPane {
 				continue;
 			}
 			double t = p.age / p.life;
-			double drag = p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW ? 1 : Math.exp(-(p.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * dt);
-			p.vx *= drag;
-			p.vz *= drag;
-			if (p.kind == ParticleKind.SPARK) {
-				// Thrown up, then falls
-				p.vy += 160 * dt;
-			} else if (p.kind == ParticleKind.FLAME) {
-				// Flames speed up going up
-				p.vy -= 30 * dt;
-			}
-			p.x += p.vx * dt;
-			p.y = Math.min(-1, p.y + p.vy * dt);
-			// Sparks go out on the floor
-			if ((p.kind == ParticleKind.SPARK || p.kind == ParticleKind.SNOW) && p.y >= -1 && p.vy > 0) {
-				p.age = p.life;
-			}
-			// Embers, snow and fireflies sway
-			if (p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW || p.kind == ParticleKind.FIREFLY) {
-				p.x += Math.sin(p.age * (p.kind == ParticleKind.EMBER ? 3 : p.kind == ParticleKind.FIREFLY ? 1.3 : 1.7) + p.shade * 6) * (p.kind == ParticleKind.FIREFLY ? 14 : 9) * dt;
-				if (p.kind == ParticleKind.FIREFLY) {
-					p.z += Math.cos(p.age * 1.1 + p.shade * 9) * 12 * dt;
-				}
-			}
-			p.z += p.vz * dt;
-			p.spin.setAngle(p.spin.getAngle() + p.spinSpeed * dt);
-
-			double width;
-			double height;
-			Color color;
-			switch (p.kind) {
-			case FLAME -> {
-				// Grows fast, then thins out to a tip
-				double grow = Math.min(1, t * 5);
-				width = p.size * grow * (1 - 0.5 * t);
-				height = width * 1.7;
-				double flicker = 0.85 + 0.15 * this.random.nextDouble();
-				color = flameColor(p.shade < 0.35, step(t), level(Math.min(1, (1 - t) * 1.6) * flicker));
-			}
-			case SMOKE -> {
-				// Born in the fire, grows and fades
-				width = p.size * (0.6 + 2.6 * Math.sqrt(t));
-				height = width;
-				color = smokeColor(Math.max(0, Math.min(SMOKE_SHADES - 1, (int) (p.shade / SMOKE_SHADE_MAX * SMOKE_SHADES))), step(t), level(Math.min(1, t * 6) * Math.pow(1 - t, 1.4) * 0.7));
-			}
-			case EMBER -> {
-				double flicker = 0.7 + 0.3 * this.random.nextDouble();
-				width = p.size * (1 - 0.3 * t) * flicker;
-				height = width;
-				color = emberColor(step(t));
-			}
-			case FIREFLY -> {
-				width = p.size;
-				height = width;
-				// Fades in and out and blinks
-				double blink = 0.5 + 0.5 * Math.sin(p.age * 4.2 + p.shade * 20);
-				double envelope = Math.min(1, Math.min(t * 6, (1 - t) * 6));
-				color = fireflyColor(level(Math.max(0, envelope * (0.35 + 0.65 * blink))));
-			}
-			case SNOW -> {
-				width = p.size;
-				height = width;
-				color = snowColor(level(Math.min(0.9, p.age * 1.5)));
-			}
-			default -> {
-				width = p.size * (1 - 0.5 * t);
-				height = width;
-				color = sparkColor(step(t));
-			}
-			}
-			// The colors come from tables, the same object again if it did not change
-			if (p.shown != color) {
-				p.material.setDiffuseColor(color);
-				p.shown = color;
-			}
-			double px = p.x;
-			double pz = p.z;
-			if (p.anchor != null) {
-				px += p.anchor.root.getTranslateX();
-				pz += p.anchor.root.getTranslateZ();
-			}
-			p.view.setTranslateX(px);
-			p.view.setTranslateY(p.y);
-			p.view.setTranslateZ(pz);
-			p.yaw.setAngle(yaw);
-			p.pitch.setAngle(pitch);
-			p.scale.setX(Math.max(0.01, width));
-			p.scale.setY(Math.max(0.01, height));
-			// Flames are drawn from their base
-			if (p.kind == ParticleKind.FLAME) {
-				p.view.setTranslateY(p.y - height * 0.3);
-			}
-			double dx = px - eyeX;
-			double dy = p.y - eyeY;
-			double dz = pz - eyeZ;
-			p.distance = dx * dx + dy * dy + dz * dz;
+			this.moveParticle(p, dt);
+			Look look = this.lookOf(p, t);
+			this.placeParticle(p, look, yaw, pitch, eyeX, eyeY, eyeZ);
 		}
 
 		// No depth sorting in JavaFX: the farthest first, so the nearest blend
@@ -4991,6 +4884,140 @@ public class BattleArena3D extends StackPane {
 		if (!this.fireLayer.getChildren().equals(this.fireViews)) {
 			this.fireLayer.getChildren().setAll(this.fireViews);
 		}
+	}
+
+	/** Embers rise from the lava, snow falls on the ice, fireflies drift in the jungle: below a limit, so the fire of the robots is never left out */
+	private void spawnAmbient(double dt) {
+	// Embers rise from the lava, snow falls on the ice. Below a limit, so the
+	// fire of the robots is never left out.
+	double rate = this.style == ArenaStyle.VOLCANO ? 26 : this.style == ArenaStyle.ICE ? 95 : this.style == ArenaStyle.JUNGLE ? 16 : 0;
+	this.ambientDebt += dt * rate;
+	while (this.ambientDebt >= 1) {
+		this.ambientDebt--;
+		if (this.particles.size() > 550) {
+			continue;
+		}
+		if (this.style == ArenaStyle.JUNGLE) {
+			double x = (this.random.nextDouble() - 0.5) * (this.fieldWidth + 700);
+			double z = (this.random.nextDouble() - 0.5) * (this.fieldHeight + 700);
+			this.spawn(ParticleKind.FIREFLY, x, -8 - this.random.nextDouble() * 60, z, 0);
+		} else if (this.style == ArenaStyle.VOLCANO) {
+			this.spawn(ParticleKind.EMBER, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 260), -2, (this.random.nextDouble() - 0.5) * (this.fieldHeight + 260), 0);
+		} else {
+			this.spawn(ParticleKind.SNOW, (this.random.nextDouble() - 0.5) * (this.fieldWidth + 800), -240 - this.random.nextDouble() * 120,
+					(this.random.nextDouble() - 0.5) * (this.fieldHeight + 800), 0);
+		}
+	}
+	}
+
+	/** The motion of a particle: drag, gravity of its kind, and its sway */
+	private void moveParticle(Particle p, double dt) {
+		double drag = p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW ? 1 : Math.exp(-(p.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * dt);
+		p.vx *= drag;
+		p.vz *= drag;
+		if (p.kind == ParticleKind.SPARK) {
+			// Thrown up, then falls
+			p.vy += 160 * dt;
+		} else if (p.kind == ParticleKind.FLAME) {
+			// Flames speed up going up
+			p.vy -= 30 * dt;
+		}
+		p.x += p.vx * dt;
+		p.y = Math.min(-1, p.y + p.vy * dt);
+		// Sparks go out on the floor
+		if ((p.kind == ParticleKind.SPARK || p.kind == ParticleKind.SNOW) && p.y >= -1 && p.vy > 0) {
+			p.age = p.life;
+		}
+		// Embers, snow and fireflies sway
+		if (p.kind == ParticleKind.EMBER || p.kind == ParticleKind.SNOW || p.kind == ParticleKind.FIREFLY) {
+			p.x += Math.sin(p.age * (p.kind == ParticleKind.EMBER ? 3 : p.kind == ParticleKind.FIREFLY ? 1.3 : 1.7) + p.shade * 6) * (p.kind == ParticleKind.FIREFLY ? 14 : 9) * dt;
+			if (p.kind == ParticleKind.FIREFLY) {
+				p.z += Math.cos(p.age * 1.1 + p.shade * 9) * 12 * dt;
+			}
+		}
+		p.z += p.vz * dt;
+		p.spin.setAngle(p.spin.getAngle() + p.spinSpeed * dt);
+	}
+
+	/** How a particle looks at its age, as its size and color */
+	private Look lookOf(Particle p, double t) {
+		double width;
+		double height;
+		Color color;
+		switch (p.kind) {
+		case FLAME -> {
+			// Grows fast, then thins out to a tip
+			double grow = Math.min(1, t * 5);
+			width = p.size * grow * (1 - 0.5 * t);
+			height = width * 1.7;
+			double flicker = 0.85 + 0.15 * this.random.nextDouble();
+			color = flameColor(p.shade < 0.35, step(t), level(Math.min(1, (1 - t) * 1.6) * flicker));
+		}
+		case SMOKE -> {
+			// Born in the fire, grows and fades
+			width = p.size * (0.6 + 2.6 * Math.sqrt(t));
+			height = width;
+			color = smokeColor(Math.max(0, Math.min(SMOKE_SHADES - 1, (int) (p.shade / SMOKE_SHADE_MAX * SMOKE_SHADES))), step(t), level(Math.min(1, t * 6) * Math.pow(1 - t, 1.4) * 0.7));
+		}
+		case EMBER -> {
+			double flicker = 0.7 + 0.3 * this.random.nextDouble();
+			width = p.size * (1 - 0.3 * t) * flicker;
+			height = width;
+			color = emberColor(step(t));
+		}
+		case FIREFLY -> {
+			width = p.size;
+			height = width;
+			// Fades in and out and blinks
+			double blink = 0.5 + 0.5 * Math.sin(p.age * 4.2 + p.shade * 20);
+			double envelope = Math.min(1, Math.min(t * 6, (1 - t) * 6));
+			color = fireflyColor(level(Math.max(0, envelope * (0.35 + 0.65 * blink))));
+		}
+		case SNOW -> {
+			width = p.size;
+			height = width;
+			color = snowColor(level(Math.min(0.9, p.age * 1.5)));
+		}
+		default -> {
+			width = p.size * (1 - 0.5 * t);
+			height = width;
+			color = sparkColor(step(t));
+		}
+		}
+		return new Look(width, height, color);
+	}
+
+	/** Places the particle in the world, its material and its orientation towards the camera; keeps its distance to the eye */
+	private void placeParticle(Particle p, Look look, double yaw, double pitch, double eyeX, double eyeY, double eyeZ) {
+		double width = look.width();
+		double height = look.height();
+		Color color = look.color();
+		// The colors come from tables, the same object again if it did not change
+		if (p.shown != color) {
+			p.material.setDiffuseColor(color);
+			p.shown = color;
+		}
+		double px = p.x;
+		double pz = p.z;
+		if (p.anchor != null) {
+			px += p.anchor.root.getTranslateX();
+			pz += p.anchor.root.getTranslateZ();
+		}
+		p.view.setTranslateX(px);
+		p.view.setTranslateY(p.y);
+		p.view.setTranslateZ(pz);
+		p.yaw.setAngle(yaw);
+		p.pitch.setAngle(pitch);
+		p.scale.setX(Math.max(0.01, width));
+		p.scale.setY(Math.max(0.01, height));
+		// Flames are drawn from their base
+		if (p.kind == ParticleKind.FLAME) {
+			p.view.setTranslateY(p.y - height * 0.3);
+		}
+		double dx = px - eyeX;
+		double dy = p.y - eyeY;
+		double dz = pz - eyeZ;
+		p.distance = dx * dx + dy * dy + dz * dz;
 	}
 
 	private void clearFire() {
