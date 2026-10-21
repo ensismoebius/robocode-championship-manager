@@ -72,3 +72,6 @@ build/
 # Installers: packaging/build-installer.sh and build-installer.ps1
 /dist/
 /packaging/build/
+
+# Cache local da ferramenta de análise de código
+/.code-intelligence/
