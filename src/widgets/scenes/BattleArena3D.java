@@ -1034,6 +1034,10 @@ public class BattleArena3D extends StackPane {
 	 * Mossy ground, rivers on both sides, huge trees in the distance, ferns,
 	 * rocks and waterfalls. Fireflies float in the air and shafts of light cross the canopy.
 	 */
+	/** The materials of the jungle, made once for all its parts */
+	private record JungleMaterials(PhongMaterial moss, PhongMaterial water, PhongMaterial waterfall, PhongMaterial bark, PhongMaterial leaves, PhongMaterial rock) {
+	}
+
 	private void buildJungle(double w, double h) {
 		Random wild = new Random(31);
 		PhongMaterial moss = textured(JungleTexture.MOSS, Color.gray(0.05));
@@ -1046,13 +1050,27 @@ public class BattleArena3D extends StackPane {
 		waterfall.setSpecularPower(50);
 		PhongMaterial bark = textured(JungleTexture.BARK, Color.gray(0.05));
 		PhongMaterial leaves = textured(JungleTexture.LEAVES, Color.gray(0.1));
+		PhongMaterial rock = textured(JungleTexture.BARK, Color.gray(0.1));
+		JungleMaterials m = new JungleMaterials(moss, water, waterfall, bark, leaves, rock);
 
 		// The sky: a green dome seen from inside
 		this.arena.getChildren().add(skyDome(JungleTexture.SKY));
 		// The dense forest all around, painted once
 		this.arena.getChildren().add(ForestBackdrop.ring());
 		this.buildSunbeams(w, h, wild);
+		double riverZ = h / 2 + 160;
+		double riverWidth = 96;
+		this.jungleGround(w, h, m);
+		this.jungleRivers(w, h, m, riverZ, riverWidth);
+		this.jungleWaterfalls(w, h, wild, m, riverZ, riverWidth);
+		this.jungleRocks(w, h, wild, m);
+		this.jungleFerns(w, h, wild, riverZ, riverWidth);
+		this.jungleTrees(w, h, wild, riverZ, riverWidth, m);
+	}
 
+	/** Moss everywhere, a faint grid of lighter moss and a sandy border */
+	private void jungleGround(double w, double h, JungleMaterials m) {
+		PhongMaterial moss = m.moss();
 		// Ground: moss everywhere, a bit darker far away (it is the same texture,
 		// bigger tiles)
 		double far = 5000;
@@ -1070,15 +1088,21 @@ public class BattleArena3D extends StackPane {
 		PhongMaterial sand = material(Color.web("#d6c58a"));
 		this.arena.getChildren().addAll(box(w + 4, 0.6, 3, 0, -0.3, -h / 2, sand), box(w + 4, 0.6, 3, 0, -0.3, h / 2, sand), box(3, 0.6, h, -w / 2, -0.3, 0, sand),
 				box(3, 0.6, h, w / 2, -0.3, 0, sand));
+	}
 
+	/** Rivers along the long sides, flowing in opposite directions */
+	private void jungleRivers(double w, double h, JungleMaterials m, double riverZ, double riverWidth) {
 		// Rivers along the long sides, flowing in opposite directions
-		double riverZ = h / 2 + 160;
-		double riverWidth = 96;
+		PhongMaterial water = m.water();
 		this.river(-3000, 3000, -1, riverZ, 0, riverWidth, 0.16, water, 120);
 		this.river(3000, -3000, 1, riverZ, 2.3, riverWidth, 0.16, water, 120);
+	}
 
+	/** Waterfalls far at both ends, falling from a cliff to a pool */
+	private void jungleWaterfalls(double w, double h, Random wild, JungleMaterials m, double riverZ, double riverWidth) {
+		PhongMaterial water = m.water();
+		PhongMaterial waterfall = m.waterfall();
 		// Waterfalls far at both ends, falling from a cliff to a pool
-		PhongMaterial rock = textured(JungleTexture.BARK, Color.gray(0.1));
 		for (int side = -1; side <= 1; side += 2) {
 			double x = side * (w / 2 + 1000);
 			double z = (wild.nextDouble() - 0.5) * 300;
@@ -1093,7 +1117,12 @@ public class BattleArena3D extends StackPane {
 			double[][] pool = { { x - side * 2.5, 3, z - 150 }, { poolEnd, 3, z - 150 }, { poolEnd, 3, z + 150 }, { x - side * 2.5, 3, z + 150 } };
 			this.flow(pool, 0.025, 0.018, water, 120);
 		}
+	}
 
+	/** Rocks covered with moss between the field and the rivers */
+	private void jungleRocks(double w, double h, Random wild, JungleMaterials m) {
+		PhongMaterial moss = m.moss();
+		PhongMaterial rock = m.rock();
 		// Rocks covered with moss between the field and the rivers
 		for (int i = 0; i < 16; i++) {
 			double radius = 16 + wild.nextDouble() * 24;
@@ -1107,7 +1136,10 @@ public class BattleArena3D extends StackPane {
 			stone.setScaleY(0.6);
 			this.arena.getChildren().add(stone);
 		}
+	}
 
+	/** Ferns: all the blades in a few meshes, three tones of green */
+	private void jungleFerns(double w, double h, Random wild, double riverZ, double riverWidth) {
 		// Ferns: all the blades in a few meshes, three tones of green
 		String[] tones = { "#2f8f2a", "#3da83a", "#25782a" };
 		TriangleMesh[] ferns = new TriangleMesh[tones.length];
@@ -1133,7 +1165,12 @@ public class BattleArena3D extends StackPane {
 			view.setCullFace(CullFace.NONE);
 			this.arena.getChildren().add(view);
 		}
+	}
 
+	/** Huge trees far away, grown by a fractal rule */
+	private void jungleTrees(double w, double h, Random wild, double riverZ, double riverWidth, JungleMaterials m) {
+		PhongMaterial bark = m.bark();
+		PhongMaterial leaves = m.leaves();
 		// Huge trees far away, grown by a fractal rule: a crooked trunk that forks
 		// into branches that fork again, with clumps of leaves at the tips
 		Forest forest = new Forest();
