@@ -728,6 +728,16 @@ public class BattleArena3D extends StackPane {
 	 */
 	private void buildVolcano(double w, double h) {
 		Random rocks = new Random(17);
+		this.volcanoGround(w, h);
+		this.basaltPlates(w, h, rocks);
+		this.moat(w, h);
+		this.rivers(w, h, rocks);
+		this.lavaSea();
+		this.volcanoes(rocks);
+	}
+
+	/** A plateau of rock in a sea of lava, with the lava under the field */
+	private void volcanoGround(double w, double h) {
 		// A plateau of rock in a sea of lava
 		double plateau = 380;
 		Box ground = new Box(w + 2 * plateau, 2, h + 2 * plateau);
@@ -755,7 +765,10 @@ public class BattleArena3D extends StackPane {
 		fieldLava.setSelfIlluminationMap(FIELD_TEXTURE);
 		fieldLava.setSpecularColor(Color.BLACK);
 		this.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025, fieldLava, LAVA_TILE);
+	}
 
+	/** Basalt plates (Voronoi cells) with glowing lava in the cracks, and the border of the field */
+	private void basaltPlates(double w, double h, Random rocks) {
 		// Basalt plates over it: Voronoi cells of jittered seeds, each shrunk a
 		// bit so the lava glows between them, in cracks of different widths
 		double cell = 68;
@@ -808,7 +821,10 @@ public class BattleArena3D extends StackPane {
 		// The field border
 		this.glowing.getChildren().addAll(box(w, 0.5, 2, 0, -0.3, -h / 2, crack), box(w, 0.5, 2, 0, -0.3, h / 2, crack), box(2, 0.5, h, -w / 2, -0.3, 0, crack),
 				box(2, 0.5, h, w / 2, -0.3, 0, crack));
+	}
 
+	/** A moat of lava around the field, flowing clockwise seen from above */
+	private void moat(double w, double h) {
 		// A moat of lava, a bit lower than the floor
 		double edge = 20;
 		double moat = 70;
@@ -821,7 +837,13 @@ public class BattleArena3D extends StackPane {
 		this.flowStrip(middleX, -outerZ, middleX, outerZ, moat, 3, 0.18);
 		this.flowStrip(outerX, middleZ, -outerX, middleZ, moat, 3, 0.18);
 		this.flowStrip(-middleX, outerZ, -middleX, -outerZ, moat, 3, 0.18);
+	}
 
+	/** Rivers of lava from the moat to the sea, with a bend */
+	private void rivers(double w, double h, Random rocks) {
+		double plateau = 380;
+		double outerX = w / 2 + 20 + 70;
+		double outerZ = h / 2 + 20 + 70;
 		// Rivers from the moat to the sea, with a bend
 		double[][] rivers = { { -w / 4, -1, 0 }, { w / 3, 1, 0 }, { h / 5, 1, 1 }, { -h / 4, -1, 1 } };
 		for (double[] river : rivers) {
@@ -842,7 +864,10 @@ public class BattleArena3D extends StackPane {
 				}
 			}
 		}
+	}
 
+	/** The sea of lava that surrounds everything, drifting, with a cooler crust */
+	private void lavaSea() {
 		// The sea of lava, drifting, with a cooler crust: bright, it would steal the
 		// show and shimmer far away
 		PhongMaterial crust = new PhongMaterial(Color.WHITE);
@@ -851,7 +876,10 @@ public class BattleArena3D extends StackPane {
 		crust.setSpecularColor(Color.BLACK);
 		double sea = 5000;
 		this.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
+	}
 
+	/** Volcanoes on the horizon: stacked tiers make a cone, glowing on the top */
+	private void volcanoes(Random rocks) {
 		// Volcanoes on the horizon: stacked tiers make a cone, glowing on the top
 		PhongMaterial rock = new PhongMaterial(Color.web("#1c110e"));
 		rock.setSpecularColor(Color.web("#2c1a14"));
@@ -894,6 +922,7 @@ public class BattleArena3D extends StackPane {
 			this.glowing.getChildren().add(crater);
 		}
 	}
+
 
 	/**
 	 * A textured material
