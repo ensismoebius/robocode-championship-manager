@@ -22,6 +22,7 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 
 - [O que ele faz](#-o-que-ele-faz)
 - [As arenas](#-as-arenas)
+- [Personagens](#-personagens)
 - [Instalação](#-instalação)
   1. [Instale o Robocode](#1-instale-o-robocode)
   2. [Baixe o programa](#2-baixe-o-programa)
@@ -76,6 +77,40 @@ Antes do primeiro round a câmera sobrevoa a arena, começando pelos bichos que 
 Eles nunca entram na área de batalha, mas se assustam com os tiros e as explosões.
 
 ![Uma salamandra da Forja Vulcânica](docs/images/bicho-vulcao.jpg)
+
+---
+
+## 🎭 Personagens
+
+Durante a batalha, **apresentadores** comentam o que acontece, e **bichos** vivem em cada arena. Nenhum deles interfere no resultado: são o show em volta da luta.
+
+### Apresentadores
+
+Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer.
+
+| Apresentador | Comenta sobre | Como ele é |
+|---|---|---|
+| **Kayodê** | Início e fim do round, nocaute e as manchetes do final (como *VIRADA HISTÓRICA!*) | O mestre de cerimônias: animado, com microfone na mão e gosto por momentos grandes. |
+| **Benê** | Números e conquistas: precisão, *PERFECT!*, vitórias esmagadoras | O analista experiente: calmo, de headset e tablet na mão, fala com dados. |
+| **Zuri** | Paredes e colisões, como *"deu de cara com o campo de força!"* | A juíza da luta: de camisa listrada, aponta quando alguém bate na parede e não deixa passar nada. |
+| **Dandara** | Golpes, dano crítico e combos (como *"Potência máxima!"* e *"Sequência implacável!"*) | A lutadora confiante: direta e intensa, comemora cada pancada certeira. |
+| **Luana** | Tiros longos, tiros que se anulam e erros de mira (como *"calibra essa mira!"*) | A animada das manhas da pontaria: descontraída, com jaqueta de foguetes e sinal de paz. |
+| **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
+| **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
+
+### Bichos das arenas
+
+Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera sobrevoa a arena começando por eles.
+
+| Arena | Bichos | Onde ficam |
+|---|---|---|
+| **Floresta Tropical** | **Macacos**, com um **pássaro** a cada três bichos | Entre as árvores e perto do rio. O pássaro voa. |
+| **Tundra Glacial** | **Pinguins** | Pelo gelo e pelo mar glacial. Quando chegam à água, eles nadam. |
+| **Grade Neon** | **Besouros** | Pelas bordas da grade, entre os prédios de neon. |
+| **Forja Vulcânica** | **Salamandras**, com um **morcego** a cada três bichos | Pelas rochas e cinzas. O morcego voa. |
+
+> [!NOTE]
+> Os traços de personalidade descritos acima são uma leitura do estilo de cada personagem, feita a partir das falas que eles dizem e da aparência de cada um. Eles não têm regras de jogo ligadas a esses traços.
 
 ---
 

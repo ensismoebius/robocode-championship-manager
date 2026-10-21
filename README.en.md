@@ -20,6 +20,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 
 - [What it does](#-what-it-does)
 - [The arenas](#-the-arenas)
+- [Characters](#-characters)
 - [Installation](#-installation)
   1. [Install Robocode](#1-install-robocode)
   2. [Download the program](#2-download-the-program)
@@ -76,6 +77,40 @@ Before the first round the camera flies over the arena, starting with the critte
 They never enter the battle area, but they get startled by shots and explosions.
 
 ![A salamander from the Volcanic Forge](docs/images/bicho-vulcao.jpg)
+
+---
+
+## 🎭 Characters
+
+During a battle, **presenters** comment on what is happening, and **critters** live in each arena. None of them affect the result: they are the show around the fight.
+
+### Presenters
+
+Each kind of event has its own presenter. When something important happens, the presenter comes up from the bottom of the screen to comment, and goes down when there is nothing more to say.
+
+| Presenter | Comments on | Personality |
+|---|---|---|
+| **Kayodê** | Start and end of the round, knockouts and the final headlines (such as *VIRADA HISTÓRICA!*, "historic comeback") | The master of ceremonies: lively, with a microphone in hand and a taste for big moments. |
+| **Benê** | Numbers and achievements: accuracy, *PERFECT!*, landslide wins | The experienced analyst: calm, with a headset and a tablet, speaks in data. |
+| **Zuri** | Walls and collisions, such as "ran into the force field!" | The referee: in a striped shirt, points out when someone hits a wall and lets nothing slide. |
+| **Dandara** | Hits, critical damage and combos (such as "Maximum power!" and "Relentless streak!") | The confident fighter: direct and intense, celebrates every clean hit. |
+| **Luana** | Long shots, bullets that cancel each other and misses (such as "Recalibrate that aim!") | The cheerful aiming expert: relaxed, with a rocket-patched jacket and a peace sign. |
+| **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
+| **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
+
+### Arena critters
+
+Each arena has its own critters. They walk around the scenery, **never enter the battle area**, and run away when shots or explosions happen nearby. Before the first battle, the camera flies over the arena starting with them.
+
+| Arena | Critters | Where they are |
+|---|---|---|
+| **Tropical Forest** | **Monkeys**, with a **bird** every three critters | Among the trees and near the river. The bird flies. |
+| **Glacial Tundra** | **Penguins** | On the ice and in the glacial sea. When they reach the water, they swim. |
+| **Neon Grid** | **Beetles** | Along the edges of the grid, between the neon buildings. |
+| **Volcanic Forge** | **Salamanders**, with a **bat** every three critters | Over the rocks and ash. The bat flies. |
+
+> [!NOTE]
+> The personality traits above are a reading of each character's style, based on the lines they say and how they look. They have no gameplay rules tied to those traits.
 
 ---
 
