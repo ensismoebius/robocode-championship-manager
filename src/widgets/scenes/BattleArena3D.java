@@ -85,23 +85,15 @@ import widgets.scenes.ArenaHud.HudPlayer;
  */
 public class BattleArena3D extends StackPane {
 
-	/** Robocode's default speed, turns per second */
-	private static final double TPS = 30;
 	static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	/** The camera flies over the arena before the first round and ends where the battle starts */
 	static final double FLYBY_SECONDS = 6.5;
-	/** The fly by starts looking at a critter for this long before it goes on */
-	private static final double FLYBY_FOCUS_SECONDS = 2;
-	private static final int COUNTDOWN_SECONDS = 3;
-	private static final double INTRO_SECONDS = COUNTDOWN_SECONDS + 1.1;
+	static final int COUNTDOWN_SECONDS = 3;
 	/** Each robot is presented alone before the battle, then the versus */
 	private static final double SHOWCASE_SECONDS = 7;
 	private static final double VERSUS_SECONDS = 2.6;
-	private static final double ROUND_END_SECONDS = 2.8;
-	/** The headline of a special battle, after the last round */
-	private static final double HEADLINE_SECONDS = 3.4;
 	/** The action stops for a moment when a robot dies, then the replay */
 	static final double FREEZE_SECONDS = 1.3;
 	/** The photos of the key moments are kept small, as JPEG */
@@ -113,11 +105,6 @@ public class BattleArena3D extends StackPane {
 	static final double PHOTO_HIT_DELAY = 0.2;
 	/** Seconds from a destruction to its photo: the tank is falling, the battle is held (see freezeForReplay) */
 	static final double PHOTO_DESTRUCTION_DELAY = 1.0;
-	/** Slow motion speeds: before the impact, close to it, after it */
-	private static final double REPLAY_SPEED = 0.28;
-	private static final double REPLAY_IMPACT_SPEED = 0.07;
-	private static final double REPLAY_AFTER_SPEED = 0.22;
-
 	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
 	static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
@@ -184,6 +171,7 @@ public class BattleArena3D extends StackPane {
 	final ArenaBullets shots = new ArenaBullets(this);
 	final ArenaCamera director = new ArenaCamera(this);
 	final ArenaShowcase showcase = new ArenaShowcase(this);
+	final ArenaRounds rounds = new ArenaRounds(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -274,26 +262,12 @@ public class BattleArena3D extends StackPane {
 	int lastTurnProcessed = -1;
 	/** Index in SPEEDS, starts with the configured one */
 	int speed;
-	/** Shown when the round starts, configurable */
-	private final String fightText = Configuration.getFightText();
-	private boolean fightShown = false;
-	/** Where the fly by ends: the camera at the start of the battle */
-	private final double[] flyEyeEnd = new double[3];
 	/** The critter the fly by starts looking at, where it is when the fly by begins, or null */
 	double[] flyFocus;
 	/** Where the critter the fly by starts on is now, while the camera stays on it */
 	Supplier<double[]> flyFocusSource;
 	/** The animals that live around the field */
 	Critters critters;
-	/** The glacial sea of the ice arena: its middle and its radius, 0 when there is none */
-	private final double[] flyLookEnd = new double[3];
-	private double flyFovEnd;
-	private double flyMirrorX = 1;
-	private double flyMirrorZ = 1;
-	/** The number of the countdown on the screen, 0 if none yet */
-	private int countdown;
-	private String roundTitle = "";
-	private String roundSubtitle;
 	boolean paused = false;
 	double hitTension = 0;
 	/** Animations of effects run slower in the replay */
@@ -313,9 +287,7 @@ public class BattleArena3D extends StackPane {
 	// Callouts and comments
 	BattleCommentary commentary;
 	final ArenaCommentary announcer = new ArenaCommentary(this);
-	private BattleCommentary.Headline headline;
-	private boolean headlineShown = false;
-
+	BattleCommentary.Headline headline;
 
 	// The presentation of the robots
 	int showcaseOrder = 0;
@@ -887,7 +859,7 @@ public class BattleArena3D extends StackPane {
 				this.showcase.showcaseRobot(this.showcaseOrder + 1);
 			}
 		} else if (this.phase == Phase.FLYBY) {
-			this.endFlyBy();
+			this.rounds.endFlyBy();
 		} else if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
 			this.showcase.endReplay();
 		} else if (this.phase != Phase.LOADING && this.phase != Phase.FINISHED) {
@@ -895,7 +867,7 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
-	private void finish() {
+	void finish() {
 		this.phase = Phase.FINISHED;
 		this.timer.stop();
 		this.stopShowcaseMusic();
@@ -938,100 +910,30 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		case FLYBY -> {
-			if (this.phaseTime > this.flyByHold() + FLYBY_SECONDS) {
-				this.endFlyBy();
+			if (this.phaseTime > this.rounds.flyByHold() + FLYBY_SECONDS) {
+				this.rounds.endFlyBy();
 			}
 		}
-		case INTRO -> this.updateIntro();
-		case PLAYING -> this.updatePlaying(dt);
+		case INTRO -> this.rounds.updateIntro();
+		case PLAYING -> this.rounds.updatePlaying(dt);
 		case FREEZE -> {
 			if (this.phaseTime > FREEZE_SECONDS) {
 				this.showcase.startReplay();
 			}
 		}
-		case REPLAY -> this.updateReplay(dt);
-		case ROUND_END -> this.updateRoundEnd();
+		case REPLAY -> this.rounds.updateReplay(dt);
+		case ROUND_END -> this.rounds.updateRoundEnd();
 		case FINISHED -> {
 		}
 		}
 
-		this.updateTension(dt);
+		this.rounds.updateTension(dt);
 		this.announcer.tick(dt);
 		this.director.updateCamera(dt);
 		this.clock += dt * this.effectRate;
 		this.updateSurfaces();
 		this.updateAudio(dt);
 		this.updateEffects(dt);
-	}
-
-	/** The countdown before the round: the banner shows the numbers, then the fight starts */
-	private void updateIntro() {
-		int remaining = (int) Math.ceil(COUNTDOWN_SECONDS - this.phaseTime);
-		if (remaining >= 1 && remaining != this.countdown) {
-			this.countdown = remaining;
-			this.hud.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
-			this.audio.countdown(remaining == 1);
-		}
-		if (this.phaseTime > COUNTDOWN_SECONDS && !this.fightShown) {
-			this.fightShown = true;
-			this.hud.showBanner(this.fightText, null);
-			this.audio.fight();
-			this.audio.setMusicOn(true);
-		}
-		if (this.phaseTime > INTRO_SECONDS) {
-			this.hud.hideBanner();
-			this.phase = Phase.PLAYING;
-		}
-	}
-
-	/** The round is played: the turns shown as the battle goes on */
-	private void updatePlaying(double dt) {
-		if (!this.paused) {
-			this.turnPosition += dt * TPS * SPEEDS[this.speed];
-		}
-		List<Turn> turns = this.turns();
-		if (this.turnPosition >= turns.size() - 1) {
-			this.turnPosition = turns.size() - 1;
-			this.showTurn(turns);
-			if (this.phase == Phase.PLAYING) {
-				this.endRound(turns);
-			}
-		} else {
-			this.showTurn(turns);
-		}
-	}
-
-	/** The replay of the moments before a robot is destroyed, slowed down */
-	private void updateReplay(double dt) {
-		int turn = (int) this.turnPosition;
-		double rate = turn >= this.deathTurn ? REPLAY_AFTER_SPEED : this.impactTurn >= 0 && this.impactTurn - turn <= 3 ? REPLAY_IMPACT_SPEED : REPLAY_SPEED;
-		this.turnPosition += dt * TPS * rate;
-		if (this.turnPosition >= this.replayTo) {
-			this.turnPosition = this.replayTo;
-			this.showTurn(this.turns());
-			this.showcase.endReplay();
-		} else {
-			this.showTurn(this.turns());
-		}
-	}
-
-	/** The round is over: the next round, the headline of a special battle, or the end */
-	private void updateRoundEnd() {
-		if (this.phaseTime > (this.headlineShown ? HEADLINE_SECONDS : ROUND_END_SECONDS)) {
-			if (this.round + 1 < this.recording.getRounds().size()) {
-				this.startRound(this.round + 1);
-			} else if (this.headline != null && !this.headlineShown) {
-				// A special battle gets its headline
-				this.headlineShown = true;
-				this.phaseTime = 0;
-				this.hud.showBanner(this.headline.title(), this.headline.subtitle());
-				this.announcer.announce(this.headline.subtitle(), 6);
-				this.banner.setStyle("-fx-font-size: 46px;");
-				Sfx.fanfare();
-			} else {
-				this.finish();
-			}
-		}
 	}
 
 	/** The lava breathes and its flows slide */
@@ -1152,246 +1054,6 @@ public class BattleArena3D extends StackPane {
 
 	List<Turn> turns() {
 		return this.recording.getRounds().get(this.round);
-	}
-
-	void startRound(int round) {
-		this.round = round;
-		this.turnPosition = 0;
-		this.lastTurnProcessed = -1;
-		this.replayed = false;
-		this.hitPhotoTaken = false;
-		this.bulletsSeen.clear();
-		this.bulletsExploded.clear();
-		this.lowEnergyWarned.clear();
-		this.shots.clearBullets();
-		this.effects.getChildren().clear();
-		this.fire.clear();
-		this.shots.resetFence();
-		if (this.commentary != null) {
-			this.commentary.startRound();
-			if (round > 0 && round + 1 == this.recording.getRounds().size()) {
-				this.commentary.lastRoundStarts();
-			}
-		}
-		this.announcer.clearQueue();
-		for (RobotView view : this.robots.values()) {
-			view.reset();
-		}
-
-		// Skips empty rounds
-		List<Turn> turns = this.turns();
-		if (turns.isEmpty()) {
-			this.phase = Phase.ROUND_END;
-			this.phaseTime = ROUND_END_SECONDS;
-			return;
-		}
-		this.showTurn(turns);
-
-		// The camera at the start of the battle: a crane shot down to the arena
-		this.shot = Shot.CRANE;
-		this.shotTime = 0;
-		this.shotDuration = INTRO_SECONDS + 2.5;
-		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
-		this.director.cut();
-		if (round == 0) {
-			// Before the first battle the camera flies over the arena first
-			this.beginFlyBy();
-		} else {
-			this.beginIntro();
-		}
-	}
-
-	/**
-	 * The round title, the countdown and the fight
-	 */
-	private void beginIntro() {
-		this.phase = Phase.INTRO;
-		this.phaseTime = 0;
-		this.fightShown = false;
-		this.countdown = 0;
-		this.roundTitle = "ROUND " + (this.round + 1);
-		boolean decisive = this.round + 1 == this.recording.getRounds().size() && this.round > 0;
-		this.roundSubtitle = decisive ? "ROUND DECISIVO" : null;
-		this.hud.showBanner(this.roundTitle, this.roundSubtitle);
-		this.audio.roundCall();
-		this.audio.setMusicOn(true);
-		this.announcer.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (this.round + 1) + "! Preparem os motores!", 5);
-		this.hud.updateInfo();
-	}
-
-	/**
-	 * The camera flies over the arena, low and fast past the walls, and ends
-	 * where the battle starts
-	 */
-	private void beginFlyBy() {
-		this.flyMirrorX = this.random.nextBoolean() ? 1 : -1;
-		this.flyMirrorZ = this.random.nextBoolean() ? 1 : -1;
-		this.phase = Phase.FLYBY;
-		this.phaseTime = 0;
-		this.hud.hideBanner();
-		this.hud.showLetterbox(true, false);
-		this.audio.setMusicOn(true);
-		// The fly by ends framing both robots, where the battle starts
-		RobotView subject = this.robots.get(this.shotSubject);
-		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
-		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
-		this.director.frameFighters(0, a, other == null ? a : other.position());
-		System.arraycopy(this.eyeTarget, 0, this.flyEyeEnd, 0, 3);
-		System.arraycopy(this.lookTarget, 0, this.flyLookEnd, 0, 3);
-		this.flyFovEnd = this.fovTarget;
-		// The first look is at a critter, from outside the field: the fly by starts on it
-		this.flyFocusSource = this.critters == null ? null : this.critters.track(-0.8 * this.fieldWidth * this.flyMirrorX, -this.fieldHeight * this.flyMirrorZ);
-		this.flyFocus = this.flyFocusSource == null ? null : this.flyFocusSource.get();
-		// Starts at the first point of the path, no sliding to it
-		this.flyByPose(0);
-		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
-		System.arraycopy(this.lookTarget, 0, this.look, 0, 3);
-		this.fov = this.fovTarget;
-		this.hud.updateInfo();
-	}
-
-	/** How long the fly by stays on the critter before the trip: nothing if there is no critter */
-	double flyByHold() {
-		return this.flyFocusSource == null ? 0 : FLYBY_FOCUS_SECONDS;
-	}
-
-	private void endFlyBy() {
-		this.hud.showLetterbox(false);
-		this.beginIntro();
-	}
-
-	/**
-	 * Puts the camera where the fly by is at the moment: through points around
-	 * the arena, low, that end framing both robots, where the battle starts
-	 */
-	void flyByPose(double progress) {
-		double w = this.fieldWidth;
-		double h = this.fieldHeight;
-		double mx = this.flyMirrorX;
-		double mz = this.flyMirrorZ;
-		double[][] eyes = { { -0.8 * w * mx, -120, -1.0 * h * mz }, { -0.05 * w * mx, -50, -0.85 * h * mz }, { 0.85 * w * mx, -75, -0.1 * h * mz }, this.flyEyeEnd };
-		double[][] looks = { { 0.1 * w * mx, -40, 0.2 * h * mz }, { 0.25 * w * mx, -25, 0.1 * h * mz }, { -0.2 * w * mx, -20, 0 }, this.flyLookEnd };
-		if (this.flyFocus != null) {
-			// Starts looking at the critter, from its outer side, a little above it
-			double fx = this.flyFocus[0];
-			double fz = this.flyFocus[2];
-			double length = Math.max(1, Math.hypot(fx, fz));
-			eyes[0] = new double[] { fx + fx / length * 45, this.flyFocus[1] - 22, fz + fz / length * 45 };
-			looks[0] = this.flyFocus;
-		}
-		// Slow at the start and at the end, quick in the middle
-		double smooth = progress * progress * (3 - 2 * progress);
-		double u = 0.3 * progress + 0.7 * smooth;
-		catmull(eyes, u, this.eyeTarget);
-		catmull(looks, u, this.lookTarget);
-		this.fovTarget = 62 + (this.flyFovEnd - 62) * smooth;
-		this.rollTarget = 3 * Math.sin(progress * Math.PI * 2) * (1 - smooth);
-		this.follow = 40;
-	}
-
-	/**
-	 * A point along a smooth curve that goes through all the points, u from 0 to 1
-	 */
-	private static void catmull(double[][] points, double u, double[] out) {
-		int segments = points.length - 1;
-		double position = Math.max(0, Math.min(1, u)) * segments;
-		int i = Math.min(segments - 1, (int) position);
-		double t = position - i;
-		double[] p0 = points[Math.max(0, i - 1)];
-		double[] p1 = points[i];
-		double[] p2 = points[i + 1];
-		double[] p3 = points[Math.min(segments, i + 2)];
-		for (int k = 0; k < 3; k++) {
-			out[k] = 0.5 * (2 * p1[k] + (p2[k] - p0[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t * t + (3 * p1[k] - p0[k] - 3 * p2[k] + p3[k]) * t * t * t);
-		}
-	}
-
-	private void endRound(List<Turn> turns) {
-		this.phase = Phase.ROUND_END;
-		this.phaseTime = 0;
-
-		List<RobotState> alive = turns.get(turns.size() - 1).robots().stream().filter(r -> !r.isDead()).toList();
-		this.announcer.say(this.commentary.roundEnd(alive.size() == 1 ? alive.get(0).index() : -1));
-		if (this.round + 1 == this.recording.getRounds().size()) {
-			this.headline = this.commentary.battleEnd();
-		}
-		if (alive.size() == 1) {
-			int winner = alive.get(0).index();
-			this.roundWins.merge(winner, 1, Integer::sum);
-			RobotView view = this.robots.get(winner);
-			this.hud.showBanner("K.O.!", (view == null ? "" : view.displayName) + " vence o round");
-			this.announcer.announce("K.O.! " + (view == null ? "" : view.displayName) + " vence o round!", 5);
-			this.audio.knockOut();
-			// The winner, from close
-			this.shot = Shot.CLOSE;
-			this.shotSubject = winner;
-			this.shotTime = 0;
-			this.shotDuration = ROUND_END_SECONDS + 1;
-			this.shotSide = this.random.nextBoolean() ? 1 : -1;
-			this.closeDistance = 110;
-		} else {
-			this.hud.showBanner("FIM DO ROUND", null);
-		}
-		this.audio.setMusicOn(false);
-		this.hud.updatePips();
-	}
-
-	/**
-	 * How tense the fight is: low energy, the end of the round, the deciding
-	 * round and recent hits make the music grow
-	 */
-	private void updateTension(double dt) {
-		this.hitTension *= Math.exp(-0.5 * dt);
-		if (this.recording == null || this.phase == Phase.LOADING) {
-			this.audio.setIntensity(0);
-			return;
-		}
-		double lowest = 100;
-		for (RobotView view : this.robots.values()) {
-			if (!view.dead) {
-				lowest = Math.min(lowest, view.energy);
-			}
-		}
-		double progress = Math.min(1, this.turnPosition / Math.max(1, this.turns().size()));
-		boolean deciding = this.round + 1 == this.recording.getRounds().size() && this.recording.getRounds().size() > 1;
-		double tension = 0.12 + 0.55 * (1 - Math.max(0, Math.min(100, lowest)) / 100) + 0.15 * progress + (deciding ? 0.15 : 0) + this.hitTension;
-		if (this.phase == Phase.INTRO || this.phase == Phase.SHOWCASE || this.phase == Phase.FLYBY) {
-			tension = 0.1;
-		}
-		this.audio.setIntensity(tension);
-	}
-
-	/**
-	 * Puts everything where it is at the current (fractional) turn and fires the
-	 * events of the turns just reached
-	 */
-	void showTurn(List<Turn> turns) {
-		int index = Math.min((int) Math.floor(this.turnPosition), turns.size() - 1);
-		double fraction = this.turnPosition - index;
-		Turn current = turns.get(index);
-		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
-
-		for (int t = this.lastTurnProcessed + 1; t <= index; t++) {
-			this.shots.turnEvents(turns.get(t), t == 0 ? null : turns.get(t - 1), t);
-		}
-		this.lastTurnProcessed = Math.max(this.lastTurnProcessed, index);
-
-		Map<Integer, Double> energies = new HashMap<Integer, Double>();
-		for (RobotState state : current.robots()) {
-			RobotState after = find(next.robots(), state.index(), state);
-			RobotView view = this.robots.get(state.index());
-			if (view == null) {
-				continue;
-			}
-			view.place(this.worldX(lerp(state.x(), after.x(), fraction)), this.worldZ(lerp(state.y(), after.y(), fraction)), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction),
-					lerpAngle(state.gunHeading(), after.gunHeading(), fraction), lerpAngle(state.radarHeading(), after.radarHeading(), fraction));
-			double energy = lerp(state.energy(), after.energy(), fraction);
-			view.setEnergy(state.isDead() ? 0 : energy);
-			energies.put(state.index(), state.isDead() ? 0 : energy);
-		}
-		this.hud.updateHud(energies);
-
-		this.shots.showBullets(turns, index, fraction);
 	}
 
 	/**
@@ -1539,14 +1201,14 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
-	private static double lerp(double a, double b, double t) {
+	static double lerp(double a, double b, double t) {
 		return a + (b - a) * t;
 	}
 
 	/**
 	 * Interpolates angles (radians) the short way
 	 */
-	private static double lerpAngle(double a, double b, double t) {
+	static double lerpAngle(double a, double b, double t) {
 		double difference = Math.IEEEremainder(b - a, Math.PI * 2);
 		return a + difference * t;
 	}

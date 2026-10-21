@@ -189,11 +189,11 @@ final class ArenaCamera {
 
 		if (host.phase == Phase.FLYBY) {
 			// The camera stays on the critter, following it, and then the trip begins
-			double hold = host.flyByHold();
+			double hold = host.rounds.flyByHold();
 			if (host.phaseTime < hold) {
 				host.flyFocus = host.flyFocusSource.get();
 			}
-			host.flyByPose(Math.max(0, Math.min(1, (host.phaseTime - hold) / FLYBY_SECONDS)));
+			host.rounds.flyByPose(Math.max(0, Math.min(1, (host.phaseTime - hold) / FLYBY_SECONDS)));
 			return;
 		}
 		if (host.phase == Phase.SHOWCASE && !host.versus) {

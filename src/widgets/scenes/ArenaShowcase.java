@@ -130,7 +130,7 @@ final class ArenaShowcase {
 		}
 		host.turnPosition = 0;
 		host.lastTurnProcessed = -1;
-		host.showTurn(host.turns());
+		host.rounds.showTurn(host.turns());
 
 		String names = String.join("  ×  ", host.recording.getRobots().stream().map(r -> host.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
 		host.hud.showBanner("VS", names + "\n\nARENA: " + host.style.label.toUpperCase());
@@ -159,7 +159,7 @@ final class ArenaShowcase {
 		host.stageLabel.setVisible(false);
 		host.stageLabel.setManaged(false);
 		host.hud.showLetterbox(false);
-		host.startRound(0);
+		host.rounds.startRound(0);
 	}
 
 	/**
@@ -341,7 +341,7 @@ final class ArenaShowcase {
 		host.shotTime = 0;
 		host.shotDuration = 1000;
 		host.shotSide = host.random.nextBoolean() ? 1 : -1;
-		host.showTurn(host.turns());
+		host.rounds.showTurn(host.turns());
 		host.director.cut();
 	}
 
@@ -360,7 +360,7 @@ final class ArenaShowcase {
 		// Goes on from the end of the replay, with everything in its final state
 		host.turnPosition = Math.max(host.turnPosition, host.replayTo);
 		List<Turn> turns = host.turns();
-		host.showTurn(turns);
+		host.rounds.showTurn(turns);
 		RobotView dead = host.robots.get(this.deadRobot);
 		if (dead != null && !dead.dead) {
 			dead.destroy();
