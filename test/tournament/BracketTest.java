@@ -24,6 +24,31 @@ import tournament.Bracket.Status;
 
 class BracketTest {
 
+	@Test
+	void importanceFlagsSemifinalsAndFinals() {
+		Bracket bracket = new Bracket(ids(8), false, false);
+		for (Match m : bracket.getMatches()) {
+			Bracket.Importance expected = switch (bracket.roundName(m)) {
+			case "Semifinal" -> Bracket.Importance.SEMIFINAL;
+			case "Final" -> Bracket.Importance.FINAL;
+			default -> Bracket.Importance.REGULAR;
+			};
+			assertEquals(expected, bracket.importance(m), m.getCode());
+		}
+		assertEquals(2, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Bracket.Importance.SEMIFINAL).count());
+		assertEquals(1, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Bracket.Importance.FINAL).count());
+	}
+
+	@Test
+	void importanceCountsRepechageFinalsAndGrandFinal() {
+		Bracket bracket = new Bracket(ids(8), true, true);
+		for (Match m : bracket.getMatches()) {
+			boolean big = bracket.roundName(m).startsWith("Final") || bracket.roundName(m).startsWith("Grande");
+			assertEquals(big, bracket.importance(m) == Bracket.Importance.FINAL, bracket.roundName(m));
+		}
+		assertTrue(bracket.getMatches().stream().anyMatch(m -> bracket.importance(m) == Bracket.Importance.SEMIFINAL));
+	}
+
 	private static List<Long> ids(int n) {
 		return LongStream.rangeClosed(1, n).boxed().toList();
 	}

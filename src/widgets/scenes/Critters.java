@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiPredicate;
+import java.util.function.Supplier;
 
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -15,6 +16,7 @@ import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
+import javafx.scene.transform.Translate;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -93,6 +95,20 @@ final class Critters {
 
 	/** Where the critter nearest to the point is, aimed at its body, or null if there is none */
 	double[] nearest(double x, double z) {
+		Critter best = this.closest(x, z);
+		return best == null ? null : this.body(best);
+	}
+
+	/**
+	 * Follows the critter nearest to the point: every call tells where it is now,
+	 * aimed at its body. Null if there are no critters.
+	 */
+	Supplier<double[]> track(double x, double z) {
+		Critter best = this.closest(x, z);
+		return best == null ? null : () -> this.body(best);
+	}
+
+	private Critter closest(double x, double z) {
 		Critter best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for (Critter critter : this.critters) {
@@ -102,7 +118,11 @@ final class Critters {
 				best = critter;
 			}
 		}
-		return best == null ? null : new double[] { best.x, best.y - 12 * SCALE, best.z };
+		return best;
+	}
+
+	private double[] body(Critter critter) {
+		return new double[] { critter.x, critter.y - 12 * SCALE, critter.z };
 	}
 
 	/** The kinds of the arenas: a mix of walkers and flyers where there are flyers */
@@ -329,7 +349,8 @@ final class Critters {
 					part(new Sphere(2.2, 8), face, 6, -30, 2, 1, 1, 0.6), part(new Sphere(3.8, 10), face, 0, -26.5, 8, 1, 0.9, 0.7),
 					part(new Sphere(0.9, 6), dark, 0, -25, 11.3, 1.4, 0.8, 1));
 			body.getChildren().addAll(eyes(2, -28.5, 9.6, 1.1));
-			body.getChildren().addAll(tail(fur, 0, -16, -12), part(new Sphere(1.8, 8), fur, 0, -16, -21, 1, 1, 1));
+			// The tail leaves the back and curves like an S, wagging a little when it walks
+			body.getChildren().add(joint(joints, Rotate.Y_AXIS, 0, -12, -7, curledTail(fur), 0.3, 0.8));
 			for (int side = -1; side <= 1; side += 2) {
 				Group arm = new Group(box(3.2, 10, 3.2, fur, 0, 5, 0), part(new Sphere(2, 8), face, 0, 11, 0.5, 1, 1, 1));
 				body.getChildren().add(joint(joints, Rotate.X_AXIS, side * 7.5, -23, 0, arm, 0.4, side > 0 ? Math.PI : 0));
@@ -503,6 +524,43 @@ final class Critters {
 		hip.getTransforms().add(rotate);
 		joints.add(new Joint(rotate, amplitude, phase));
 		return hip;
+	}
+
+	/**
+	 * A tail that stands up curved like a loose S seen from the side: it rises from
+	 * the rump, swings back, forward and back again. Made of cylinders, one between each two points of
+	 * the curve, that get thinner towards the tip, around its root at the origin
+	 * (the back of the animal is at -z, up is -y).
+	 */
+	private static Node curledTail(PhongMaterial material) {
+		Group tail = new Group();
+		int links = 16;
+		Point3D from = null;
+		for (int i = 0; i <= links; i++) {
+			double t = (double) i / links;
+			// Up along y, standing; it swings back, forward and back again along z, a
+			// loose S: the swings are uneven and the tail wanders a little to the side
+			Point3D to = new Point3D(2 * Math.sin(4.1 * t + 0.6), -20 * t, -3 * t - 3.6 * Math.sin(2 * Math.PI * Math.pow(t, 1.15)));
+			if (from != null) {
+				tail.getChildren().add(link(material, from, to, 1.9 - 0.7 * t));
+			}
+			from = to;
+		}
+		return tail;
+	}
+
+	/**
+	 * A cylinder from a point to another, a little longer so the links of a chain
+	 * overlap at the bends
+	 */
+	private static Node link(PhongMaterial material, Point3D from, Point3D to, double radius) {
+		Point3D direction = to.subtract(from);
+		Cylinder cylinder = new Cylinder(radius, direction.magnitude() * 1.15, 8);
+		cylinder.setMaterial(material);
+		Point3D middle = from.midpoint(to);
+		// A cylinder stands along y: turned around the axis perpendicular to y and the direction
+		cylinder.getTransforms().addAll(new Translate(middle.getX(), middle.getY(), middle.getZ()), new Rotate(Rotate.Y_AXIS.angle(direction), Rotate.Y_AXIS.crossProduct(direction)));
+		return cylinder;
 	}
 
 	private static Node tail(PhongMaterial material, double x, double y, double z) {

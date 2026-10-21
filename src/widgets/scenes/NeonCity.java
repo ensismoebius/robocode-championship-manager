@@ -84,15 +84,64 @@ final class NeonCity {
 		}
 	}
 
+	/** The streets of the city run along both axes, this far from each other */
+	static final double ROAD_SPACING = 560;
+	static final double ROAD_WIDTH = 70;
+	/** The streets go this far from the middle, both ways */
+	static final double ROAD_REACH = 3600;
+
 	/**
-	 * Towers around the field, far away
+	 * Where the streets are along an axis, that is the coordinates of the streets
+	 * that run across it: all but those too near the field, which is half its
+	 * size from the middle
 	 */
-	void skyline(int count, Random random) {
-		for (int i = 0; i < count; i++) {
-			double angle = random.nextDouble() * Math.PI * 2;
-			double distance = 1500 + random.nextDouble() * 1100;
-			double height = 250 + Math.pow(random.nextDouble(), 2.2) * 1700;
-			this.addTower(Math.cos(angle) * distance * 1.2, Math.sin(angle) * distance, 150 + random.nextDouble() * 260, 150 + random.nextDouble() * 260, height, random);
+	static double[] roads(double half) {
+		java.util.List<Double> positions = new java.util.ArrayList<>();
+		for (int k = -7; k <= 6; k++) {
+			double position = (k + 0.5) * ROAD_SPACING;
+			if (Math.abs(position) >= half + 100) {
+				positions.add(position);
+			}
 		}
+		return positions.stream().mapToDouble(Double::doubleValue).toArray();
+	}
+
+	/**
+	 * Towers around the field, far away and between the streets: each one stands
+	 * in a block, never over a street
+	 *
+	 * @param roadsX
+	 *            the x of the streets that run along z
+	 * @param roadsZ
+	 *            the z of the streets that run along x
+	 */
+	void skyline(int count, Random random, double[] roadsX, double[] roadsZ) {
+		for (int i = 0; i < count; i++) {
+			// Some places fall on a street: the tower is tried somewhere else
+			for (int attempt = 0; attempt < 40; attempt++) {
+				double angle = random.nextDouble() * Math.PI * 2;
+				double distance = 1500 + random.nextDouble() * 1100;
+				double height = 250 + Math.pow(random.nextDouble(), 2.2) * 1700;
+				double x = Math.cos(angle) * distance * 1.2;
+				double z = Math.sin(angle) * distance;
+				// A block between two streets is about 490 wide: the towers fit in it
+				double width = 150 + random.nextDouble() * 140;
+				double depth = 150 + random.nextDouble() * 140;
+				if (!onStreet(x, width / 2, roadsX) && !onStreet(z, depth / 2, roadsZ)) {
+					this.addTower(x, z, width, depth, height, random);
+					break;
+				}
+			}
+		}
+	}
+
+	/** Whether a footprint that goes this far from the coordinate touches a street */
+	private static boolean onStreet(double coordinate, double reach, double[] roads) {
+		for (double road : roads) {
+			if (Math.abs(coordinate - road) < reach + ROAD_WIDTH / 2 + 12) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

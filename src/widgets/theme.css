@@ -230,6 +230,11 @@
 	-fx-font-size: 15px;
 }
 
+.form-hint {
+	-fx-text-fill: -rc-info;
+	-fx-font-size: 14px;
+}
+
 .error-text {
 	-fx-text-fill: -rc-danger;
 }
@@ -536,6 +541,26 @@
 	-fx-background-color: rgba(11, 14, 20, 0.8);
 	-fx-border-color: -rc-accent;
 	-fx-border-width: 2;
+}
+
+.arena-round-big {
+	-fx-text-fill: #ffd54a;
+	-fx-border-color: #ffd54a;
+	-fx-effect: dropshadow(gaussian, rgba(255, 213, 74, 0.7), 14, 0.4, 0, 0);
+}
+
+.arena-stage {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 20px;
+	-fx-text-fill: -rc-text;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 8, 0.6, 0, 0);
+}
+
+.arena-stage-big {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 46px;
+	-fx-text-fill: #ffd54a;
+	-fx-effect: dropshadow(gaussian, rgba(255, 170, 0, 0.9), 22, 0.4, 0, 0);
 }
 
 .arena-player-name {

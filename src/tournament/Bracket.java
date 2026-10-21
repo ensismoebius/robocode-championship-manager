@@ -44,6 +44,11 @@ public class Bracket {
 		FINAL
 	}
 
+	/** How much a match matters, so the program can warn about the big ones */
+	public enum Importance {
+		REGULAR, SEMIFINAL, FINAL
+	}
+
 	public enum Status {
 		/** Waiting for the result of previous matches */
 		WAITING,
@@ -485,6 +490,22 @@ public class Bracket {
 		case WINNERS -> this.winnersRoundName(match.getRound());
 		case LOSERS -> this.losersRoundName(match.getRound());
 		case FINAL -> match.getRound() == 1 ? "Grande final" : "Final — revanche";
+		};
+	}
+
+	/**
+	 * Whether a match is a semifinal or a final (of the main bracket, of the
+	 * repechage, the grand final or its reset), or a regular one
+	 */
+	public Importance importance(Match match) {
+		return switch (match.getSide()) {
+		case WINNERS -> switch (this.winnersRounds.size() - match.getRound()) {
+		case 0 -> Importance.FINAL;
+		case 1 -> Importance.SEMIFINAL;
+		default -> Importance.REGULAR;
+		};
+		case LOSERS -> match.getRound() == this.losersRounds.size() ? Importance.FINAL : Importance.REGULAR;
+		case FINAL -> Importance.FINAL;
 		};
 	}
 

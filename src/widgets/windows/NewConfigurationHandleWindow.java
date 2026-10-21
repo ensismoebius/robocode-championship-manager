@@ -27,6 +27,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import utils.configuration.Configuration;
 import utils.configuration.INewConfigurationHandle;
+import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.WinnerCriterion;
 import widgets.GameDialog;
 import widgets.BattleAudio;
@@ -61,10 +62,31 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 		TextField robocodeRounds = new TextField(old.getProperty(ROBOCODE_ROUNDS, String.valueOf(Configuration.DEFAULT_ROBOCODE_ROUNDS)));
 
+		// The two kinds of battle: by points, or by knockout (the best of the rounds)
 		ChoiceBox<String> winnerCriterion = new ChoiceBox<String>();
-		winnerCriterion.getItems().addAll("Mais rounds vencidos, pontuação total desempata", "Pontuação total, rounds vencidos desempatam");
-		winnerCriterion.getSelectionModel().select(WinnerCriterion.SCORE.name().equals(old.getProperty(WINNER_CRITERION)) ? 1 : 0);
+		winnerCriterion.getItems().addAll("Por pontos", "Por K.O. (melhor de)");
+		winnerCriterion.getSelectionModel().select(WinnerCriterion.SCORE.name().equals(old.getProperty(WINNER_CRITERION)) ? 0 : 1);
 		winnerCriterion.setMaxWidth(Double.MAX_VALUE);
+		Label roundsCaption = new Label();
+		roundsCaption.getStyleClass().add("form-label");
+		Label battleRule = new Label();
+		battleRule.setWrapText(true);
+		battleRule.getStyleClass().add("form-hint");
+		Runnable explainBattle = () -> {
+			boolean knockout = winnerCriterion.getSelectionModel().getSelectedIndex() == 1;
+			int rounds = Configuration.parseInt(robocodeRounds.getText(), -1);
+			roundsCaption.setText(knockout ? "Melhor de quantas partidas" : "Quantas partidas");
+			if (rounds < 1) {
+				battleRule.setText("");
+			} else if (knockout) {
+				battleRule.setText("Melhor de " + rounds + ": vence quem ganhar " + BattleControl.roundsToWin(rounds) + " partidas, e a batalha termina assim que alguém chegar lá. Se as vitórias empatarem, inclusive em duplo K.O., decidem os pontos.");
+			} else {
+				battleRule.setText(rounds + (rounds == 1 ? " partida" : " partidas") + ": vence quem somar mais pontos. Se empatar nos pontos, decide quem ganhou mais partidas.");
+			}
+		};
+		winnerCriterion.getSelectionModel().selectedIndexProperty().addListener((observable, before, after) -> explainBattle.run());
+		robocodeRounds.textProperty().addListener((observable, before, after) -> explainBattle.run());
+		explainBattle.run();
 
 		ChoiceBox<String> battleView = new ChoiceBox<String>();
 		battleView.getItems().addAll("3D, no gerenciador", "Janela clássica do robocode");
@@ -153,11 +175,12 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		Tab startTab = new Tab("Tela inicial", startGrid);
 
 		GridPane battleGrid = grid();
-		battleGrid.add(field("Rounds por batalha", robocodeRounds), 0, 0);
-		battleGrid.add(field("Vencedor da batalha", winnerCriterion), 1, 0);
-		battleGrid.add(field("Exibição da batalha", battleView), 0, 1);
-		battleGrid.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 1);
-		battleGrid.add(field("Texto do início do round", fightText), 0, 2, 2, 1);
+		battleGrid.add(field("Tipo de batalha", winnerCriterion), 0, 0);
+		battleGrid.add(new VBox(6, roundsCaption, robocodeRounds), 1, 0);
+		battleGrid.add(battleRule, 0, 1, 2, 1);
+		battleGrid.add(field("Exibição da batalha", battleView), 0, 2);
+		battleGrid.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 2);
+		battleGrid.add(field("Texto do início do round", fightText), 0, 3, 2, 1);
 		Tab battleTab = new Tab("Batalha", battleGrid);
 
 		GridPane soundGrid = grid();
@@ -198,7 +221,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 				return;
 			}
 			if (rounds < 1) {
-				error.setText("O número de rounds deve ser um número maior que zero");
+				error.setText("O número de partidas deve ser um número maior que zero");
 				tabs.getSelectionModel().select(battleTab);
 				return;
 			}
@@ -211,7 +234,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			Properties properties = new Properties();
 			properties.setProperty(ROBOCODE_ROUNDS, String.valueOf(rounds));
 			properties.setProperty(WEBSERVER_PORT, String.valueOf(port));
-			properties.setProperty(WINNER_CRITERION, (winnerCriterion.getSelectionModel().getSelectedIndex() == 1 ? WinnerCriterion.SCORE : WinnerCriterion.RANK).name());
+			properties.setProperty(WINNER_CRITERION, (winnerCriterion.getSelectionModel().getSelectedIndex() == 0 ? WinnerCriterion.SCORE : WinnerCriterion.RANK).name());
 			properties.setProperty(DATABASE_FILE, databaseFile.getText().trim());
 			properties.setProperty(ROBOCODE_PATH, robocodePath);
 			properties.setProperty(REGISTRATION_ENABLED, String.valueOf(registrationEnabled.isSelected()));

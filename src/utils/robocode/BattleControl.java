@@ -34,14 +34,22 @@ public class BattleControl {
 	}
 
 	/**
-	 * How the winner of a battle is chosen. The one with more rounds won may
-	 * have fewer points.
+	 * The two kinds of battle. The one with more rounds won may have fewer points.
 	 */
 	public enum WinnerCriterion {
-		/** Rounds won, total score breaks ties */
+		/**
+		 * By knockout, the best of the rounds: rounds won, total score breaks ties.
+		 * The battle ends as soon as a robot has won most of the rounds. A round
+		 * with a double knockout has no winner.
+		 */
 		RANK,
-		/** Total score, rounds won break ties */
+		/** By points: all the rounds are fought, total score decides, rounds won break ties */
 		SCORE;
+
+		/** Whether the battle ends when a robot has won most of the rounds */
+		public boolean isKnockout() {
+			return this == RANK;
+		}
 
 		Comparator<BattleResult> comparator() {
 			// The rank robocode reports may be computed before the last round
@@ -50,6 +58,30 @@ public class BattleControl {
 			Comparator<BattleResult> byScore = Comparator.comparingInt(BattleResult::score).reversed();
 			return this == RANK ? byRounds.thenComparing(byScore) : byScore.thenComparing(byRounds);
 		}
+	}
+
+	/**
+	 * In a best of that many rounds, how many a robot has to win to take the
+	 * battle: best of 5 takes 3
+	 */
+	public static int roundsToWin(int rounds) {
+		return Math.max(1, rounds) / 2 + 1;
+	}
+
+	/**
+	 * What follows the robocode directory in the command of the battle starter:
+	 * the rounds, then the options
+	 */
+	static List<String> battleArguments(int rounds, WinnerCriterion criterion, boolean record) {
+		List<String> arguments = new ArrayList<String>();
+		arguments.add(String.valueOf(rounds));
+		if (record) {
+			arguments.add("-s");
+		}
+		if (criterion.isKnockout()) {
+			arguments.add("-k");
+		}
+		return arguments;
 	}
 
 	/**
@@ -85,10 +117,7 @@ public class BattleControl {
 		}
 		command.add(startScript.toString());
 		command.add(robocodePath);
-		command.add(String.valueOf(rounds));
-		if (record) {
-			command.add("-s");
-		}
+		command.addAll(battleArguments(rounds, criterion, record));
 
 		for (Opponent opponent : opponents) {
 			if (opponent.getCompiledRobot() == null || opponent.getCompiledRobot().length == 0) {

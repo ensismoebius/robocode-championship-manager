@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
 
@@ -72,6 +73,7 @@ import javafx.scene.image.WritableImage;
 import javafx.util.Duration;
 import model.Author;
 import model.Opponent;
+import tournament.Bracket;
 import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;
@@ -109,6 +111,10 @@ public class BattleArena3D extends StackPane {
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	/** The camera flies over the arena before the first round and ends where the battle starts */
 	private static final double FLYBY_SECONDS = 6.5;
+	/** The fly by starts looking at a critter for this long before it goes on */
+	private static final double FLYBY_FOCUS_SECONDS = 2;
+	/** Seconds between two paintings of the aurora */
+	private static final double AURORA_STEP = 0.05;
 	private static final int COUNTDOWN_SECONDS = 3;
 	private static final double INTRO_SECONDS = COUNTDOWN_SECONDS + 1.1;
 	/** Each robot is presented alone before the battle, then the versus */
@@ -217,6 +223,7 @@ public class BattleArena3D extends StackPane {
 	private final List<Color> pulseColors = new ArrayList<Color>();
 	private final List<Double> pulsePhases = new ArrayList<Double>();
 	private double neonClock;
+	private final List<Car> cars = new ArrayList<>();
 	private Box scanner;
 	private static final double BEAM_ALPHA = 0.07;
 	private final List<Particle> particles = new ArrayList<Particle>();
@@ -279,6 +286,10 @@ public class BattleArena3D extends StackPane {
 	private final Label subBanner = new Label();
 	private final Label loading = new Label("PREPARANDO A BATALHA");
 	private final Label roundLabel = new Label();
+	/** The stage of the championship, over the loading and the versus */
+	private final Label stageLabel = new Label();
+	private String stageName = "";
+	private Bracket.Importance stageImportance = Bracket.Importance.REGULAR;
 	private final Label speedLabel = new Label();
 	private final Label viewLabel = new Label();
 	private final HBox hudTop = new HBox();
@@ -314,6 +325,12 @@ public class BattleArena3D extends StackPane {
 	private final double[] flyEyeEnd = new double[3];
 	/** The critter the fly by starts looking at, where it is when the fly by begins, or null */
 	private double[] flyFocus;
+	/** Where the critter the fly by starts on is now, while the camera stays on it */
+	private Supplier<double[]> flyFocusSource;
+	/** The aurora of the ice arena, painted on its sky again a few times a second */
+	private Aurora aurora;
+	private double auroraClock;
+	private double auroraWait;
 	/** The animals that live around the field */
 	private Critters critters;
 	/** The glacial sea of the ice arena: its middle and its radius, 0 when there is none */
@@ -389,6 +406,25 @@ public class BattleArena3D extends StackPane {
 	 * @param fighters
 	 *            the robots, to show their names, teams and logos
 	 */
+	/**
+	 * Warns which stage of the championship this battle is: a semifinal and a
+	 * final are highlighted. Call it before the battle starts.
+	 */
+	public void setStage(String name, Bracket.Importance importance) {
+		this.stageName = name == null ? "" : name.toUpperCase();
+		this.stageImportance = importance == null ? Bracket.Importance.REGULAR : importance;
+		boolean big = this.stageImportance != Bracket.Importance.REGULAR;
+		this.stageLabel.setText(big ? "★ " + this.stageName + " ★" : this.stageName);
+		this.stageLabel.getStyleClass().removeAll("arena-stage", "arena-stage-big");
+		this.stageLabel.getStyleClass().add(big ? "arena-stage-big" : "arena-stage");
+		this.stageLabel.setVisible(!this.stageName.isEmpty());
+		this.stageLabel.setManaged(!this.stageName.isEmpty());
+		this.roundLabel.getStyleClass().remove("arena-round-big");
+		if (big) {
+			this.roundLabel.getStyleClass().add("arena-round-big");
+		}
+	}
+
 	public BattleArena3D(List<Opponent> fighters) {
 		this.fighters = fighters;
 		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
@@ -685,14 +721,109 @@ public class BattleArena3D extends StackPane {
 		this.glowing.getChildren().add(this.meshView(far, this.neonGlow(Color.web("#07283a"), false, random)));
 
 		// The skyline: towers with lit windows and neon crowns
+		// The streets of the city, between the towers
+		double[] roadsX = NeonCity.roads(w / 2);
+		double[] roadsZ = NeonCity.roads(h / 2);
+		this.buildRoads(roadsX, roadsZ, random);
 		NeonCity city = new NeonCity();
-		city.skyline(48, random);
+		city.skyline(48, random, roadsX, roadsZ);
 		PhongMaterial facade = new PhongMaterial(Color.gray(0.6));
 		facade.setDiffuseMap(NeonTexture.FACADE);
 		facade.setSelfIlluminationMap(NeonTexture.FACADE_GLOW);
 		this.arena.getChildren().add(this.meshView(city.facades, facade));
 		this.glowing.getChildren().add(this.meshView(city.cyan, this.neonGlow(Color.web("#2ec4ff"), false, random)));
 		this.glowing.getChildren().add(this.meshView(city.magenta, this.neonGlow(Color.web("#ff3fa4"), false, random)));
+	}
+
+	/** A car on a street of the neon city: a light that goes along it, and comes back at the end */
+	private record Car(Box node, boolean alongZ, double lane, double speed, double[] position) {
+	}
+
+	/**
+	 * The streets of the neon city: dark asphalt with lines of light on the edges
+	 * and in the middle, and cars, small lights, driving along them
+	 *
+	 * @param roadsX
+	 *            the x of the streets that run along z
+	 * @param roadsZ
+	 *            the z of the streets that run along x
+	 */
+	private void buildRoads(double[] roadsX, double[] roadsZ, Random random) {
+		double reach = NeonCity.ROAD_REACH;
+		double half = NeonCity.ROAD_WIDTH / 2;
+		PhongMaterial asphalt = material(Color.web("#12162c"));
+		TriangleMesh edges = new TriangleMesh();
+		TriangleMesh dashes = new TriangleMesh();
+		// The streets that run along x are a little above those that run along z, so where they cross there is no flicker
+		for (double z : roadsZ) {
+			this.arena.getChildren().add(box(2 * reach, 1, NeonCity.ROAD_WIDTH, 0, 4.5, z, asphalt));
+			for (double[] part : gaps(roadsX, -reach, reach)) {
+				double middle = (part[0] + part[1]) / 2;
+				NeonCity.box(edges, middle, 3.6, z - half + 3, part[1] - part[0], 0.5, 2.4);
+				NeonCity.box(edges, middle, 3.6, z + half - 3, part[1] - part[0], 0.5, 2.4);
+			}
+			for (double x = -reach + 30; x < reach - 30; x += 52) {
+				if (!near(x, roadsX, half + 10)) {
+					NeonCity.box(dashes, x, 3.6, z, 24, 0.5, 2.4);
+				}
+			}
+		}
+		for (double x : roadsX) {
+			this.arena.getChildren().add(box(NeonCity.ROAD_WIDTH, 1, 2 * reach, x, 4.0, 0, asphalt));
+			for (double[] part : gaps(roadsZ, -reach, reach)) {
+				double middle = (part[0] + part[1]) / 2;
+				NeonCity.box(edges, x - half + 3, 3.1, middle, 3.4, 0.5, part[1] - part[0]);
+				NeonCity.box(edges, x + half - 3, 3.1, middle, 2.4, 0.5, part[1] - part[0]);
+			}
+			for (double z = -reach + 30; z < reach - 30; z += 52) {
+				if (!near(z, roadsZ, half + 10)) {
+					NeonCity.box(dashes, x, 3.1, z, 2.4, 0.5, 24);
+				}
+			}
+		}
+		this.glowing.getChildren().add(this.meshView(edges, this.neonGlow(Color.web("#1fa8e0"), true, random)));
+		this.glowing.getChildren().add(this.meshView(dashes, this.neonGlow(Color.web("#d63fa0"), false, random)));
+
+		// Cars: white lights going one way, magenta ones coming back
+		PhongMaterial going = this.neonGlow(Color.web("#e6fbff"), false, random);
+		PhongMaterial coming = this.neonGlow(Color.web("#ff3fa4"), false, random);
+		for (int axis = 0; axis < 2; axis++) {
+			double[] roads = axis == 0 ? roadsX : roadsZ;
+			for (double road : roads) {
+				for (int i = 0; i < 8; i++) {
+					boolean forward = i % 2 == 0;
+					double lane = road + (forward ? -17 : 17);
+					double start = (random.nextDouble() * 2 - 1) * reach;
+					double speed = (forward ? 1 : -1) * (130 + random.nextDouble() * 140);
+					double y = axis == 0 ? 2.2 : 1.7;
+					Box car = axis == 0 ? box(10, 3.6, 28, lane, y, start, forward ? going : coming) : box(28, 3.6, 10, start, y, lane, forward ? going : coming);
+					this.glowing.getChildren().add(car);
+					this.cars.add(new Car(car, axis == 0, lane, speed, new double[] { start }));
+				}
+			}
+		}
+	}
+
+	/** The stretches of a street, from one end to the other, left between the streets that cross it */
+	private static List<double[]> gaps(double[] crossing, double from, double to) {
+		List<double[]> parts = new ArrayList<>();
+		double start = from;
+		double clear = NeonCity.ROAD_WIDTH / 2 + 3;
+		for (double cross : java.util.Arrays.stream(crossing).sorted().toArray()) {
+			parts.add(new double[] { start, cross - clear });
+			start = cross + clear;
+		}
+		parts.add(new double[] { start, to });
+		return parts;
+	}
+
+	private static boolean near(double coordinate, double[] roads, double distance) {
+		for (double road : roads) {
+			if (Math.abs(coordinate - road) < distance) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -703,6 +834,22 @@ public class BattleArena3D extends StackPane {
 			return;
 		}
 		this.neonClock += dt;
+		for (Car car : this.cars) {
+			double reach = NeonCity.ROAD_REACH;
+			double at = car.position()[0] + car.speed() * dt;
+			// At the end of the street the car comes back at the other end
+			if (at > reach) {
+				at -= 2 * reach;
+			} else if (at < -reach) {
+				at += 2 * reach;
+			}
+			car.position()[0] = at;
+			if (car.alongZ()) {
+				car.node().setTranslateZ(at);
+			} else {
+				car.node().setTranslateX(at);
+			}
+		}
 		for (int i = 0; i < this.pulseMaterials.size(); i++) {
 			double breath = 0.5 + 0.5 * Math.sin(this.neonClock * 1.3 + this.pulsePhases.get(i));
 			this.pulseMaterials.get(i).setDiffuseColor(this.pulseColors.get(i).deriveColor(0, 1, 0.45 + 0.55 * breath, 1));
@@ -718,6 +865,8 @@ public class BattleArena3D extends StackPane {
 	private static final Image LAVA_TEXTURE = LavaTexture.create(0);
 	/** Far away the lava has cooled, only its veins glow */
 	private static final Image CRUST_TEXTURE = LavaTexture.create(0.45);
+	/** Under the field of the battle the lava glows little: the robots are what should stand out */
+	private static final Image FIELD_TEXTURE = LavaTexture.create(0.6, 0.5);
 	/** Units of the world one tile of the lava texture covers */
 	private static final double LAVA_TILE = 150;
 
@@ -886,8 +1035,13 @@ public class BattleArena3D extends StackPane {
 		floor.setTranslateY(2);
 		this.arena.getChildren().addAll(ground, floor);
 
-		// Lava under the whole field, slowly moving, it shows in the cracks
-		this.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025);
+		// Lava under the whole field, slowly moving, it shows in the cracks. It glows little, much less
+		// than the moat and the sea, so the robots stand out against the field
+		PhongMaterial fieldLava = new PhongMaterial(Color.WHITE);
+		fieldLava.setDiffuseMap(FIELD_TEXTURE);
+		fieldLava.setSelfIlluminationMap(FIELD_TEXTURE);
+		fieldLava.setSpecularColor(Color.BLACK);
+		this.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025, fieldLava, LAVA_TILE);
 
 		// Basalt plates over it: Voronoi cells of jittered seeds, each shrunk a
 		// bit so the lava glows between them, in cracks of different widths
@@ -935,8 +1089,8 @@ public class BattleArena3D extends StackPane {
 			this.arena.getChildren().add(view);
 		}
 
-		PhongMaterial crack = new PhongMaterial(Color.web("#ff5a14"));
-		crack.setSpecularColor(Color.web("#ffb070"));
+		PhongMaterial crack = new PhongMaterial(Color.web("#a8380e"));
+		crack.setSpecularColor(Color.web("#7a4a30"));
 
 		// The field border
 		this.glowing.getChildren().addAll(box(w, 0.5, 2, 0, -0.3, -h / 2, crack), box(w, 0.5, 2, 0, -0.3, h / 2, crack), box(2, 0.5, h, -w / 2, -0.3, 0, crack),
@@ -1033,6 +1187,9 @@ public class BattleArena3D extends StackPane {
 	 */
 	private void buildIce(double w, double h) {
 		Random crystals = new Random(23);
+		// The sky keeps its color and has an aurora that waves over it
+		this.aurora = new Aurora(this.style.sky);
+		this.arena.getChildren().add(skyDome(this.aurora.image()));
 		Box ground = new Box(w * 6, 2, h * 6);
 		ground.setMaterial(material(Color.web("#8ea4b8")));
 		ground.setTranslateY(6);
@@ -1709,7 +1866,9 @@ public class BattleArena3D extends StackPane {
 	private Node buildHud() {
 		this.banner.getStyleClass().add("arena-banner");
 		this.subBanner.getStyleClass().add("arena-sub-banner");
-		VBox center = new VBox(10, this.loading, this.banner, this.subBanner);
+		this.stageLabel.setVisible(false);
+		this.stageLabel.setManaged(false);
+		VBox center = new VBox(10, this.stageLabel, this.loading, this.banner, this.subBanner);
 		center.setAlignment(Pos.CENTER);
 		center.setMouseTransparent(true);
 
@@ -1859,8 +2018,20 @@ public class BattleArena3D extends StackPane {
 		return spacer;
 	}
 
-	private void updatePips() {
+	/**
+	 * How many rounds the robots play for: all of the recording in a battle by
+	 * points, the rounds to win in a knockout (best of 5, 3), which may end earlier
+	 */
+	private int roundsToWin() {
 		int rounds = this.recording == null ? 0 : this.recording.getRounds().size();
+		if (!Configuration.getWinnerCriterion().isKnockout()) {
+			return rounds;
+		}
+		return Math.max(1, BattleControl.roundsToWin(Configuration.getRobocodeRounds()));
+	}
+
+	private void updatePips() {
+		int rounds = this.roundsToWin();
 		for (HudPlayer player : this.hudPlayers) {
 			player.pips().getChildren().clear();
 			int wins = this.roundWins.getOrDefault(player.index(), 0);
@@ -1906,7 +2077,9 @@ public class BattleArena3D extends StackPane {
 		this.speedLabel.setText(this.paused ? "❚❚ PAUSA" : "▶ " + formatSpeed(SPEEDS[this.speed]) + "x");
 		this.viewLabel.setText("◉ " + this.viewMode.label);
 		if (this.recording != null) {
-			this.roundLabel.setText("ROUND " + (this.round + 1) + "/" + this.recording.getRounds().size());
+			boolean knockout = Configuration.getWinnerCriterion().isKnockout();
+			String stage = this.stageImportance == Bracket.Importance.REGULAR ? "" : this.stageName + " · ";
+			this.roundLabel.setText(stage + "ROUND " + (this.round + 1) + (knockout ? " · MELHOR DE " + Configuration.getRobocodeRounds() : "/" + this.recording.getRounds().size()));
 		}
 	}
 
@@ -2082,7 +2255,7 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		case FLYBY -> {
-			if (this.phaseTime > FLYBY_SECONDS) {
+			if (this.phaseTime > this.flyByHold() + FLYBY_SECONDS) {
 				this.endFlyBy();
 			}
 		}
@@ -2178,6 +2351,14 @@ public class BattleArena3D extends StackPane {
 		this.updateFire(dt * this.effectRate);
 		this.updateSunbeams(dt);
 		this.updateNeon(dt);
+		if (this.aurora != null) {
+			this.auroraClock += dt;
+			this.auroraWait += dt;
+			if (this.auroraWait >= AURORA_STEP) {
+				this.auroraWait = 0;
+				this.aurora.update(this.auroraClock);
+			}
+		}
 		if (this.critters != null) {
 			this.critters.update(dt);
 		}
@@ -2356,13 +2537,19 @@ public class BattleArena3D extends StackPane {
 		System.arraycopy(this.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = this.fovTarget;
 		// The first look is at a critter, from outside the field: the fly by starts on it
-		this.flyFocus = this.critters == null ? null : this.critters.nearest(-0.8 * this.fieldWidth * this.flyMirrorX, -this.fieldHeight * this.flyMirrorZ);
+		this.flyFocusSource = this.critters == null ? null : this.critters.track(-0.8 * this.fieldWidth * this.flyMirrorX, -this.fieldHeight * this.flyMirrorZ);
+		this.flyFocus = this.flyFocusSource == null ? null : this.flyFocusSource.get();
 		// Starts at the first point of the path, no sliding to it
 		this.flyByPose(0);
 		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
 		System.arraycopy(this.lookTarget, 0, this.look, 0, 3);
 		this.fov = this.fovTarget;
 		this.updateInfo();
+	}
+
+	/** How long the fly by stays on the critter before the trip: nothing if there is no critter */
+	private double flyByHold() {
+		return this.flyFocusSource == null ? 0 : FLYBY_FOCUS_SECONDS;
 	}
 
 	private void endFlyBy() {
@@ -3600,7 +3787,12 @@ public class BattleArena3D extends StackPane {
 
 		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
 		this.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
-		this.announce("Frente a frente: " + names.replace("  ×  ", " contra ") + "!", 5);
+		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
+		this.announce(switch (this.stageImportance) {
+		case SEMIFINAL -> "Atenção, é uma SEMIFINAL! " + versusLine + " Quem vence vai para a final!";
+		case FINAL -> "Atenção, é a FINAL! " + versusLine + " Quem vencer leva a glória!";
+		default -> versusLine;
+		}, 5);
 		this.audio.whoosh();
 		Sfx.slam();
 		this.shot = Shot.WIDE;
@@ -3617,6 +3809,8 @@ public class BattleArena3D extends StackPane {
 			view.root.setVisible(true);
 		}
 		this.hideBanner();
+		this.stageLabel.setVisible(false);
+		this.stageLabel.setManaged(false);
 		this.showLetterbox(false);
 		this.startRound(0);
 	}
@@ -3995,7 +4189,12 @@ public class BattleArena3D extends StackPane {
 		this.rollTarget = 0;
 
 		if (this.phase == Phase.FLYBY) {
-			this.flyByPose(Math.min(1, this.phaseTime / FLYBY_SECONDS));
+			// The camera stays on the critter, following it, and then the trip begins
+			double hold = this.flyByHold();
+			if (this.phaseTime < hold) {
+				this.flyFocus = this.flyFocusSource.get();
+			}
+			this.flyByPose(Math.max(0, Math.min(1, (this.phaseTime - hold) / FLYBY_SECONDS)));
 			return;
 		}
 		if (this.phase == Phase.SHOWCASE && !this.versus) {

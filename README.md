@@ -64,16 +64,16 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios.</td>
 <td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões.</td>
 </tr>
 <tr>
-<td><img src="docs/images/batalha-gelo.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo e um mar glacial com pinguins.</td>
+<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins.</td>
 <td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada, rios e cachoeiras.</td>
 </tr>
 </table>
 
-Antes do primeiro round a câmera sobrevoa a arena, começando pelos bichos que vivem nela.
+Antes do primeiro round, a câmera fica 2 segundos num dos bichos que vivem na arena e depois sobrevoa o campo, até onde a batalha começa.
 Eles nunca entram na área de batalha, mas se assustam com os tiros e as explosões.
 
 ![Uma salamandra da Forja Vulcânica](docs/images/bicho-vulcao.jpg)
@@ -100,7 +100,7 @@ Cada tipo de acontecimento tem o seu apresentador. Quando algo importante aconte
 
 ### Bichos das arenas
 
-Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera sobrevoa a arena começando por eles.
+Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera fica 2 segundos num deles e depois segue o seu passeio pela arena.
 
 | | | |
 |---|---|---|
@@ -231,7 +231,7 @@ o novo banco de dados é aberto na mesma hora.
 | Aba | O que tem lá |
 |---|---|
 | **Tela inicial** | Título e subtítulo da tela inicial (um subtítulo vazio não aparece), se as inscrições estão abertas e a porta do site de inscrições (8080 por padrão). |
-| **Batalha** | Rounds por batalha, critério de vitória, exibição (3D no gerenciador ou a janela clássica do Robocode), velocidade inicial e o texto do início do round (`FIGHT!`). |
+| **Batalha** | O tipo de batalha (por pontos ou por K.O.) e o número de partidas, exibição (3D no gerenciador ou a janela clássica do Robocode), velocidade inicial e o texto do início do round (`FIGHT!`). |
 | **Arena e som** | Arena e música (sorteadas ou fixas), "usar a mesma música da arena", volume e a suavização de bordas (desligue se a batalha ficar lenta). |
 | **Sistema** | O arquivo do banco SQLite e a pasta do Robocode (a que tem a pasta `robots`). |
 
@@ -258,6 +258,7 @@ robôs cadastrados, depois **`R`** para ver o chaveamento.
 ![O chaveamento](docs/images/bracket.jpg)
 
 - A chave principal fica em cima, a repescagem embaixo, as finais e a classificação ao lado.
+- **Semifinais e finais são avisadas**: na tela da chave a próxima partida aparece em dourado com o nome da fase, e na arena 3D o nome da fase (★ SEMIFINAL ★, ★ FINAL ★) aparece na abertura, no placar durante a batalha e na fala do apresentador.
 - Clique numa partida para selecioná-la; depois de cada resultado a próxima é selecionada sozinha.
 - **`+`**, **`-`** e **`0`** aproximam, afastam e mostram a chave inteira (ou `Ctrl` + roda do mouse);
   arraste, use a roda ou as setas para mover.
@@ -399,10 +400,17 @@ nos seus tutoriais.
 - **Final com revanche**: se o campeão da repescagem vencer a grande final, ela é jogada de novo,
   para que o campeão nunca tenha duas derrotas.
 - **Sem repescagem**: eliminação simples.
-- **Quem vence uma batalha** é configurável: mais rounds vencidos (a pontuação total desempata,
-  o padrão) ou maior pontuação total (os rounds desempatam). Os dois podem discordar: um robô
-  pode vencer mais rounds com menos pontos. A colocação que o próprio Robocode informa não é
-  usada, porque pode estar errada (é calculada antes do último round contar).
+- **O tipo de batalha** é configurável (tecla `C`, aba **Batalha**):
+  - **Por pontos, com N partidas:** todas as partidas são jogadas e vence quem somar mais
+    pontos. Se empatar nos pontos, vence quem ganhou mais partidas.
+  - **Por K.O., melhor de N partidas:** vence quem ganhar a maioria das partidas, e a batalha
+    termina assim que alguém chegar lá. Por exemplo, na melhor de 5, quem ganhar 3 já leva; se
+    cada um ganhar 2, a quinta partida desempata. Uma partida em que os dois robôs são
+    destruídos juntos (duplo K.O.) não dá vitória a ninguém: se isso deixar as vitórias
+    empatadas no fim, decidem os pontos.
+  - Os dois tipos podem discordar: um robô pode vencer mais partidas com menos pontos. A
+    colocação que o próprio Robocode informa não é usada, porque pode estar errada (é calculada
+    antes da última partida contar).
 
 Os robôs são copiados para `<robocode>/robots` como `equipe.Robo.jar` antes de cada batalha.
 

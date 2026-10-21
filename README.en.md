@@ -64,16 +64,16 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings.</td>
 <td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes.</td>
 </tr>
 <tr>
-<td><img src="docs/images/batalha-gelo.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow and a glacial sea with penguins.</td>
+<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins.</td>
 <td><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b>: dense jungle, rivers and waterfalls.</td>
 </tr>
 </table>
 
-Before the first round the camera flies over the arena, starting with the critters that live there.
+Before the first round, the camera stays on one of the critters that live in the arena for 2 seconds and then flies over the field to where the battle starts.
 They never enter the battle area, but they get startled by shots and explosions.
 
 ![A salamander from the Volcanic Forge](docs/images/bicho-vulcao.jpg)
@@ -100,7 +100,7 @@ Each kind of event has its own presenter. When something important happens, the 
 
 ### Arena critters
 
-Each arena has its own critters. They walk around the scenery, **never enter the battle area**, and run away when shots or explosions happen nearby. Before the first battle, the camera flies over the arena starting with them.
+Each arena has its own critters. They walk around the scenery, **never enter the battle area**, and run away when shots or explosions happen nearby. Before the first battle, the camera stays on one of them for 2 seconds and then goes on with its trip around the arena.
 
 | | | |
 |---|---|---|
@@ -231,7 +231,7 @@ new database file is opened immediately.
 | Tab | What's there |
 |---|---|
 | **Start screen** | Start screen title and subtitle (an empty subtitle is not shown), whether registrations are open, and the registration web server port (8080 by default). |
-| **Battle** | Rounds per battle, battle winner rule, display (3D in the manager or the classic Robocode window), starting speed and the round start text (`FIGHT!`). |
+| **Battle** | The kind of battle (by points or by knockout) and the number of rounds, display (3D in the manager or the classic Robocode window), starting speed and the round start text (`FIGHT!`). |
 | **Arena and sound** | Arena and music (random or fixed), "use the arena's own music", volume and anti-aliasing (turn it off if battles run slowly). |
 | **System** | The SQLite database file and the Robocode folder (the one that has the `robots` folder). |
 
@@ -258,6 +258,7 @@ then **`R`** to see the bracket.
 ![The bracket](docs/images/bracket.jpg)
 
 - The main bracket is on top, the repechage below, and the finals and standings on the side.
+- **Semifinals and finals are announced**: on the bracket screen the next match is shown in gold with the name of the stage, and in the 3D arena the stage (★ SEMIFINAL ★, ★ FINAL ★) appears in the intro, in the scoreboard during the battle and in the presenter's line.
 - Click a match to select it; after each result the next match is selected automatically.
 - **`+`**, **`-`** and **`0`** zoom in, zoom out and show the whole bracket (or `Ctrl` + mouse wheel);
   drag, use the wheel or the arrows to move around.
@@ -397,10 +398,17 @@ tutorials above.
 - **Rematch final**: if the repechage champion wins the grand final, it is played again, so the
   champion never has two losses.
 - **Without repechage**: single elimination.
-- **Who wins a battle** is configurable: most rounds won (total score breaks ties, the default), or
-  total score (rounds won break ties). The two can disagree: a robot may win more rounds with fewer
-  points. The ranking Robocode reports itself is not used, because it can be wrong (it is computed
-  before the last round counts).
+- **The kind of battle** is configurable (key `C`, **Battle** tab):
+  - **By points, with N rounds:** every round is fought and whoever adds up more points wins. If
+    the points are tied, whoever won more rounds wins.
+  - **By knockout, best of N rounds:** whoever wins most of the rounds takes the battle, and it
+    ends as soon as someone gets there. For example, in a best of 5, three wins are enough; if
+    each one wins 2, the fifth round breaks the tie. A round in which both robots are destroyed
+    together (a double knockout) gives a win to nobody: if that leaves the wins tied at the end,
+    the points decide.
+  - The two kinds can disagree: a robot may win more rounds with fewer points. The ranking
+    Robocode reports itself is not used, because it can be wrong (it is computed before the last
+    round counts).
 
 Robots are copied to `<robocode>/robots` as `team.Robot.jar` before each battle.
 

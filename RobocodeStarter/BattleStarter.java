@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import robocode.control.events.RoundStartedEvent;
 import robocode.control.events.TurnEndedEvent;
 import robocode.control.snapshot.IBulletSnapshot;
 import robocode.control.snapshot.IRobotSnapshot;
+import robocode.control.snapshot.RobotState;
 import robocode.control.snapshot.ITurnSnapshot;
 
 /**
@@ -34,7 +36,14 @@ import robocode.control.snapshot.ITurnSnapshot;
  * reliable (it may be computed before the last round counts), use the rounds
  * won.
  *
- * Usage: BattleStarter -p robocodeDir -r rounds [-s] -o robot robot [robot...]
+ * Usage: BattleStarter -p robocodeDir -r rounds [-s] [-k] -o robot robot [robot...]
+ *
+ * With -k the battle is a knockout, the best of the rounds: it is run one round
+ * at a time, the one who wins most of the rounds (rounds / 2 + 1) wins it and the
+ * battle ends there. The winner of a round is the only robot alive at its end, a
+ * double knockout has none. The scores of the rounds are added. If nobody
+ * reaches that many (a double knockout, for instance), all the rounds are run and
+ * the scores tell who is ahead.
  *
  * With -s the robocode window is not shown and every turn is printed (lines
  * starting with #) so the championship manager can show the battle in 3D:
@@ -61,6 +70,7 @@ public class BattleStarter {
 		String robocodePath = "";
 		int rounds = 1;
 		boolean stream = false;
+		boolean knockout = false;
 		List<String> robots = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
@@ -73,6 +83,9 @@ public class BattleStarter {
 				break;
 			case "-s":
 				stream = true;
+				break;
+			case "-k":
+				knockout = true;
 				break;
 			case "-o":
 				// The robots come next
@@ -88,16 +101,63 @@ public class BattleStarter {
 
 		RobocodeEngine.setLogMessagesEnabled(false);
 		RobocodeEngine engine = new RobocodeEngine(new File(robocodePath));
-		engine.addBattleListener(new Observer(out, stream));
+		Observer observer = new Observer(out, stream);
+		engine.addBattleListener(observer);
 		engine.setVisible(!stream);
 
 		RobotSpecification[] selected = engine.getLocalRepository(String.join(",", robots));
-		BattleSpecification battle = new BattleSpecification(rounds, new BattlefieldSpecification(800, 600), selected);
-		engine.runBattle(battle, true);
+		if (knockout) {
+			runKnockout(engine, observer, selected, rounds, out);
+		} else {
+			BattleSpecification battle = new BattleSpecification(rounds, new BattlefieldSpecification(800, 600), selected);
+			engine.runBattle(battle, true);
+		}
 		engine.close();
 
 		out.flush();
 		System.exit(0);
+	}
+
+	/**
+	 * A knockout: the rounds are run one by one until a robot has won most of them.
+	 * Prints the results like a battle does, with the rounds won counted here.
+	 */
+	private static void runKnockout(RobocodeEngine engine, Observer observer, RobotSpecification[] selected, int rounds, PrintStream out) {
+		int target = rounds / 2 + 1;
+		Map<String, Integer> wins = new LinkedHashMap<String, Integer>();
+		Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
+		Map<String, String> names = new LinkedHashMap<String, String>();
+		observer.knockout(rounds);
+		for (int played = 0; played < rounds; played++) {
+			observer.nextRound(played);
+			engine.runBattle(new BattleSpecification(1, new BattlefieldSpecification(800, 600), selected), true);
+			for (BattleResults result : observer.results()) {
+				String key = key(result.getTeamLeaderName());
+				scores.merge(key, result.getScore(), Integer::sum);
+				names.put(key, result.getTeamLeaderName());
+				wins.putIfAbsent(key, 0);
+			}
+			String winner = observer.roundWinner();
+			if (winner != null) {
+				int total = wins.merge(winner, 1, Integer::sum);
+				if (total >= target) {
+					break;
+				}
+			}
+		}
+		// Most rounds won first, the score breaks the ties
+		List<String> sorted = new ArrayList<String>(names.keySet());
+		sorted.sort((a, b) -> wins.get(a).equals(wins.get(b)) ? Integer.compare(scores.get(b), scores.get(a)) : Integer.compare(wins.get(b), wins.get(a)));
+		for (int i = 0; i < sorted.size(); i++) {
+			String key = sorted.get(i);
+			out.println((i + 1) + "\t" + names.get(key) + "\t" + scores.get(key) + "\t" + wins.get(key));
+		}
+		out.flush();
+	}
+
+	/** The name of a robot without the version, the "*" or the number of the instance */
+	static String key(String name) {
+		return name.trim().split("[ (]")[0].replaceAll("\\*$", "");
 	}
 
 	static class Observer extends BattleAdaptor {
@@ -106,17 +166,55 @@ public class BattleStarter {
 		private final boolean stream;
 		private final Map<Integer, String> colors = new HashMap<Integer, String>();
 		private boolean namesPrinted = false;
+		/** In a knockout the rounds are battles of their own: they are numbered here, and the results are kept, not printed */
+		private boolean knockout = false;
+		private int totalRounds;
+		private int roundOffset;
+		private ITurnSnapshot lastTurn;
+		private BattleResults[] results = new BattleResults[0];
 
 		Observer(PrintStream out, boolean stream) {
 			this.out = out;
 			this.stream = stream;
 		}
 
+		void knockout(int totalRounds) {
+			this.knockout = true;
+			this.totalRounds = totalRounds;
+		}
+
+		void nextRound(int index) {
+			this.roundOffset = index;
+			this.lastTurn = null;
+		}
+
+		BattleResults[] results() {
+			return this.results;
+		}
+
+		/** The robot that is the only one alive at the end of the round, or null */
+		String roundWinner() {
+			if (this.lastTurn == null) {
+				return null;
+			}
+			String winner = null;
+			for (IRobotSnapshot robot : this.lastTurn.getRobots()) {
+				if (robot.getState() != RobotState.DEAD) {
+					if (winner != null) {
+						return null;
+					}
+					winner = key(robot.getName());
+				}
+			}
+			return winner;
+		}
+
 		@Override
 		public void onBattleStarted(BattleStartedEvent event) {
-			if (this.stream) {
+			// A knockout is many battles, the frame is told once
+			if (this.stream && this.roundOffset == 0) {
 				BattleRules rules = event.getBattleRules();
-				this.out.println("#F " + rules.getBattlefieldWidth() + " " + rules.getBattlefieldHeight() + " " + rules.getNumRounds());
+				this.out.println("#F " + rules.getBattlefieldWidth() + " " + rules.getBattlefieldHeight() + " " + (this.knockout ? this.totalRounds : rules.getNumRounds()));
 			}
 		}
 
@@ -132,12 +230,13 @@ public class BattleStarter {
 				}
 				this.namesPrinted = true;
 			}
-			this.out.println("#R " + event.getRound());
+			this.out.println("#R " + (event.getRound() + this.roundOffset));
 			this.printTurn(start);
 		}
 
 		@Override
 		public void onTurnEnded(TurnEndedEvent event) {
+			this.lastTurn = event.getTurnSnapshot();
 			if (this.stream) {
 				this.printTurn(event.getTurnSnapshot());
 			}
@@ -146,7 +245,7 @@ public class BattleStarter {
 		@Override
 		public void onRoundEnded(RoundEndedEvent event) {
 			if (this.stream) {
-				this.out.println("#E " + event.getRound() + " " + event.getTurns());
+				this.out.println("#E " + (event.getRound() + this.roundOffset) + " " + event.getTurns());
 			}
 		}
 
@@ -161,7 +260,7 @@ public class BattleStarter {
 				}
 			}
 
-			line.append("#T ").append(turn.getRound()).append(' ').append(turn.getTurn()).append('|');
+			line.append("#T ").append(turn.getRound() + this.roundOffset).append(' ').append(turn.getTurn()).append('|');
 			IRobotSnapshot[] robots = turn.getRobots();
 			for (int i = 0; i < robots.length; i++) {
 				IRobotSnapshot robot = robots[i];
@@ -219,6 +318,10 @@ public class BattleStarter {
 
 		@Override
 		public void onBattleCompleted(BattleCompletedEvent event) {
+			if (this.knockout) {
+				this.results = event.getSortedResults();
+				return;
+			}
 			for (BattleResults result : event.getSortedResults()) {
 				this.out.println(result.getRank() + "\t" + result.getTeamLeaderName() + "\t" + result.getScore() + "\t" + result.getFirsts());
 			}

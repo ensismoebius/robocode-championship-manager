@@ -38,6 +38,25 @@ final class LavaTexture {
 	}
 
 	/**
+	 * Lava that glows less: as the other, with all the colors darker
+	 *
+	 * @param brightness
+	 *            from 0 (black) to 1 (the same)
+	 */
+	static Image create(double crust, double brightness) {
+		int[] pixels = pixels(crust);
+		for (int i = 0; i < pixels.length; i++) {
+			int red = (int) (((pixels[i] >> 16) & 0xff) * brightness);
+			int green = (int) (((pixels[i] >> 8) & 0xff) * brightness);
+			int blue = (int) ((pixels[i] & 0xff) * brightness);
+			pixels[i] = 0xff000000 | red << 16 | green << 8 | blue;
+		}
+		WritableImage image = new WritableImage(SIZE, SIZE);
+		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);
+		return image;
+	}
+
+	/**
 	 * ARGB pixels, row by row
 	 */
 	static int[] pixels(double crust) {

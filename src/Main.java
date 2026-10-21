@@ -664,6 +664,7 @@ public class Main extends Application {
 		boolean in3D = Configuration.isBattleView3D() && Platform.isSupported(ConditionalFeature.SCENE3D);
 		BattleArena3D arena = in3D ? new BattleArena3D(fighters) : null;
 		if (arena != null) {
+			arena.setStage(this.bracket.roundName(match), this.bracket.importance(match));
 			this.resetAllScenes();
 			this.show(arena);
 		}

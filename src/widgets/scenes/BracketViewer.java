@@ -215,9 +215,15 @@ public class BracketViewer extends StackPane {
 			banner.setMaxWidth(Region.USE_PREF_SIZE);
 			header.getChildren().add(banner);
 		} else {
-			Label next = new Label(this.bracket.getNextMatch().map(m -> "Próxima partida: " + m.getCode() + " — " + this.nameOf(m.getA().getParticipant()) + " × " + this.nameOf(m.getB().getParticipant()))
-					.orElse(""));
+			Label next = new Label(this.bracket.getNextMatch().map(m -> {
+				Bracket.Importance importance = this.bracket.importance(m);
+				String stage = importance == Bracket.Importance.REGULAR ? "" : "★ " + this.bracket.roundName(m).toUpperCase() + " ★  ";
+				return stage + "Próxima partida: " + m.getCode() + " — " + this.nameOf(m.getA().getParticipant()) + " × " + this.nameOf(m.getB().getParticipant());
+			}).orElse(""));
 			next.getStyleClass().add("subtitle");
+			if (this.bracket.getNextMatch().map(m -> this.bracket.importance(m) != Bracket.Importance.REGULAR).orElse(false)) {
+				next.setStyle("-fx-text-fill: #ffd54a;");
+			}
 			header.getChildren().add(next);
 		}
 

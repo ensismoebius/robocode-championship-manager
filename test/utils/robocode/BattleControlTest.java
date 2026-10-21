@@ -1,6 +1,8 @@
 package utils.robocode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -86,5 +88,50 @@ class BattleControlTest {
 
 		List<String> sameScore = List.of("2\talpha.A\t100", "1\tbravo.B\t100");
 		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(sameScore, List.of(a, b), BattleControl.WinnerCriterion.SCORE)));
+	}
+
+	@Test
+	void bestOfTakesMostOfTheRounds() {
+		// Best of 5: three rounds are enough
+		assertEquals(3, BattleControl.roundsToWin(5));
+		assertEquals(2, BattleControl.roundsToWin(3));
+		assertEquals(1, BattleControl.roundsToWin(1));
+		// Best of 4 and of 2: more than half of them
+		assertEquals(3, BattleControl.roundsToWin(4));
+		assertEquals(2, BattleControl.roundsToWin(2));
+		// Never zero
+		assertEquals(1, BattleControl.roundsToWin(0));
+	}
+
+	@Test
+	void onlyTheKnockoutEndsWhenSomeoneHasWon() {
+		assertTrue(BattleControl.WinnerCriterion.RANK.isKnockout());
+		assertFalse(BattleControl.WinnerCriterion.SCORE.isKnockout());
+
+		assertEquals(List.of("5", "-s", "-k"), BattleControl.battleArguments(5, BattleControl.WinnerCriterion.RANK, true));
+		assertEquals(List.of("5", "-k"), BattleControl.battleArguments(5, BattleControl.WinnerCriterion.RANK, false));
+		// By points every round is fought, there is nothing to tell the starter
+		assertEquals(List.of("7", "-s"), BattleControl.battleArguments(7, BattleControl.WinnerCriterion.SCORE, true));
+	}
+
+	@Test
+	void knockoutWithTheRoundsTiedIsDecidedByPoints() {
+		Opponent a = opponent("alpha", "A");
+		Opponent b = opponent("bravo", "B");
+
+		// Best of 5 that ended 2 x 2 with a double knockout in the last round: nobody won 3
+		List<String> tied = List.of("1\talpha.A\t810\t2", "2\tbravo.B\t905\t2");
+		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(tied, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
+	}
+
+	@Test
+	void knockoutWinnerWinsEvenWithFewerPoints() {
+		Opponent a = opponent("alpha", "A");
+		Opponent b = opponent("bravo", "B");
+
+		// B has more points, but A won 3 rounds to 1: the knockout is A's, the points would give B
+		List<String> output = List.of("1\tbravo.B\t700\t1", "2\talpha.A\t640\t3");
+		assertEquals(List.of(a, b), ranked(BattleControl.parseRanking(output, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
+		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(output, List.of(a, b), BattleControl.WinnerCriterion.SCORE)));
 	}
 }
