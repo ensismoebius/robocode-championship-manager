@@ -57,6 +57,7 @@ final class Forest {
 		BLOB_FACES = divided.toArray(new int[0][]);
 	}
 
+	/** The index of the point in the middle of an edge: it is made once and shared by the faces that use the edge. */
 	private static int middle(List<double[]> points, Map<Long, Integer> cache, int first, int second) {
 		long key = ((long) Math.min(first, second) << 32) | Math.max(first, second);
 		Integer found = cache.get(key);
@@ -207,11 +208,13 @@ final class Forest {
 		}
 	}
 
+	/** The vector with length one and the same direction, or straight down for the zero vector. */
 	private static double[] normalize(double[] vCoord) {
 		double length = Math.sqrt(vCoord[0] * vCoord[0] + vCoord[1] * vCoord[1] + vCoord[2] * vCoord[2]);
 		return length == 0 ? new double[] { 0, -1, 0 } : new double[] { vCoord[0] / length, vCoord[1] / length, vCoord[2] / length };
 	}
 
+	/** The cross product of two vectors. */
 	private static double[] cross(double[] first, double[] second) {
 		return new double[] { first[1] * second[2] - first[2] * second[1], first[2] * second[0] - first[0] * second[2], first[0] * second[1] - first[1] * second[0] };
 	}

@@ -19,6 +19,7 @@ public abstract class TimedPane extends Pane {
 	private final AnimationTimer timer = new AnimationTimer() {
 		private long last = -1;
 
+		/** Moves the pane by the time since the last frame. */
 		@Override
 		public void handle(long now) {
 			double delta = this.last < 0 ? 0 : Math.min(TimedPane.this.maxDelta, (now - this.last) / 1e9);

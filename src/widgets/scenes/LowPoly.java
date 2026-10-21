@@ -18,6 +18,7 @@ final class LowPoly {
 
 	final TriangleMesh mesh = new TriangleMesh();
 
+	/** Creates an empty low poly shape, with its mesh. */
 	LowPoly() {
 		this.mesh.getTexCoords().addAll(0, 0);
 	}
@@ -79,8 +80,9 @@ final class LowPoly {
 		this.mesh.getFaces().addAll(base, 0, base + 1, 0, base + 2, 0);
 	}
 
-	void box(double cxValue, double cyValue, double czValue, double sxValue, double syValue, double szValue) {
-		this.frustum(new double[][] { { cxValue - sxValue / 2, czValue - szValue / 2 }, { cxValue + sxValue / 2, czValue - szValue / 2 }, { cxValue + sxValue / 2, czValue + szValue / 2 }, { cxValue - sxValue / 2, czValue + szValue / 2 } }, cyValue + syValue / 2, cyValue - syValue / 2, 1);
+	/** A box with the given centre and size, as part of this shape. */
+	void box(double centerX, double centerY, double centerZ, double sizeX, double sizeY, double sizeZ) {
+		this.frustum(new double[][] { { centerX - sizeX / 2, centerZ - sizeZ / 2 }, { centerX + sizeX / 2, centerZ - sizeZ / 2 }, { centerX + sizeX / 2, centerZ + sizeZ / 2 }, { centerX - sizeX / 2, centerZ + sizeZ / 2 } }, centerY + sizeY / 2, centerY - sizeY / 2, 1);
 	}
 
 	/**

@@ -19,6 +19,7 @@ final class Synth {
 	/** Fade in of the decaying waves, {@link #square} and {@link #sweep} */
 	private static final double DECAY_ATTACK = 0.003;
 
+	/** The synthesizer is static: this class is not instantiated. */
 	private Synth() {
 	}
 
@@ -160,10 +161,12 @@ final class Synth {
 		return samples;
 	}
 
+	/** Silence, as samples, for the given number of seconds. */
 	static double[] silence(double seconds) {
 		return new double[(int) (RATE * seconds)];
 	}
 
+	/** The sounds one after the other, as a single sound. */
 	static double[] concat(double[]... parts) {
 		int length = 0;
 		for (double[] part : parts) {

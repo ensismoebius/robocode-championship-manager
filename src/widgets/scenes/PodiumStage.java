@@ -50,6 +50,7 @@ final class PodiumStage extends Pane {
 	private final double[] trophyScales = { 0, 0.00068, 0.00056, 0.00048 };
 	private static final Color[] PLACE_COLORS = { null, Podium.GOLD, Podium.SILVER, Podium.BRONZE };
 
+	/** Creates the stage of the ceremony for the host podium: the three places, transparent to the mouse. */
 	PodiumStage(Podium host) {
 		this.host = host;
 		this.setMouseTransparent(true);
@@ -163,10 +164,12 @@ final class PodiumStage extends Pane {
 		return place == 1 ? 0.5 : place == 2 ? 0.5 - Podium.COLUMN_SPACING : 0.5 + Podium.COLUMN_SPACING;
 	}
 
+	/** The height of the step of a place: the first place is the highest. */
 	private double stepHeight(int place) {
 		return this.getHeight() * (place == 1 ? 0.26 : place == 2 ? 0.19 : 0.13);
 	}
 
+	/** Places the steps and the figures of the three places on the stage. */
 	@Override
 	protected void layoutChildren() {
 		double width = this.getWidth();
@@ -221,6 +224,7 @@ final class PodiumStage extends Pane {
 		this.layout();
 	}
 
+	/** Shows the figure of a place: its banner, its step and its colour. */
 	void show(int place) {
 		this.setBanner(place);
 		host.animate(Podium.slam(this.banner, 0, 550)).play();
@@ -270,6 +274,7 @@ final class PodiumStage extends Pane {
 				new KeyFrame(Duration.millis(400), new KeyValue(step.opacityProperty(), 1))))).play();
 	}
 
+	/** Hides the figure of a place. */
 	void hide(int place) {
 		if (this.figures[place] != null) {
 			this.figures[place].setVisible(false);

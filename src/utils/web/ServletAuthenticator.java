@@ -34,6 +34,7 @@ public class ServletAuthenticator {
 		return object instanceof Long ? (Long) object : null;
 	}
 
+	/** Tells whether the request belongs to a logged author. */
 	public static boolean isAuthenticated(HttpServletRequest request) {
 		return ServletAuthenticator.getOpponentId(request) != null;
 	}
@@ -46,7 +47,7 @@ public class ServletAuthenticator {
 			return false;
 		}
 
-		List<Object[]> rows = Database.read(emValue -> emValue
+		List<Object[]> rows = Database.read(entityManager -> entityManager
 				.createQuery("select o.id, a from Opponent o join o.authors a where a.login = :login", Object[].class)
 				.setParameter("login", login).getResultList());
 
@@ -71,6 +72,7 @@ public class ServletAuthenticator {
 		request.getSession().setAttribute(SESSION_KEY, opponentId);
 	}
 
+	/** Logs the author out: the session of the request is discarded. */
 	public static void logout(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session != null) {

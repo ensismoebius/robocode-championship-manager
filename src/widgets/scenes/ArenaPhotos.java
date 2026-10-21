@@ -30,6 +30,7 @@ final class ArenaPhotos {
 
 	private final BattleArena3D host;
 
+	/** Creates the photographer of the arena, which takes the pictures of the moments. */
 	ArenaPhotos(BattleArena3D host) {
 		this.host = host;
 	}
@@ -55,6 +56,7 @@ final class ArenaPhotos {
 		host.pendingPhotos.addAll(waiting);
 	}
 
+	/** Takes a photo of the pending moment, when its subject is known. */
 	void takePhoto(PendingPhoto pending) {
 		if (pending.subject() == null) {
 			return;

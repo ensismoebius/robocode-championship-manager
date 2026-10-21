@@ -39,6 +39,7 @@ final class ArenaCommentary {
 
 	private final BattleArena3D host;
 
+	/** Creates the commentary of the arena: the presenter and the queue of comments. */
 	ArenaCommentary(BattleArena3D host) {
 		this.host = host;
 	}
@@ -72,6 +73,7 @@ final class ArenaCommentary {
 	private double lastPresented = -1000;
 	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
 
+	/** A comment waiting its turn, with the time since it was queued. */
 	private record QueuedComment(BattleCommentary.Message message, double since) {
 	}
 
@@ -150,6 +152,7 @@ final class ArenaCommentary {
 		return -1;
 	}
 
+	/** The colour of a comment, by its tone. */
 	private Color toneColor(BattleCommentary.Message message) {
 		return switch (message.tone()) {
 		case DANGER -> Color.web("#ff2a2a");
@@ -263,6 +266,7 @@ final class ArenaCommentary {
 		return true;
 	}
 
+	/** Moves the commentary by the time that passed: the presenter, the comment and the queue. */
 	void tick(double deltaTime) {
 		this.commentClock += deltaTime;
 		this.presenter.tick(deltaTime);

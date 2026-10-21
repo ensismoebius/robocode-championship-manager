@@ -214,8 +214,8 @@ public class BattleStarter {
 			return winner;
 		}
 
-		@Override
 		/** Prints the frame with the size of the battlefield, when streaming. */
+		@Override
 		public void onBattleStarted(BattleStartedEvent event) {
 			// A knockout is many battles, the frame is told once
 			if (this.stream && this.roundOffset == 0) {
@@ -224,8 +224,8 @@ public class BattleStarter {
 			}
 		}
 
-		@Override
 		/** Prints the start of a round with its robots, when streaming. */
+		@Override
 		public void onRoundStarted(RoundStartedEvent event) {
 			if (!this.stream) {
 				return;
@@ -241,8 +241,8 @@ public class BattleStarter {
 			this.printTurn(start);
 		}
 
-		@Override
 		/** Keeps the last turn and prints it, when streaming. */
+		@Override
 		public void onTurnEnded(TurnEndedEvent event) {
 			this.lastTurn = event.getTurnSnapshot();
 			if (this.stream) {
@@ -250,8 +250,8 @@ public class BattleStarter {
 			}
 		}
 
-		@Override
 		/** Prints the end of a round, when streaming. */
+		@Override
 		public void onRoundEnded(RoundEndedEvent event) {
 			if (this.stream) {
 				this.out.println("#E " + (event.getRound() + this.roundOffset) + " " + event.getTurns());
@@ -326,8 +326,8 @@ public class BattleStarter {
 			return line;
 		}
 
-		@Override
 		/** Keeps the sorted results of a knockout, or prints the results of a battle. */
+		@Override
 		public void onBattleCompleted(BattleCompletedEvent event) {
 			if (this.knockout) {
 				this.results = event.getSortedResults();
@@ -339,8 +339,8 @@ public class BattleStarter {
 			this.out.flush();
 		}
 
-		@Override
 		/** Prints the error of the battle. */
+		@Override
 		public void onBattleError(BattleErrorEvent event) {
 			this.out.println("Err> " + event.getError());
 			this.out.flush();

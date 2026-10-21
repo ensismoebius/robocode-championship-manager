@@ -53,6 +53,7 @@ public class Opponent {
 
 	private List<Author> authors;
 
+	/** Creates an empty robot, with no authors, to be filled later. */
 	public Opponent() {
 		this.authors = new ArrayList<Author>();
 	}
@@ -61,70 +62,69 @@ public class Opponent {
 	 * The robot class name as robocode knows it: team.RobotName
 	 */
 	@Transient
-	/** Returns the full name. */
 	public String getFullName() {
 		return this.team + "." + this.name;
 	}
 
+	/** Returns the authors. */
 	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	@Fetch(FetchMode.SUBSELECT)
 	@JoinColumn(name = "opponentId")
-	/** Returns the authors. */
 	public List<Author> getAuthors() {
 		return authors;
 	}
 
-	@Column(nullable = true, length = MAX_BATTLE_CRY_LENGTH)
 	/** Returns the battle cry. */
+	@Column(nullable = true, length = MAX_BATTLE_CRY_LENGTH)
 	public String getBattleCry() {
 		return battleCry;
 	}
 
-	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	/** Returns the compiled robot. */
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getCompiledRobot() {
 		return this.compiledRobot;
 	}
 
+	/** Returns the id. */
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	/** Returns the id. */
 	public long getId() {
 		return id;
 	}
 
-	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	/** Returns the image. */
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getImage() {
 		return this.image;
 	}
 
-	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	/** Returns the music. */
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public byte[] getMusic() {
 		return this.music;
 	}
 
-	@Column(nullable = true)
 	/** Returns the music start. */
+	@Column(nullable = true)
 	public double getMusicStart() {
 		return musicStart;
 	}
 
-	@Column(nullable = false)
 	/** Returns the name. */
+	@Column(nullable = false)
 	public String getName() {
 		return name;
 	}
 
-	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	/** Returns the source code. */
+	@Column(nullable = true, length = MAX_FILE_LENGTH)
 	public String getSourceCode() {
 		return sourceCode;
 	}
 
-	@Column(nullable = false)
 	/** Returns the team. */
+	@Column(nullable = false)
 	public String getTeam() {
 		return team;
 	}

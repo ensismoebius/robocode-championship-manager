@@ -23,6 +23,7 @@ final class LavaFlows {
 
 	private final BattleArena3D host;
 
+	/** Creates the lava flows of the arena, drawn in the host scene. */
 	LavaFlows(BattleArena3D host) {
 		this.host = host;
 	}
@@ -70,11 +71,12 @@ final class LavaFlows {
 		this.flowStrip(x1Value, z1Value, x2Value, z2Value, width, posY, speed, host.lava, LAVA_TILE);
 	}
 
-	void flowStrip(double x1Value, double z1Value, double x2Value, double z2Value, double width, double posY, double speed, PhongMaterial material, double tile) {
-		double length = Math.hypot(x2Value - x1Value, z2Value - z1Value);
-		double posX = -(z2Value - z1Value) / length * width / 2;
-		double posZ = (x2Value - x1Value) / length * width / 2;
-		this.flow(new double[][] { { x1Value - posX, posY, z1Value - posZ }, { x2Value - posX, posY, z2Value - posZ }, { x2Value + posX, posY, z2Value + posZ }, { x1Value + posX, posY, z1Value + posZ } }, -speed, 0, material, tile);
+	/** A strip of flowing lava between two points, of the given width and height. */
+	void flowStrip(double startX, double startZ, double endX, double endZ, double width, double posY, double speed, PhongMaterial material, double tile) {
+		double length = Math.hypot(endX - startX, endZ - startZ);
+		double posX = -(endZ - startZ) / length * width / 2;
+		double posZ = (endX - startX) / length * width / 2;
+		this.flow(new double[][] { { startX - posX, posY, startZ - posZ }, { endX - posX, posY, endZ - posZ }, { endX + posX, posY, endZ + posZ }, { startX + posX, posY, startZ + posZ } }, -speed, 0, material, tile);
 	}
 
 	/**
@@ -140,6 +142,7 @@ final class LavaFlows {
 		this.flowRibbon(xsValue, zsValue, halfWidths, 3, -speed, 0, material, tile);
 	}
 
+	/** Moves the texture of every flow by the time that passed, so that the lava seems to flow. */
 	void updateFlows() {
 		for (Flow flow : host.flows) {
 			float[] coordinates = new float[flow.base().length];

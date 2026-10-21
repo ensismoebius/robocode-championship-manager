@@ -9,6 +9,7 @@
  */
 public class Launcher {
 
+	/** Starts the program. */
 	public static void main(String[] args) {
 		Main.main(args);
 	}

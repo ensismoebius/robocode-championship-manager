@@ -23,6 +23,7 @@ public class Database {
 
 	private static EntityManagerFactory entityManagerFactory;
 
+	/** The entity manager of the database, created the first time it is needed. */
 	public static synchronized EntityManager getEntityManager() {
 
 		if (Database.entityManagerFactory == null) {
@@ -80,6 +81,7 @@ public class Database {
 		}
 	}
 
+	/** Closes the database, if it is open. */
 	public static synchronized void close() {
 		if (Database.entityManagerFactory != null && Database.entityManagerFactory.isOpen()) {
 			Database.entityManagerFactory.close();

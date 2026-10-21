@@ -54,6 +54,7 @@ public class HttpServer {
 		return ((ServerConnector) this.server.getConnectors()[0]).getLocalPort();
 	}
 
+	/** Stops the web server. */
 	public void stop() {
 		try {
 			this.server.stop();

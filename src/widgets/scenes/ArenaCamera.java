@@ -25,6 +25,7 @@ final class ArenaCamera {
 
 	private final BattleArena3D host;
 
+	/** Creates the camera director of the arena, which chooses and moves the camera shots. */
 	ArenaCamera(BattleArena3D host) {
 		this.host = host;
 	}
@@ -71,6 +72,7 @@ final class ArenaCamera {
 		}
 	}
 
+	/** The lowest energy among the robots still alive: the lower it is, the more tense the battle. */
 	double lowestEnergyTension() {
 		double lowest = 100;
 		for (RobotView view : host.robots.values()) {
@@ -95,6 +97,7 @@ final class ArenaCamera {
 		host.closeDistance = 90;
 	}
 
+	/** Moves the camera to the shot of the moment, or lets it follow the free view. */
 	void updateCamera(double deltaTime) {
 		host.shotTime += deltaTime;
 		if (host.viewMode == ViewMode.CINEMATIC || host.phase == Phase.REPLAY || host.phase == Phase.FREEZE || host.phase == Phase.SHOWCASE || host.phase == Phase.FLYBY) {
@@ -353,13 +356,14 @@ final class ArenaCamera {
 		}
 	}
 
-	void setShot(double exValue, double eyValue, double ezValue, double lxValue, double lyValue, double lzValue, double fov, double follow) {
-		host.eyeTarget[0] = exValue;
-		host.eyeTarget[1] = eyValue;
-		host.eyeTarget[2] = ezValue;
-		host.lookTarget[0] = lxValue;
-		host.lookTarget[1] = lyValue;
-		host.lookTarget[2] = lzValue;
+	/** Sets the eye and the look targets of the camera shot, with its field of view and how it follows. */
+	void setShot(double eyeX, double eyeY, double eyeZ, double lookX, double lookY, double lookZ, double fov, double follow) {
+		host.eyeTarget[0] = eyeX;
+		host.eyeTarget[1] = eyeY;
+		host.eyeTarget[2] = eyeZ;
+		host.lookTarget[0] = lookX;
+		host.lookTarget[1] = lookY;
+		host.lookTarget[2] = lookZ;
 		host.fovTarget = fov;
 		host.follow = follow;
 	}

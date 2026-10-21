@@ -10,6 +10,7 @@ package widgets.scenes;
  */
 final class TextureMath {
 
+	/** The math is static: this class is not instantiated. */
 	private TextureMath() {
 	}
 

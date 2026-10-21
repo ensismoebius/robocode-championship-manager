@@ -35,6 +35,7 @@ public enum ArenaStyle {
 	/** The song that goes with the arena */
 	public final Song song;
 
+	/** An arena style: its name, its colours and its music. */
 	ArenaStyle(String label, Color sky, Color ambient, Color key, Color fence, Song song) {
 		this.label = label;
 		this.sky = sky;

@@ -44,13 +44,16 @@ final class BracketReplay {
 	private SequentialTransition resultAnimation;
 	private final List<Runnable> finalStates = new ArrayList<Runnable>();
 
+	/** Creates the replay of a result on the bracket. */
 	BracketReplay(BracketViewer host) {
 		this.host = host;
 	}
 
+	/** A match that moves to its next place in the bracket, with its row and whether it is the winner. */
 	private record Arrival(Match match, HBox row, boolean winner) {
 	}
 
+	/** Starts the animation of the result of the match with the given code. */
 	void start(String code) {
 		Match finished = host.bracket.getMatch(code);
 		Point2D finishedCenter = host.centerOf(code);
@@ -303,6 +306,7 @@ final class BracketReplay {
 		return true;
 	}
 
+	/** Ends the animation: the final states are applied and the animation is cleared. */
 	private void endAnimation() {
 		this.resultAnimation = null;
 		for (Runnable finalState : this.finalStates) {

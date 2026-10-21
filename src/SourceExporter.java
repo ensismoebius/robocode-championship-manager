@@ -18,6 +18,7 @@ import utils.database.Database;
  */
 final class SourceExporter {
 
+	/** The exporter is static: this class is not instantiated. */
 	private SourceExporter() {
 	}
 
@@ -35,7 +36,7 @@ final class SourceExporter {
 	 * @return how many robots there are in the database
 	 */
 	static int export(Path exportDir) throws IOException, PersistenceException {
-		List<Opponent> all = Database.read(emValue -> emValue.createQuery("select o from Opponent o", Opponent.class).getResultList());
+		List<Opponent> all = Database.read(entityManager -> entityManager.createQuery("select o from Opponent o", Opponent.class).getResultList());
 
 		for (Opponent opponent : all) {
 			if (opponent.getSourceCode() == null) {

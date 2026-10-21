@@ -15,6 +15,7 @@ import java.util.Enumeration;
  */
 public class Network {
 
+	/** The address of this machine on the local network, to show to the other computers. */
 	public static String getLocalIpAddress() {
 		Enumeration<NetworkInterface> enumeration;
 		try {

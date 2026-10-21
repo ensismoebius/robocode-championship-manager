@@ -27,6 +27,7 @@ public class PasswordHasher {
 
 	private static final SecureRandom RANDOM = new SecureRandom();
 
+	/** The hash of a password with a new random salt, in the format stored in the database. */
 	public static String hash(String password) {
 		byte[] salt = new byte[SALT_BYTES];
 		RANDOM.nextBytes(salt);
@@ -36,6 +37,7 @@ public class PasswordHasher {
 		return PREFIX + "$" + ITERATIONS + "$" + encoder.encodeToString(salt) + "$" + encoder.encodeToString(hash);
 	}
 
+	/** Tells whether a password matches a stored hash. */
 	public static boolean verify(String password, String stored) {
 		if (password == null || stored == null) {
 			return false;
@@ -59,6 +61,7 @@ public class PasswordHasher {
 		}
 	}
 
+	/** The PBKDF2 key of a password with the salt, for the given number of iterations. */
 	private static byte[] pbkdf2(String password, byte[] salt, int iterations) {
 		try {
 			PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, HASH_BITS);

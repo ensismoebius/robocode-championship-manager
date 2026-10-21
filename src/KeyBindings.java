@@ -16,10 +16,12 @@ final class KeyBindings {
 
 	private final Main host;
 
+	/** Creates the key bindings of the host window. */
 	KeyBindings(Main host) {
 		this.host = host;
 	}
 
+	/** Handles a key press: the keys with control, the keys of the ceremony and the plain keys of the screen. */
 	void handle(KeyEvent event) {
 		if (host.championTransition) {
 			return;

@@ -106,6 +106,7 @@ public class Sfx {
 		return pcm;
 	}
 
+	/** Writes the samples to an audio line and waits until they are played. */
 	private static void write(byte[] pcm) {
 		AudioFormat format = new AudioFormat(Synth.RATE, 16, 1, true, false);
 		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
@@ -118,6 +119,7 @@ public class Sfx {
 		}
 	}
 
+	/** Plays a sound in the background, so that the caller does not wait for it. */
 	private static void play(double[] samples) {
 		byte[] pcm = Sfx.toPcm(samples);
 		PLAYER.execute(() -> Sfx.write(pcm));

@@ -43,14 +43,17 @@ public class ShowOponent extends StackPane {
 	private Label titleLabel;
 	private boolean champion;
 
+	/** Creates the card that shows a robot, empty until one is set. */
 	public ShowOponent() {
 		super();
 	}
 
+	/** Shows the card of a robot, with no title. */
 	public void setOponent(Opponent oponent) throws IOException {
 		this.setOponent(oponent, null, false);
 	}
 
+	/** Shows the card of a robot with the given title. */
 	public void setOponent(Opponent oponent, String title) throws IOException {
 		this.setOponent(oponent, title, false);
 	}
@@ -175,6 +178,7 @@ public class ShowOponent extends StackPane {
 		return prompt;
 	}
 
+	/** Plays the card: the picture slides in and the music of the robot starts. */
 	public void play() {
 		if (this.oponentImage != null) {
 			TranslateTransition slide = new TranslateTransition(Duration.millis(500), this.oponentImage);
@@ -204,6 +208,7 @@ public class ShowOponent extends StackPane {
 			this.mp.play();
 	}
 
+	/** Stops the music of the robot. */
 	public void stop() {
 		if (this.mp != null)
 			this.mp.stop();

@@ -40,6 +40,7 @@ final class JungleArena {
 
 	private final BattleArena3D host;
 
+	/** Creates the jungle of the arena, drawn in the host scene. */
 	JungleArena(BattleArena3D host) {
 		this.host = host;
 	}
@@ -119,11 +120,12 @@ final class JungleArena {
 	/**
 	 * Mossy ground, rivers on both sides, huge trees in the distance, ferns,
 	 * rocks and waterfalls. Fireflies float in the air and shafts of light cross the canopy.
+	 * The materials of the jungle, made once for all its parts.
 	 */
-	/** The materials of the jungle, made once for all its parts */
 	record JungleMaterials(PhongMaterial moss, PhongMaterial water, PhongMaterial waterfall, PhongMaterial bark, PhongMaterial leaves, PhongMaterial rock) {
 	}
 
+	/** Builds the jungle terrain over the given size of the arena. */
 	void build(double width, double height) {
 		Random wild = new Random(31);
 		PhongMaterial moss = textured(JungleTexture.MOSS, Color.gray(0.05));

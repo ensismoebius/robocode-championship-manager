@@ -50,6 +50,7 @@ public final class GameWindow {
 	private static boolean closing = false;
 	private static boolean fullScreenRequested = false;
 
+	/** The window is static: this class is not instantiated. */
 	private GameWindow() {
 	}
 
@@ -159,6 +160,7 @@ public final class GameWindow {
 		GameWindow.curtain.setOpacity(black ? 1 : 0);
 	}
 
+	/** Shows a screen in the window, in place of the one that was there, and gives it the focus. */
 	public static void setScreen(Parent screen) {
 		GameWindow.screenLayer.getChildren().setAll(screen);
 		if (GameWindow.modals.isEmpty()) {
@@ -271,10 +273,12 @@ public final class GameWindow {
 		GameWindow.overlayLayer.getChildren().add(notice);
 	}
 
+	/** Removes a notice from the window. */
 	public static void removeNotice(Node notice) {
 		GameWindow.overlayLayer.getChildren().remove(notice);
 	}
 
+	/** Tells whether a node is the ancestor or lies inside it. */
 	private static boolean isInside(EventTarget target, Node ancestor) {
 		if (!(target instanceof Node node)) {
 			return false;

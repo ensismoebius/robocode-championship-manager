@@ -27,11 +27,12 @@ public class ChampionshipService {
 	 * @return the most recent championship or null if there is none
 	 */
 	public static Championship current() {
-		return Database.read(emValue -> emValue.createQuery("select c from Championship c order by c.id desc", Championship.class).setMaxResults(1).getResultStream().findFirst().orElse(null));
+		return Database.read(entityManager -> entityManager.createQuery("select c from Championship c order by c.id desc", Championship.class).setMaxResults(1).getResultStream().findFirst().orElse(null));
 	}
 
+	/** The number of robots registered in the database. */
 	public static long countOpponents() {
-		Long count = Database.read(emValue -> emValue.createQuery("select count(o) from Opponent o", Long.class).getSingleResult());
+		Long count = Database.read(entityManager -> entityManager.createQuery("select count(o) from Opponent o", Long.class).getSingleResult());
 		return count;
 	}
 
@@ -42,8 +43,8 @@ public class ChampionshipService {
 	 *             if there are less than two robots
 	 */
 	public static Championship create(boolean repechage, Random random) {
-		return Database.inTransaction(emValue -> {
-			List<Opponent> opponents = new ArrayList<Opponent>(emValue.createQuery("select o from Opponent o order by o.id", Opponent.class).getResultList());
+		return Database.inTransaction(entityManager -> {
+			List<Opponent> opponents = new ArrayList<Opponent>(entityManager.createQuery("select o from Opponent o order by o.id", Opponent.class).getResultList());
 			if (opponents.size() < 2) {
 				throw new IllegalStateException("São necessários ao menos dois robôs cadastrados");
 			}
@@ -56,7 +57,7 @@ public class ChampionshipService {
 			championship.setName("Campeonato de " + championship.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 			championship.setRepechage(repechage);
 			championship.getSeeds().addAll(opponents);
-			emValue.persist(championship);
+			entityManager.persist(championship);
 			return championship;
 		});
 	}
@@ -98,14 +99,14 @@ public class ChampionshipService {
 		bracket.record(matchCode, winnerId, winnerScore, loserScore);
 		long loserId = bracket.getMatch(matchCode).getLoser();
 
-		return Database.inTransaction(emValue -> {
-			Championship managed = emValue.find(Championship.class, championship.getId());
+		return Database.inTransaction(entityManager -> {
+			Championship managed = entityManager.find(Championship.class, championship.getId());
 
 			MatchResult result = new MatchResult();
 			result.setChampionship(managed);
 			result.setMatchCode(matchCode);
-			result.setWinner(emValue.find(Opponent.class, winnerId));
-			result.setLoser(emValue.find(Opponent.class, loserId));
+			result.setWinner(entityManager.find(Opponent.class, winnerId));
+			result.setLoser(entityManager.find(Opponent.class, loserId));
 			result.setWinnerScore(winnerScore);
 			result.setLoserScore(loserScore);
 			result.setPlayedAt(LocalDateTime.now());
@@ -121,8 +122,8 @@ public class ChampionshipService {
 	 * @return the championship without it
 	 */
 	public static Championship undoLastResult(Championship championship) {
-		return Database.inTransaction(emValue -> {
-			Championship managed = emValue.find(Championship.class, championship.getId());
+		return Database.inTransaction(entityManager -> {
+			Championship managed = entityManager.find(Championship.class, championship.getId());
 			if (!managed.getResults().isEmpty()) {
 				managed.getResults().remove(managed.getResults().size() - 1);
 			}

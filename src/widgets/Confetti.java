@@ -25,6 +25,7 @@ public class Confetti extends TimedPane {
 	// x, y (0..1 of the screen), speed, sway phase, size, color
 	private final double[][] pieces = new double[PIECES][6];
 
+	/** Creates the confetti: the pieces start above the top, each falling at its own speed. */
 	public Confetti() {
 		super(Double.MAX_VALUE);
 		this.getChildren().add(this.canvas);
@@ -35,6 +36,7 @@ public class Confetti extends TimedPane {
 		}
 	}
 
+	/** Puts a piece above the top of the screen, at a random place and speed. */
 	private void reset(double[] piece) {
 		piece[0] = this.random.nextDouble();
 		piece[1] = -0.05;
@@ -44,12 +46,14 @@ public class Confetti extends TimedPane {
 		piece[5] = this.random.nextInt(COLORS.length);
 	}
 
+	/** Resizes the canvas to the size of the confetti. */
 	@Override
 	protected void layoutChildren() {
 		this.canvas.setWidth(this.getWidth());
 		this.canvas.setHeight(this.getHeight());
 	}
 
+	/** Moves the pieces by the time that passed, and draws them. */
 	@Override
 	protected void step(double delta, double seconds) {
 		double width = this.canvas.getWidth();

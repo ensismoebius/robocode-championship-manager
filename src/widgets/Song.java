@@ -24,6 +24,7 @@ public enum Song {
 	final double calmBpm;
 	final double tenseBpm;
 
+	/** A song of the battle: its label, the roots and modes of its chords, and its tempos when calm and when tense. */
 	Song(String label, double[] roots, boolean[] minor, double calmBpm, double moreBpm) {
 		this.label = label;
 		this.roots = roots;

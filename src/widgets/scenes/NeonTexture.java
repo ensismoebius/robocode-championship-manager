@@ -33,9 +33,11 @@ final class NeonTexture {
 	static final Image SKY = sky();
 	static final Image SUN = sun();
 
+	/** The textures are static: this class is not instantiated. */
 	private NeonTexture() {
 	}
 
+	/** Makes an image of the given size from the pixels. */
 	private static Image image(int width, int height, int[] pixels) {
 		WritableImage image = new WritableImage(width, height);
 		image.getPixelWriter().setPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);

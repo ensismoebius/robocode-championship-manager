@@ -23,6 +23,7 @@ import javafx.util.Duration;
  */
 public final class GameDialog {
 
+	/** The dialogs are static: this class is not instantiated. */
 	private GameDialog() {
 	}
 
@@ -41,6 +42,7 @@ public final class GameDialog {
 		return panel;
 	}
 
+	/** A label with the text of a dialog, wrapped to its width. */
 	private static Label message(String text) {
 		Label message = new Label(text);
 		message.setWrapText(true);
@@ -48,6 +50,7 @@ public final class GameDialog {
 		return message;
 	}
 
+	/** Asks a question in a dialog, with yes and no: true when the operator says yes. */
 	public static boolean confirm(String title, String message) {
 		return GameDialog.confirm(title, GameDialog.message(message));
 	}
@@ -67,16 +70,19 @@ public final class GameDialog {
 		return GameWindow.showModal(panel, button, cancel) == Boolean.TRUE;
 	}
 
+	/** Shows an error in a dialog, with the error sound. */
 	public static void error(String message) {
 		Sfx.error();
 		GameDialog.inform("Erro", message, "error");
 	}
 
+	/** Shows a message in a dialog, with the blip sound. */
 	public static void info(String title, String message) {
 		Sfx.blip();
 		GameDialog.inform(title, message, null);
 	}
 
+	/** Shows a dialog with a single OK button, styled by the given class. */
 	private static void inform(String title, String message, String styleClass) {
 		Button button = new Button("OK");
 		button.getStyleClass().add("primary");

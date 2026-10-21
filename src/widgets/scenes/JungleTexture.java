@@ -66,6 +66,7 @@ final class JungleTexture {
 	// The alpha of the material scales it.
 	static final Image BEAM = beam();
 
+	/** The texture of a sunbeam: a bright band that fades along its length. */
 	private static Image beam() {
 		int[] pixels = new int[SIZE * SIZE];
 		for (int posY = 0; posY < SIZE; posY++) {
@@ -107,6 +108,7 @@ final class JungleTexture {
 	});
 	static final Image WATERFALL_RELIEF = relief(FALL_FIELD, 2.8);
 
+	/** The textures are static: this class is not instantiated. */
 	private JungleTexture() {
 	}
 
@@ -123,6 +125,7 @@ final class JungleTexture {
 		return heights;
 	}
 
+	/** A texture that colours each pixel by its height. */
 	private static Image color(double[][] heights, java.util.function.DoubleToIntFunction color) {
 		int[] pixels = new int[SIZE * SIZE];
 		for (int posY = 0; posY < SIZE; posY++) {
@@ -154,6 +157,7 @@ final class JungleTexture {
 		return image(pixels);
 	}
 
+	/** Makes an image of the pixels of a texture. */
 	static Image image(int[] pixels) {
 		WritableImage image = new WritableImage(SIZE, SIZE);
 		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);
@@ -179,6 +183,7 @@ final class JungleTexture {
 		return top + (column + (delta - column) * fxValue - top) * fyValue;
 	}
 
+		/** A texture from a function of the x and y positions, over the pixels of the texture. */
 		private static Image make(DoubleBinaryOperator color) {
 		int[] pixels = new int[SIZE * SIZE];
 		for (int posY = 0; posY < SIZE; posY++) {

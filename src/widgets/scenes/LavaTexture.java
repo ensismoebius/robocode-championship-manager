@@ -23,6 +23,7 @@ final class LavaTexture {
 	private static final double[] STOPS = { 0, 0.22, 0.42, 0.6, 0.78, 1 };
 	private static final int[] COLORS = { 0x160302, 0x3d0a03, 0x9a1d08, 0xee5410, 0xffa22a, 0xfff0a8 };
 
+	/** The textures are static: this class is not instantiated. */
 	private LavaTexture() {
 	}
 
@@ -86,6 +87,7 @@ final class LavaTexture {
 		return pixels;
 	}
 
+	/** The colour of a heat, between the stops of the lava colours. */
 	private static int color(double heat) {
 		for (int index = 1; index < STOPS.length; index++) {
 			if (heat <= STOPS[index]) {

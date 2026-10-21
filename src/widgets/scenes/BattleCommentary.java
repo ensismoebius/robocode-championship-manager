@@ -108,6 +108,7 @@ public final class BattleCommentary {
 		}
 	}
 
+	/** Starts a new round: the statistics of every robot are cleared. */
 	public void startRound() {
 		this.stats.clear();
 		for (Integer index : this.names.keySet()) {
@@ -146,6 +147,7 @@ public final class BattleCommentary {
 		return messages;
 	}
 
+	/** Comments the bullets of a turn: the shots that are fired. */
 	private void bullets(Turn turn, List<Message> messages) {
 		for (Bullet bullet : turn.bullets()) {
 			Stats owner = this.stats.get(bullet.owner());
@@ -179,6 +181,7 @@ public final class BattleCommentary {
 		}
 	}
 
+	/** Comments a bullet that hit a robot: the attacker and the victim. */
 	private void hit(Turn turn, Bullet bullet, Stats owner, List<Message> messages) {
 		int attacker = bullet.owner();
 		int victim = bullet.victim();
@@ -221,6 +224,7 @@ public final class BattleCommentary {
 		}
 	}
 
+	/** Comments the robots of a turn: the deaths and the energy that changes. */
 	private void robots(Turn turn, Turn previous, List<Message> messages) {
 		int deaths = 0;
 		for (RobotState state : turn.robots()) {
@@ -340,6 +344,7 @@ public final class BattleCommentary {
 		this.tiedBeforeLast = this.roundsPlayed > 0 && this.roundWins.values().stream().distinct().count() == 1;
 	}
 
+	/** The accuracy of every robot, for the summary of the battle. */
 	private String accuracy() {
 		List<String> parts = new ArrayList<String>();
 		for (Integer index : this.names.keySet()) {
@@ -389,6 +394,7 @@ public final class BattleCommentary {
 		return new Message(false, text.replace("{A}", string).replace("{B}", string2), robot, Tone.PLAYER, priority, topic);
 	}
 
+	/** The state of the robot with the given index in a turn, or null when there is none. */
 	private static RobotState find(Turn turn, int index) {
 		for (RobotState state : turn.robots()) {
 			if (state.index() == index) {

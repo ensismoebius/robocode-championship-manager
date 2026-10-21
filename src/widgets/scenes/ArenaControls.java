@@ -25,12 +25,14 @@ final class ArenaControls {
 
 	private final BattleArena3D host;
 
+	/** Creates the controls of the arena: the keys, the mouse and the views. */
 	ArenaControls(BattleArena3D host) {
 		this.host = host;
 	}
 
 	// ---------------------------------------------------------------- controls
 
+	/** Installs the keyboard and mouse controls of the arena. */
 	void installControls() {
 		host.setFocusTraversable(true);
 		host.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
@@ -84,6 +86,7 @@ final class ArenaControls {
 		});
 	}
 
+	/** Changes the view of the camera; the free view starts from where the director was. */
 	void setView(ViewMode mode) {
 		if (mode == ViewMode.FREE && host.viewMode == ViewMode.CINEMATIC) {
 			// Starts from where the director was
@@ -125,6 +128,7 @@ final class ArenaControls {
 		}
 	}
 
+	/** Ends the battle: stops the timer and the showcase music. */
 	void finish() {
 		host.phase = Phase.FINISHED;
 		host.timer.stop();

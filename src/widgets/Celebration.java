@@ -66,11 +66,13 @@ public class Celebration extends TimedPane {
 	private RadialGradient rayPaint;
 	private double rayPaintSize;
 
+	/** Creates the celebration, with its canvas, which is redrawn while it is shown. */
 	public Celebration() {
 		super(0.05);
 		this.getChildren().add(this.canvas);
 	}
 
+	/** Resizes the canvas to the size of the celebration and forgets the cached paints. */
 	@Override
 	protected void layoutChildren() {
 		this.canvas.setWidth(this.getWidth());
@@ -190,6 +192,7 @@ public class Celebration extends TimedPane {
 		this.pieces.clear();
 	}
 
+	/** A new piece of confetti, with a random colour and size. */
 	private Piece piece() {
 		Piece piece = new Piece();
 		piece.color = PARTY[this.random.nextInt(PARTY.length)];
@@ -198,6 +201,7 @@ public class Celebration extends TimedPane {
 		return piece;
 	}
 
+	/** Makes a burst of pieces at the given position, with the colour and the number of pieces. */
 	private void explode(double posX, double posY, Color color, int count) {
 		double height = Math.max(1, this.canvas.getHeight());
 		double power = height * 0.5;
@@ -220,6 +224,7 @@ public class Celebration extends TimedPane {
 
 	// ------------------------------------------------------------ animation
 
+	/** Moves the celebration by the time that passed: the bursts, the pieces and the rays. */
 	@Override
 	protected void step(double delta, double seconds) {
 		double width = this.canvas.getWidth();
@@ -330,6 +335,7 @@ public class Celebration extends TimedPane {
 		}
 	}
 
+	/** Draws the rays of light behind the celebration, when there is a ray colour. */
 	private void drawRays(GraphicsContext graphicsContext, double width, double height, double seconds) {
 		if (this.rayColor == null) {
 			return;

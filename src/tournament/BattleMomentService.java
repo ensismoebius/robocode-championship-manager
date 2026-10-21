@@ -20,11 +20,11 @@ public class BattleMomentService {
 	 * Saves the photos of a match, the ones it had before are replaced
 	 */
 	public static void save(long championshipId, String matchCode, List<BattleMoment> moments) {
-		Database.inTransaction(emValue -> {
-			emValue.createQuery("delete from BattleMoment m where m.championshipId = :championship and m.matchCode = :match")
+		Database.inTransaction(entityManager -> {
+			entityManager.createQuery("delete from BattleMoment m where m.championshipId = :championship and m.matchCode = :match")
 					.setParameter("championship", championshipId).setParameter("match", matchCode).executeUpdate();
 			for (BattleMoment moment : moments) {
-				emValue.persist(moment);
+				entityManager.persist(moment);
 			}
 			return null;
 		});
@@ -34,8 +34,8 @@ public class BattleMomentService {
 	 * Removes the photos of a match, when its result is undone
 	 */
 	public static void delete(long championshipId, String matchCode) {
-		Database.inTransaction(emValue -> {
-			emValue.createQuery("delete from BattleMoment m where m.championshipId = :championship and m.matchCode = :match")
+		Database.inTransaction(entityManager -> {
+			entityManager.createQuery("delete from BattleMoment m where m.championshipId = :championship and m.matchCode = :match")
 					.setParameter("championship", championshipId).setParameter("match", matchCode).executeUpdate();
 			return null;
 		});
@@ -48,7 +48,7 @@ public class BattleMomentService {
 		if (robotIds.isEmpty()) {
 			return List.of();
 		}
-		return Database.read(emValue -> emValue
+		return Database.read(entityManager -> entityManager
 				.createQuery("select m from BattleMoment m where m.championshipId = :championship and (m.firstId in :robots or m.secondId in :robots) order by m.id", BattleMoment.class)
 				.setParameter("championship", championshipId).setParameter("robots", robotIds).getResultList());
 	}

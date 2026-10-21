@@ -21,6 +21,7 @@ final class NeonCity {
 	final TriangleMesh cyan = new TriangleMesh();
 	final TriangleMesh magenta = new TriangleMesh();
 
+	/** Creates the city of the neon arena, with the texture of its facades. */
 	NeonCity() {
 		this.facades.getTexCoords().addAll(0, 0);
 	}

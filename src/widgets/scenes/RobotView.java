@@ -72,6 +72,7 @@ final class RobotView {
 	private static final double BELT_CENTER = (BELT_INNER + BELT_OUTER) / 2;
 	private static final double BELT_WIDTH = BELT_OUTER - BELT_INNER;
 
+	/** The length of the belt of the tracks, around the wheels. */
 	private static double beltLength() {
 		double length = 0;
 		for (int index = 0; index < BELT.length; index++) {
@@ -165,9 +166,11 @@ final class RobotView {
 	double turretSpeed;
 	double lastGun = Double.NaN;
 
+	/** The materials of the tank model: the dark parts, the plates, the steel, the cyan lights, the identity colour, the lamp and the warning. */
 	private record Materials(PhongMaterial dark, PhongMaterial plate, PhongMaterial steel, PhongMaterial cyan, PhongMaterial identity, PhongMaterial lamp, PhongMaterial warning) {
 	}
 
+	/** Creates the model of a robot in the arena, in the colour of its place in the order, with its name above it. */
 	RobotView(BattleArena3D host, BattleRecording.Robot robot, Opponent opponent, int order) {
 		this.host = host;
 		this.opponent = opponent;
@@ -333,10 +336,12 @@ final class RobotView {
 		this.balloon.setVisible(false);
 	}
 
+	/** The position of the robot on the arena floor, as x, zero and z. */
 	double[] position() {
 		return new double[] { this.root.getTranslateX(), 0, this.root.getTranslateZ() };
 	}
 
+	/** Places the robot at the given position, turning its body, its turret and its radar to the given angles. */
 	void place(double posX, double posZ, double body, double gun, double radar) {
 		this.root.setTranslateX(posX);
 		this.root.setTranslateZ(posZ);
@@ -626,9 +631,10 @@ final class RobotView {
 		return material;
 	}
 
-	void setGlowing(boolean onValue) {
+	/** Turns the glow of the robot on or off. */
+	void setGlowing(boolean glowing) {
 		for (int index = 0; index < this.glows.size(); index++) {
-			this.glows.get(index).setSelfIlluminationMap(onValue ? this.glowMaps.get(index) : null);
+			this.glows.get(index).setSelfIlluminationMap(glowing ? this.glowMaps.get(index) : null);
 		}
 	}
 

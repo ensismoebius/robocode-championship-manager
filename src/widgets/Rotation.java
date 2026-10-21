@@ -20,6 +20,7 @@ public final class Rotation<T> {
 	private final List<T> deck = new ArrayList<T>();
 	private T last;
 
+	/** A rotation over the given options, which are kept in their order. */
 	@SafeVarargs
 	public Rotation(T... options) {
 		this.options = List.of(options);

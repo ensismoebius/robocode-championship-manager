@@ -41,11 +41,12 @@ public class Theme {
 	 * Goes a bit past the end and comes back, for things that "pop"
 	 */
 	public static final Interpolator OVERSHOOT = new Interpolator() {
+		/** The overshoot easing: goes a little past the end and comes back. */
 		@Override
 		protected double curve(double time) {
-			double text = 1.70158;
+			double overshoot = 1.70158;
 			double uCoord = time - 1;
-			return uCoord * uCoord * ((text + 1) * uCoord + text) + 1;
+			return uCoord * uCoord * ((overshoot + 1) * uCoord + overshoot) + 1;
 		}
 	};
 
@@ -73,6 +74,7 @@ public class Theme {
 		fontsLoaded = true;
 	}
 
+	/** Applies the theme to a scene: its fonts and its stylesheet. */
 	public static <T extends Scene> T apply(T scene) {
 		Theme.loadFonts();
 		if (!scene.getStylesheets().contains(STYLESHEET)) {

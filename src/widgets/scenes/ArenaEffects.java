@@ -40,6 +40,7 @@ final class ArenaEffects {
 
 	private final BattleArena3D host;
 
+	/** Creates the effects of the arena, drawn in the host scene. */
 	ArenaEffects(BattleArena3D host) {
 		this.host = host;
 	}
@@ -157,6 +158,7 @@ final class ArenaEffects {
 	/** A thin flat ring, one unit across, that spreads as a shock wave */
 	private static final TriangleMesh RING = ringMesh();
 
+	/** The mesh of a ring, used by the shockwaves. */
 	static TriangleMesh ringMesh() {
 		LowPoly shape = new LowPoly();
 		shape.ring(0.9, 1, -0.5, 0.5, 40);
@@ -214,6 +216,7 @@ final class ArenaEffects {
 		all.getChildren().add(spread);
 	}
 
+	/** A flash at the muzzle of a shot, tinted with the given colour. */
 	void muzzleFlash(double posX, double posZ, Color tint) {
 		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.8), 1));
 		flash.setTranslateX(posX);

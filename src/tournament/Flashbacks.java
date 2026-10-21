@@ -21,6 +21,7 @@ public final class Flashbacks {
 	 */
 	public static final int LIMIT = 12;
 
+	/** The flashbacks are static: this class is not instantiated. */
 	private Flashbacks() {
 	}
 

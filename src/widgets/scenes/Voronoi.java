@@ -14,6 +14,7 @@ import java.util.List;
  */
 final class Voronoi {
 
+	/** The diagram is static: this class is not instantiated. */
 	private Voronoi() {
 	}
 

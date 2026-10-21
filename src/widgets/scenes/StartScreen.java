@@ -156,6 +156,7 @@ public class StartScreen extends StackPane {
 	 */
 	private static Pane horizonLayout(ImageView robocodeLogo, VBox titleBlock) {
 		Pane horizonLayout = new Pane(robocodeLogo, titleBlock) {
+			/** Places the background and the stars of the start screen on the horizon. */
 			@Override
 			protected void layoutChildren() {
 				double width = this.getWidth();
@@ -271,6 +272,7 @@ public class StartScreen extends StackPane {
 		this.layout.setBottom(open ? this.registration : null);
 	}
 
+	/** Shows or hides the panel with the controls of the start screen. */
 	private void showControls(boolean show) {
 		if (show == this.controls.isVisible()) {
 			return;

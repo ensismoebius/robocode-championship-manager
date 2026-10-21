@@ -29,6 +29,7 @@ public class Style extends HttpServlet {
 			"/Rajdhani-SemiBold.ttf", "/widgets/fonts/Rajdhani-SemiBold.ttf", //
 			"/Rajdhani-Bold.ttf", "/widgets/fonts/Rajdhani-Bold.ttf");
 
+	/** Serves a stylesheet or a font from the resources of the game. */
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		String resource;

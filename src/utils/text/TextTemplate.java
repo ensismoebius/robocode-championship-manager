@@ -64,8 +64,8 @@ public class TextTemplate {
 		this.parseBlockElements(block);
 	}
 
-	@SuppressWarnings("unchecked")
 	/** The text of a block of a parsed template, with the place holders replaced by their values. */
+	@SuppressWarnings("unchecked")
 	private String out(ArrayList<HashMap<String, Object>> template, String blockName) {
 		// the final result
 		StringBuilder finalText = new StringBuilder();
@@ -112,8 +112,8 @@ public class TextTemplate {
 		return finalText.toString();
 	}
 
-	@SuppressWarnings("unchecked")
 	/** Splits the items of a block into text and place holders. */
+	@SuppressWarnings("unchecked")
 	private List<Object> parseBlockElements(List<Object> itens) {
 
 		Pattern placeHoldersPattern = Pattern.compile("\\{(\\w+)\\}");

@@ -72,9 +72,9 @@ public class BattleArena3D extends StackPane {
 
 	static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
-	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	/** The camera flies over the arena before the first round and ends where the battle starts */
 	static final double FLYBY_SECONDS = 6.5;
+	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	static final int COUNTDOWN_SECONDS = 3;
 	/** Each robot is presented alone before the battle, then the versus */
 	private static final double SHOWCASE_SECONDS = 7;
@@ -281,8 +281,8 @@ public class BattleArena3D extends StackPane {
 	final AnimationTimer timer = new AnimationTimer() {
 		private long last = -1;
 
-		@Override
 		/** Advances the battle by the time since the last frame. */
+		@Override
 		public void handle(long now) {
 			double deltaTime = this.last < 0 ? 0 : Math.min(0.1, (now - this.last) / 1e9);
 			this.last = now;

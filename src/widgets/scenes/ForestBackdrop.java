@@ -41,6 +41,7 @@ final class ForestBackdrop {
 	/** Painted only when first used: it stays the same for every battle */
 	private static final Image PICTURE = paint();
 
+	/** The backdrop is static: this class is not instantiated. */
 	private ForestBackdrop() {
 	}
 
@@ -74,6 +75,7 @@ final class ForestBackdrop {
 		return view;
 	}
 
+	/** Paints the forest: the sky, the trees and the undergrowth, in a single picture. */
 	private static Image paint() {
 		Random random = new Random(77);
 		int[] pixels = new int[WIDTH * HEIGHT];
@@ -164,6 +166,7 @@ final class ForestBackdrop {
 		private final int shadow;
 		private final double[][] crowns;
 
+		/** A tree with its depth, its place and its size: the deeper it is, the farther away it looks. */
 		Tree(Random random, double ground) {
 			depth = Math.pow(random.nextDouble(), 0.8);
 			haze = Math.pow(1 - depth, 1.5) * 0.8;
@@ -184,6 +187,7 @@ final class ForestBackdrop {
 			}
 		}
 
+		/** Paints the trunk and the leaves of the tree into the pixels. */
 		void paint(int[] pixels) {
 			// The trunk: thin at the top, wider at the root, leaning and waving
 			for (int posY = (int) top; posY < foot; posY++) {
@@ -235,6 +239,7 @@ final class ForestBackdrop {
 		}
 	}
 
+	/** The value kept between zero and one. */
 	private static double clamp(double value) {
 		return Math.max(0, Math.min(1, value));
 	}
@@ -256,6 +261,7 @@ final class ForestBackdrop {
 		return 0xff000000 | red << 16 | green << 8 | blue;
 	}
 
+	/** One colour channel of an ARGB colour, from zero to 255. */
 	private static int channel(int color, int shift) {
 		return color >> shift & 0xff;
 	}

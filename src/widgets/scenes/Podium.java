@@ -65,8 +65,8 @@ public class Podium extends StackPane {
 
 	/** Lands and bounces, like something heavy falling on the step */
 	static final Interpolator BOUNCE = new Interpolator() {
-		@Override
 		/** The bounce easing: the position of the animation at the given time, between zero and one. */
+		@Override
 		protected double curve(double time) {
 			if (time < 1 / 2.75) {
 				return 7.5625 * time * time;

@@ -31,10 +31,12 @@ final class BracketLayout {
 
 	private final BracketViewer host;
 
+	/** Creates the layout of the bracket of the host viewer. */
 	BracketLayout(BracketViewer host) {
 		this.host = host;
 	}
 
+	/** Places every match, the titles of the rounds and the standings on the canvas of the bracket. */
 	void build() {
 		double top = 0;
 		List<List<Match>> winners = host.bracket.getWinnersRounds();
@@ -108,6 +110,7 @@ final class BracketLayout {
 		return height;
 	}
 
+	/** Adds the title of a section, such as the main bracket or the repechage. */
 	private void addSectionTitle(String text, double posY) {
 		Label label = new Label(text);
 		label.getStyleClass().add("section-title");
@@ -115,6 +118,7 @@ final class BracketLayout {
 		host.canvas.getChildren().add(label);
 	}
 
+	/** Adds the title of a round, at the given place. */
 	private void addRoundTitle(String text, double posX, double posY) {
 		Label label = new Label(text);
 		label.getStyleClass().add("round-title");

@@ -16,6 +16,7 @@ import widgets.scenes.BattleArena3D;
  */
 final class MatchPhotos {
 
+	/** The photos are static: this class is not instantiated. */
 	private MatchPhotos() {
 	}
 

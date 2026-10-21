@@ -49,6 +49,7 @@ final class ArenaShowcase {
 
 	private final BattleArena3D host;
 
+	/** Creates the showcase of the arena: the robots presented one by one, and the replay. */
 	ArenaShowcase(BattleArena3D host) {
 		this.host = host;
 	}
@@ -147,6 +148,7 @@ final class ArenaShowcase {
 		host.director.cut();
 	}
 
+	/** Ends the showcase: stops its music and clears its layer. */
 	void endShowcase() {
 		host.stopShowcaseMusic();
 		host.versus = false;
@@ -306,6 +308,7 @@ final class ArenaShowcase {
 		host.shotSide = host.random.nextBoolean() ? 1 : -1;
 	}
 
+	/** Starts the replay of the battle, with the phase and the time reset. */
 	void startReplay() {
 		host.phase = Phase.REPLAY;
 		host.phaseTime = 0;
@@ -345,6 +348,7 @@ final class ArenaShowcase {
 		host.director.cut();
 	}
 
+	/** Ends the replay and goes back to the battle, when it was in the replay or frozen. */
 	void endReplay() {
 		if (host.phase != Phase.REPLAY && host.phase != Phase.FREEZE) {
 			return;

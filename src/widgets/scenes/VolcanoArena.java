@@ -31,6 +31,7 @@ final class VolcanoArena {
 
 	private final BattleArena3D host;
 
+	/** Creates the volcano of the arena, drawn in the host scene. */
 	VolcanoArena(BattleArena3D host) {
 		this.host = host;
 	}

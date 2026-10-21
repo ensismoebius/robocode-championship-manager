@@ -118,8 +118,8 @@ public class Main extends Application {
 		launch(args);
 	}
 
-	@Override
 	/** Builds the only window, opens the start screen and wires the keys. */
+	@Override
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 
@@ -161,8 +161,8 @@ public class Main extends Application {
 		Configuration.addListener(this::applyConfiguration);
 	}
 
-	@Override
 	/** Stops the web server and clears the scenes when the application closes. */
+	@Override
 	public void stop() {
 		this.resetAllScenes();
 		if (this.httpServer != null) {
@@ -533,8 +533,8 @@ public class Main extends Application {
 		// Robocode runs in another process, waiting for it in the JavaFX thread
 		// would freeze the screen
 		Task<BattleOutcome> battle = new Task<BattleOutcome>() {
-			@Override
 			/** Runs the battle on Robocode in a background thread. */
+			@Override
 			protected BattleOutcome call() throws Exception {
 				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
 			}

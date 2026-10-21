@@ -14,6 +14,7 @@ final class IceTexture {
 
 	private static final int SIZE = 256;
 
+	/** The textures are static: this class is not instantiated. */
 	private IceTexture() {
 	}
 

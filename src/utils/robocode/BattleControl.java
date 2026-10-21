@@ -51,6 +51,7 @@ public class BattleControl {
 			return this == RANK;
 		}
 
+		/** The order of the results of a battle: by the rounds won when they are known, otherwise by the rank that Robocode reports. */
 		Comparator<BattleResult> comparator() {
 			// The rank robocode reports may be computed before the last round
 			// counts, so the rounds won are used when known

@@ -62,8 +62,8 @@ public class RobotEditor extends HttpServlet {
 	private record Upload(String fileName, byte[] content) {
 	}
 
-	@Override
 	/** Shows the robot editor for the logged author: the form of a new robot or of the robot being edited. */
+	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
 		String action = this.getAction(req);
@@ -102,8 +102,8 @@ public class RobotEditor extends HttpServlet {
 		resp.sendRedirect("/");
 	}
 
-	@Override
 	/** Handles the robot editor form: saves the robot, or shows the errors that were found. */
+	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		req.setCharacterEncoding("UTF-8");
 
@@ -484,7 +484,7 @@ public class RobotEditor extends HttpServlet {
 	 * @return true if another team already uses this login
 	 */
 	private boolean loginTaken(String login, long opponentId) {
-		List<Long> owners = Database.read(emValue -> emValue.createQuery("select o.id from Opponent o join o.authors a where a.login = :login", Long.class)
+		List<Long> owners = Database.read(entityManager -> entityManager.createQuery("select o.id from Opponent o join o.authors a where a.login = :login", Long.class)
 				.setParameter("login", login).getResultList());
 		return owners.stream().anyMatch(identifier -> identifier != opponentId);
 	}
@@ -493,7 +493,7 @@ public class RobotEditor extends HttpServlet {
 	 * @return true if another team already has a robot with this name
 	 */
 	private boolean robotNameTaken(String team, String name, long opponentId) {
-		List<Long> owners = Database.read(emValue -> emValue.createQuery("select o.id from Opponent o where o.team = :team and o.name = :name", Long.class)
+		List<Long> owners = Database.read(entityManager -> entityManager.createQuery("select o.id from Opponent o where o.team = :team and o.name = :name", Long.class)
 				.setParameter("team", team).setParameter("name", name).getResultList());
 		return owners.stream().anyMatch(identifier -> identifier != opponentId);
 	}
@@ -504,20 +504,20 @@ public class RobotEditor extends HttpServlet {
 	 * @return the robot or null if it does not exist
 	 */
 	private Opponent loadOpponent(long opponentId) {
-		return Database.read(emValue -> emValue.find(Opponent.class, opponentId));
+		return Database.read(entityManager -> entityManager.find(Opponent.class, opponentId));
 	}
 
 	/**
 	 * Saves robot to database
 	 */
 	private Opponent saveOpponent(Opponent opponent) {
-		return Database.inTransaction(emValue -> {
+		return Database.inTransaction(entityManager -> {
 			// Saves or update depending if it already exists or not
 			if (opponent.getId() == 0) {
-				emValue.persist(opponent);
+				entityManager.persist(opponent);
 				return opponent;
 			}
-			return emValue.merge(opponent);
+			return entityManager.merge(opponent);
 		});
 	}
 }

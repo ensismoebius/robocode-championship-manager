@@ -31,6 +31,7 @@ public class Sound {
 	private volatile boolean stopped = false;
 	private Thread thread;
 
+	/** A sound loaded from its audio data, with its name. */
 	private Sound(byte[] audio, String name) {
 		this.audio = audio;
 		this.name = name;
@@ -128,6 +129,7 @@ public class Sound {
 		}
 	}
 
+	/** Plays the sound on the audio line, from the start. */
 	private void playback() {
 		SourceDataLine line = null;
 		try {

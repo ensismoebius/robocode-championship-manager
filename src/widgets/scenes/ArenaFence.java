@@ -20,6 +20,7 @@ final class ArenaFence {
 
 	private final BattleArena3D host;
 
+	/** Creates the fence of the arena, drawn in the host scene. */
 	ArenaFence(BattleArena3D host) {
 		this.host = host;
 	}
@@ -56,6 +57,7 @@ final class ArenaFence {
 		final PhongMaterial material;
 		Timeline animation;
 
+		/** A segment of the fence: its wall, its index in the wall, its box and its material. */
 		FenceSegment(int wall, int index, Box box, PhongMaterial material) {
 			this.wall = wall;
 			this.index = index;
@@ -63,18 +65,22 @@ final class ArenaFence {
 			this.material = material;
 		}
 
+		/** The wall of the segment. */
 		int wall() {
 			return wall;
 		}
 
+		/** The index of the segment in its wall. */
 		int index() {
 			return index;
 		}
 
+		/** The box of the segment. */
 		Box box() {
 			return box;
 		}
 
+		/** The material of the segment. */
 		PhongMaterial material() {
 			return material;
 		}

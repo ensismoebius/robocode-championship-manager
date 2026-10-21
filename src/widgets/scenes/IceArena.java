@@ -35,6 +35,7 @@ final class IceArena {
 	private double seaZ;
 	private double seaRadius;
 
+	/** Creates the ice of the arena, drawn in the host scene. */
 	IceArena(BattleArena3D host) {
 		this.host = host;
 	}
@@ -44,10 +45,12 @@ final class IceArena {
 		return this.seaX;
 	}
 
+	/** The z coordinate of the centre of the sea. */
 	double seaZ() {
 		return this.seaZ;
 	}
 
+	/** The radius of the sea. */
 	double seaRadius() {
 		return this.seaRadius;
 	}

@@ -59,6 +59,7 @@ final class ArenaRounds {
 
 	private final BattleArena3D host;
 
+	/** Creates the round flow of the arena: the flyby, the intro, the battle and the end of each round. */
 	ArenaRounds(BattleArena3D host) {
 		this.host = host;
 	}
@@ -133,6 +134,7 @@ final class ArenaRounds {
 		}
 	}
 
+	/** Starts a round: its turns are played from the beginning. */
 	void startRound(int round) {
 		host.round = round;
 		host.turnPosition = 0;
@@ -234,6 +236,7 @@ final class ArenaRounds {
 		return host.flyFocusSource == null ? 0 : FLYBY_FOCUS_SECONDS;
 	}
 
+	/** Ends the flyby: hides the letterbox and starts the intro. */
 	void endFlyBy() {
 		host.hud.showLetterbox(false);
 		this.beginIntro();
@@ -285,6 +288,7 @@ final class ArenaRounds {
 		}
 	}
 
+	/** Ends a round: the phase goes to the end of the round, and its turns are the ones given. */
 	void endRound(List<Turn> turns) {
 		host.phase = Phase.ROUND_END;
 		host.phaseTime = 0;

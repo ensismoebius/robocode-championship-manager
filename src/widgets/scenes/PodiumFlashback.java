@@ -49,6 +49,7 @@ final class PodiumFlashback {
 	private FadeTransition flashbackFade;
 	private boolean flashbackOpen = false;
 
+	/** Creates the flashback of the podium: the clips of the battles of a robot. */
 	PodiumFlashback(Podium host) {
 		this.host = host;
 	}
@@ -80,6 +81,7 @@ final class PodiumFlashback {
 		this.flashbackWait.play();
 	}
 
+	/** Opens the flashback of a robot with its chosen clips. */
 	private void openFlashback(Opponent robot, List<BattleMoment> chosen) {
 		this.flashbackOpen = true;
 		this.buildFlashback(robot, chosen.size());
@@ -145,6 +147,7 @@ final class PodiumFlashback {
 		return new Clip(new Image(new ByteArrayInputStream(moment.getImage())), "ROUND " + moment.getRoundNumber() + " · VS " + rivalName, rivalTeam, event);
 	}
 
+	/** The text in capital letters, or an empty text when it is null. */
 	private static String upper(String text) {
 		return text == null ? "" : text.toUpperCase();
 	}
@@ -217,6 +220,7 @@ final class PodiumFlashback {
 		return timeline;
 	}
 
+	/** Shows a clip of the flashback: its picture, its round and its team. */
 	private void showClip(Clip clip, int index) {
 		this.flashbackImage.setImage(clip.image());
 		this.flashbackRound.setText(clip.round());

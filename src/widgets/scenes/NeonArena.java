@@ -30,6 +30,7 @@ final class NeonArena {
 	private final List<Car> cars = new ArrayList<>();
 	private Box scanner;
 
+	/** Creates the neon arena, drawn in the host scene. */
 	NeonArena(BattleArena3D host) {
 		this.host = host;
 	}
@@ -296,6 +297,7 @@ final class NeonArena {
 		return parts;
 	}
 
+	/** Tells whether a coordinate is within the distance of one of the roads. */
 	private static boolean near(double coordinate, double[] roads, double distance) {
 		for (double road : roads) {
 			if (Math.abs(coordinate - road) < distance) {

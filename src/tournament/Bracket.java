@@ -259,8 +259,8 @@ public class Bracket {
 			}
 		}
 
-		@Override
 		/** The code of the match with its participants and status. */
+		@Override
 		public String toString() {
 			return this.code + "[" + this.a.participant + " x " + this.b.participant + " " + this.status + "]";
 		}

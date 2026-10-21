@@ -53,6 +53,7 @@ public class BattleViewer extends StackPane {
 	private VBox player2;
 	private Sound versusMusic;
 
+	/** Creates the viewer of the battles, with the versus picture and its music. */
 	public BattleViewer() {
 		super();
 
@@ -190,6 +191,7 @@ public class BattleViewer extends StackPane {
 		new SequentialTransition(new ParallelTransition(in1, in2), new PauseTransition(Duration.millis(150)), parallelTransition).play();
 	}
 
+	/** Flashes the screen and shakes it a little. */
 	private void flashAndShake() {
 		FadeTransition flash = new FadeTransition(Duration.millis(350), this.flash);
 		flash.setFromValue(0.85);
@@ -204,6 +206,7 @@ public class BattleViewer extends StackPane {
 		shake.play();
 	}
 
+	/** Stops the versus music. */
 	public void stop() {
 		if (this.versusMusic != null)
 			this.versusMusic.stop();

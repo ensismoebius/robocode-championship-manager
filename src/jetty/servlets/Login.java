@@ -22,6 +22,7 @@ public class Login extends HttpServlet {
 
 	private static final long serialVersionUID = -5170201804563458934L;
 
+	/** Shows the login screen, or goes to the robot editor when the author is already logged in. */
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		if (ServletAuthenticator.isAuthenticated(req)) {
@@ -31,6 +32,7 @@ public class Login extends HttpServlet {
 		this.showAuthScreen(resp, "Olá!");
 	}
 
+	/** Checks the login and the password of the form: logs the author in, or shows the screen again with the error. */
 	@Override
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		req.setCharacterEncoding("UTF-8");
@@ -46,6 +48,7 @@ public class Login extends HttpServlet {
 		}
 	}
 
+	/** Writes the login screen with a message, such as an error. */
 	private void showAuthScreen(HttpServletResponse resp, String message) throws IOException {
 		/*
 		 * JSP is a better tecnology than this,but looks like jetty does not gives

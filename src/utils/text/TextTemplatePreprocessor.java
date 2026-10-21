@@ -101,6 +101,7 @@ public class TextTemplatePreprocessor {
 		return contents;
 	}
 
+	/** Adds an item to a block of the template, creating the block the first time. */
 	@SuppressWarnings("unchecked")
 	private void putItem(HashMap<String, Object> contents, String blockName, Object item) {
 		if (contents.get(blockName) == null) {

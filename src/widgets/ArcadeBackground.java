@@ -38,6 +38,7 @@ public class ArcadeBackground extends Pane {
 	private final AnimationTimer timer = new AnimationTimer() {
 		private long start = -1;
 
+		/** Draws the background of the frame, with the time since the start of the animation. */
 		@Override
 		public void handle(long now) {
 			if (this.start < 0) {
@@ -47,6 +48,7 @@ public class ArcadeBackground extends Pane {
 		}
 	};
 
+	/** Creates the background in the default colour. */
 	public ArcadeBackground() {
 		this(Color.web("#2ec4ff"));
 	}
@@ -77,12 +79,14 @@ public class ArcadeBackground extends Pane {
 		});
 	}
 
+	/** Resizes the canvas to the size of the background. */
 	@Override
 	protected void layoutChildren() {
 		this.canvas.setWidth(this.getWidth());
 		this.canvas.setHeight(this.getHeight());
 	}
 
+	/** Draws the background for the given time, in seconds from the start. */
 	private void draw(double seconds) {
 		double width = this.canvas.getWidth();
 		double height = this.canvas.getHeight();

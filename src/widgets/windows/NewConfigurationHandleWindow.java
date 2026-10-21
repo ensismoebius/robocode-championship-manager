@@ -44,8 +44,8 @@ import widgets.scenes.ArenaStyle;
  */
 public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
-	@Override
 	/** Shows the configuration form filled with the old properties, and returns the properties that the operator saved. */
+	@Override
 	public Properties askForProperties(Properties oldProperties) {
 		ConfigForm form = new ConfigForm(oldProperties == null ? new Properties() : oldProperties);
 

@@ -27,6 +27,7 @@ public enum Topic {
 	public final String presenter;
 	private final String file;
 
+	/** A topic of the presenter: the presenter name and the file of the text. */
 	Topic(String presenter, String file) {
 		this.presenter = presenter;
 		this.file = file;
