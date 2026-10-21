@@ -13,6 +13,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import utils.robocode.BattleControl.WinnerCriterion;
+
 /**
  * The program follows the configuration through the listeners, they must be
  * called on every real change and only then
@@ -177,5 +179,14 @@ class ConfigurationTest {
 		// Already closed
 		Configuration.setEnabledRegistration(false);
 		assertEquals(1, this.changes.get());
+	}
+
+	@Test
+	void anUnknownWinnerCriterionFallsBackToTheRank() {
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.WINNER_CRITERION, "NOPE");
+		assertTrue(Configuration.askForProperties());
+
+		assertEquals(WinnerCriterion.RANK, Configuration.getWinnerCriterion());
 	}
 }

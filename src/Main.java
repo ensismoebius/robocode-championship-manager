@@ -112,6 +112,8 @@ public class Main extends Application {
 	 */
 	boolean battleRunning = false;
 	private final KeyBindings keys = new KeyBindings(this);
+	/** Follows the configuration while the program runs, see stop */
+	private final Runnable configurationListener = this::applyConfiguration;
 	final BattleRunner battles = new BattleRunner(this);
 
 	/** Starts the application. */
@@ -145,7 +147,7 @@ public class Main extends Application {
 		this.showStartScreen();
 
 		// From now on the program follows every change of the configuration
-		Configuration.addListener(this::applyConfiguration);
+		Configuration.addListener(this.configurationListener);
 	}
 
 	/** Opens the only window, always in full screen, with the background of the start screen. */
@@ -180,6 +182,7 @@ public class Main extends Application {
 	/** Stops the web server and clears the scenes when the application closes. */
 	@Override
 	public void stop() {
+		Configuration.removeListener(this.configurationListener);
 		this.resetAllScenes();
 		if (this.httpServer != null) {
 			this.httpServer.stop();

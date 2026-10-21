@@ -41,6 +41,34 @@ Simple to control with the keyboard!</description>
 			<activation><os><family>mac</family><arch>aarch64</arch></os></activation>
 			<properties><javafx.platform>mac-aarch64</javafx.platform></properties>
 		</profile>
+		<!-- mvn -Pcoverage test: runs the tests with JaCoCo and writes target/site/jacoco/index.html -->
+		<profile>
+			<id>coverage</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>0.8.12</version>
+						<executions>
+							<execution>
+								<id>prepare-agent</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>report</id>
+								<phase>test</phase>
+								<goals>
+									<goal>report</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 
 	<build>
