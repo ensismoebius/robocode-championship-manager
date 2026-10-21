@@ -504,58 +504,6 @@ public class Main extends Application {
 	}
 
 	/**
-	 * Keeps the photos of the key moments of a 3D battle with its match. They are
-	 * a bonus: when they fail, the battle still counts
-	 */
-	private void keepPhotos(BattleArena3D arena, Match match, List<Opponent> fighters) {
-		List<BattleMoment> moments = new ArrayList<BattleMoment>();
-		for (BattleArena3D.BattlePhoto photo : arena.photos()) {
-			if (photo.subject() == null) {
-				continue;
-			}
-			BattleMoment moment = new BattleMoment();
-			moment.setChampionshipId(this.championship.getId());
-			moment.setMatchCode(match.getCode());
-			moment.setRoundNumber(photo.round());
-			moment.setDestruction(photo.destruction());
-			moment.setSubjectId(photo.subject().getId());
-			moment.setPower(photo.power());
-			moment.setFirstId(fighters.get(0).getId());
-			moment.setSecondId(fighters.get(1).getId());
-			moment.setImage(photo.jpeg());
-			moments.add(moment);
-		}
-		try {
-			BattleMomentService.save(this.championship.getId(), match.getCode(), moments);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Removes the photos of a match whose result was undone
-	 */
-	private void forgetPhotos(String matchCode) {
-		try {
-			BattleMomentService.delete(this.championship.getId(), matchCode);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * The photos of the battles of the robots, when they can be read
-	 */
-	private List<BattleMoment> photosOf(List<Long> robots) {
-		try {
-			return BattleMomentService.of(this.championship.getId(), robots);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			return List.of();
-		}
-	}
-
-	/**
 	 * The winner of the match, or the champion
 	 */
 	private void showResult(long winnerId) {
@@ -596,7 +544,7 @@ public class Main extends Application {
 			this.selectedMatch = last.getMatchCode();
 			this.justPlayed = null;
 			this.setChampionship(ChampionshipService.undoLastResult(this.championship));
-			this.forgetPhotos(last.getMatchCode());
+			MatchPhotos.forget(this.championship.getId(), last.getMatchCode());
 			this.showBracket();
 		} catch (RuntimeException e) {
 			e.printStackTrace();
@@ -721,7 +669,7 @@ public class Main extends Application {
 		if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
 			arena.play(recording, () -> {
 				this.battleRunning = false;
-				this.keepPhotos(arena, match, fighters);
+				MatchPhotos.keep(this.championship.getId(), arena, match, fighters);
 				this.showResult(winner);
 			});
 		} else {
@@ -837,7 +785,7 @@ public class Main extends Application {
 			for (Long id : ids) {
 				podium.add(this.opponents.get(id));
 			}
-			this.podiumScene = new Podium(podium, this.photosOf(ids), this.opponents);
+			this.podiumScene = new Podium(podium, MatchPhotos.of(this.championship.getId(), ids), this.opponents);
 			this.show(this.podiumScene);
 		} catch (RuntimeException e) {
 			e.printStackTrace();
@@ -863,27 +811,13 @@ public class Main extends Application {
 	}
 
 	/**
-	 * Saves the source code of every robot as
-	 * temp/robochamp-export/team/RobotName.java
+	 * Saves the source code of every robot as temp/robochamp-export/team/RobotName.java
 	 */
 	private void exportToFiles() {
-
-		Path exportDir = Path.of(Configuration.getTempDir(), "robochamp-export");
-
+		Path exportDir = SourceExporter.defaultDir();
 		try {
-			List<Opponent> all = Database.read(em -> em.createQuery("select o from Opponent o", Opponent.class).getResultList());
-
-			for (Opponent opponent : all) {
-				if (opponent.getSourceCode() == null) {
-					continue;
-				}
-				Path file = exportDir.resolve(opponent.getTeam()).resolve(opponent.getName().replace('.', '/') + ".java");
-				Files.createDirectories(file.getParent());
-				Files.writeString(file, opponent.getSourceCode());
-			}
-
-			GameDialog.info("Exportação", all.size() + " robôs exportados para " + exportDir);
-
+			int exported = SourceExporter.export(exportDir);
+			GameDialog.info("Exportação", exported + " robôs exportados para " + exportDir);
 		} catch (IOException | PersistenceException e) {
 			e.printStackTrace();
 			this.showError("Falha ao exportar os robôs:\n" + e.getMessage());
