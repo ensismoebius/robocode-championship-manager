@@ -102,12 +102,10 @@ Cada tipo de acontecimento tem o seu apresentador. Quando algo importante aconte
 
 Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera sobrevoa a arena começando por eles.
 
-| Arena | Bichos | Onde ficam |
+| | | |
 |---|---|---|
-| **Floresta Tropical** | **Macacos**, com um **pássaro** a cada três bichos | Entre as árvores e perto do rio. O pássaro voa. |
-| **Tundra Glacial** | **Pinguins** | Pelo gelo e pelo mar glacial. Quando chegam à água, eles nadam. |
-| **Grade Neon** | **Besouros** | Pelas bordas da grade, entre os prédios de neon. |
-| **Forja Vulcânica** | **Salamandras**, com um **morcego** a cada três bichos | Pelas rochas e cinzas. O morcego voa. |
+| <img src="docs/images/bicho-monkey.jpg" width="300" alt="Macaco"><br>**Macaco**<br><i>Floresta Tropical</i><br>Entre as árvores e perto do rio. | <img src="docs/images/bicho-bird.jpg" width="300" alt="Pássaro"><br>**Pássaro**<br><i>Floresta Tropical (um a cada três bichos)</i><br>Voa pela mata e se mistura às folhas. | <img src="docs/images/bicho-penguin.jpg" width="300" alt="Pinguim"><br>**Pinguim**<br><i>Tundra Glacial</i><br>Anda pelo gelo e, na água do mar glacial, nada. |
+| <img src="docs/images/bicho-beetle.jpg" width="300" alt="Besouro"><br>**Besouro**<br><i>Grade Neon</i><br>Corre pelas bordas da grade, entre os prédios de neon. | <img src="docs/images/bicho-salamander.jpg" width="300" alt="Salamandra"><br>**Salamandra**<br><i>Forja Vulcânica</i><br>Anda pelas rochas e pela cinza, perto da lava. | <img src="docs/images/bicho-bat.jpg" width="300" alt="Morcego"><br>**Morcego**<br><i>Forja Vulcânica (um a cada três bichos)</i><br>Voa pela arena, acima das rochas. |
 
 > [!NOTE]
 > Os traços de personalidade descritos acima são uma leitura do estilo de cada personagem, feita a partir das falas que eles dizem e da aparência de cada um. Eles não têm regras de jogo ligadas a esses traços.

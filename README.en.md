@@ -102,12 +102,10 @@ Each kind of event has its own presenter. When something important happens, the 
 
 Each arena has its own critters. They walk around the scenery, **never enter the battle area**, and run away when shots or explosions happen nearby. Before the first battle, the camera flies over the arena starting with them.
 
-| Arena | Critters | Where they are |
+| | | |
 |---|---|---|
-| **Tropical Forest** | **Monkeys**, with a **bird** every three critters | Among the trees and near the river. The bird flies. |
-| **Glacial Tundra** | **Penguins** | On the ice and in the glacial sea. When they reach the water, they swim. |
-| **Neon Grid** | **Beetles** | Along the edges of the grid, between the neon buildings. |
-| **Volcanic Forge** | **Salamanders**, with a **bat** every three critters | Over the rocks and ash. The bat flies. |
+| <img src="docs/images/bicho-monkey.jpg" width="300" alt="Monkey"><br>**Monkey**<br><i>Tropical Forest</i><br>Among the trees and near the river. | <img src="docs/images/bicho-bird.jpg" width="300" alt="Bird"><br>**Bird**<br><i>Tropical Forest (one in every three critters)</i><br>Flies through the forest, mixed with the leaves. | <img src="docs/images/bicho-penguin.jpg" width="300" alt="Penguin"><br>**Penguin**<br><i>Glacial Tundra</i><br>Walks on the ice and swims in the water of the glacial sea. |
+| <img src="docs/images/bicho-beetle.jpg" width="300" alt="Beetle"><br>**Beetle**<br><i>Neon Grid</i><br>Runs along the edges of the grid, between the neon buildings. | <img src="docs/images/bicho-salamander.jpg" width="300" alt="Salamander"><br>**Salamander**<br><i>Volcanic Forge</i><br>Walks over the rocks and ash, near the lava. | <img src="docs/images/bicho-bat.jpg" width="300" alt="Bat"><br>**Bat**<br><i>Volcanic Forge (one in every three critters)</i><br>Flies around the arena, above the rocks. |
 
 > [!NOTE]
 > The personality traits above are a reading of each character's style, based on the lines they say and how they look. They have no gameplay rules tied to those traits.
