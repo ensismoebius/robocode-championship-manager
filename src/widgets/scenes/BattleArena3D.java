@@ -1,7 +1,6 @@
 package widgets.scenes;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,10 +18,7 @@ import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
-import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
-import javafx.geometry.Pos;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -34,7 +30,6 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -43,7 +38,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
@@ -57,7 +51,6 @@ import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.CullFace;
 import javafx.scene.image.WritableImage;
 import javafx.util.Duration;
-import model.Author;
 import model.Opponent;
 import tournament.Bracket;
 import utils.configuration.Configuration;
@@ -110,7 +103,7 @@ public class BattleArena3D extends StackPane {
 	/** The headline of a special battle, after the last round */
 	private static final double HEADLINE_SECONDS = 3.4;
 	/** The action stops for a moment when a robot dies, then the replay */
-	private static final double FREEZE_SECONDS = 1.3;
+	static final double FREEZE_SECONDS = 1.3;
 	/** The photos of the key moments are kept small, as JPEG */
 	private static final int PHOTO_WIDTH = 640;
 	private static final int PHOTO_HEIGHT = 360;
@@ -120,9 +113,6 @@ public class BattleArena3D extends StackPane {
 	static final double PHOTO_HIT_DELAY = 0.2;
 	/** Seconds from a destruction to its photo: the tank is falling, the battle is held (see freezeForReplay) */
 	static final double PHOTO_DESTRUCTION_DELAY = 1.0;
-	/** Turns of the replay before and after the death */
-	private static final int REPLAY_BEFORE = 30;
-	private static final int REPLAY_AFTER = 10;
 	/** Slow motion speeds: before the impact, close to it, after it */
 	private static final double REPLAY_SPEED = 0.28;
 	private static final double REPLAY_IMPACT_SPEED = 0.07;
@@ -193,6 +183,7 @@ public class BattleArena3D extends StackPane {
 	final JungleArena jungle = new JungleArena(this);
 	final ArenaBullets shots = new ArenaBullets(this);
 	final ArenaCamera director = new ArenaCamera(this);
+	final ArenaShowcase showcase = new ArenaShowcase(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -263,7 +254,7 @@ public class BattleArena3D extends StackPane {
 	final Rectangle letterboxBottom = new Rectangle();
 	final HBox replayTag = new HBox(14);
 	/** The card of the robot being presented */
-	private final StackPane showcaseLayer = new StackPane();
+	final StackPane showcaseLayer = new StackPane();
 	final Region whiteFlash = new Region();
 
 	// Playback
@@ -280,7 +271,7 @@ public class BattleArena3D extends StackPane {
 	double phaseTime = 0;
 	int round = 0;
 	double turnPosition = 0;
-	private int lastTurnProcessed = -1;
+	int lastTurnProcessed = -1;
 	/** Index in SPEEDS, starts with the configured one */
 	int speed;
 	/** Shown when the round starts, configurable */
@@ -309,10 +300,8 @@ public class BattleArena3D extends StackPane {
 	double effectRate = 1;
 
 	// The death being replayed
-	private int deathTurn = -1;
-	private int deadRobot = -1;
-	private int replayFrom;
-	private int replayTo;
+	int deathTurn = -1;
+	int replayTo;
 	int fatalBullet = -1;
 	int impactTurn = -1;
 	boolean replayed = false;
@@ -329,9 +318,9 @@ public class BattleArena3D extends StackPane {
 
 
 	// The presentation of the robots
-	private int showcaseOrder = 0;
+	int showcaseOrder = 0;
 	boolean versus = false;
-	private Sound showcaseMusic;
+	Sound showcaseMusic;
 
 	private final AnimationTimer timer = new AnimationTimer() {
 		private long last = -1;
@@ -460,7 +449,7 @@ public class BattleArena3D extends StackPane {
 		this.commentary = new BattleCommentary(names, this.random);
 
 		this.audio.start();
-		this.startShowcase();
+		this.showcase.startShowcase();
 	}
 
 	Opponent opponentOf(BattleRecording.Robot robot) {
@@ -893,14 +882,14 @@ public class BattleArena3D extends StackPane {
 	private void skip(boolean all) {
 		if (this.phase == Phase.SHOWCASE) {
 			if (all || this.versus) {
-				this.endShowcase();
+				this.showcase.endShowcase();
 			} else {
-				this.showcaseRobot(this.showcaseOrder + 1);
+				this.showcase.showcaseRobot(this.showcaseOrder + 1);
 			}
 		} else if (this.phase == Phase.FLYBY) {
 			this.endFlyBy();
 		} else if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
-			this.endReplay();
+			this.showcase.endReplay();
 		} else if (this.phase != Phase.LOADING && this.phase != Phase.FINISHED) {
 			this.finish();
 		}
@@ -939,12 +928,12 @@ public class BattleArena3D extends StackPane {
 		case SHOWCASE -> {
 			if (this.versus) {
 				if (this.phaseTime > VERSUS_SECONDS) {
-					this.endShowcase();
+					this.showcase.endShowcase();
 				}
 			} else {
-				this.turntable();
+				this.showcase.turntable();
 				if (this.phaseTime > SHOWCASE_SECONDS) {
-					this.showcaseRobot(this.showcaseOrder + 1);
+					this.showcase.showcaseRobot(this.showcaseOrder + 1);
 				}
 			}
 		}
@@ -957,7 +946,7 @@ public class BattleArena3D extends StackPane {
 		case PLAYING -> this.updatePlaying(dt);
 		case FREEZE -> {
 			if (this.phaseTime > FREEZE_SECONDS) {
-				this.startReplay();
+				this.showcase.startReplay();
 			}
 		}
 		case REPLAY -> this.updateReplay(dt);
@@ -1020,7 +1009,7 @@ public class BattleArena3D extends StackPane {
 		if (this.turnPosition >= this.replayTo) {
 			this.turnPosition = this.replayTo;
 			this.showTurn(this.turns());
-			this.endReplay();
+			this.showcase.endReplay();
 		} else {
 			this.showTurn(this.turns());
 		}
@@ -1161,11 +1150,11 @@ public class BattleArena3D extends StackPane {
 		return out.toByteArray();
 	}
 
-	private List<Turn> turns() {
+	List<Turn> turns() {
 		return this.recording.getRounds().get(this.round);
 	}
 
-	private void startRound(int round) {
+	void startRound(int round) {
 		this.round = round;
 		this.turnPosition = 0;
 		this.lastTurnProcessed = -1;
@@ -1376,7 +1365,7 @@ public class BattleArena3D extends StackPane {
 	 * Puts everything where it is at the current (fractional) turn and fires the
 	 * events of the turns just reached
 	 */
-	private void showTurn(List<Turn> turns) {
+	void showTurn(List<Turn> turns) {
 		int index = Math.min((int) Math.floor(this.turnPosition), turns.size() - 1);
 		double fraction = this.turnPosition - index;
 		Turn current = turns.get(index);
@@ -1543,328 +1532,11 @@ public class BattleArena3D extends StackPane {
 		return vanish;
 	}
 
-	// --------------------------------------------------------------- showcase
-
-	/**
-	 * Before the first round each robot is presented alone in the arena, like
-	 * the fighters of a fighting game, then both face each other
-	 */
-	private void startShowcase() {
-		this.phase = Phase.SHOWCASE;
-		this.hudTop.setVisible(false);
-		this.hud.showLetterbox(true, false);
-		this.audio.setMusicOn(false);
-		this.showcaseRobot(0);
-	}
-
-	/**
-	 * Presents the robot at this position of the battle, or the versus after the
-	 * last one
-	 */
-	private void showcaseRobot(int order) {
-		this.stopShowcaseMusic();
-		List<BattleRecording.Robot> list = this.recording.getRobots();
-		if (order >= list.size()) {
-			this.startVersus();
-			return;
-		}
-		this.showcaseOrder = order;
-		this.phaseTime = 0;
-
-		BattleRecording.Robot robot = list.get(order);
-		RobotView view = this.robots.get(robot.getIndex());
-		for (RobotView other : this.robots.values()) {
-			other.root.setVisible(other == view);
-		}
-		this.shotSubject = robot.getIndex();
-		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
-		this.turntable();
-
-		// A spotlight in the color of the player
-		this.flashLight.setTranslateX(0);
-		this.flashLight.setTranslateY(-160);
-		this.flashLight.setTranslateZ(0);
-		this.flashLight.setColor(view.playerColor.deriveColor(0, 0.8, 0.9, 1));
-
-		Opponent opponent = this.opponentOf(robot);
-		Node card = this.showcaseCard(robot, opponent, view.playerColor, order);
-		this.showcaseLayer.getChildren().setAll(card);
-		TranslateTransition slide = new TranslateTransition(Duration.millis(550), card);
-		double side = order % 2 == 0 ? -1 : 1;
-		slide.setFromX(side * Math.max(1200, this.getWidth()));
-		slide.setToX(0);
-		slide.setDelay(Duration.millis(700));
-		slide.setInterpolator(Interpolator.EASE_OUT);
-		slide.setOnFinished(event -> Sfx.slam());
-		card.setTranslateX(slide.getFromX());
-		slide.play();
-
-		this.audio.whoosh();
-		this.showcaseMusic = opponent == null ? null : Sound.fromBytes(opponent.getMusic(), opponent.getFullName());
-		if (this.showcaseMusic != null) {
-			this.showcaseMusic.play();
-		}
-		this.director.cut();
-	}
-
-	/**
-	 * Both robots where the battle starts, and the VS
-	 */
-	private void startVersus() {
-		this.versus = true;
-		this.phaseTime = 0;
-		this.showcaseLayer.getChildren().clear();
-		this.flashLight.setColor(Color.BLACK);
-		for (RobotView view : this.robots.values()) {
-			view.root.setVisible(true);
-		}
-		this.turnPosition = 0;
-		this.lastTurnProcessed = -1;
-		this.showTurn(this.turns());
-
-		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
-		this.hud.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
-		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
-		this.announcer.announce(switch (this.stageImportance) {
-		case SEMIFINAL -> "Atenção, é uma SEMIFINAL! " + versusLine + " Quem vence vai para a final!";
-		case FINAL -> "Atenção, é a FINAL! " + versusLine + " Quem vencer leva a glória!";
-		default -> versusLine;
-		}, 5);
-		this.audio.whoosh();
-		Sfx.slam();
-		this.shot = Shot.WIDE;
-		this.shotTime = 0;
-		this.director.cut();
-	}
-
-	private void endShowcase() {
-		this.stopShowcaseMusic();
-		this.versus = false;
-		this.showcaseLayer.getChildren().clear();
-		this.flashLight.setColor(Color.BLACK);
-		for (RobotView view : this.robots.values()) {
-			view.root.setVisible(true);
-		}
-		this.hud.hideBanner();
-		this.stageLabel.setVisible(false);
-		this.stageLabel.setManaged(false);
-		this.hud.showLetterbox(false);
-		this.startRound(0);
-	}
-
-	private void stopShowcaseMusic() {
+	void stopShowcaseMusic() {
 		if (this.showcaseMusic != null) {
 			this.showcaseMusic.stop();
 			this.showcaseMusic = null;
 		}
-	}
-
-	/**
-	 * The presented robot turns slowly in the center of the arena, aiming its gun
-	 * and spinning the radar
-	 */
-	private void turntable() {
-		RobotView view = this.robots.get(this.shotSubject);
-		if (view == null) {
-			return;
-		}
-		double t = this.phaseTime;
-		double body = this.shotSeed + t * 0.35;
-		view.place(0, 0, body, body + 0.7 * Math.sin(t * 1.4), t * 5);
-	}
-
-	/**
-	 * Comes down from above to a low hero angle, circling and getting closer. The
-	 * robot stays on the side opposite to its card.
-	 */
-	void showcaseShot(double[] robot) {
-		double t = this.phaseTime;
-		double crane = Math.max(0, 1 - t / 2.5);
-		crane = crane * crane;
-		double angle = this.shotSeed + Math.PI - t * 0.3;
-		double radius = 175 - Math.min(30, t * 4.5) + 120 * crane;
-		double ex = robot[0] + Math.cos(angle) * radius;
-		double ez = robot[2] + Math.sin(angle) * radius;
-		double ey = -30 - 150 * crane;
-
-		// Screen right of the camera, the look point moves to the side of the card
-		double fx = robot[0] - ex;
-		double fz = robot[2] - ez;
-		double length = Math.max(1, Math.hypot(fx, fz));
-		double rightX = fz / length;
-		double rightZ = -fx / length;
-		double offset = (this.showcaseOrder % 2 == 0 ? -1 : 1) * 34;
-		this.director.setShot(ex, ey, ez, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
-		this.rollTarget = (this.showcaseOrder % 2 == 0 ? 1 : -1) * 2.5 * crane;
-	}
-
-	/**
-	 * Logo, name, team, battle cry and authors of the robot
-	 */
-	private Node showcaseCard(BattleRecording.Robot robot, Opponent opponent, Color color, int order) {
-		boolean left = order % 2 == 0;
-		Pos alignment = left ? Pos.CENTER_LEFT : Pos.CENTER_RIGHT;
-		VBox card = new VBox(10);
-		card.setAlignment(alignment);
-
-		Label tag = new Label("JOGADOR " + (order + 1));
-		tag.getStyleClass().add("showcase-section");
-		tag.setTextFill(color);
-		card.getChildren().add(tag);
-
-		if (opponent != null && opponent.getImage() != null) {
-			ImageView logo = new ImageView(new Image(new ByteArrayInputStream(opponent.getImage()), 260, 180, true, true));
-			card.getChildren().add(logo);
-		}
-
-		Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
-		name.setWrapText(true);
-		name.getStyleClass().add("showcase-name");
-		name.setTextFill(color);
-		name.setEffect(Theme.glow(color, 18));
-		card.getChildren().add(name);
-
-		if (opponent != null) {
-			Label team = new Label("Time " + opponent.getTeam());
-			team.getStyleClass().add("showcase-team");
-			card.getChildren().add(team);
-
-			if (opponent.getBattleCry() != null && !opponent.getBattleCry().isBlank()) {
-				Label cry = new Label("“" + opponent.getBattleCry() + "”");
-				cry.setWrapText(true);
-				cry.getStyleClass().add("showcase-cry");
-				card.getChildren().add(cry);
-			}
-
-			if (!opponent.getAuthors().isEmpty()) {
-				Label section = new Label("EQUIPE");
-				section.getStyleClass().add("showcase-section");
-				card.getChildren().add(section);
-				for (Author author : opponent.getAuthors()) {
-					Label label = new Label("▸ " + author.getName());
-					label.getStyleClass().add("showcase-author");
-					card.getChildren().add(label);
-				}
-			}
-		}
-		for (Node node : card.getChildren()) {
-			if (node instanceof Label label) {
-				label.setAlignment(alignment);
-				label.setTextAlignment(left ? javafx.scene.text.TextAlignment.LEFT : javafx.scene.text.TextAlignment.RIGHT);
-			}
-		}
-
-		card.setStyle("-fx-background-color: rgba(8, 10, 20, 0.72); -fx-padding: 28 36 28 36; -fx-border-color: " + toCss(color) + "; -fx-border-width: "
-				+ (left ? "0 0 0 6" : "0 6 0 0") + ";");
-		card.maxWidthProperty().bind(this.widthProperty().multiply(0.36));
-		card.setMaxHeight(Region.USE_PREF_SIZE);
-		StackPane.setAlignment(card, alignment);
-		StackPane.setMargin(card, new Insets(0, 70, 0, 70));
-		return card;
-	}
-
-	// ----------------------------------------------------------------- replay
-
-	/**
-	 * A robot died: the action stops for a moment, then the last second is
-	 * shown again in slow motion
-	 */
-	void freezeForReplay(int robot, int turn) {
-		this.phase = Phase.FREEZE;
-		this.phaseTime = 0;
-		this.deadRobot = robot;
-		this.deathTurn = turn;
-		this.replayFrom = Math.max(0, turn - REPLAY_BEFORE);
-		this.replayTo = Math.min(this.turns().size() - 1, turn + REPLAY_AFTER);
-
-		// The bullet that killed it, if one did
-		this.fatalBullet = -1;
-		this.impactTurn = -1;
-		List<Turn> turns = this.turns();
-		// (a bullet stays in the records for a while after its hit, exploding: the
-		// hit is the turn it changes to HIT_VICTIM, the last one before the death)
-		for (int t = Math.min(turns.size() - 1, turn + 1); t >= Math.max(1, turn - 3) && this.fatalBullet < 0; t--) {
-			for (Bullet bullet : turns.get(t).bullets()) {
-				Bullet before = findBullet(turns.get(t - 1), bullet.id());
-				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && bullet.victim() == robot && (before == null || !before.isHit())) {
-					this.fatalBullet = bullet.id();
-					this.impactTurn = t;
-					break;
-				}
-			}
-		}
-
-		// Holds on the explosion, far enough to see all of it
-		this.shot = Shot.IMPACT;
-		this.shotSubject = robot;
-		this.shotTime = 0;
-		this.shotDuration = FREEZE_SECONDS + 1;
-		this.closeDistance = 190;
-		this.shotSide = this.random.nextBoolean() ? 1 : -1;
-	}
-
-	private void startReplay() {
-		this.phase = Phase.REPLAY;
-		this.phaseTime = 0;
-		this.replayed = true;
-		this.effectRate = 0.3;
-		this.audio.whoosh();
-		this.audio.setSlowMotion(true);
-		this.hud.showLetterbox(true);
-
-		// Back to before the death
-		this.turnPosition = this.replayFrom;
-		this.lastTurnProcessed = this.replayFrom - 1;
-		this.bulletsSeen.clear();
-		this.bulletsExploded.clear();
-		this.shots.clearBullets();
-		this.effects.getChildren().clear();
-		for (RobotView view : this.robots.values()) {
-			view.reset();
-		}
-		// Bullets already flying when the replay starts are not new shots, and the
-		// ones still exploding there hit before it
-		if (this.replayFrom > 0) {
-			for (Bullet bullet : this.turns().get(this.replayFrom - 1).bullets()) {
-				this.bulletsSeen.add(bullet.id());
-				if (bullet.isHit()) {
-					this.bulletsExploded.add(bullet.id());
-				}
-			}
-		}
-
-		this.shot = Shot.FATAL;
-		this.shotSubject = this.deadRobot;
-		this.shotTime = 0;
-		this.shotDuration = 1000;
-		this.shotSide = this.random.nextBoolean() ? 1 : -1;
-		this.showTurn(this.turns());
-		this.director.cut();
-	}
-
-	private void endReplay() {
-		if (this.phase != Phase.REPLAY && this.phase != Phase.FREEZE) {
-			return;
-		}
-		this.replayed = true;
-		this.effectRate = 1;
-		for (RobotView view : this.robots.values()) {
-			view.running.forEach(animation -> animation.setRate(1));
-		}
-		this.audio.setSlowMotion(false);
-		this.hud.showLetterbox(false);
-
-		// Goes on from the end of the replay, with everything in its final state
-		this.turnPosition = Math.max(this.turnPosition, this.replayTo);
-		List<Turn> turns = this.turns();
-		this.showTurn(turns);
-		RobotView dead = this.robots.get(this.deadRobot);
-		if (dead != null && !dead.dead) {
-			dead.destroy();
-		}
-		this.phase = Phase.PLAYING;
-		this.phaseTime = 0;
-		this.director.pickShot(true);
 	}
 
 	private static double lerp(double a, double b, double t) {

@@ -322,7 +322,7 @@ final class ArenaBullets {
 					host.pendingPhotos.add(new PendingPhoto(PHOTO_DESTRUCTION_DELAY, host.round + 1, true, view.opponent, 0));
 				}
 				if (host.phase == Phase.PLAYING && !host.replayed) {
-					host.freezeForReplay(state.index(), turnIndex);
+					host.showcase.freezeForReplay(state.index(), turnIndex);
 				}
 			}
 		}

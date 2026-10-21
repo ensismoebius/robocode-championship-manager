@@ -197,7 +197,7 @@ final class ArenaCamera {
 			return;
 		}
 		if (host.phase == Phase.SHOWCASE && !host.versus) {
-			host.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
+			host.showcase.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
 			return;
 		}
 
