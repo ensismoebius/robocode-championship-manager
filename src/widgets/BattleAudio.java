@@ -34,8 +34,10 @@ public final class BattleAudio {
 	private static final double MUSIC_GAIN = 0.75;
 	private static final double SFX_GAIN = 0.9;
 	private static final double MACHINE_GAIN = 0.8;
+	/** The whole mix, before the limiter: the loud peaks of the music fit under its knee */
+	private static final double MASTER_GAIN = 0.6;
 	/** The drive of the tracks, over the machines: how loud the hum and the rumble are */
-	private static final double TRACK_GAIN = 3.0;
+	private static final double TRACK_GAIN = 2.5;
 	/** The placement of a sound in the middle: both ears hear it the same */
 	private static final double[] CENTER = { 1, 1 };
 	/** The distance between two links of a track, in arena units */
@@ -578,9 +580,9 @@ public final class BattleAudio {
 		left += delayedLeft * 0.35;
 		right += delayedRight * 0.35;
 
-		// Soft clipping: loud without distortion
-		out[0] = Math.tanh((music + left) * 1.1) * 0.92;
-		out[1] = Math.tanh((music + right) * 1.1) * 0.92;
+		// The master gain keeps the whole mix under the tanh curve, which only bends the loudest peaks
+		out[0] = Math.tanh((music + left) * MASTER_GAIN * 1.1) * 0.92;
+		out[1] = Math.tanh((music + right) * MASTER_GAIN * 1.1) * 0.92;
 	}
 
 	/**

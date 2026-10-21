@@ -8,12 +8,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -141,35 +144,43 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		error.getStyleClass().add("error-text");
 		error.setWrapText(true);
 
-		// Two columns, so it fits on short screens
-		GridPane form = new GridPane();
-		form.setHgap(24);
-		form.setVgap(14);
-		ColumnConstraints half = new ColumnConstraints();
-		half.setPercentWidth(50);
-		form.getColumnConstraints().addAll(half, half);
-		form.add(field("Título da tela inicial", title), 0, 0);
-		form.add(field("Subtítulo da tela inicial", subtitle), 1, 0);
-		form.add(field("Rounds por batalha", robocodeRounds), 0, 1);
-		form.add(field("Vencedor da batalha", winnerCriterion), 1, 1);
-		form.add(field("Porta do servidor web de cadastro", webserverPort), 0, 2);
-		form.add(field("Inscrições", registrationEnabled), 1, 2);
-		form.add(field("Exibição da batalha", battleView), 0, 3);
-		form.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 3);
-		form.add(field("Texto do início do round", fightText), 0, 4);
-		form.add(field("Arena da batalha 3D", arena), 1, 4);
-		form.add(field("Música da batalha 3D", new VBox(8, music, arenaMusic)), 0, 5);
-		form.add(field("Volume da música de fundo", new HBox(10, musicVolume, musicVolumeValue)), 1, 5);
-		form.add(field("Qualidade gráfica da batalha 3D", antialiasing), 0, 6);
-		form.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 7, 2, 1);
-		form.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 8, 2, 1);
-		form.add(error, 0, 9, 2, 1);
+		// One tab for each subject, each one in two columns
+		GridPane startGrid = grid();
+		startGrid.add(field("Título da tela inicial", title), 0, 0);
+		startGrid.add(field("Subtítulo da tela inicial", subtitle), 1, 0);
+		startGrid.add(field("Inscrições", registrationEnabled), 0, 1);
+		startGrid.add(field("Porta do servidor web de cadastro", webserverPort), 1, 1);
+		Tab startTab = new Tab("Tela inicial", startGrid);
+
+		GridPane battleGrid = grid();
+		battleGrid.add(field("Rounds por batalha", robocodeRounds), 0, 0);
+		battleGrid.add(field("Vencedor da batalha", winnerCriterion), 1, 0);
+		battleGrid.add(field("Exibição da batalha", battleView), 0, 1);
+		battleGrid.add(field("Velocidade inicial da batalha 3D", battleSpeed), 1, 1);
+		battleGrid.add(field("Texto do início do round", fightText), 0, 2, 2, 1);
+		Tab battleTab = new Tab("Batalha", battleGrid);
+
+		GridPane soundGrid = grid();
+		soundGrid.add(field("Arena da batalha 3D", arena), 0, 0);
+		soundGrid.add(field("Qualidade gráfica da batalha 3D", antialiasing), 1, 0);
+		soundGrid.add(field("Música da batalha 3D", new VBox(8, music, arenaMusic)), 0, 1);
+		soundGrid.add(field("Volume da música de fundo", new HBox(10, musicVolume, musicVolumeValue)), 1, 1);
+		Tab soundTab = new Tab("Arena e som", soundGrid);
+
+		GridPane systemGrid = grid();
+		systemGrid.add(field("Arquivo do banco de dados SQLite", new HBox(6, databaseFile, chooseDatabaseFile)), 0, 0, 2, 1);
+		systemGrid.add(field("Diretório do robocode", new HBox(6, robocodeDirectory, chooseRobocodeDirectory)), 0, 1, 2, 1);
+		Tab systemTab = new Tab("Sistema", systemGrid);
+		TabPane tabs = new TabPane(startTab, battleTab, soundTab, systemTab);
+		tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+		// The first tab is the one the user sees first
+		tabs.getSelectionModel().select(startTab);
 
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
 		Button cancel = new Button("Cancelar");
-		VBox panel = GameDialog.panel("Configurações", form, cancel, save);
-		panel.setStyle("-fx-pref-width: 940;");
+		VBox panel = GameDialog.panel("Configurações", new VBox(12, tabs, error), cancel, save);
+		panel.setStyle("-fx-pref-width: 900;");
 
 		save.setOnAction(event -> {
 			int rounds = Configuration.parseInt(robocodeRounds.getText(), -1);
@@ -178,18 +189,22 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 			if (databaseFile.getText().isBlank() || Files.isDirectory(Path.of(databaseFile.getText().trim()))) {
 				error.setText("Informe o arquivo do banco de dados");
+				tabs.getSelectionModel().select(systemTab);
 				return;
 			}
 			if (robocodePath.isEmpty() || !Files.isDirectory(Path.of(robocodePath, "robots"))) {
 				error.setText("Escolha o diretório onde o robocode está instalado (o que contém o diretório robots)");
+				tabs.getSelectionModel().select(systemTab);
 				return;
 			}
 			if (rounds < 1) {
 				error.setText("O número de rounds deve ser um número maior que zero");
+				tabs.getSelectionModel().select(battleTab);
 				return;
 			}
 			if (port < 1 || port > 65535) {
 				error.setText("A porta deve ser um número entre 1 e 65535");
+				tabs.getSelectionModel().select(startTab);
 				return;
 			}
 
@@ -254,6 +269,20 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 	private static String formatSpeed(double speed) {
 		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
+	}
+
+	/**
+	 * A grid of two columns with some room around, the content of a tab
+	 */
+	private static GridPane grid() {
+		GridPane grid = new GridPane();
+		grid.setHgap(24);
+		grid.setVgap(14);
+		grid.setPadding(new Insets(16));
+		ColumnConstraints half = new ColumnConstraints();
+		half.setPercentWidth(50);
+		grid.getColumnConstraints().addAll(half, half);
+		return grid;
 	}
 
 	/**
