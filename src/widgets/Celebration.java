@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.BlendMode;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
@@ -24,7 +22,7 @@ import javafx.scene.paint.Stop;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class Celebration extends Pane {
+public class Celebration extends TimedPane {
 
 	private static final Color[] PARTY = { Color.web("#ffd400"), Color.web("#2ec4ff"), Color.web("#ff3d6e"), Color.web("#5af08f"), Color.web("#c86bff"), Color.WHITE };
 	private static final double GRAVITY = 0.55;
@@ -68,27 +66,9 @@ public class Celebration extends Pane {
 	private RadialGradient rayPaint;
 	private double rayPaintSize;
 
-	private final AnimationTimer timer = new AnimationTimer() {
-		private long last = -1;
-
-		@Override
-		public void handle(long now) {
-			double delta = this.last < 0 ? 0 : Math.min(0.05, (now - this.last) / 1e9);
-			this.last = now;
-			Celebration.this.step(delta, now / 1e9);
-		}
-	};
-
 	public Celebration() {
+		super(0.05);
 		this.getChildren().add(this.canvas);
-		this.setMouseTransparent(true);
-		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
-			if (newScene == null) {
-				this.timer.stop();
-			} else {
-				this.timer.start();
-			}
-		});
 	}
 
 	@Override
@@ -240,7 +220,8 @@ public class Celebration extends Pane {
 
 	// ------------------------------------------------------------ animation
 
-	private void step(double delta, double seconds) {
+	@Override
+	protected void step(double delta, double seconds) {
 		double width = this.canvas.getWidth();
 		double height = this.canvas.getHeight();
 		if (width < 2 || height < 2) {
@@ -252,8 +233,14 @@ public class Celebration extends Pane {
 
 		this.boost = Math.max(0, this.boost - delta * 0.9);
 		this.drawRays(g, width, height, seconds);
+		this.launch(delta, width, height);
+		this.flyRockets(delta, height);
+		this.drawSparks(g, delta, height);
+		this.drawPieces(g, delta, height, seconds);
+	}
 
-		// Launches of their own
+	/** Rockets launched on their own and the confetti raining */
+	private void launch(double delta, double width, double height) {
 		this.rocketDebt += this.autoRockets * delta;
 		while (this.rocketDebt >= 1) {
 			this.rocketDebt--;
@@ -270,8 +257,10 @@ public class Celebration extends Pane {
 			piece.life = 12;
 			this.pieces.add(piece);
 		}
+	}
 
-		// Rockets rise, leaving sparks, and burst
+	/** The rockets rise, leaving sparks, and burst */
+	private void flyRockets(double delta, double height) {
 		for (int i = this.rockets.size() - 1; i >= 0; i--) {
 			Rocket rocket = this.rockets.get(i);
 			rocket.fuse -= delta;
@@ -292,7 +281,10 @@ public class Celebration extends Pane {
 			}
 		}
 
-		// The sparks of the fireworks add their light
+	}
+
+	/** The sparks of the fireworks add their light */
+	private void drawSparks(GraphicsContext g, double delta, double height) {
 		g.setGlobalBlendMode(BlendMode.ADD);
 		for (int i = this.sparks.size() - 1; i >= 0; i--) {
 			Spark spark = this.sparks.get(i);
@@ -315,7 +307,10 @@ public class Celebration extends Pane {
 		}
 		g.setGlobalBlendMode(BlendMode.SRC_OVER);
 
-		// Confetti flips like paper falling
+	}
+
+	/** Confetti flips like paper falling */
+	private void drawPieces(GraphicsContext g, double delta, double height, double seconds) {
 		for (int i = this.pieces.size() - 1; i >= 0; i--) {
 			Piece piece = this.pieces.get(i);
 			piece.age += delta;

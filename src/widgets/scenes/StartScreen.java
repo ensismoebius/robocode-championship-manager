@@ -86,9 +86,35 @@ public class StartScreen extends StackPane {
 	public StartScreen(int serverPort) {
 		super();
 
-		// Center: logo and title
+		ImageView robocodeLogo = logo();
+		VBox titleBlock = titleBlock();
+		Pane horizonLayout = horizonLayout(robocodeLogo, titleBlock);
+
+		// Top: controls and registration status
+		StackPane controlsArea = controlsArea();
+		Region spacer = new Region();
+		HBox.setHgrow(spacer, Priority.ALWAYS);
+		HBox top = new HBox(controlsArea, spacer, this.badge);
+		top.setAlignment(Pos.TOP_LEFT);
+
+		// Bottom: where the teams register their robots
+		this.registration = registration();
+
+		this.layout = new BorderPane(null, top, null, null, null);
+		this.layout.setPadding(new Insets(28));
+		this.refresh(serverPort);
+
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+
+		this.getChildren().setAll(new ArcadeBackground(), horizonLayout, this.layout, scanlines);
+	}
+
+	/** The robocode logo, which has a black background that blends with the sky */
+	private static ImageView logo() {
 		ImageView robocodeLogo = new ImageView();
-		try (InputStream logo = getClass().getResourceAsStream("robocodeLogo.png")) {
+		try (InputStream logo = StartScreen.class.getResourceAsStream("robocodeLogo.png")) {
 			robocodeLogo.setImage(new Image(logo));
 		} catch (IOException e) {
 			GameDialog.error(e.getMessage());
@@ -97,7 +123,11 @@ public class StartScreen extends StackPane {
 		robocodeLogo.setSmooth(true);
 		// The logo has a black background, this blends it with the sky
 		robocodeLogo.setBlendMode(BlendMode.LIGHTEN);
+		return robocodeLogo;
+	}
 
+	/** The title, the subtitle and the blinking "press R" */
+	private VBox titleBlock() {
 		this.title.getStyleClass().add("game-title");
 		Theme.pulseGlow(this.title, Theme.ACCENT);
 
@@ -117,8 +147,14 @@ public class StartScreen extends StackPane {
 
 		VBox titleBlock = new VBox(14, this.title, this.subtitle, new Region(), pressStart);
 		titleBlock.setAlignment(Pos.CENTER);
+		return titleBlock;
+	}
 
-		// The logo stays in the sky, the title on the grid
+	/**
+	 * The logo stays in the sky, the title on the grid: both fit the screen when
+	 * it is resized
+	 */
+	private static Pane horizonLayout(ImageView robocodeLogo, VBox titleBlock) {
 		Pane horizonLayout = new Pane(robocodeLogo, titleBlock) {
 			@Override
 			protected void layoutChildren() {
@@ -143,8 +179,13 @@ public class StartScreen extends StackPane {
 			}
 		};
 		horizonLayout.setMouseTransparent(true);
+		return horizonLayout;
+	}
 
-		// Top: controls and registration status
+	/**
+	 * The controls panel, shown while Alt is held, with the hint that says so
+	 */
+	private StackPane controlsArea() {
 		GridPane shortcuts = new GridPane();
 		shortcuts.getStyleClass().add("shortcuts");
 		for (int i = 0; i < SHORTCUTS.length; i++) {
@@ -188,31 +229,20 @@ public class StartScreen extends StackPane {
 				}
 			}
 		});
+		return controlsArea;
+	}
 
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		HBox top = new HBox(controlsArea, spacer, this.badge);
-		top.setAlignment(Pos.TOP_LEFT);
-
-		// Bottom: where the teams register their robots
+	/** The address where the teams register their robots */
+	private VBox registration() {
 		Label caption = new Label("CADASTRE SEU ROBÔ EM");
 		caption.getStyleClass().add("address-caption");
 		this.address.getStyleClass().add("address");
 		this.address.setEffect(Theme.glow(Theme.ACCENT, 14));
-		this.registration = new VBox(caption, this.address);
-		this.registration.getStyleClass().add("address-box");
-		this.registration.setMaxWidth(Region.USE_PREF_SIZE);
-		BorderPane.setAlignment(this.registration, Pos.CENTER);
-
-		this.layout = new BorderPane(null, top, null, null, null);
-		this.layout.setPadding(new Insets(28));
-		this.refresh(serverPort);
-
-		Region scanlines = new Region();
-		scanlines.getStyleClass().add("scanlines");
-		scanlines.setMouseTransparent(true);
-
-		this.getChildren().setAll(new ArcadeBackground(), horizonLayout, this.layout, scanlines);
+		VBox registration = new VBox(caption, this.address);
+		registration.getStyleClass().add("address-box");
+		registration.setMaxWidth(Region.USE_PREF_SIZE);
+		BorderPane.setAlignment(registration, Pos.CENTER);
+		return registration;
 	}
 
 	/**

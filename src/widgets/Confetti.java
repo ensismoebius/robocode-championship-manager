@@ -2,10 +2,8 @@ package widgets;
 
 import java.util.Random;
 
-import javafx.animation.AnimationTimer;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
 /**
@@ -16,7 +14,7 @@ import javafx.scene.paint.Color;
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-public class Confetti extends Pane {
+public class Confetti extends TimedPane {
 
 	private static final Color[] COLORS = { Color.web("#ffd400"), Color.web("#2ec4ff"), Color.web("#ff3d6e"), Color.web("#5af08f"), Color.web("#c86bff"), Color.WHITE };
 	private static final int PIECES = 180;
@@ -27,32 +25,14 @@ public class Confetti extends Pane {
 	// x, y (0..1 of the screen), speed, sway phase, size, color
 	private final double[][] pieces = new double[PIECES][6];
 
-	private final AnimationTimer timer = new AnimationTimer() {
-		private long last = -1;
-
-		@Override
-		public void handle(long now) {
-			double delta = this.last < 0 ? 0 : (now - this.last) / 1e9;
-			this.last = now;
-			Confetti.this.step(delta, now / 1e9);
-		}
-	};
-
 	public Confetti() {
+		super(Double.MAX_VALUE);
 		this.getChildren().add(this.canvas);
-		this.setMouseTransparent(true);
 		for (double[] piece : this.pieces) {
 			this.reset(piece);
 			// Starts spread over the screen, not all at the top
 			piece[1] = this.random.nextDouble() * -1.2;
 		}
-		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
-			if (newScene == null) {
-				this.timer.stop();
-			} else {
-				this.timer.start();
-			}
-		});
 	}
 
 	private void reset(double[] piece) {
@@ -70,7 +50,8 @@ public class Confetti extends Pane {
 		this.canvas.setHeight(this.getHeight());
 	}
 
-	private void step(double delta, double seconds) {
+	@Override
+	protected void step(double delta, double seconds) {
 		double width = this.canvas.getWidth();
 		double height = this.canvas.getHeight();
 		GraphicsContext g = this.canvas.getGraphicsContext2D();
