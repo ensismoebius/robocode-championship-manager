@@ -60,4 +60,64 @@ class BattleAudioTest {
 		// Out of range powers are kept in range
 		assertEquals(BattleAudio.shotPitch(3), BattleAudio.shotPitch(9), 1e-9);
 	}
+
+	@Test
+	void machinesSoundOnlyWhenTheyMove() {
+		assertEquals(0, rms(BattleAudio.machines(0, 0, 2)), 1e-12);
+		assertTrue(rms(BattleAudio.machines(40, 0, 3)) > 0.01, "tracks are silent");
+		assertTrue(rms(BattleAudio.machines(0, 90, 3)) > 0.005, "turret is silent");
+	}
+
+	@Test
+	void fasterTracksHumLouder() {
+		// The drive hums louder the faster the tracks run
+		assertTrue(rms(BattleAudio.machines(120, 0, 3)) > rms(BattleAudio.machines(20, 0, 3)));
+	}
+
+	@Test
+	void soundsComeFromTheSideTheyHappenOn() {
+		BattleAudio audio = new BattleAudio();
+		// Looking to +z: the right hand is +x
+		audio.setListener(0, 0, 0, 1);
+		double[] right = audio.spatial(300, 0);
+		double[] left = audio.spatial(-300, 0);
+		double[] ahead = audio.spatial(0, 300);
+		assertTrue(right[1] > 2 * right[0], "a sound on the right is not in the right ear");
+		assertTrue(left[0] > 2 * left[1], "a sound on the left is not in the left ear");
+		assertEquals(ahead[0], ahead[1], 1e-9);
+		assertTrue(audio.spatial(900, 0)[1] < right[1], "a farther sound is not quieter");
+	}
+
+	@Test
+	void theRightEarHearsTheRobotOnTheRight() {
+		BattleAudio audio = new BattleAudio();
+		audio.setListener(0, 0, 0, 1);
+		audio.setMachine(1, 60, 0, 300, 0);
+		// The music is in the middle of both ears: silent, the sides are what is tested
+		audio.setMusicLevel(0);
+		double[] frame = new double[2];
+		double left = 0;
+		double right = 0;
+		for (int i = 0; i < 2 * Synth.RATE; i++) {
+			audio.nextFrame(frame);
+			left += frame[0] * frame[0];
+			right += frame[1] * frame[1];
+		}
+		assertTrue(right > 4 * left, "left " + left + " right " + right);
+	}
+
+	@Test
+	void tracksAreLowAndInternal() {
+		// The difference between two samples grows with the treble: a dull sound has little of it
+		double[] samples = BattleAudio.machines(60, 0, 3);
+		double energy = 0;
+		double change = 0;
+		for (int i = 0; i < samples.length; i++) {
+			energy += samples[i] * samples[i];
+			if (i > 0) {
+				change += (samples[i] - samples[i - 1]) * (samples[i] - samples[i - 1]);
+			}
+		}
+		assertTrue(Math.sqrt(change / energy) < 0.1, "the tracks are too bright: " + Math.sqrt(change / energy));
+	}
 }

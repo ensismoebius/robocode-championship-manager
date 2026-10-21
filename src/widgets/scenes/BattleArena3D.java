@@ -1862,8 +1862,13 @@ public class BattleArena3D extends StackPane {
 		if (!this.flows.isEmpty()) {
 			this.updateFlows();
 		}
-		for (RobotView robotView : this.robots.values()) {
-			robotView.roll();
+		// The ears are the camera: the sounds come from the side of the screen they are on
+		this.audio.setListener(this.eye[0], this.eye[2], this.look[0] - this.eye[0], this.look[2] - this.eye[2]);
+		for (Map.Entry<Integer, RobotView> entry : this.robots.entrySet()) {
+			RobotView robotView = entry.getValue();
+			robotView.roll(dt);
+			double[] at = robotView.position();
+			this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, at[0], at[2]);
 		}
 		this.updateFire(dt * this.effectRate);
 		this.updateSunbeams(dt);
@@ -2429,7 +2434,7 @@ public class BattleArena3D extends StackPane {
 	 */
 	private void bulletFired(Bullet bullet, double x, double y) {
 		if (this.bulletsSeen.add(bullet.id())) {
-			this.audio.shot(bullet.power());
+			this.audio.shotAt(bullet.power(), this.worldX(x), this.worldZ(y));
 			this.muzzleFlash(this.worldX(x), this.worldZ(y), this.shooterColor(bullet));
 		}
 	}
@@ -2446,7 +2451,7 @@ public class BattleArena3D extends StackPane {
 		RobotView victim = this.robots.get(bullet.victim());
 		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
 			victim.flash();
-			this.audio.hit(bullet.power());
+			this.audio.hitAt(bullet.power(), this.worldX(x), this.worldZ(y));
 			this.hitTension = Math.min(0.25, this.hitTension + 0.08 + bullet.power() * 0.03);
 			this.shake += 3 + bullet.power() * 3;
 			this.impactCut(bullet.victim(), bullet.power());
@@ -2457,7 +2462,7 @@ public class BattleArena3D extends StackPane {
 				this.pendingPhotos.add(new PendingPhoto(PHOTO_HIT_DELAY, this.round + 1, false, shooter.opponent, bullet.power()));
 			}
 		} else {
-			this.audio.spark();
+			this.audio.sparkAt(this.worldX(x), this.worldZ(y));
 			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
 				this.flashFence(bullet.x(), bullet.y());
 			}
@@ -2493,18 +2498,18 @@ public class BattleArena3D extends StackPane {
 				continue;
 			}
 			if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
-				this.audio.thud();
+				this.audio.thudAt(this.worldX(state.x()), this.worldZ(state.y()));
 				this.shake += 1.5;
 				if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
 					this.flashFence(state.x(), state.y());
 				}
 			}
 			if (!state.isDead() && state.energy() < 20 && this.lowEnergyWarned.add(state.index())) {
-				this.audio.lowEnergy();
+				this.audio.lowEnergyAt(view.position()[0], view.position()[2]);
 			}
 			if (state.isDead() && before != null && !before.isDead() && !view.dead) {
 				view.destroy();
-				this.audio.destroyed();
+				this.audio.destroyedAt(view.position()[0], view.position()[2]);
 				this.shake += 22;
 				this.whiteFlash();
 				if (this.phase == Phase.PLAYING) {
@@ -3940,6 +3945,10 @@ public class BattleArena3D extends StackPane {
 		double rollX = Double.NaN;
 		double rollZ;
 		double rollHeading;
+		/** How fast the tracks run (arena units a second) and the turret turns (degrees a second), for the sound */
+		double treadSpeed;
+		double turretSpeed;
+		double lastGun = Double.NaN;
 
 		RobotView(BattleRecording.Robot robot, Opponent opponent, int order) {
 			this.opponent = opponent;
@@ -4180,20 +4189,36 @@ public class BattleArena3D extends StackPane {
 		 * the hull covered since the last frame, so a robot turning in place runs its
 		 * two belts the opposite way. Dead robots stop.
 		 */
-		void roll() {
+		void roll(double dt) {
+			double gun = this.gunRotate.getAngle();
+			this.treadSpeed = 0;
+			this.turretSpeed = 0;
 			double x = this.root.getTranslateX();
 			double z = this.root.getTranslateZ();
 			double heading = Math.toRadians(this.bodyRotate.getAngle());
 			// A jump (new round, replay) is not a movement
 			if (!Double.isNaN(this.rollX) && !this.dead && Math.hypot(x - this.rollX, z - this.rollZ) < 60) {
+				double fastest = 0;
 				for (int side = 0; side < 2; side++) {
 					double[] from = sidePoint(this.rollX, this.rollZ, this.rollHeading, side);
 					double[] to = sidePoint(x, z, heading, side);
 					// How far that side went forward, along the hull
 					double forward = (to[0] - from[0]) * Math.sin(heading) + (to[1] - from[1]) * Math.cos(heading);
-					this.treadShift[side] = (this.treadShift[side] - forward) % BELT_LENGTH;
+					this.treadShift[side] = (this.treadShift[side] + forward) % BELT_LENGTH;
+					fastest = Math.max(fastest, Math.abs(forward));
+				}
+				if (dt > 0) {
+					this.treadSpeed = fastest / dt;
 				}
 			}
+			// The turret: how far it turned since the last frame, round the short way
+			if (!Double.isNaN(this.lastGun) && !this.dead && dt > 0) {
+				double turn = Math.IEEEremainder(gun - this.lastGun, 360);
+				if (Math.abs(turn) < 90) {
+					this.turretSpeed = Math.abs(turn) / dt;
+				}
+			}
+			this.lastGun = gun;
 			this.rollX = x;
 			this.rollZ = z;
 			this.rollHeading = heading;

@@ -2,9 +2,12 @@ package widgets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -30,6 +33,13 @@ public final class BattleAudio {
 	private static final int CHUNK = 512;
 	private static final double MUSIC_GAIN = 0.75;
 	private static final double SFX_GAIN = 0.9;
+	private static final double MACHINE_GAIN = 0.8;
+	/** The drive of the tracks, over the machines: how loud the hum and the rumble are */
+	private static final double TRACK_GAIN = 2.5;
+	/** The placement of a sound in the middle: both ears hear it the same */
+	private static final double[] CENTER = { 1, 1 };
+	/** The distance between two links of a track, in arena units */
+	private static final double TREAD_PITCH = 3.2;
 
 	/** The adaptive songs */
 	public enum Song {
@@ -89,6 +99,14 @@ public final class BattleAudio {
 	private volatile double musicLevel = 1;
 	/** Seconds to reach silence, 0 while it is not fading out */
 	private volatile double fadeSeconds = 0;
+	/** Where the listener is on the floor and its right hand: the camera of the arena */
+	private volatile double listenerX;
+	private volatile double listenerZ;
+	private volatile double rightX = 1;
+	private volatile double rightZ;
+	/** The machines of each robot. The list is read by the audio thread, the map is only used by the JavaFX thread */
+	private final List<Machine> robotMachines = new CopyOnWriteArrayList<Machine>();
+	private final Map<Integer, Machine> machinesById = new HashMap<Integer, Machine>();
 
 	// Mixer state, only the audio thread touches it
 	private final List<Voice> sfxVoices = new ArrayList<Voice>();
@@ -97,6 +115,9 @@ public final class BattleAudio {
 	private double musicVolume = 0;
 	private double slow = 0;
 	private double duck = 1;
+	/** Where the sounds of the shots and the hits go, for the JavaFX thread: the ears' gains */
+	private double[] placement = CENTER;
+	private final double[] effects = new double[2];
 	private double beat = 0;
 	private int lastStep = -1;
 	private double padPhase1;
@@ -104,8 +125,10 @@ public final class BattleAudio {
 	private double padPhase3;
 	private double padFrequency = Song.EPIC.roots[0];
 	private double padFilter;
-	private double sfxFilter;
+	private double sfxFilterLeft;
+	private double sfxFilterRight;
 	private final double[] echo = new double[(int) (Synth.RATE * 0.13)];
+	private final double[] echoRight = new double[(int) (Synth.RATE * 0.13)];
 	private int echoPosition;
 
 	// Ready made sounds
@@ -127,10 +150,19 @@ public final class BattleAudio {
 		final double rate;
 		double position;
 
+		final double left;
+		final double right;
+
 		Voice(double[] samples, double gain, double rate) {
+			this(samples, gain, rate, CENTER[0], CENTER[1]);
+		}
+
+		Voice(double[] samples, double gain, double rate, double left, double right) {
 			this.samples = samples;
 			this.gain = gain;
 			this.rate = rate;
+			this.left = left;
+			this.right = right;
 		}
 
 		boolean finished() {
@@ -144,6 +176,27 @@ public final class BattleAudio {
 			this.position += this.rate;
 			return value * this.gain;
 		}
+	}
+
+	/**
+	 * The machines of one robot: how fast its tracks run and its turret turns, where
+	 * it is, and the state of their sounds
+	 */
+	private static final class Machine {
+		// Written by the JavaFX thread
+		volatile double treadSpeed;
+		volatile double turretSpeed;
+		volatile double leftGain = 1;
+		volatile double rightGain = 1;
+		// Eased and played by the audio thread
+		double left = 1;
+		double right = 1;
+		double treadLevel;
+		double turretLevel;
+		double humPhase;
+		double gearPhase;
+		double rumble;
+		double servoPhase;
 	}
 
 	// ------------------------------------------------------------------- control
@@ -186,6 +239,88 @@ public final class BattleAudio {
 	 */
 	public void setMusicLevel(double level) {
 		this.musicLevel = Math.max(0, Math.min(1, level));
+	}
+
+	/**
+	 * Where the listener is and where it faces, on the floor: the camera. The sounds
+	 * come from the side of the screen where they happen, in the headphones.
+	 */
+	public void setListener(double x, double z, double facingX, double facingZ) {
+		double length = Math.hypot(facingX, facingZ);
+		this.listenerX = x;
+		this.listenerZ = z;
+		if (length > 1e-9) {
+			// The right hand of the facing, on the floor, as the camera has it
+			this.rightX = facingZ / length;
+			this.rightZ = -facingX / length;
+		}
+	}
+
+	/**
+	 * A robot's machines, called every frame: how fast its tracks run (arena units a
+	 * second), how fast its turret turns (degrees a second) and where it is on the
+	 * floor. Each robot has its own sound, from where it is.
+	 */
+	public void setMachine(int robot, double treadSpeed, double turretSpeed, double x, double z) {
+		Machine machine = this.machinesById.get(robot);
+		if (machine == null) {
+			machine = new Machine();
+			this.machinesById.put(robot, machine);
+			this.robotMachines.add(machine);
+		}
+		machine.treadSpeed = treadSpeed;
+		machine.turretSpeed = turretSpeed;
+		double[] gains = this.spatial(x, z);
+		machine.leftGain = gains[0];
+		machine.rightGain = gains[1];
+	}
+
+	/**
+	 * The gains of the left and the right ear for a sound at x, z: panned by where it
+	 * is from the listener, quieter with the distance. Centered, both are 1.
+	 */
+	double[] spatial(double x, double z) {
+		double dx = x - this.listenerX;
+		double dz = z - this.listenerZ;
+		double distance = Math.hypot(dx, dz);
+		double pan = distance < 1 ? 0 : (dx * this.rightX + dz * this.rightZ) / distance;
+		double angle = (pan + 1) * Math.PI / 4;
+		double loudness = 1 / (1 + distance / 600);
+		return new double[] { Math.sqrt(2) * Math.cos(angle) * loudness, Math.sqrt(2) * Math.sin(angle) * loudness };
+	}
+
+	/** Runs a sound placed at x, z: the shot, the hit or the rest, heard from where it is */
+	private void placedAt(double x, double z, Runnable sound) {
+		this.placement = this.spatial(x, z);
+		try {
+			sound.run();
+		} finally {
+			this.placement = CENTER;
+		}
+	}
+
+	public void shotAt(double power, double x, double z) {
+		this.placedAt(x, z, () -> this.shot(power));
+	}
+
+	public void hitAt(double power, double x, double z) {
+		this.placedAt(x, z, () -> this.hit(power));
+	}
+
+	public void sparkAt(double x, double z) {
+		this.placedAt(x, z, this::spark);
+	}
+
+	public void thudAt(double x, double z) {
+		this.placedAt(x, z, this::thud);
+	}
+
+	public void lowEnergyAt(double x, double z) {
+		this.placedAt(x, z, this::lowEnergy);
+	}
+
+	public void destroyedAt(double x, double z) {
+		this.placedAt(x, z, this::destroyed);
 	}
 
 	public void setSong(Song song) {
@@ -313,6 +448,23 @@ public final class BattleAudio {
 		return render(song, intensity, seconds, 1);
 	}
 
+	/**
+	 * The sound of the machines alone, for the tests: the tracks and the turrets at
+	 * the speeds given, without music
+	 */
+	static double[] machines(double treadSpeed, double turretSpeed, double seconds) {
+		BattleAudio audio = new BattleAudio();
+		audio.setMachine(0, treadSpeed, turretSpeed, 0, 0);
+		audio.musicLevel = 0;
+		double[] samples = new double[(int) (seconds * Synth.RATE)];
+		double[] frame = new double[2];
+		for (int i = 0; i < samples.length; i++) {
+			audio.nextFrame(frame);
+			samples[i] = (frame[0] + frame[1]) / 2;
+		}
+		return samples;
+	}
+
 	static double[] render(Song song, double intensity, double seconds, double musicLevel) {
 		BattleAudio audio = new BattleAudio();
 		audio.song = song;
@@ -321,8 +473,10 @@ public final class BattleAudio {
 		audio.targetIntensity = intensity;
 		audio.musicVolume = 1;
 		double[] samples = new double[(int) (seconds * Synth.RATE)];
+		double[] frame = new double[2];
 		for (int i = 0; i < samples.length; i++) {
-			samples[i] = audio.nextSample();
+			audio.nextFrame(frame);
+			samples[i] = (frame[0] + frame[1]) / 2;
 		}
 		return samples;
 	}
@@ -339,18 +493,19 @@ public final class BattleAudio {
 	}
 
 	private void sfx(double[] samples, double gain, double rate) {
-		this.incoming.add(new Voice(samples, gain, rate));
+		this.incoming.add(new Voice(samples, gain, rate, this.placement[0], this.placement[1]));
 	}
 
 	// -------------------------------------------------------------------- mixer
 
 	private void run() {
-		AudioFormat format = new AudioFormat(Synth.RATE, 16, 1, true, false);
+		AudioFormat format = new AudioFormat(Synth.RATE, 16, 2, true, false);
 		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
 			// Small buffer: the effects must sound with the images
-			line.open(format, CHUNK * 2 * 6);
+			line.open(format, CHUNK * 4 * 6);
 			line.start();
-			byte[] pcm = new byte[CHUNK * 2];
+			byte[] pcm = new byte[CHUNK * 4];
+			double[] frame = new double[2];
 			double fadeOut = 1;
 			double faded = 1;
 			while (this.running || fadeOut > 0) {
@@ -362,9 +517,13 @@ public final class BattleAudio {
 					faded = Math.max(0, faded - CHUNK / (Synth.RATE * this.fadeSeconds));
 				}
 				for (int i = 0; i < CHUNK; i++) {
-					int value = (int) (this.nextSample() * fadeOut * faded * Short.MAX_VALUE);
-					pcm[2 * i] = (byte) value;
-					pcm[2 * i + 1] = (byte) (value >> 8);
+					this.nextFrame(frame);
+					int left = (int) (frame[0] * fadeOut * faded * Short.MAX_VALUE);
+					int right = (int) (frame[1] * fadeOut * faded * Short.MAX_VALUE);
+					pcm[4 * i] = (byte) left;
+					pcm[4 * i + 1] = (byte) (left >> 8);
+					pcm[4 * i + 2] = (byte) right;
+					pcm[4 * i + 3] = (byte) (right >> 8);
 				}
 				line.write(pcm, 0, pcm.length);
 			}
@@ -375,11 +534,14 @@ public final class BattleAudio {
 		}
 	}
 
-	private double nextSample() {
+	/**
+	 * The next moment of the mix, for the left and the right ear
+	 */
+	void nextFrame(double[] out) {
 		// Eases the controls, per sample, so nothing clicks
 		Voice voice;
 		while ((voice = this.incoming.poll()) != null) {
-			this.sfxVoices.add(new Voice(voice.samples, voice.gain, voice.rate * (this.slowMotion ? 0.45 : 1)));
+			this.sfxVoices.add(new Voice(voice.samples, voice.gain, voice.rate * (this.slowMotion ? 0.45 : 1), voice.left, voice.right));
 		}
 		this.intensity += (this.targetIntensity - this.intensity) * 0.00003;
 		this.slow += ((this.slowMotion ? 1 : 0) - this.slow) * 0.0002;
@@ -388,26 +550,72 @@ public final class BattleAudio {
 
 		double music = this.music() * this.musicVolume * this.duck * MUSIC_GAIN * this.musicLevel;
 
-		double effects = 0;
+		this.effects[0] = 0;
+		this.effects[1] = 0;
 		for (Iterator<Voice> it = this.sfxVoices.iterator(); it.hasNext();) {
 			Voice playing = it.next();
-			effects += playing.next();
+			double value = playing.next();
+			this.effects[0] += value * playing.left;
+			this.effects[1] += value * playing.right;
 			if (playing.finished()) {
 				it.remove();
 			}
 		}
-		// In slow motion the effects are muffled too
-		this.sfxFilter += (effects - this.sfxFilter) * (1 - 0.8 * this.slow);
-		effects = this.sfxFilter * SFX_GAIN;
+		this.mixMachines(this.effects);
 
-		// A short echo gives the effects some space
-		double delayed = this.echo[this.echoPosition];
-		this.echo[this.echoPosition] = effects + delayed * 0.32;
+		// In slow motion the effects are muffled too
+		this.sfxFilterLeft += (this.effects[0] - this.sfxFilterLeft) * (1 - 0.8 * this.slow);
+		this.sfxFilterRight += (this.effects[1] - this.sfxFilterRight) * (1 - 0.8 * this.slow);
+		double left = this.sfxFilterLeft * SFX_GAIN;
+		double right = this.sfxFilterRight * SFX_GAIN;
+
+		// A short echo gives the effects some space, each ear with its own, so the echo keeps the side
+		double delayedLeft = this.echo[this.echoPosition];
+		double delayedRight = this.echoRight[this.echoPosition];
+		this.echo[this.echoPosition] = left + delayedLeft * 0.32;
+		this.echoRight[this.echoPosition] = right + delayedRight * 0.32;
 		this.echoPosition = (this.echoPosition + 1) % this.echo.length;
-		effects += delayed * 0.35;
+		left += delayedLeft * 0.35;
+		right += delayedRight * 0.35;
 
 		// Soft clipping: loud without distortion
-		return Math.tanh((music + effects) * 1.1) * 0.92;
+		out[0] = Math.tanh((music + left) * 1.1) * 0.92;
+		out[1] = Math.tanh((music + right) * 1.1) * 0.92;
+	}
+
+	/**
+	 * The machines of each robot, from where it is, all of them low, the inside of the
+	 * tank: the drive of the tracks hums with its harmonics, its pitch rising a little
+	 * with the speed, the gears swell once per turn under it and the engine rumbles
+	 * below. The servo of the turret whines as it turns, higher the faster it goes.
+	 */
+	private void mixMachines(double[] effects) {
+		for (Machine machine : this.robotMachines) {
+			machine.treadLevel += (machine.treadSpeed - machine.treadLevel) * 0.0005;
+			machine.turretLevel += (machine.turretSpeed - machine.turretLevel) * 0.0005;
+			double tread = Math.min(1, machine.treadLevel / 40);
+			double turret = Math.min(1, machine.turretLevel / 90);
+			// The placement eases to where the robot is now, so it does not click
+			machine.left += (machine.leftGain - machine.left) * 0.001;
+			machine.right += (machine.rightGain - machine.right) * 0.001;
+
+			// The drive: a low hum and its harmonics
+			machine.humPhase = (machine.humPhase + (38 + 0.2 * machine.treadLevel) / Synth.RATE) % 1;
+			double hum = Math.sin(2 * Math.PI * machine.humPhase) + 0.45 * Math.sin(4 * Math.PI * machine.humPhase) + 0.2 * Math.sin(6 * Math.PI * machine.humPhase);
+			// The gears: a slow swell, once for each stretch of belt that passes a tooth
+			machine.gearPhase = (machine.gearPhase + machine.treadLevel / TREAD_PITCH / 8 / Synth.RATE) % 1;
+			double swell = 0.8 + 0.2 * Math.sin(2 * Math.PI * machine.gearPhase);
+			// The engine below everything: noise that is only low
+			machine.rumble += ((this.random.nextDouble() * 2 - 1) - machine.rumble) * 0.01;
+			double sound = (hum * 0.3 * swell + machine.rumble * 0.9) * tread * TRACK_GAIN;
+
+			machine.servoPhase = (machine.servoPhase + (330 + 4 * machine.turretLevel) / Synth.RATE) % 1;
+			double whine = Math.sin(2 * Math.PI * machine.servoPhase) + 0.4 * Math.sin(4 * Math.PI * machine.servoPhase);
+			sound += (whine * 0.09 + (this.random.nextDouble() * 2 - 1) * 0.03) * turret;
+			sound *= MACHINE_GAIN;
+			effects[0] += sound * machine.left;
+			effects[1] += sound * machine.right;
+		}
 	}
 
 	/**
