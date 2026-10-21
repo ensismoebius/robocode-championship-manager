@@ -59,8 +59,8 @@ final class Critters {
 		this.halfWidth = width / 2;
 		this.halfHeight = height / 2;
 		this.random = random;
-		for (int i = 0; i < COUNT; i++) {
-			Critter critter = new Critter(kind(style, i));
+		for (int index = 0; index < COUNT; index++) {
+			Critter critter = new Critter(kind(style, index));
 			this.critters.add(critter);
 			this.root.getChildren().add(critter.root);
 		}
@@ -75,9 +75,9 @@ final class Critters {
 		this.water = water;
 	}
 
-	void update(double dt) {
+	void update(double deltaTime) {
 		for (Critter critter : this.critters) {
-			critter.update(dt);
+			critter.update(deltaTime);
 		}
 	}
 
@@ -85,18 +85,18 @@ final class Critters {
 	 * Something happens in the battle at (x, z): the critters within the radius are
 	 * frightened, the nearer the more, and run or fly away from it
 	 */
-	void alarm(double x, double z, double radius, double strength) {
+	void alarm(double posX, double posZ, double radius, double strength) {
 		for (Critter critter : this.critters) {
-			double distance = Math.hypot(critter.x - x, critter.z - z);
+			double distance = Math.hypot(critter.x - posX, critter.z - posZ);
 			if (distance < radius) {
-				critter.frighten(x, z, strength * (1 - distance / radius));
+				critter.frighten(posX, posZ, strength * (1 - distance / radius));
 			}
 		}
 	}
 
 	/** Where the critter nearest to the point is, aimed at its body, or null if there is none */
-	double[] nearest(double x, double z) {
-		Critter best = this.closest(x, z);
+	double[] nearest(double posX, double posZ) {
+		Critter best = this.closest(posX, posZ);
 		return best == null ? null : this.body(best);
 	}
 
@@ -104,16 +104,16 @@ final class Critters {
 	 * Follows the critter nearest to the point: every call tells where it is now,
 	 * aimed at its body. Null if there are no critters.
 	 */
-	Supplier<double[]> track(double x, double z) {
-		Critter best = this.closest(x, z);
+	Supplier<double[]> track(double posX, double posZ) {
+		Critter best = this.closest(posX, posZ);
 		return best == null ? null : () -> this.body(best);
 	}
 
-	private Critter closest(double x, double z) {
+	private Critter closest(double posX, double posZ) {
 		Critter best = null;
 		double bestDistance = Double.MAX_VALUE;
 		for (Critter critter : this.critters) {
-			double distance = Math.hypot(critter.x - x, critter.z - z);
+			double distance = Math.hypot(critter.x - posX, critter.z - posZ);
 			if (distance < bestDistance) {
 				bestDistance = distance;
 				best = critter;
@@ -147,33 +147,33 @@ final class Critters {
 	}
 
 	/** Whether the point is in the battle area, with its margin */
-	private boolean inField(double x, double z) {
-		return Math.abs(x) < this.halfWidth + MARGIN && Math.abs(z) < this.halfHeight + MARGIN;
+	private boolean inField(double posX, double posZ) {
+		return Math.abs(posX) < this.halfWidth + MARGIN && Math.abs(posZ) < this.halfHeight + MARGIN;
 	}
 
 	/** Whether a critter can be at the point: near the field, not in the battle, not in the river for walkers */
-	private boolean walkable(double x, double z, boolean flies) {
-		if (this.inField(x, z)) {
+	private boolean walkable(double posX, double posZ, boolean flies) {
+		if (this.inField(posX, posZ)) {
 			return false;
 		}
-		boolean near = Math.abs(x) <= this.halfWidth + REACH && Math.abs(z) <= this.halfHeight + REACH;
-		boolean wet = this.water != null && this.water.test(x, z);
-		if (!near && !(wet && Math.abs(x) <= this.halfWidth + SWIM_REACH && Math.abs(z) <= this.halfHeight + SWIM_REACH)) {
+		boolean near = Math.abs(posX) <= this.halfWidth + REACH && Math.abs(posZ) <= this.halfHeight + REACH;
+		boolean wet = this.water != null && this.water.test(posX, posZ);
+		if (!near && !(wet && Math.abs(posX) <= this.halfWidth + SWIM_REACH && Math.abs(posZ) <= this.halfHeight + SWIM_REACH)) {
 			return false;
 		}
-		return flies || this.style != ArenaStyle.JUNGLE || Math.abs(Math.abs(z) - (this.halfHeight + 160)) >= 90;
+		return flies || this.style != ArenaStyle.JUNGLE || Math.abs(Math.abs(posZ) - (this.halfHeight + 160)) >= 90;
 	}
 
 	/** Whether the straight way from one point to another never enters the battle area */
 	private boolean clearPath(double fromX, double fromZ, double toX, double toZ) {
 		// Dense enough that not even a corner of the field can be skipped between two points
 		int samples = (int) Math.ceil(Math.hypot(toX - fromX, toZ - fromZ) / 4) + 1;
-		for (int i = 1; i <= samples; i++) {
-			double t = (double) i / samples;
+		for (int index = 1; index <= samples; index++) {
+			double time2 = (double) index / samples;
 			// Checked a little wider than the margin, so a corner grazed between two samples is still caught
-			double x = fromX + (toX - fromX) * t;
-			double z = fromZ + (toZ - fromZ) * t;
-			if (Math.abs(x) < this.halfWidth + MARGIN + 8 && Math.abs(z) < this.halfHeight + MARGIN + 8) {
+			double posX = fromX + (toX - fromX) * time2;
+			double posZ = fromZ + (toZ - fromZ) * time2;
+			if (Math.abs(posX) < this.halfWidth + MARGIN + 8 && Math.abs(posZ) < this.halfHeight + MARGIN + 8) {
 				return false;
 			}
 		}
@@ -186,18 +186,18 @@ final class Critters {
 		boolean wantWater = this.water != null && this.random.nextBoolean();
 		for (int attempt = 0; attempt < 1000; attempt++) {
 			double reach = this.water == null ? REACH : SWIM_REACH;
-			double x = (this.random.nextDouble() * 2 - 1) * (this.halfWidth + reach);
-			double z = (this.random.nextDouble() * 2 - 1) * (this.halfHeight + reach);
-			if (this.walkable(x, z, flies) && (!wantWater || this.water.test(x, z))) {
-				return new double[] { x, z };
+			double posX = (this.random.nextDouble() * 2 - 1) * (this.halfWidth + reach);
+			double posZ = (this.random.nextDouble() * 2 - 1) * (this.halfHeight + reach);
+			if (this.walkable(posX, posZ, flies) && (!wantWater || this.water.test(posX, posZ))) {
+				return new double[] { posX, posZ };
 			}
 		}
 		// No water around: any place will do
 		while (true) {
-			double x = (this.random.nextDouble() * 2 - 1) * (this.halfWidth + REACH);
-			double z = (this.random.nextDouble() * 2 - 1) * (this.halfHeight + REACH);
-			if (this.walkable(x, z, flies)) {
-				return new double[] { x, z };
+			double posX2 = (this.random.nextDouble() * 2 - 1) * (this.halfWidth + REACH);
+			double posZ2 = (this.random.nextDouble() * 2 - 1) * (this.halfHeight + REACH);
+			if (this.walkable(posX2, posZ2, flies)) {
+				return new double[] { posX2, posZ2 };
 			}
 		}
 	}
@@ -222,10 +222,10 @@ final class Critters {
 		for (int attempt = 0; attempt < 60; attempt++) {
 			double direction = away + (this.random.nextDouble() - 0.5) * 1.4;
 			double distance = 120 + this.random.nextDouble() * 160;
-			double x = fromX + Math.cos(direction) * distance;
-			double z = fromZ + Math.sin(direction) * distance;
-			if (this.walkable(x, z, flies) && this.clearPath(fromX, fromZ, x, z)) {
-				return new double[] { x, z };
+			double posX = fromX + Math.cos(direction) * distance;
+			double posZ = fromZ + Math.sin(direction) * distance;
+			if (this.walkable(posX, posZ, flies) && this.clearPath(fromX, fromZ, posX, posZ)) {
+				return new double[] { posX, posZ };
 			}
 		}
 		return this.wander(flies, fromX, fromZ);
@@ -275,41 +275,41 @@ final class Critters {
 		}
 
 		/** Runs or flies away from a threat; the nearer it is, the more afraid */
-		void frighten(double x, double z, double amount) {
-			this.threatX = x;
-			this.threatZ = z;
+		void frighten(double posX, double posZ, double amount) {
+			this.threatX = posX;
+			this.threatZ = posZ;
 			this.fear = Math.min(1, Math.max(this.fear, amount * 1.5));
-			double[] goal = escape(this.kind.flies, this.x, this.z, x, z);
+			double[] goal = escape(this.kind.flies, this.x, this.z, posX, posZ);
 			this.targetX = goal[0];
 			this.targetZ = goal[1];
 		}
 
-		void update(double dt) {
-			this.time += dt;
-			this.fear = Math.max(0, this.fear - dt * 0.3);
-			double dx = this.targetX - this.x;
-			double dz = this.targetZ - this.z;
-			if (Math.hypot(dx, dz) < 14) {
+		void update(double deltaTime) {
+			this.time += deltaTime;
+			this.fear = Math.max(0, this.fear - deltaTime * 0.3);
+			double deltaX = this.targetX - this.x;
+			double deltaZ = this.targetZ - this.z;
+			if (Math.hypot(deltaX, deltaZ) < 14) {
 				double[] goal = this.fear > 0.05 ? escape(this.kind.flies, this.x, this.z, this.threatX, this.threatZ) : wander(this.kind.flies, this.x, this.z);
 				this.targetX = goal[0];
 				this.targetZ = goal[1];
-				dx = this.targetX - this.x;
-				dz = this.targetZ - this.z;
+				deltaX = this.targetX - this.x;
+				deltaZ = this.targetZ - this.z;
 			}
-			double desired = Math.atan2(dx, dz);
+			double desired = Math.atan2(deltaX, deltaZ);
 			double turnBy = Math.atan2(Math.sin(desired - this.heading), Math.cos(desired - this.heading));
-			this.heading += turnBy * Math.min(1, dt * (2.5 + 4 * this.fear));
+			this.heading += turnBy * Math.min(1, deltaTime * (2.5 + 4 * this.fear));
 
 			// Walks straight to the goal, the way that was checked to stay out of the battle area;
 			// the body turns towards it on its own pace
 			boolean inWater = this.kind == Kind.PENGUIN && Critters.this.water != null && Critters.this.water.test(this.x, this.z);
-			this.swim += ((inWater ? 1 : 0) - this.swim) * Math.min(1, dt * 4);
+			this.swim += ((inWater ? 1 : 0) - this.swim) * Math.min(1, deltaTime * 4);
 			double speed = (this.kind.flies ? 90 : 34 + 30 * this.swim) * (1 + 1.6 * this.fear);
-			double distance = Math.hypot(dx, dz);
-			double step = Math.min(distance, speed * dt);
+			double distance = Math.hypot(deltaX, deltaZ);
+			double step = Math.min(distance, speed * deltaTime);
 			if (distance > 0) {
-				this.x += dx / distance * step;
-				this.z += dz / distance * step;
+				this.x += deltaX / distance * step;
+				this.z += deltaZ / distance * step;
 			}
 
 			// The legs swing with the stride, the wings flap quicker when afraid
@@ -396,8 +396,8 @@ final class Critters {
 				part(new Box(3, 1, 15), glow, 0, -7, 0, 1, 1, 1), part(new Box(0.5, 0.6, 14), seam, -2.6, -6.6, 0, 1, 1, 1),
 				part(new Box(0.5, 0.6, 14), seam, 2.6, -6.6, 0, 1, 1, 1));
 		for (int side = -1; side <= 1; side += 2) {
-			for (double z = -4; z <= 3; z += 7) {
-				body.getChildren().add(part(new Sphere(0.9, 6), glow, side * 3.2, -6.6, z, 1, 0.5, 1));
+			for (double posZ = -4; posZ <= 3; posZ += 7) {
+				body.getChildren().add(part(new Sphere(0.9, 6), glow, side * 3.2, -6.6, posZ, 1, 0.5, 1));
 			}
 			body.getChildren().add(cylinder(0.3, 9, shell, side * 2.2, -11, 12, -side * 20));
 			body.getChildren().add(part(new Sphere(0.9, 6), glow, side * 4.2, -15.5, 12.5, 1, 1, 1));
@@ -422,8 +422,8 @@ final class Critters {
 				part(new Sphere(4, 10), skin, 0, -4, 10, 1, 0.8, 1.1), tail(skin, 0, -3, -15));
 		for (int side = -1; side <= 1; side += 2) {
 			body.getChildren().add(part(new Box(0.4, 3, 2.5), gill, side * 4.3, -5, 8, 1, 1, 1));
-			for (double z = -6; z <= 6; z += 4) {
-				body.getChildren().add(part(new Sphere(0.9, 6), spot, side * 1.6, -5.4, z, 1, 0.5, 1));
+			for (double posZ = -6; posZ <= 6; posZ += 4) {
+				body.getChildren().add(part(new Sphere(0.9, 6), spot, side * 1.6, -5.4, posZ, 1, 0.5, 1));
 			}
 		}
 		body.getChildren().addAll(eyes(2, -6, 13, 0.9));
@@ -466,8 +466,8 @@ final class Critters {
 			body.getChildren().add(cylinder(0.7, 3.5, fur, side * 1.6, -4.5, 4.5, 0));
 			body.getChildren().add(part(new Sphere(0.7, 6), red, side * 1.1, -1.2, 6.6, 1, 1, 1));
 			Group wing = new Group(box(16, 0.4, 8, membrane, side * 8, 0, 0));
-			for (double x = 4; x <= 13; x += 4.5) {
-				wing.getChildren().add(box(0.4, 0.6, 8.5, rib, side * x, -0.2, 0));
+			for (double posX = 4; posX <= 13; posX += 4.5) {
+				wing.getChildren().add(box(0.4, 0.6, 8.5, rib, side * posX, -0.2, 0));
 			}
 			body.getChildren().add(joint(joints, Rotate.Z_AXIS, side * 2, 0, 0, wing, 0.9 * side, 0));
 		}
@@ -475,27 +475,27 @@ final class Critters {
 	}
 
 	/** Two eyes at x = ±x: a white with a black pupil in front of it */
-	private static List<Node> eyes(double x, double y, double z, double size) {
+	private static List<Node> eyes(double posX, double posY, double posZ, double size) {
 		PhongMaterial white = paint(Color.web("#f4f4ee"), 60);
 		PhongMaterial pupil = paint(Color.web("#0a0a0a"), 60);
 		List<Node> parts = new ArrayList<>();
 		for (int side = -1; side <= 1; side += 2) {
-			parts.add(part(new Sphere(size, 8), white, side * x, y, z, 1, 1, 1));
-			parts.add(part(new Sphere(size * 0.55, 6), pupil, side * x, y, z + size * 0.6, 1, 1, 1));
+			parts.add(part(new Sphere(size, 8), white, side * posX, posY, posZ, 1, 1, 1));
+			parts.add(part(new Sphere(size * 0.55, 6), pupil, side * posX, posY, posZ + size * 0.6, 1, 1, 1));
 		}
 		return parts;
 	}
 
 	/** A cylinder standing on its middle, tilted sideways by degrees around Z */
-	private static Node cylinder(double radius, double height, PhongMaterial material, double x, double y, double z, double tilt) {
+	private static Node cylinder(double radius, double height, PhongMaterial material, double posX, double posY, double posZ, double tilt) {
 		Cylinder cylinder = new Cylinder(radius, height, 6);
 		cylinder.setMaterial(material);
 		if (tilt != 0) {
 			cylinder.getTransforms().add(new Rotate(tilt, Rotate.Z_AXIS));
 		}
-		cylinder.setTranslateX(x);
-		cylinder.setTranslateY(y);
-		cylinder.setTranslateZ(z);
+		cylinder.setTranslateX(posX);
+		cylinder.setTranslateY(posY);
+		cylinder.setTranslateZ(posZ);
 		return cylinder;
 	}
 
@@ -512,29 +512,29 @@ final class Critters {
 		return material;
 	}
 
-	private static <T extends Shape3D> T part(T shape, PhongMaterial material, double x, double y, double z, double sx, double sy, double sz) {
+	private static <T extends Shape3D> T part(T shape, PhongMaterial material, double posX, double posY, double posZ, double sxValue, double syValue, double szValue) {
 		shape.setMaterial(material);
-		shape.setTranslateX(x);
-		shape.setTranslateY(y);
-		shape.setTranslateZ(z);
-		shape.setScaleX(sx);
-		shape.setScaleY(sy);
-		shape.setScaleZ(sz);
+		shape.setTranslateX(posX);
+		shape.setTranslateY(posY);
+		shape.setTranslateZ(posZ);
+		shape.setScaleX(sxValue);
+		shape.setScaleY(syValue);
+		shape.setScaleZ(szValue);
 		return shape;
 	}
 
-	private static Box box(double sx, double sy, double sz, PhongMaterial material, double x, double y, double z) {
-		Box box = new Box(sx, sy, sz);
-		return (Box) part(box, material, x, y, z, 1, 1, 1);
+	private static Box box(double sxValue, double syValue, double szValue, PhongMaterial material, double posX, double posY, double posZ) {
+		Box box = new Box(sxValue, syValue, szValue);
+		return (Box) part(box, material, posX, posY, posZ, 1, 1, 1);
 	}
 
 	/** A joint: a hip at (x, y, z) that turns around the axis, with the child hanging from it */
-	private static Node joint(List<Joint> joints, Point3D axis, double x, double y, double z, Node child, double amplitude, double phase) {
+	private static Node joint(List<Joint> joints, Point3D axis, double posX, double posY, double posZ, Node child, double amplitude, double phase) {
 		Rotate rotate = new Rotate(0, axis);
 		Group hip = new Group(child);
-		hip.setTranslateX(x);
-		hip.setTranslateY(y);
-		hip.setTranslateZ(z);
+		hip.setTranslateX(posX);
+		hip.setTranslateY(posY);
+		hip.setTranslateZ(posZ);
 		hip.getTransforms().add(rotate);
 		joints.add(new Joint(rotate, amplitude, phase));
 		return hip;
@@ -550,15 +550,15 @@ final class Critters {
 		Group tail = new Group();
 		int links = 16;
 		Point3D from = null;
-		for (int i = 0; i <= links; i++) {
-			double t = (double) i / links;
+		for (int index = 0; index <= links; index++) {
+			double time2 = (double) index / links;
 			// Up along y, standing; it swings back, forward and back again along z, a
 			// loose S: the swings are uneven and the tail wanders a little to the side
-			Point3D to = new Point3D(2 * Math.sin(4.1 * t + 0.6), -20 * t, -3 * t - 3.6 * Math.sin(2 * Math.PI * Math.pow(t, 1.15)));
+			Point3D point3D = new Point3D(2 * Math.sin(4.1 * time2 + 0.6), -20 * time2, -3 * time2 - 3.6 * Math.sin(2 * Math.PI * Math.pow(time2, 1.15)));
 			if (from != null) {
-				tail.getChildren().add(link(material, from, to, 1.9 - 0.7 * t));
+				tail.getChildren().add(link(material, from, point3D, 1.9 - 0.7 * time2));
 			}
-			from = to;
+			from = point3D;
 		}
 		return tail;
 	}
@@ -567,32 +567,32 @@ final class Critters {
 	 * A cylinder from a point to another, a little longer so the links of a chain
 	 * overlap at the bends
 	 */
-	private static Node link(PhongMaterial material, Point3D from, Point3D to, double radius) {
-		Point3D direction = to.subtract(from);
+	private static Node link(PhongMaterial material, Point3D from, Point3D point3D, double radius) {
+		Point3D direction = point3D.subtract(from);
 		Cylinder cylinder = new Cylinder(radius, direction.magnitude() * 1.15, 8);
 		cylinder.setMaterial(material);
-		Point3D middle = from.midpoint(to);
+		Point3D middle = from.midpoint(point3D);
 		// A cylinder stands along y: turned around the axis perpendicular to y and the direction
 		cylinder.getTransforms().addAll(new Translate(middle.getX(), middle.getY(), middle.getZ()), new Rotate(Rotate.Y_AXIS.angle(direction), Rotate.Y_AXIS.crossProduct(direction)));
 		return cylinder;
 	}
 
-	private static Node tail(PhongMaterial material, double x, double y, double z) {
-		return pointing(1.6, 16, material, x, y, z);
+	private static Node tail(PhongMaterial material, double posX, double posY, double posZ) {
+		return pointing(1.6, 16, material, posX, posY, posZ);
 	}
 
-	private static Node beak(PhongMaterial material, double x, double y, double z) {
-		return pointing(1.2, 4, material, x, y, z);
+	private static Node beak(PhongMaterial material, double posX, double posY, double posZ) {
+		return pointing(1.2, 4, material, posX, posY, posZ);
 	}
 
 	/** A cylinder lying along z, its center at x, y, z */
-	private static Node pointing(double radius, double length, PhongMaterial material, double x, double y, double z) {
+	private static Node pointing(double radius, double length, PhongMaterial material, double posX, double posY, double posZ) {
 		Cylinder cylinder = new Cylinder(radius, length, 6);
 		cylinder.setMaterial(material);
 		cylinder.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
-		cylinder.setTranslateX(x);
-		cylinder.setTranslateY(y);
-		cylinder.setTranslateZ(z);
+		cylinder.setTranslateX(posX);
+		cylinder.setTranslateY(posY);
+		cylinder.setTranslateZ(posZ);
 		return cylinder;
 	}
 }

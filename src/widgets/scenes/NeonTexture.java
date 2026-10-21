@@ -50,40 +50,40 @@ final class NeonTexture {
 		int size = 256;
 		int[] pixels = new int[size * size];
 		Random random = new Random(11);
-		for (int i = 0; i < pixels.length; i++) {
+		for (int index = 0; index < pixels.length; index++) {
 			int grain = random.nextInt(7);
-			pixels[i] = 0xff000000 | TextureMath.mix(0x0b0e1c, 0x131830, grain / 6.0);
+			pixels[index] = 0xff000000 | TextureMath.mix(0x0b0e1c, 0x131830, grain / 6.0);
 		}
 		// Seams: dark groove with a thin light edge inside
-		for (int i = 0; i < size; i++) {
-			for (int k = 0; k < 3; k++) {
-				pixels[i * size + k] = 0xff04050b;
-				pixels[k * size + i] = 0xff04050b;
-				pixels[i * size + size - 1 - k] = 0xff04050b;
-				pixels[(size - 1 - k) * size + i] = 0xff04050b;
+		for (int index2 = 0; index2 < size; index2++) {
+			for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+				pixels[index2 * size + deepIndex] = 0xff04050b;
+				pixels[deepIndex * size + index2] = 0xff04050b;
+				pixels[index2 * size + size - 1 - deepIndex] = 0xff04050b;
+				pixels[(size - 1 - deepIndex) * size + index2] = 0xff04050b;
 			}
-			pixels[i * size + 3] = 0xff17304a;
-			pixels[3 * size + i] = 0xff17304a;
+			pixels[index2 * size + 3] = 0xff17304a;
+			pixels[3 * size + index2] = 0xff17304a;
 		}
 		// Traces: each turns a few times, ends in a node
 		for (int trace = 0; trace < 9; trace++) {
-			int x = 24 + random.nextInt(size - 48);
-			int y = 24 + random.nextInt(size - 48);
+			int posX = 24 + random.nextInt(size - 48);
+			int posY = 24 + random.nextInt(size - 48);
 			boolean horizontal = random.nextBoolean();
 			for (int segment = 0; segment < 3; segment++) {
 				int length = 20 + random.nextInt(60);
 				int step = random.nextBoolean() ? 1 : -1;
-				for (int i = 0; i < length; i++) {
-					x = Math.max(8, Math.min(size - 9, x + (horizontal ? step : 0)));
-					y = Math.max(8, Math.min(size - 9, y + (horizontal ? 0 : step)));
-					pixels[y * size + x] = 0xff1b4f70;
+				for (int index3 = 0; index3 < length; index3++) {
+					posX = Math.max(8, Math.min(size - 9, posX + (horizontal ? step : 0)));
+					posY = Math.max(8, Math.min(size - 9, posY + (horizontal ? 0 : step)));
+					pixels[posY * size + posX] = 0xff1b4f70;
 				}
 				horizontal = !horizontal;
 			}
-			for (int dy = -2; dy <= 2; dy++) {
-				for (int dx = -2; dx <= 2; dx++) {
-					if (Math.abs(dx) + Math.abs(dy) <= 3) {
-						pixels[(y + dy) * size + x + dx] = (dx == 0 && dy == 0) ? 0xff7fe4ff : 0xff2587b5;
+			for (int deltaY = -2; deltaY <= 2; deltaY++) {
+				for (int deltaX = -2; deltaX <= 2; deltaX++) {
+					if (Math.abs(deltaX) + Math.abs(deltaY) <= 3) {
+						pixels[(posY + deltaY) * size + posX + deltaX] = (deltaX == 0 && deltaY == 0) ? 0xff7fe4ff : 0xff2587b5;
 					}
 				}
 			}
@@ -103,10 +103,10 @@ final class NeonTexture {
 		Random random = new Random(23);
 		int cellWidth = size / columns;
 		int cellHeight = size / rows;
-		for (int py = 0; py < size; py++) {
-			for (int px = 0; px < size; px++) {
-				int wall = 0xff000000 | TextureMath.mix(0x0a0d1a, 0x141a30, (double) py / size);
-				pixels[py * size + px] = glowOnly ? 0xff000000 : wall;
+		for (int posY = 0; posY < size; posY++) {
+			for (int posX = 0; posX < size; posX++) {
+				int wall = 0xff000000 | TextureMath.mix(0x0a0d1a, 0x141a30, (double) posY / size);
+				pixels[posY * size + posX] = glowOnly ? 0xff000000 : wall;
 			}
 		}
 		for (int row = 0; row < rows; row++) {
@@ -114,12 +114,12 @@ final class NeonTexture {
 				boolean lit = random.nextDouble() < 0.38;
 				int color = WINDOW_COLORS[random.nextInt(WINDOW_COLORS.length)];
 				double strength = 0.55 + random.nextDouble() * 0.45;
-				for (int py = row * cellHeight + 5; py < (row + 1) * cellHeight - 6; py++) {
-					for (int px = column * cellWidth + 6; px < (column + 1) * cellWidth - 6; px++) {
+				for (int posY2 = row * cellHeight + 5; posY2 < (row + 1) * cellHeight - 6; posY2++) {
+					for (int posX2 = column * cellWidth + 6; posX2 < (column + 1) * cellWidth - 6; posX2++) {
 						if (lit) {
-							pixels[py * size + px] = 0xff000000 | TextureMath.mix(0x000000, color, strength);
+							pixels[posY2 * size + posX2] = 0xff000000 | TextureMath.mix(0x000000, color, strength);
 						} else if (!glowOnly) {
-							pixels[py * size + px] = 0xff05070f;
+							pixels[posY2 * size + posX2] = 0xff05070f;
 						}
 					}
 				}
@@ -137,26 +137,26 @@ final class NeonTexture {
 		int height = 512;
 		int[] pixels = new int[width * height];
 		Random random = new Random(5);
-		for (int py = 0; py < height; py++) {
-			double t = (double) py / height;
+		for (int posY = 0; posY < height; posY++) {
+			double time = (double) posY / height;
 			int color;
-			if (t < 0.5) {
-				double up = t / 0.5;
-				color = TextureMath.mix(0x04050e, 0x1a0b3d, Math.pow(up, 1.4));
-				color = TextureMath.mix(color, 0xff2a9d, Math.pow(up, 9) * 0.85);
+			if (time < 0.5) {
+				double upValue = time / 0.5;
+				color = TextureMath.mix(0x04050e, 0x1a0b3d, Math.pow(upValue, 1.4));
+				color = TextureMath.mix(color, 0xff2a9d, Math.pow(upValue, 9) * 0.85);
 			} else {
-				color = TextureMath.mix(0x4a0f46, 0x06070d, Math.min(1, (t - 0.5) / 0.05));
+				color = TextureMath.mix(0x4a0f46, 0x06070d, Math.min(1, (time - 0.5) / 0.05));
 			}
-			for (int px = 0; px < width; px++) {
-				pixels[py * width + px] = 0xff000000 | color;
+			for (int posX = 0; posX < width; posX++) {
+				pixels[posY * width + posX] = 0xff000000 | color;
 			}
 		}
-		for (int i = 0; i < 700; i++) {
-			int px = random.nextInt(width);
-			int py = (int) (Math.pow(random.nextDouble(), 0.8) * height * 0.42);
+		for (int index = 0; index < 700; index++) {
+			int posX2 = random.nextInt(width);
+			int posY2 = (int) (Math.pow(random.nextDouble(), 0.8) * height * 0.42);
 			// Stretched at the top of the sphere: wider stars there
 			double brightness = 0.4 + random.nextDouble() * 0.6;
-			pixels[py * width + px] = 0xff000000 | TextureMath.mix(0x1a0b3d, 0xe8f4ff, brightness);
+			pixels[posY2 * width + posX2] = 0xff000000 | TextureMath.mix(0x1a0b3d, 0xe8f4ff, brightness);
 		}
 		return image(width, height, pixels);
 	}
@@ -168,21 +168,21 @@ final class NeonTexture {
 	private static Image sun() {
 		int size = 512;
 		int[] pixels = new int[size * size];
-		for (int py = 0; py < size; py++) {
-			for (int px = 0; px < size; px++) {
-				double x = (px + 0.5) / size * 2 - 1;
-				double y = (py + 0.5) / size * 2 - 1;
-				double radius = Math.hypot(x, y);
+		for (int posY = 0; posY < size; posY++) {
+			for (int posX = 0; posX < size; posX++) {
+				double posX2 = (posX + 0.5) / size * 2 - 1;
+				double posY2 = (posY + 0.5) / size * 2 - 1;
+				double radius = Math.hypot(posX2, posY2);
 				double alpha = 0;
 				int color = 0xff2a9d;
 				if (radius < 0.62) {
-					double v = (y + 0.62) / 1.24;
-					color = TextureMath.mix(0xffe14d, 0xff2a9d, v * 1.1);
+					double vCoord = (posY2 + 0.62) / 1.24;
+					color = TextureMath.mix(0xffe14d, 0xff2a9d, vCoord * 1.1);
 					alpha = Math.min(1, (0.62 - radius) * 90);
 					// Bands in the lower half
-					if (v > 0.45) {
-						double band = (v - 0.45) * 16;
-						double cut = (v - 0.45) * 1.9;
+					if (vCoord > 0.45) {
+						double band = (vCoord - 0.45) * 16;
+						double cut = (vCoord - 0.45) * 1.9;
 						if (band - Math.floor(band) < cut) {
 							alpha = 0;
 						}
@@ -191,7 +191,7 @@ final class NeonTexture {
 					double halo = 1 - (radius - 0.62) / 0.38;
 					alpha = halo * halo * 0.35;
 				}
-				pixels[py * size + px] = ((int) Math.round(alpha * 255) << 24) | color;
+				pixels[posY * size + posX] = ((int) Math.round(alpha * 255) << 24) | color;
 			}
 		}
 		return image(size, size, pixels);

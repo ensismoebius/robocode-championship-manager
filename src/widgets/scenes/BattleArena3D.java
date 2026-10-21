@@ -282,9 +282,9 @@ public class BattleArena3D extends StackPane {
 
 		@Override
 		public void handle(long now) {
-			double dt = this.last < 0 ? 0 : Math.min(0.1, (now - this.last) / 1e9);
+			double deltaTime = this.last < 0 ? 0 : Math.min(0.1, (now - this.last) / 1e9);
 			this.last = now;
-			BattleArena3D.this.update(dt);
+			BattleArena3D.this.update(deltaTime);
 		}
 	};
 
@@ -409,7 +409,7 @@ public class BattleArena3D extends StackPane {
 
 	Opponent opponentOf(BattleRecording.Robot robot) {
 		String name = BattleControl.robotClassName(robot.getName());
-		return this.fighters.stream().filter(o -> o.getFullName().equals(name)).findFirst().orElse(null);
+		return this.fighters.stream().filter(other -> other.getFullName().equals(name)).findFirst().orElse(null);
 	}
 
 	// ------------------------------------------------------------------ scene
@@ -431,23 +431,23 @@ public class BattleArena3D extends StackPane {
 		this.glowing.getChildren().clear();
 		this.lava = null;
 		this.flows.clear();
-		double w = this.fieldWidth;
-		double h = this.fieldHeight;
+		double width = this.fieldWidth;
+		double height = this.fieldHeight;
 		switch (this.style) {
-		case NEON -> this.neon.build(w, h);
-		case VOLCANO -> this.volcano.build(w, h);
-		case ICE -> this.ice.build(w, h);
-		case JUNGLE -> this.jungle.build(w, h);
+		case NEON -> this.neon.build(width, height);
+		case VOLCANO -> this.volcano.build(width, height);
+		case ICE -> this.ice.build(width, height);
+		case JUNGLE -> this.jungle.build(width, height);
 		}
 		this.arena.getChildren().add(this.glowing);
-		this.forceField.buildFence(w, h);
-		this.critters = new Critters(this.style, w, h, this.random);
+		this.forceField.buildFence(width, height);
+		this.critters = new Critters(this.style, width, height, this.random);
 		this.arena.getChildren().add(this.critters.root());
 		if (this.style == ArenaStyle.ICE && this.ice.seaRadius() > 0) {
 			double centreX = this.ice.seaX();
 			double centreZ = this.ice.seaZ();
 			double radius = this.ice.seaRadius();
-			this.critters.setWater((x, z) -> Math.hypot(x - centreX, z - centreZ) < IceArena.shore(Math.atan2(z - centreZ, x - centreX), radius) * 0.97);
+			this.critters.setWater((posX, posZ) -> Math.hypot(posX - centreX, posZ - centreZ) < IceArena.shore(Math.atan2(posZ - centreZ, posX - centreX), radius) * 0.97);
 		}
 	}
 
@@ -498,12 +498,12 @@ public class BattleArena3D extends StackPane {
 	 * Robocode position to the world: the field is centered, north is +Z, up is
 	 * -Y
 	 */
-	double worldX(double x) {
-		return x - this.fieldWidth / 2;
+	double worldX(double posX) {
+		return posX - this.fieldWidth / 2;
 	}
 
-	double worldZ(double y) {
-		return y - this.fieldHeight / 2;
+	double worldZ(double posY) {
+		return posY - this.fieldHeight / 2;
 	}
 
 	// ------------------------------------------------------------------- HUD
@@ -526,8 +526,8 @@ public class BattleArena3D extends StackPane {
 
 	// ----------------------------------------------------------------- update
 
-	private void update(double dt) {
-		this.phaseTime += dt;
+	private void update(double deltaTime) {
+		this.phaseTime += deltaTime;
 
 		switch (this.phase) {
 		case LOADING -> {
@@ -550,25 +550,25 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		case INTRO -> this.rounds.updateIntro();
-		case PLAYING -> this.rounds.updatePlaying(dt);
+		case PLAYING -> this.rounds.updatePlaying(deltaTime);
 		case FREEZE -> {
 			if (this.phaseTime > FREEZE_SECONDS) {
 				this.showcase.startReplay();
 			}
 		}
-		case REPLAY -> this.rounds.updateReplay(dt);
+		case REPLAY -> this.rounds.updateReplay(deltaTime);
 		case ROUND_END -> this.rounds.updateRoundEnd();
 		case FINISHED -> {
 		}
 		}
 
-		this.rounds.updateTension(dt);
-		this.announcer.tick(dt);
-		this.director.updateCamera(dt);
-		this.clock += dt * this.effectRate;
+		this.rounds.updateTension(deltaTime);
+		this.announcer.tick(deltaTime);
+		this.director.updateCamera(deltaTime);
+		this.clock += deltaTime * this.effectRate;
 		this.updateSurfaces();
-		this.updateAudio(dt);
-		this.updateEffects(dt);
+		this.updateAudio(deltaTime);
+		this.updateEffects(deltaTime);
 	}
 
 	/** The lava breathes and its flows slide */
@@ -582,28 +582,28 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/** The ears of the sound are the camera; each robot makes its machine sound */
-	private void updateAudio(double dt) {
+	private void updateAudio(double deltaTime) {
 	// The ears are the camera: the sounds come from the side of the screen they are on
 	this.audio.setListener(this.eye[0], this.eye[2], this.look[0] - this.eye[0], this.look[2] - this.eye[2]);
 	for (Map.Entry<Integer, RobotView> entry : this.robots.entrySet()) {
 		RobotView robotView = entry.getValue();
-		robotView.roll(dt);
-		double[] at = robotView.position();
-		this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, at[0], at[2]);
+		robotView.roll(deltaTime);
+		double[] atValue = robotView.position();
+		this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, atValue[0], atValue[2]);
 	}
 	}
 
 	/** The fire, the sunbeams, the neon and the ice, the critters, the balloons and the photos */
-	private void updateEffects(double dt) {
-	this.fire.update(dt * this.effectRate);
-	this.jungle.updateSunbeams(dt);
-	this.neon.update(dt);
-	this.ice.update(dt);
+	private void updateEffects(double deltaTime) {
+	this.fire.update(deltaTime * this.effectRate);
+	this.jungle.updateSunbeams(deltaTime);
+	this.neon.update(deltaTime);
+	this.ice.update(deltaTime);
 	if (this.critters != null) {
-		this.critters.update(dt);
+		this.critters.update(deltaTime);
 	}
 	this.director.placeBalloons();
-	this.photographer.flushPhotos(dt);
+	this.photographer.flushPhotos(deltaTime);
 	}
 
 	/**
@@ -632,9 +632,9 @@ public class BattleArena3D extends StackPane {
 		return new double[] { lerp(state.x(), after.x(), fraction), lerp(state.y(), after.y(), fraction), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction) };
 	}
 
-	static Bullet findBullet(Turn turn, int id) {
+	static Bullet findBullet(Turn turn, int identifier) {
 		for (Bullet bullet : turn.bullets()) {
-			if (bullet.id() == id) {
+			if (bullet.id() == identifier) {
 				return bullet;
 			}
 		}
@@ -687,9 +687,9 @@ public class BattleArena3D extends StackPane {
 	 */
 	static WritableImage solidMap(Color color) {
 		WritableImage map = new WritableImage(2, 2);
-		for (int y = 0; y < 2; y++) {
-			for (int x = 0; x < 2; x++) {
-				map.getPixelWriter().setColor(x, y, color);
+		for (int posY = 0; posY < 2; posY++) {
+			for (int posX = 0; posX < 2; posX++) {
+				map.getPixelWriter().setColor(posX, posY, color);
 			}
 		}
 		return map;
@@ -702,16 +702,16 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
-	static double lerp(double a, double b, double t) {
-		return a + (b - a) * t;
+	static double lerp(double first, double second, double time) {
+		return first + (second - first) * time;
 	}
 
 	/**
 	 * Interpolates angles (radians) the short way
 	 */
-	static double lerpAngle(double a, double b, double t) {
-		double difference = Math.IEEEremainder(b - a, Math.PI * 2);
-		return a + difference * t;
+	static double lerpAngle(double first, double second, double time) {
+		double difference = Math.IEEEremainder(second - first, Math.PI * 2);
+		return first + difference * time;
 	}
 
 	// ------------------------------------------------------------------ robot

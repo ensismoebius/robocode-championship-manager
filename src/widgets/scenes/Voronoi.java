@@ -28,26 +28,26 @@ final class Voronoi {
 	 */
 	static List<double[][]> cells(double[][] seeds, double[] gaps, double minX, double minZ, double maxX, double maxZ) {
 		List<double[][]> cells = new ArrayList<double[][]>(seeds.length);
-		for (int i = 0; i < seeds.length; i++) {
-			double gap = gaps[i];
+		for (int index = 0; index < seeds.length; index++) {
+			double gap = gaps[index];
 			List<double[]> polygon = new ArrayList<double[]>(List.of( //
 					new double[] { minX + gap, minZ + gap }, new double[] { maxX - gap, minZ + gap }, //
 					new double[] { maxX - gap, maxZ - gap }, new double[] { minX + gap, maxZ - gap }));
-			double[] seed = seeds[i];
-			for (int j = 0; j < seeds.length && !polygon.isEmpty(); j++) {
-				if (j == i) {
+			double[] seed = seeds[index];
+			for (int innerIndex = 0; innerIndex < seeds.length && !polygon.isEmpty(); innerIndex++) {
+				if (innerIndex == index) {
 					continue;
 				}
 				// Keeps the side of the bisector closer to this seed, moved back by the gap
-				double dx = seeds[j][0] - seed[0];
-				double dz = seeds[j][1] - seed[1];
-				double length = Math.hypot(dx, dz);
+				double deltaX = seeds[innerIndex][0] - seed[0];
+				double deltaZ = seeds[innerIndex][1] - seed[1];
+				double length = Math.hypot(deltaX, deltaZ);
 				if (length == 0) {
 					continue;
 				}
-				double midX = (seed[0] + seeds[j][0]) / 2;
-				double midZ = (seed[1] + seeds[j][1]) / 2;
-				polygon = clip(polygon, dx, dz, midX * dx + midZ * dz - gap * length);
+				double midX = (seed[0] + seeds[innerIndex][0]) / 2;
+				double midZ = (seed[1] + seeds[innerIndex][1]) / 2;
+				polygon = clip(polygon, deltaX, deltaZ, midX * deltaX + midZ * deltaZ - gap * length);
 			}
 			cells.add(polygon.toArray(new double[0][]));
 		}
@@ -57,19 +57,19 @@ final class Voronoi {
 	/**
 	 * Sutherland–Hodgman: the part of a convex polygon where x·dx + z·dz <= limit
 	 */
-	private static List<double[]> clip(List<double[]> polygon, double dx, double dz, double limit) {
+	private static List<double[]> clip(List<double[]> polygon, double deltaX, double deltaZ, double limit) {
 		List<double[]> result = new ArrayList<double[]>(polygon.size() + 1);
-		for (int k = 0; k < polygon.size(); k++) {
-			double[] a = polygon.get(k);
-			double[] b = polygon.get((k + 1) % polygon.size());
-			double da = a[0] * dx + a[1] * dz - limit;
-			double db = b[0] * dx + b[1] * dz - limit;
-			if (da <= 0) {
-				result.add(a);
+		for (int deepIndex = 0; deepIndex < polygon.size(); deepIndex++) {
+			double[] first = polygon.get(deepIndex);
+			double[] second = polygon.get((deepIndex + 1) % polygon.size());
+			double daValue = first[0] * deltaX + first[1] * deltaZ - limit;
+			double dbValue = second[0] * deltaX + second[1] * deltaZ - limit;
+			if (daValue <= 0) {
+				result.add(first);
 			}
-			if ((da <= 0) != (db <= 0)) {
-				double t = da / (da - db);
-				result.add(new double[] { a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t });
+			if ((daValue <= 0) != (dbValue <= 0)) {
+				double time = daValue / (daValue - dbValue);
+				result.add(new double[] { first[0] + (second[0] - first[0]) * time, first[1] + (second[1] - first[1]) * time });
 			}
 		}
 		return result;

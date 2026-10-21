@@ -61,10 +61,10 @@ final class BracketLayout {
 		// Finals to the right of everything
 		int columns = Math.max(winners.size(), losers.size());
 		List<Match> finals = host.bracket.getFinals();
-		for (int i = 0; i < finals.size(); i++) {
-			double x = (columns + i) * COL_W;
-			this.addRoundTitle(host.bracket.roundName(finals.get(i)), x, finalsY - CARD_H / 2 - ROUND_TITLE_H);
-			host.positions.put(finals.get(i), new double[] { x, finalsY });
+		for (int index = 0; index < finals.size(); index++) {
+			double posX = (columns + index) * COL_W;
+			this.addRoundTitle(host.bracket.roundName(finals.get(index)), posX, finalsY - CARD_H / 2 - ROUND_TITLE_H);
+			host.positions.put(finals.get(index), new double[] { posX, finalsY });
 		}
 
 		// Standings in the free space under the finals
@@ -96,29 +96,29 @@ final class BracketLayout {
 	 */
 	private double layoutRounds(List<List<Match>> rounds, double top, java.util.function.IntFunction<String> roundName) {
 		double height = rounds.get(0).size() * SLOT_H;
-		for (int r = 0; r < rounds.size(); r++) {
-			List<Match> round = rounds.get(r);
-			double x = r * COL_W;
-			this.addRoundTitle(roundName.apply(r + 1), x, top);
+		for (int row = 0; row < rounds.size(); row++) {
+			List<Match> round = rounds.get(row);
+			double posX = row * COL_W;
+			this.addRoundTitle(roundName.apply(row + 1), posX, top);
 			double spacing = height / round.size();
-			for (int i = 0; i < round.size(); i++) {
-				host.positions.put(round.get(i), new double[] { x, top + ROUND_TITLE_H + spacing * (i + 0.5) });
+			for (int index = 0; index < round.size(); index++) {
+				host.positions.put(round.get(index), new double[] { posX, top + ROUND_TITLE_H + spacing * (index + 0.5) });
 			}
 		}
 		return height;
 	}
 
-	private void addSectionTitle(String text, double y) {
+	private void addSectionTitle(String text, double posY) {
 		Label label = new Label(text);
 		label.getStyleClass().add("section-title");
-		label.relocate(0, y);
+		label.relocate(0, posY);
 		host.canvas.getChildren().add(label);
 	}
 
-	private void addRoundTitle(String text, double x, double y) {
+	private void addRoundTitle(String text, double posX, double posY) {
 		Label label = new Label(text);
 		label.getStyleClass().add("round-title");
-		label.relocate(x + 4, y);
+		label.relocate(posX + 4, posY);
 		host.canvas.getChildren().add(label);
 	}
 
@@ -127,20 +127,20 @@ final class BracketLayout {
 	 * from the main bracket are not drawn, their slot tells where they come from
 	 */
 	private void addConnectors(Match match) {
-		double[] to = host.positions.get(match);
+		double[] toValue = host.positions.get(match);
 		for (Slot slot : List.of(match.getA(), match.getB())) {
 			Match source = slot.getSource();
 			if (source == null || !slot.isSourceWinner()) {
 				continue;
 			}
 			double[] from = host.positions.get(source);
-			double x1 = from[0] + CARD_W;
-			double y1 = from[1];
-			double x2 = to[0];
-			double y2 = to[1];
-			double middle = x2 - COL_GAP / 2;
+			double x1Value = from[0] + CARD_W;
+			double y1Value = from[1];
+			double x2Value = toValue[0];
+			double y2Value = toValue[1];
+			double middle = x2Value - COL_GAP / 2;
 
-			Polyline line = new Polyline(x1, y1, middle, y1, middle, y2, x2, y2);
+			Polyline line = new Polyline(x1Value, y1Value, middle, y1Value, middle, y2Value, x2Value, y2Value);
 			line.getStyleClass().add("connector");
 			host.lines.put(source.getCode() + ">" + match.getCode(), line);
 			if (source.getStatus() == Status.FINISHED || (source.getStatus() == Status.BYE && source.getWinner() != null)) {

@@ -30,33 +30,33 @@ final class Synth {
 	 */
 	static double[] tone(double frequency, double seconds, double duty) {
 		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double phase = (i * frequency / RATE) % 1.0;
-			samples[i] = (phase < duty ? 1 : -1) * Synth.envelope(i, samples.length, ATTACK);
+		for (int index = 0; index < samples.length; index++) {
+			double phase = (index * frequency / RATE) % 1.0;
+			samples[index] = (phase < duty ? 1 : -1) * Synth.envelope(index, samples.length, ATTACK);
 		}
 		return samples;
 	}
 
 	/** Square wave gliding from one frequency to another, with a short fade in */
-	static double[] sweep(double from, double to, double seconds) {
+	static double[] sweep(double from, double toValue, double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		double phase = 0;
-		for (int i = 0; i < samples.length; i++) {
-			double frequency = from + (to - from) * i / samples.length;
+		for (int index = 0; index < samples.length; index++) {
+			double frequency = from + (toValue - from) * index / samples.length;
 			phase = (phase + frequency / RATE) % 1.0;
-			samples[i] = (phase < 0.5 ? 1 : -1) * Synth.envelope(i, samples.length, ATTACK);
+			samples[index] = (phase < 0.5 ? 1 : -1) * Synth.envelope(index, samples.length, ATTACK);
 		}
 		return samples;
 	}
 
 	/** Square wave gliding, optionally with a decay */
-	static double[] sweep(double from, double to, double seconds, boolean decay) {
+	static double[] sweep(double from, double toValue, double seconds, boolean decay) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		double phase = 0;
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			phase = (phase + (from + (to - from) * t) / RATE) % 1;
-			samples[i] = (phase < 0.5 ? 1 : -1) * (decay ? (1 - t) * (1 - t) : Synth.envelope(i, samples.length, DECAY_ATTACK));
+		for (int index = 0; index < samples.length; index++) {
+			double time = (double) index / samples.length;
+			phase = (phase + (from + (toValue - from) * time) / RATE) % 1;
+			samples[index] = (phase < 0.5 ? 1 : -1) * (decay ? (1 - time) * (1 - time) : Synth.envelope(index, samples.length, DECAY_ATTACK));
 		}
 		return samples;
 	}
@@ -64,9 +64,9 @@ final class Synth {
 	/** Square wave, decaying */
 	static double[] square(double frequency, double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double phase = (i * frequency / RATE) % 1;
-			samples[i] = (phase < 0.5 ? 1 : -1) * Synth.envelope(i, samples.length, DECAY_ATTACK);
+		for (int index = 0; index < samples.length; index++) {
+			double phase = (index * frequency / RATE) % 1;
+			samples[index] = (phase < 0.5 ? 1 : -1) * Synth.envelope(index, samples.length, DECAY_ATTACK);
 		}
 		return samples;
 	}
@@ -74,9 +74,9 @@ final class Synth {
 	/** Saw wave, decaying */
 	static double[] saw(double frequency, double seconds, double decay) {
 		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double phase = (i * frequency / RATE) % 1;
-			samples[i] = (phase * 2 - 1) * Math.exp(-decay * i / RATE) * Math.min(1, i / (RATE * 0.004));
+		for (int index = 0; index < samples.length; index++) {
+			double phase = (index * frequency / RATE) % 1;
+			samples[index] = (phase * 2 - 1) * Math.exp(-decay * index / RATE) * Math.min(1, index / (RATE * 0.004));
 		}
 		return samples;
 	}
@@ -84,22 +84,22 @@ final class Synth {
 	/** Decaying sine */
 	static double[] sine(double frequency, double seconds, double decay) {
 		double[] samples = new double[(int) (RATE * seconds)];
-		for (int i = 0; i < samples.length; i++) {
-			double t = i / RATE;
-			samples[i] = Math.sin(2 * Math.PI * frequency * t) * Math.exp(-decay * t);
+		for (int index = 0; index < samples.length; index++) {
+			double time = index / RATE;
+			samples[index] = Math.sin(2 * Math.PI * frequency * time) * Math.exp(-decay * time);
 		}
 		return samples;
 	}
 
 	/** Sine gliding down exponentially, the body of kicks and explosions */
-	static double[] sineSweep(double from, double to, double seconds) {
+	static double[] sineSweep(double from, double toValue, double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		double phase = 0;
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			double frequency = to + (from - to) * Math.exp(-6 * t);
+		for (int index = 0; index < samples.length; index++) {
+			double time = (double) index / samples.length;
+			double frequency = toValue + (from - toValue) * Math.exp(-6 * time);
 			phase += frequency / RATE;
-			samples[i] = Math.sin(2 * Math.PI * phase) * (1 - t) * (1 - t) * Math.min(1, i / (RATE * 0.002));
+			samples[index] = Math.sin(2 * Math.PI * phase) * (1 - time) * (1 - time) * Math.min(1, index / (RATE * 0.002));
 		}
 		return samples;
 	}
@@ -108,9 +108,9 @@ final class Synth {
 	static double[] noise(double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		java.util.Random random = new java.util.Random(42);
-		for (int i = 0; i < samples.length; i++) {
-			double decay = 1.0 - (double) i / samples.length;
-			samples[i] = (random.nextDouble() * 2 - 1) * decay * decay;
+		for (int index = 0; index < samples.length; index++) {
+			double decay = 1.0 - (double) index / samples.length;
+			samples[index] = (random.nextDouble() * 2 - 1) * decay * decay;
 		}
 		return samples;
 	}
@@ -119,8 +119,8 @@ final class Synth {
 	static double[] noise(double seconds, double decay) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		java.util.Random random = new java.util.Random();
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] = (random.nextDouble() * 2 - 1) * Math.exp(-decay * i / RATE) * Math.min(1, (samples.length - i) / (RATE * 0.02));
+		for (int index = 0; index < samples.length; index++) {
+			samples[index] = (random.nextDouble() * 2 - 1) * Math.exp(-decay * index / RATE) * Math.min(1, (samples.length - index) / (RATE * 0.02));
 		}
 		return samples;
 	}
@@ -129,13 +129,13 @@ final class Synth {
 	static double[] crackle(double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];
 		java.util.Random random = new java.util.Random();
-		for (int i = 0; i < samples.length; i++) {
-			double t = (double) i / samples.length;
-			if (random.nextDouble() < 0.004 * (1 - t)) {
+		for (int index = 0; index < samples.length; index++) {
+			double time = (double) index / samples.length;
+			if (random.nextDouble() < 0.004 * (1 - time)) {
 				int length = 40 + random.nextInt(200);
 				double amplitude = 0.6 + random.nextDouble() * 0.4;
-				for (int j = 0; j < length && i + j < samples.length; j++) {
-					samples[i + j] += (random.nextDouble() * 2 - 1) * amplitude * (1 - (double) j / length);
+				for (int innerIndex = 0; innerIndex < length && index + innerIndex < samples.length; innerIndex++) {
+					samples[index + innerIndex] += (random.nextDouble() * 2 - 1) * amplitude * (1 - (double) innerIndex / length);
 				}
 			}
 		}
@@ -145,17 +145,17 @@ final class Synth {
 	/** One pole low pass, alpha from 0 (closed) to 1 (open) */
 	static double[] lowpass(double[] samples, double alpha) {
 		double state = 0;
-		for (int i = 0; i < samples.length; i++) {
-			state += (samples[i] - state) * alpha;
-			samples[i] = state;
+		for (int index = 0; index < samples.length; index++) {
+			state += (samples[index] - state) * alpha;
+			samples[index] = state;
 		}
 		// Low pass makes it quieter, gets the level back
 		double peak = 1e-9;
 		for (double sample : samples) {
 			peak = Math.max(peak, Math.abs(sample));
 		}
-		for (int i = 0; i < samples.length; i++) {
-			samples[i] /= peak;
+		for (int index2 = 0; index2 < samples.length; index2++) {
+			samples[index2] /= peak;
 		}
 		return samples;
 	}
@@ -179,10 +179,10 @@ final class Synth {
 	}
 
 	/** Average of two signals */
-	static double[] mix(double[] a, double[] b) {
-		double[] mixed = new double[Math.max(a.length, b.length)];
-		for (int i = 0; i < mixed.length; i++) {
-			mixed[i] = ((i < a.length ? a[i] : 0) + (i < b.length ? b[i] : 0)) / 2;
+	static double[] mix(double[] first, double[] second) {
+		double[] mixed = new double[Math.max(first.length, second.length)];
+		for (int index = 0; index < mixed.length; index++) {
+			mixed[index] = ((index < first.length ? first[index] : 0) + (index < second.length ? second[index] : 0)) / 2;
 		}
 		return mixed;
 	}
@@ -190,10 +190,10 @@ final class Synth {
 	/**
 	 * a + b * gain
 	 */
-	static double[] mix(double[] a, double[] b, double gain) {
-		double[] mixed = new double[Math.max(a.length, b.length)];
-		for (int i = 0; i < mixed.length; i++) {
-			mixed[i] = (i < a.length ? a[i] : 0) + (i < b.length ? b[i] * gain : 0);
+	static double[] mix(double[] first, double[] second, double gain) {
+		double[] mixed = new double[Math.max(first.length, second.length)];
+		for (int index = 0; index < mixed.length; index++) {
+			mixed[index] = (index < first.length ? first[index] : 0) + (index < second.length ? second[index] * gain : 0);
 		}
 		return mixed;
 	}
@@ -204,14 +204,14 @@ final class Synth {
 	 * @param attackSeconds
 	 *            how long the sound takes to reach full volume
 	 */
-	static double envelope(int i, int length, double attackSeconds) {
+	static double envelope(int index, int length, double attackSeconds) {
 		int attack = (int) (RATE * attackSeconds);
 		int release = Math.min(length / 3, (int) (RATE * 0.03));
-		if (i < attack) {
-			return (double) i / attack;
+		if (index < attack) {
+			return (double) index / attack;
 		}
-		if (i > length - release) {
-			return (double) (length - i) / release;
+		if (index > length - release) {
+			return (double) (length - index) / release;
 		}
 		return 1;
 	}

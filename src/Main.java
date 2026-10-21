@@ -139,9 +139,9 @@ public class Main extends Application {
 			this.databaseFile = Main.configuredDatabaseFile();
 			Database.getEntityManager().close();
 			this.loadChampionship();
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showError("Falha ao abrir o banco de dados " + Configuration.getDatabaseFile() + ":\n" + rootCauseMessage(e));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao abrir o banco de dados " + Configuration.getDatabaseFile() + ":\n" + rootCauseMessage(runtimeException));
 			GameWindow.quit();
 			return;
 		}
@@ -175,10 +175,10 @@ public class Main extends Application {
 		this.webserverPort = Configuration.getWebserverPort();
 		try {
 			this.httpServer = new HttpServer(this.webserverPort);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (Exception exception) {
+			exception.printStackTrace();
 			this.httpServer = null;
-			this.showError("Falha ao iniciar o servidor web na porta " + this.webserverPort + ":\n" + rootCauseMessage(e));
+			this.showError("Falha ao iniciar o servidor web na porta " + this.webserverPort + ":\n" + rootCauseMessage(exception));
 		}
 	}
 
@@ -217,10 +217,10 @@ public class Main extends Application {
 			this.justPlayed = null;
 			try {
 				this.loadChampionship();
-			} catch (RuntimeException e) {
-				e.printStackTrace();
+			} catch (RuntimeException runtimeException) {
+				runtimeException.printStackTrace();
 				this.setChampionship(null);
-				this.showError("Falha ao abrir o banco de dados " + this.databaseFile + ":\n" + rootCauseMessage(e));
+				this.showError("Falha ao abrir o banco de dados " + this.databaseFile + ":\n" + rootCauseMessage(runtimeException));
 			}
 		}
 
@@ -290,8 +290,8 @@ public class Main extends Application {
 		long robots;
 		try {
 			robots = ChampionshipService.countOpponents();
-		} catch (PersistenceException e) {
-			this.showError("Falha ao ler os robôs:\n" + rootCauseMessage(e));
+		} catch (PersistenceException persistenceException) {
+			this.showError("Falha ao ler os robôs:\n" + rootCauseMessage(persistenceException));
 			return;
 		}
 
@@ -318,18 +318,18 @@ public class Main extends Application {
 			this.justPlayed = null;
 			this.setChampionship(ChampionshipService.create(repechage.isSelected(), new SecureRandom()));
 			this.showBracket();
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showError("Falha ao criar o campeonato:\n" + rootCauseMessage(e));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao criar o campeonato:\n" + rootCauseMessage(runtimeException));
 		}
 	}
 
 	void showBracket() {
 		try {
 			this.loadChampionship();
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showError("Falha ao carregar o campeonato:\n" + rootCauseMessage(e));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao carregar o campeonato:\n" + rootCauseMessage(runtimeException));
 			return;
 		}
 
@@ -391,9 +391,9 @@ public class Main extends Application {
 			this.setChampionship(ChampionshipService.recordResult(this.championship, match.getCode(), winnerId, winnerScore, loserScore));
 			this.justPlayed = match.getCode();
 			return true;
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showError("Falha ao salvar o resultado:\n" + rootCauseMessage(e));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao salvar o resultado:\n" + rootCauseMessage(runtimeException));
 			return false;
 		}
 	}
@@ -441,14 +441,14 @@ public class Main extends Application {
 			this.setChampionship(ChampionshipService.undoLastResult(this.championship));
 			MatchPhotos.forget(this.championship.getId(), last.getMatchCode());
 			this.showBracket();
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showError("Falha ao desfazer o resultado:\n" + rootCauseMessage(e));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao desfazer o resultado:\n" + rootCauseMessage(runtimeException));
 		}
 	}
 
-	private String nameOf(Long id) {
-		Opponent opponent = this.opponents.get(id);
+	private String nameOf(Long identifier) {
+		Opponent opponent = this.opponents.get(identifier);
 		return opponent == null ? "?" : opponent.getFullName();
 	}
 
@@ -614,8 +614,8 @@ public class Main extends Application {
 		}
 		Match match = playable.get();
 
-		Long id = this.opponentIndexIWantToShow % 2 == 0 ? match.getA().getParticipant() : match.getB().getParticipant();
-		this.showOpponent(this.opponents.get(id), null, false);
+		Long identifier = this.opponentIndexIWantToShow % 2 == 0 ? match.getA().getParticipant() : match.getB().getParticipant();
+		this.showOpponent(this.opponents.get(identifier), null, false);
 
 		// Controls the index values to circle between opponents
 		this.opponentIndexIWantToShow++;
@@ -677,13 +677,13 @@ public class Main extends Application {
 		try {
 			List<Opponent> podium = new ArrayList<Opponent>();
 			List<Long> ids = this.bracket.getPodium();
-			for (Long id : ids) {
-				podium.add(this.opponents.get(id));
+			for (Long identifier : ids) {
+				podium.add(this.opponents.get(identifier));
 			}
-			this.podiumScene = new Podium(podium, MatchPhotos.of(this.championship.getId(), ids), this.opponents);
+			this.podiumScene = new Podium(podium, MatchPhotos.photosOf(this.championship.getId(), ids), this.opponents);
 			this.show(this.podiumScene);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
 			this.podiumScene = null;
 			this.showError("Falha ao exibir o campeão");
 		}
@@ -699,8 +699,8 @@ public class Main extends Application {
 			this.opponentScene.setOponent(item, title, champion);
 			this.show(this.opponentScene);
 			this.opponentScene.play();
-		} catch (IOException | RuntimeException e) {
-			e.printStackTrace();
+		} catch (IOException | RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
 			this.showError("Falha ao exibir oponente");
 		}
 	}
@@ -713,9 +713,9 @@ public class Main extends Application {
 		try {
 			int exported = SourceExporter.export(exportDir);
 			GameDialog.info("Exportação", exported + " robôs exportados para " + exportDir);
-		} catch (IOException | PersistenceException e) {
-			e.printStackTrace();
-			this.showError("Falha ao exportar os robôs:\n" + e.getMessage());
+		} catch (IOException | PersistenceException persistenceException) {
+			persistenceException.printStackTrace();
+			this.showError("Falha ao exportar os robôs:\n" + persistenceException.getMessage());
 		}
 	}
 
@@ -773,8 +773,8 @@ public class Main extends Application {
 		GameDialog.error(message);
 	}
 
-	private static String rootCauseMessage(Throwable e) {
-		Throwable cause = e;
+	private static String rootCauseMessage(Throwable throwable) {
+		Throwable cause = throwable;
 		while (cause.getCause() != null && cause.getCause() != cause) {
 			cause = cause.getCause();
 		}

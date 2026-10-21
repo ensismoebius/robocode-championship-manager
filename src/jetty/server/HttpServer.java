@@ -57,8 +57,8 @@ public class HttpServer {
 	public void stop() {
 		try {
 			this.server.stop();
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (Exception exception) {
+			exception.printStackTrace();
 		}
 	}
 }

@@ -73,13 +73,13 @@ public class BattleStarter {
 		boolean knockout = false;
 		List<String> robots = new ArrayList<String>();
 
-		for (int i = 0; i < args.length; i++) {
-			switch (args[i]) {
+		for (int index = 0; index < args.length; index++) {
+			switch (args[index]) {
 			case "-p":
-				robocodePath = args[++i];
+				robocodePath = args[++index];
 				break;
 			case "-r":
-				rounds = Integer.parseInt(args[++i]);
+				rounds = Integer.parseInt(args[++index]);
 				break;
 			case "-s":
 				stream = true;
@@ -91,7 +91,7 @@ public class BattleStarter {
 				// The robots come next
 				break;
 			default:
-				robots.add(args[i]);
+				robots.add(args[index]);
 			}
 		}
 
@@ -147,10 +147,10 @@ public class BattleStarter {
 		}
 		// Most rounds won first, the score breaks the ties
 		List<String> sorted = new ArrayList<String>(names.keySet());
-		sorted.sort((a, b) -> wins.get(a).equals(wins.get(b)) ? Integer.compare(scores.get(b), scores.get(a)) : Integer.compare(wins.get(b), wins.get(a)));
-		for (int i = 0; i < sorted.size(); i++) {
-			String key = sorted.get(i);
-			out.println((i + 1) + "\t" + names.get(key) + "\t" + scores.get(key) + "\t" + wins.get(key));
+		sorted.sort((first, second) -> wins.get(first).equals(wins.get(second)) ? Integer.compare(scores.get(second), scores.get(first)) : Integer.compare(wins.get(second), wins.get(first)));
+		for (int index = 0; index < sorted.size(); index++) {
+			String key = sorted.get(index);
+			out.println((index + 1) + "\t" + names.get(key) + "\t" + scores.get(key) + "\t" + wins.get(key));
 		}
 		out.flush();
 	}
@@ -262,9 +262,9 @@ public class BattleStarter {
 
 			line.append("#T ").append(turn.getRound() + this.roundOffset).append(' ').append(turn.getTurn()).append('|');
 			IRobotSnapshot[] robots = turn.getRobots();
-			for (int i = 0; i < robots.length; i++) {
-				IRobotSnapshot robot = robots[i];
-				if (i > 0) {
+			for (int index = 0; index < robots.length; index++) {
+				IRobotSnapshot robot = robots[index];
+				if (index > 0) {
 					line.append(';');
 				}
 				line.append(robot.getContestantIndex()).append(' ');

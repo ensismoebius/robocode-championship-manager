@@ -96,12 +96,12 @@ final class ArenaBullets {
 		Bullet previous = start;
 		Bullet hit = null;
 		int end = first;
-		for (int k = first + 1; k < turns.size(); k++) {
-			Bullet now = findBullet(turns.get(k), seen.id());
+		for (int deepIndex = first + 1; deepIndex < turns.size(); deepIndex++) {
+			Bullet now = findBullet(turns.get(deepIndex), seen.id());
 			if (now == null) {
 				break;
 			}
-			end = k;
+			end = deepIndex;
 			if (now.isHit()) {
 				hit = now;
 				last = now;
@@ -111,21 +111,21 @@ final class ArenaBullets {
 			last = now;
 		}
 		double speed = 20 - 3 * start.power();
-		double dx = last.x() - start.x();
-		double dy = last.y() - start.y();
-		double length = Math.hypot(dx, dy);
+		double deltaX = last.x() - start.x();
+		double deltaY = last.y() - start.y();
+		double length = Math.hypot(deltaX, deltaY);
 		Flight flight = null;
 		if (length > 1e-6 && !start.isHit()) {
-			dx /= length;
-			dy /= length;
+			deltaX /= length;
+			deltaY /= length;
 			double born = first - 1;
 			// Gets there when the last step is done
 			double duration = hit != null ? end - 1 - born + Math.hypot(hit.x() - previous.x(), hit.y() - previous.y()) / speed : end - born;
 			duration = Math.max(0.01, duration);
-			double sx = start.x() - dx * speed;
-			double sy = start.y() - dy * speed;
-			double ex = last.x();
-			double ey = last.y();
+			double sxValue = start.x() - deltaX * speed;
+			double syValue = start.y() - deltaY * speed;
+			double exValue = last.x();
+			double eyValue = last.y();
 			// Where it hits the victim, in the frame of the tank (across and ahead),
 			// and where that point of the hull is drawn when the bolt gets there: the
 			// bolt flies straight to it
@@ -135,18 +135,18 @@ final class ArenaBullets {
 				RobotState victim = BattleArena3D.find(turns.get(end).robots(), hit.victim(), null);
 				double[] pose = pose(turns, hit.victim(), born + duration);
 				if (victim != null && pose != null) {
-					double ox = hit.x() - victim.x();
-					double oy = hit.y() - victim.y();
+					double oxValue = hit.x() - victim.x();
+					double oyValue = hit.y() - victim.y();
 					double heading = victim.bodyHeading();
-					side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, ox * Math.cos(heading) - oy * Math.sin(heading)));
-					ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, ox * Math.sin(heading) + oy * Math.cos(heading)));
-					ex = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
-					ey = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
+					side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, oxValue * Math.cos(heading) - oyValue * Math.sin(heading)));
+					ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, oxValue * Math.sin(heading) + oyValue * Math.cos(heading)));
+					exValue = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
+					eyValue = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
 				}
 			}
-			double total = Math.hypot(ex - sx, ey - sy);
+			double total = Math.hypot(exValue - sxValue, eyValue - syValue);
 			if (total > 1e-6) {
-				flight = new Flight(sx, sy, (ex - sx) / total, (ey - sy) / total, total, born, duration, hit, side, ahead);
+				flight = new Flight(sxValue, syValue, (exValue - sxValue) / total, (eyValue - syValue) / total, total, born, duration, hit, side, ahead);
 			}
 		}
 		// A bullet with no flight is never drawn: it was born hitting
@@ -181,8 +181,8 @@ final class ArenaBullets {
 				}
 				// From the muzzle to the end, the speed is the same all the way
 				double distance = flight.total() > MUZZLE ? MUZZLE + (flight.total() - MUZZLE) * progress : flight.total() * progress;
-				double x = flight.sx() + flight.ux() * distance;
-				double y = flight.sy() + flight.uy() * distance;
+				double posX = flight.sx() + flight.ux() * distance;
+				double posY = flight.sy() + flight.uy() * distance;
 				// The ones that hit a tank come down, little by little, from the height of
 				// the gun to the middle of the hull
 				double height = BARREL_HEIGHT;
@@ -195,7 +195,7 @@ final class ArenaBullets {
 				} else if (host.bulletsSeen.contains(bullet.id()) == false) {
 					this.bulletFired(bullet, flight.sx() + flight.ux() * Math.min(MUZZLE, flight.total()), flight.sy() + flight.uy() * Math.min(MUZZLE, flight.total()));
 				}
-				this.placeBullet(bullet, flying, x, y, flight.ux(), flight.uy(), height);
+				this.placeBullet(bullet, flying, posX, posY, flight.ux(), flight.uy(), height);
 			}
 		}
 		host.bullets.entrySet().removeIf(entry -> {
@@ -207,14 +207,14 @@ final class ArenaBullets {
 		});
 	}
 
-	void placeBullet(Bullet bullet, Set<Integer> flying, double x, double y, double dx, double dy, double height) {
+	void placeBullet(Bullet bullet, Set<Integer> flying, double posX, double posY, double deltaX, double deltaY, double height) {
 		flying.add(bullet.id());
-		Group shot = host.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
-		shot.setTranslateX(host.worldX(x));
-		shot.setTranslateZ(host.worldZ(y));
+		Group shot = host.bullets.computeIfAbsent(bullet.id(), identifier -> this.newBullet(bullet));
+		shot.setTranslateX(host.worldX(posX));
+		shot.setTranslateZ(host.worldZ(posY));
 		shot.setTranslateY(height);
 		// The bolt points to where it goes, turned around its head
-		((Rotate) shot.getTransforms().get(0)).setAngle(Math.toDegrees(Math.atan2(dx, dy)));
+		((Rotate) shot.getTransforms().get(0)).setAngle(Math.toDegrees(Math.atan2(deltaX, deltaY)));
 	}
 
 	/**
@@ -227,10 +227,10 @@ final class ArenaBullets {
 		if (victim == null) {
 			return new double[] { flight.sx() + flight.ux() * flight.total(), flight.sy() + flight.uy() * flight.total() };
 		}
-		double x = victim.root.getTranslateX() + host.fieldWidth / 2;
-		double y = victim.root.getTranslateZ() + host.fieldHeight / 2;
+		double posX = victim.root.getTranslateX() + host.fieldWidth / 2;
+		double posY = victim.root.getTranslateZ() + host.fieldHeight / 2;
 		double heading = Math.toRadians(victim.bodyRotate.getAngle());
-		return new double[] { x + flight.side() * Math.cos(heading) + flight.ahead() * Math.sin(heading), y - flight.side() * Math.sin(heading) + flight.ahead() * Math.cos(heading) };
+		return new double[] { posX + flight.side() * Math.cos(heading) + flight.ahead() * Math.sin(heading), posY - flight.side() * Math.sin(heading) + flight.ahead() * Math.cos(heading) };
 	}
 
 	/** Something happens in the battle at this world point: the critters nearby react to it */
@@ -243,11 +243,11 @@ final class ArenaBullets {
 	/**
 	 * The shot, once: the sound and the flash at the gun
 	 */
-	void bulletFired(Bullet bullet, double x, double y) {
+	void bulletFired(Bullet bullet, double posX, double posY) {
 		if (host.bulletsSeen.add(bullet.id())) {
-			host.audio.shotAt(bullet.power(), host.worldX(x), host.worldZ(y));
-			host.fx.muzzleFlash(host.worldX(x), host.worldZ(y), this.shooterColor(bullet));
-			this.startle(host.worldX(x), host.worldZ(y), 150, 0.4);
+			host.audio.shotAt(bullet.power(), host.worldX(posX), host.worldZ(posY));
+			host.fx.muzzleFlash(host.worldX(posX), host.worldZ(posY), this.shooterColor(bullet));
+			this.startle(host.worldX(posX), host.worldZ(posY), 150, 0.4);
 		}
 	}
 
@@ -255,16 +255,16 @@ final class ArenaBullets {
 	 * The hit, once: the explosion where the bullet stopped and what the victim
 	 * feels
 	 */
-	void bulletHit(Bullet bullet, double x, double y) {
+	void bulletHit(Bullet bullet, double posX, double posY) {
 		if (!host.bulletsExploded.add(bullet.id())) {
 			return;
 		}
-		host.fx.explosion(host.worldX(x), host.worldZ(y), 8 + bullet.power() * 6, this.shooterColor(bullet));
-		this.startle(host.worldX(x), host.worldZ(y), 220, 0.7);
+		host.fx.explosion(host.worldX(posX), host.worldZ(posY), 8 + bullet.power() * 6, this.shooterColor(bullet));
+		this.startle(host.worldX(posX), host.worldZ(posY), 220, 0.7);
 		RobotView victim = host.robots.get(bullet.victim());
 		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
 			victim.flash();
-			host.audio.hitAt(bullet.power(), host.worldX(x), host.worldZ(y));
+			host.audio.hitAt(bullet.power(), host.worldX(posX), host.worldZ(posY));
 			host.hitTension = Math.min(0.25, host.hitTension + 0.08 + bullet.power() * 0.03);
 			host.shake += 3 + bullet.power() * 3;
 			host.director.impactCut(bullet.victim(), bullet.power());
@@ -275,7 +275,7 @@ final class ArenaBullets {
 				host.pendingPhotos.add(new PendingPhoto(PHOTO_HIT_DELAY, host.round + 1, false, shooter.opponent, bullet.power()));
 			}
 		} else {
-			host.audio.sparkAt(host.worldX(x), host.worldZ(y));
+			host.audio.sparkAt(host.worldX(posX), host.worldZ(posY));
 			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
 				this.flashFence(bullet.x(), bullet.y());
 			}
@@ -343,13 +343,13 @@ final class ArenaBullets {
 	 */
 	Group newBullet(Bullet bullet) {
 		Color tint = this.shooterColor(bullet);
-		double r = 2.2 + bullet.power() * 0.7;
+		double row = 2.2 + bullet.power() * 0.7;
 		LowPoly core = new LowPoly();
-		core.spindle(0, 0, 0, r, r * 3.4, r * 2.2, 6);
+		core.spindle(0, 0, 0, row, row * 3.4, row * 2.2, 6);
 		LowPoly halo = new LowPoly();
-		halo.spindle(0, 0, 0, r * 1.9, r * 3.8, r * 2.8, 6);
+		halo.spindle(0, 0, 0, row * 1.9, row * 3.8, row * 2.8, 6);
 		LowPoly tail = new LowPoly();
-		tail.spindle(0, 0, -r * 2, r * 0.9, 0, r * 12, 6);
+		tail.spindle(0, 0, -row * 2, row * 0.9, 0, row * 12, 6);
 
 		Color hot = tint.interpolate(Color.WHITE, 0.75);
 		PhongMaterial coreMaterial = new PhongMaterial(hot);
@@ -389,22 +389,22 @@ final class ArenaBullets {
 	 * The cage lights up where a robot or a bullet hit it, the glow spreads to
 	 * the neighboring panels like a shockwave
 	 */
-	void flashFence(double x, double y) {
-		double w = host.fieldWidth;
-		double h = host.fieldHeight;
-		double cx = Math.max(0, Math.min(w, x));
-		double cy = Math.max(0, Math.min(h, y));
+	void flashFence(double posX, double posY) {
+		double width = host.fieldWidth;
+		double height = host.fieldHeight;
+		double cxValue = Math.max(0, Math.min(width, posX));
+		double cyValue = Math.max(0, Math.min(height, posY));
 
-		double[] distances = { cy, h - cy, cx, w - cx };
+		double[] distances = { cyValue, height - cyValue, cxValue, width - cxValue };
 		int wall = 0;
-		for (int i = 1; i < distances.length; i++) {
-			if (distances[i] < distances[wall]) {
-				wall = i;
+		for (int index2 = 1; index2 < distances.length; index2++) {
+			if (distances[index2] < distances[wall]) {
+				wall = index2;
 			}
 		}
 
-		double along = wall <= 1 ? cx : cy;
-		int count = (int) Math.round((wall <= 1 ? w : h) / 100);
+		double along = wall <= 1 ? cxValue : cyValue;
+		int count = (int) Math.round((wall <= 1 ? width : height) / 100);
 		int index = Math.max(0, Math.min(count - 1, (int) Math.floor(along / 100)));
 
 		this.flashSegment(wall, index, 1.0, Duration.ZERO);
@@ -440,7 +440,7 @@ final class ArenaBullets {
 					new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), shieldBright)),
 					new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(segment.material().diffuseColorProperty(), shieldMid)),
 					new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(segment.material().diffuseColorProperty(), shieldFade)));
-			flash.setOnFinished(e -> {
+			flash.setOnFinished(event -> {
 				segment.box().setVisible(false);
 				segment.material().setDiffuseColor(FENCE_BASE);
 				segment.material().setSpecularColor(Color.TRANSPARENT);

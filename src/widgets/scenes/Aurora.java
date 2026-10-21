@@ -54,54 +54,54 @@ final class Aurora {
 	 * number of times around the sky, so the picture has no seam where it closes.
 	 */
 	void update(double time) {
-		for (int c = 0; c < CURTAINS; c++) {
-			for (int x = 0; x < WIDTH; x++) {
-				double around = (double) x / WIDTH;
+		for (int column = 0; column < CURTAINS; column++) {
+			for (int posX = 0; posX < WIDTH; posX++) {
+				double around = (double) posX / WIDTH;
 				// Where the lower edge of the curtain is: it undulates and the waves travel
-				this.edge[c][x] = 0.30 + 0.04 * c + 0.028 * Math.sin(2 * Math.PI * (around * (2 + c) + 0.31 * c) + 0.35 * (1 + 0.3 * c) * time)
-						+ 0.016 * Math.sin(2 * Math.PI * (around * (5 + 2 * c) + 0.7 * c) - 0.8 * (1 + 0.2 * c) * time);
+				this.edge[column][posX] = 0.30 + 0.04 * column + 0.028 * Math.sin(2 * Math.PI * (around * (2 + column) + 0.31 * column) + 0.35 * (1 + 0.3 * column) * time)
+						+ 0.016 * Math.sin(2 * Math.PI * (around * (5 + 2 * column) + 0.7 * column) - 0.8 * (1 + 0.2 * column) * time);
 				// The rays: vertical strips of light that flicker and slide along the curtain
-				double strips = 0.5 + 0.28 * Math.sin(2 * Math.PI * (around * 13) + 1.1 * time + c) + 0.22 * Math.sin(2 * Math.PI * (around * 29 + 0.2 * c) - 1.7 * time)
-						+ 0.12 * Math.sin(2 * Math.PI * (around * 47) + 2.3 * time + 2 * c);
-				this.ray[c][x] = 0.3 + 0.7 * Math.pow(Math.max(0, Math.min(1, strips)), 1.3);
+				double strips = 0.5 + 0.28 * Math.sin(2 * Math.PI * (around * 13) + 1.1 * time + column) + 0.22 * Math.sin(2 * Math.PI * (around * 29 + 0.2 * column) - 1.7 * time)
+						+ 0.12 * Math.sin(2 * Math.PI * (around * 47) + 2.3 * time + 2 * column);
+				this.ray[column][posX] = 0.3 + 0.7 * Math.pow(Math.max(0, Math.min(1, strips)), 1.3);
 				// Where the curtain shines at all: it fades in and out along its arc
-				double glow = 0.5 + 0.5 * Math.sin(2 * Math.PI * (around * (1 + c)) + 0.22 * time + 1.7 * c);
-				double breath = 0.85 + 0.15 * Math.sin(0.6 * time + c);
-				this.patch[c][x] = Math.max(0, Math.min(1, glow * 1.6 - 0.15)) * breath;
+				double glow = 0.5 + 0.5 * Math.sin(2 * Math.PI * (around * (1 + column)) + 0.22 * time + 1.7 * column);
+				double breath = 0.85 + 0.15 * Math.sin(0.6 * time + column);
+				this.patch[column][posX] = Math.max(0, Math.min(1, glow * 1.6 - 0.15)) * breath;
 			}
 		}
 		int baseRed = (this.sky >> 16) & 0xff;
 		int baseGreen = (this.sky >> 8) & 0xff;
 		int baseBlue = this.sky & 0xff;
 		for (int row = 0; row < this.rows; row++) {
-			double t = (double) (this.firstRow + row) / HEIGHT;
-			for (int x = 0; x < WIDTH; x++) {
+			double time2 = (double) (this.firstRow + row) / HEIGHT;
+			for (int posX2 = 0; posX2 < WIDTH; posX2++) {
 				double red = baseRed;
 				double green = baseGreen;
 				double blue = baseBlue;
-				for (int c = 0; c < CURTAINS; c++) {
+				for (int column2 = 0; column2 < CURTAINS; column2++) {
 					// Below the edge it ends sharply, above it the light rises and fades
-					double d = t - this.edge[c][x];
-					if (d > 0.05 || d < -0.4) {
+					double delta = time2 - this.edge[column2][posX2];
+					if (delta > 0.05 || delta < -0.4) {
 						continue;
 					}
-					double rise = Math.max(0, Math.min(1, -d / 0.13));
-					double strength = d > 0 ? Math.exp(-Math.pow(d / 0.012, 2)) : Math.exp(-Math.pow(-d / 0.075, 2));
-					strength *= this.ray[c][x] * this.patch[c][x];
+					double rise = Math.max(0, Math.min(1, -delta / 0.13));
+					double strength = delta > 0 ? Math.exp(-Math.pow(delta / 0.012, 2)) : Math.exp(-Math.pow(-delta / 0.075, 2));
+					strength *= this.ray[column2][posX2] * this.patch[column2][posX2];
 					if (strength < 0.004) {
 						continue;
 					}
 					// Green at the foot, then teal, and violet at the top of the curtain
 					int light = TextureMath.mix(0x4dffa8, 0x1fb5d6, Math.min(1, rise * 1.4));
 					light = TextureMath.mix(light, 0x8a4dff, rise * rise * 0.85);
-					if (d > 0) {
+					if (delta > 0) {
 						light = TextureMath.mix(light, 0xff5a9a, 0.4);
 					}
 					red += ((light >> 16) & 0xff) * strength * 0.95;
 					green += ((light >> 8) & 0xff) * strength * 0.95;
 					blue += (light & 0xff) * strength * 0.95;
 				}
-				this.pixels[row * WIDTH + x] = 0xff000000 | ((int) Math.min(255, red) << 16) | ((int) Math.min(255, green) << 8) | (int) Math.min(255, blue);
+				this.pixels[row * WIDTH + posX2] = 0xff000000 | ((int) Math.min(255, red) << 16) | ((int) Math.min(255, green) << 8) | (int) Math.min(255, blue);
 			}
 		}
 		this.image.getPixelWriter().setPixels(0, this.firstRow, WIDTH, this.rows, PixelFormat.getIntArgbInstance(), this.pixels, 0, WIDTH);

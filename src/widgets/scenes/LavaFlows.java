@@ -33,19 +33,19 @@ final class LavaFlows {
 	 * @param corners
 	 *            four {x, y, z}, in order around the quad: the texture goes from
 	 *            the first to the second (u) and from the first to the fourth (v)
-	 * @param du
+	 * @param duValue
 	 *            tiles per second the texture slides along u, negative goes from
 	 *            the first corner to the second
 	 */
-	void flow(double[][] corners, double du, double dv) {
-		this.flow(corners, du, dv, host.lava, LAVA_TILE);
+	void flow(double[][] corners, double duValue, double dvValue) {
+		this.flow(corners, duValue, dvValue, host.lava, LAVA_TILE);
 	}
 
 	/**
 	 * @param tile
 	 *            units of the world one tile of the texture covers
 	 */
-	void flow(double[][] corners, double du, double dv, PhongMaterial material, double tile) {
+	void flow(double[][] corners, double duValue, double dvValue, PhongMaterial material, double tile) {
 		double uLength = Math.sqrt(distance2(corners[0], corners[1])) / tile;
 		double vLength = Math.sqrt(distance2(corners[0], corners[3])) / tile;
 		TriangleMesh mesh = new TriangleMesh();
@@ -60,54 +60,54 @@ final class LavaFlows {
 		view.setCullFace(CullFace.NONE);
 		// Only the lava glows, water is lit like the rest
 		(host.style == ArenaStyle.VOLCANO ? host.glowing : host.arena).getChildren().add(view);
-		host.flows.add(new Flow(mesh, base, du, dv));
+		host.flows.add(new Flow(mesh, base, duValue, dvValue));
 	}
 
 	/**
 	 * A flat strip of lava from one point to another, flowing that way
 	 */
-	void flowStrip(double x1, double z1, double x2, double z2, double width, double y, double speed) {
-		this.flowStrip(x1, z1, x2, z2, width, y, speed, host.lava, LAVA_TILE);
+	void flowStrip(double x1Value, double z1Value, double x2Value, double z2Value, double width, double posY, double speed) {
+		this.flowStrip(x1Value, z1Value, x2Value, z2Value, width, posY, speed, host.lava, LAVA_TILE);
 	}
 
-	void flowStrip(double x1, double z1, double x2, double z2, double width, double y, double speed, PhongMaterial material, double tile) {
-		double length = Math.hypot(x2 - x1, z2 - z1);
-		double px = -(z2 - z1) / length * width / 2;
-		double pz = (x2 - x1) / length * width / 2;
-		this.flow(new double[][] { { x1 - px, y, z1 - pz }, { x2 - px, y, z2 - pz }, { x2 + px, y, z2 + pz }, { x1 + px, y, z1 + pz } }, -speed, 0, material, tile);
+	void flowStrip(double x1Value, double z1Value, double x2Value, double z2Value, double width, double posY, double speed, PhongMaterial material, double tile) {
+		double length = Math.hypot(x2Value - x1Value, z2Value - z1Value);
+		double posX = -(z2Value - z1Value) / length * width / 2;
+		double posZ = (x2Value - x1Value) / length * width / 2;
+		this.flow(new double[][] { { x1Value - posX, posY, z1Value - posZ }, { x2Value - posX, posY, z2Value - posZ }, { x2Value + posX, posY, z2Value + posZ }, { x1Value + posX, posY, z1Value + posZ } }, -speed, 0, material, tile);
 	}
 
 	/**
 	 * A flat ribbon along a winding line, with its own half width at each point: a
 	 * single mesh, so the texture runs on without a seam at the joints
 	 */
-	void flowRibbon(double[] xs, double[] zs, double[] halfWidths, double y, double du, double dv, PhongMaterial material, double tile) {
-		int count = xs.length;
+	void flowRibbon(double[] xsValue, double[] zsValue, double[] halfWidths, double posY, double duValue, double dvValue, PhongMaterial material, double tile) {
+		int count = xsValue.length;
 		TriangleMesh mesh = new TriangleMesh();
 		float[] texture = new float[4 * count];
 		double along = 0;
-		for (int i = 0; i < count; i++) {
-			if (i > 0) {
-				along += Math.hypot(xs[i] - xs[i - 1], zs[i] - zs[i - 1]);
+		for (int index = 0; index < count; index++) {
+			if (index > 0) {
+				along += Math.hypot(xsValue[index] - xsValue[index - 1], zsValue[index] - zsValue[index - 1]);
 			}
 			// The side of the ribbon: across the direction of the line
-			double dx = xs[Math.min(i + 1, count - 1)] - xs[Math.max(i - 1, 0)];
-			double dz = zs[Math.min(i + 1, count - 1)] - zs[Math.max(i - 1, 0)];
-			double length = Math.hypot(dx, dz);
-			double sx = -dz / length * halfWidths[i];
-			double sz = dx / length * halfWidths[i];
-			mesh.getPoints().addAll((float) (xs[i] + sx), (float) y, (float) (zs[i] + sz), (float) (xs[i] - sx), (float) y, (float) (zs[i] - sz));
+			double deltaX = xsValue[Math.min(index + 1, count - 1)] - xsValue[Math.max(index - 1, 0)];
+			double deltaZ = zsValue[Math.min(index + 1, count - 1)] - zsValue[Math.max(index - 1, 0)];
+			double length = Math.hypot(deltaX, deltaZ);
+			double sxValue = -deltaZ / length * halfWidths[index];
+			double szValue = deltaX / length * halfWidths[index];
+			mesh.getPoints().addAll((float) (xsValue[index] + sxValue), (float) posY, (float) (zsValue[index] + szValue), (float) (xsValue[index] - sxValue), (float) posY, (float) (zsValue[index] - szValue));
 			// Along the line the texture grows with the length, across it with the width
-			float u = (float) (along / tile);
-			float v = (float) (2 * halfWidths[i] / tile);
-			texture[4 * i] = u;
-			texture[4 * i + 1] = 0;
-			texture[4 * i + 2] = u;
-			texture[4 * i + 3] = v;
+			float uCoord = (float) (along / tile);
+			float vCoord = (float) (2 * halfWidths[index] / tile);
+			texture[4 * index] = uCoord;
+			texture[4 * index + 1] = 0;
+			texture[4 * index + 2] = uCoord;
+			texture[4 * index + 3] = vCoord;
 		}
 		mesh.getTexCoords().addAll(texture);
-		for (int i = 0; i < count - 1; i++) {
-			int left = 2 * i;
+		for (int index2 = 0; index2 < count - 1; index2++) {
+			int left = 2 * index2;
 			int right = left + 1;
 			int nextLeft = left + 2;
 			int nextRight = left + 3;
@@ -118,7 +118,7 @@ final class LavaFlows {
 		view.setMaterial(material);
 		view.setCullFace(CullFace.NONE);
 		host.arena.getChildren().add(view);
-		host.flows.add(new Flow(mesh, texture, du, dv));
+		host.flows.add(new Flow(mesh, texture, duValue, dvValue));
 	}
 
 	/**
@@ -127,28 +127,28 @@ final class LavaFlows {
 	 */
 	void river(double fromX, double toX, double sign, double centre, double phase, double width, double speed, PhongMaterial material, double tile) {
 		int count = 150;
-		double[] xs = new double[count];
-		double[] zs = new double[count];
+		double[] xsValue = new double[count];
+		double[] zsValue = new double[count];
 		double[] halfWidths = new double[count];
-		for (int i = 0; i < count; i++) {
-			double x = fromX + (toX - fromX) * i / (count - 1);
-			double bend = 45 * Math.sin(x / 330 + phase) + 22 * Math.sin(x / 120 + 1.7 + 2 * phase) + 10 * Math.sin(x / 57 + 0.3 * phase);
-			xs[i] = x;
-			zs[i] = sign * (centre + bend);
-			halfWidths[i] = width / 2 * (0.8 + 0.3 * (0.5 + 0.5 * Math.sin(x / 190 + 0.9 + phase)));
+		for (int index = 0; index < count; index++) {
+			double posX = fromX + (toX - fromX) * index / (count - 1);
+			double bend = 45 * Math.sin(posX / 330 + phase) + 22 * Math.sin(posX / 120 + 1.7 + 2 * phase) + 10 * Math.sin(posX / 57 + 0.3 * phase);
+			xsValue[index] = posX;
+			zsValue[index] = sign * (centre + bend);
+			halfWidths[index] = width / 2 * (0.8 + 0.3 * (0.5 + 0.5 * Math.sin(posX / 190 + 0.9 + phase)));
 		}
-		this.flowRibbon(xs, zs, halfWidths, 3, -speed, 0, material, tile);
+		this.flowRibbon(xsValue, zsValue, halfWidths, 3, -speed, 0, material, tile);
 	}
 
 	void updateFlows() {
 		for (Flow flow : host.flows) {
 			float[] coordinates = new float[flow.base().length];
 			// Kept small: the texture repeats every 1
-			float u = (float) ((host.clock * flow.du()) % 1);
-			float v = (float) ((host.clock * flow.dv()) % 1);
-			for (int i = 0; i < coordinates.length / 2; i++) {
-				coordinates[2 * i] = flow.base()[2 * i] + u;
-				coordinates[2 * i + 1] = flow.base()[2 * i + 1] + v;
+			float uCoord = (float) ((host.clock * flow.du()) % 1);
+			float vCoord = (float) ((host.clock * flow.dv()) % 1);
+			for (int index = 0; index < coordinates.length / 2; index++) {
+				coordinates[2 * index] = flow.base()[2 * index] + uCoord;
+				coordinates[2 * index + 1] = flow.base()[2 * index + 1] + vCoord;
 			}
 			flow.mesh().getTexCoords().setAll(coordinates);
 		}

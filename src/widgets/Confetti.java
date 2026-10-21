@@ -54,20 +54,20 @@ public class Confetti extends TimedPane {
 	protected void step(double delta, double seconds) {
 		double width = this.canvas.getWidth();
 		double height = this.canvas.getHeight();
-		GraphicsContext g = this.canvas.getGraphicsContext2D();
-		g.clearRect(0, 0, width, height);
+		GraphicsContext graphicsContext = this.canvas.getGraphicsContext2D();
+		graphicsContext.clearRect(0, 0, width, height);
 
 		for (double[] piece : this.pieces) {
 			piece[1] += piece[2] * delta;
 			if (piece[1] > 1.05) {
 				this.reset(piece);
 			}
-			double x = piece[0] * width + Math.sin(seconds * 2 + piece[3]) * 18;
-			double y = piece[1] * height;
+			double posX = piece[0] * width + Math.sin(seconds * 2 + piece[3]) * 18;
+			double posY = piece[1] * height;
 			// Flipping, like a paper falling
 			double flip = Math.abs(Math.cos(seconds * 4 + piece[3]));
-			g.setFill(COLORS[(int) piece[5]]);
-			g.fillRect(x, y, piece[4], Math.max(2, piece[4] * flip));
+			graphicsContext.setFill(COLORS[(int) piece[5]]);
+			graphicsContext.fillRect(posX, posY, piece[4], Math.max(2, piece[4] * flip));
 		}
 	}
 }

@@ -48,15 +48,15 @@ final class LavaTexture {
 	 */
 	static Image floor(double crust, double brightness, int gray) {
 		int[] pixels = pixels(crust);
-		for (int i = 0; i < pixels.length; i++) {
+		for (int index = 0; index < pixels.length; index++) {
 			int color = 0;
 			for (int shift = 16; shift >= 0; shift -= 8) {
 				int base = (gray >> shift) & 0xff;
-				int glow = (int) (((pixels[i] >> shift) & 0xff) * brightness);
+				int glow = (int) (((pixels[index] >> shift) & 0xff) * brightness);
 				// What the base leaves free, the glow fills
 				color |= Math.min(255, base + glow * (255 - base) / 255) << shift;
 			}
-			pixels[i] = 0xff000000 | color;
+			pixels[index] = 0xff000000 | color;
 		}
 		WritableImage image = new WritableImage(SIZE, SIZE);
 		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);
@@ -68,29 +68,29 @@ final class LavaTexture {
 	 */
 	static int[] pixels(double crust) {
 		int[] pixels = new int[SIZE * SIZE];
-		for (int py = 0; py < SIZE; py++) {
-			for (int px = 0; px < SIZE; px++) {
-				double u = (double) px / SIZE * PERIOD;
-				double v = (double) py / SIZE * PERIOD;
+		for (int posY = 0; posY < SIZE; posY++) {
+			for (int posX = 0; posX < SIZE; posX++) {
+				double uCoord = (double) posX / SIZE * PERIOD;
+				double vCoord = (double) posY / SIZE * PERIOD;
 				// Domain warp: the noise is read somewhere moved by other noise
-				double warpU = fbm(u + 3.1, v + 7.7, 3, 1);
-				double warpV = fbm(u + 11.3, v + 2.9, 3, 2);
-				double n = fbm(u + 2.2 * warpU, v + 2.2 * warpV, 5, 3);
+				double warpU = fbm(uCoord + 3.1, vCoord + 7.7, 3, 1);
+				double warpV = fbm(uCoord + 11.3, vCoord + 2.9, 3, 2);
+				double count = fbm(uCoord + 2.2 * warpU, vCoord + 2.2 * warpV, 5, 3);
 				// Ridges of the noise are the veins of magma
-				double ridge = 1 - Math.abs(2 * n - 1);
-				double heat = Math.pow(ridge, 5) * 0.85 + Math.pow(n, 2) * 0.35;
+				double ridge = 1 - Math.abs(2 * count - 1);
+				double heat = Math.pow(ridge, 5) * 0.85 + Math.pow(count, 2) * 0.35;
 				heat = Math.max(0, (heat - crust) / (1 - crust));
-				pixels[py * SIZE + px] = 0xff000000 | color(Math.min(1, heat));
+				pixels[posY * SIZE + posX] = 0xff000000 | color(Math.min(1, heat));
 			}
 		}
 		return pixels;
 	}
 
 	private static int color(double heat) {
-		for (int i = 1; i < STOPS.length; i++) {
-			if (heat <= STOPS[i]) {
-				double t = (heat - STOPS[i - 1]) / (STOPS[i] - STOPS[i - 1]);
-				return TextureMath.mix(COLORS[i - 1], COLORS[i], t);
+		for (int index = 1; index < STOPS.length; index++) {
+			if (heat <= STOPS[index]) {
+				double time = (heat - STOPS[index - 1]) / (STOPS[index] - STOPS[index - 1]);
+				return TextureMath.mix(COLORS[index - 1], COLORS[index], time);
 			}
 		}
 		return COLORS[COLORS.length - 1];
@@ -99,13 +99,13 @@ final class LavaTexture {
 		/**
 	 * Fractal noise from 0 to 1, repeating every PERIOD
 	 */
-	static double fbm(double u, double v, int octaves, int seed) {
+	static double fbm(double uCoord, double vCoord, int octaves, int seed) {
 		double sum = 0;
 		double amplitude = 0.5;
 		double total = 0;
 		int scale = 1;
 		for (int octave = 0; octave < octaves; octave++) {
-			sum += amplitude * noise(u * scale, v * scale, PERIOD * scale, seed + octave * 31);
+			sum += amplitude * noise(uCoord * scale, vCoord * scale, PERIOD * scale, seed + octave * 31);
 			total += amplitude;
 			amplitude *= 0.5;
 			scale *= 2;
@@ -116,18 +116,18 @@ final class LavaTexture {
 	/**
 	 * Smooth value noise on a lattice that wraps after period cells
 	 */
-	private static double noise(double u, double v, int period, int seed) {
-		int x = (int) Math.floor(u);
-		int y = (int) Math.floor(v);
-		double fx = u - x;
-		double fy = v - y;
-		fx = fx * fx * (3 - 2 * fx);
-		fy = fy * fy * (3 - 2 * fy);
-		double a = TextureMath.lattice(x, y, period, period, seed);
-		double b = TextureMath.lattice(x + 1, y, period, period, seed);
-		double c = TextureMath.lattice(x, y + 1, period, period, seed);
-		double d = TextureMath.lattice(x + 1, y + 1, period, period, seed);
-		return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy;
+	private static double noise(double uCoord, double vCoord, int period, int seed) {
+		int posX = (int) Math.floor(uCoord);
+		int posY = (int) Math.floor(vCoord);
+		double fxValue = uCoord - posX;
+		double fyValue = vCoord - posY;
+		fxValue = fxValue * fxValue * (3 - 2 * fxValue);
+		fyValue = fyValue * fyValue * (3 - 2 * fyValue);
+		double first = TextureMath.lattice(posX, posY, period, period, seed);
+		double second = TextureMath.lattice(posX + 1, posY, period, period, seed);
+		double column = TextureMath.lattice(posX, posY + 1, period, period, seed);
+		double delta = TextureMath.lattice(posX + 1, posY + 1, period, period, seed);
+		return (first + (second - first) * fxValue) + ((column + (delta - column) * fxValue) - (first + (second - first) * fxValue)) * fyValue;
 	}
 
 	}

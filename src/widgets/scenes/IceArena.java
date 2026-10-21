@@ -53,10 +53,10 @@ final class IceArena {
 	}
 
 	/** Paints the aurora again a few times a second, as the battle goes on */
-	void update(double dt) {
+	void update(double deltaTime) {
 		if (this.aurora != null) {
-			this.auroraClock += dt;
-			this.auroraWait += dt;
+			this.auroraClock += deltaTime;
+			this.auroraWait += deltaTime;
 			if (this.auroraWait >= AURORA_STEP) {
 				this.auroraWait = 0;
 				this.aurora.update(this.auroraClock);
@@ -67,50 +67,50 @@ final class IceArena {
 	/**
 	 * Plates of ice with bright seams, and crystals of ice on the horizon
 	 */
-	void build(double w, double h) {
+	void build(double width, double height) {
 		Random crystals = new Random(23);
 		// The sky keeps its color and has an aurora that waves over it
 		this.aurora = new Aurora(host.style.sky);
 		host.arena.getChildren().add(ArenaMaterials.skyDome(this.aurora.image()));
-		this.floor(w, h);
-		this.plates(w, h, crystals);
+		this.floor(width, height);
+		this.plates(width, height, crystals);
 		// The glacial sea west of the field, beyond the snow of its edges
 		double seaRadius = 600;
-		double seaX = -(w / 2 + 60 + 1.25 * seaRadius);
-		double seaZ = h * 0.1;
+		double seaX = -(width / 2 + 60 + 1.25 * seaRadius);
+		double seaZ = height * 0.1;
 		this.buildSea(seaX, seaZ, seaRadius, crystals);
 		this.seaX = seaX;
 		this.seaZ = seaZ;
 		this.seaRadius = seaRadius;
-		this.shards(w, h, crystals);
+		this.shards(width, height, crystals);
 		this.farCrystals(crystals);
 	}
 
 	/** The ground around the field and the light seams under the plates */
-	private void floor(double w, double h) {
-		Box ground = new Box(w * 6, 2, h * 6);
+	private void floor(double width, double height) {
+		Box ground = new Box(width * 6, 2, height * 6);
 		ground.setMaterial(ArenaMaterials.material(Color.web("#8ea4b8")));
 		ground.setTranslateY(6);
 
 		// The seams: a light floor under the plates
-		Box seams = new Box(w + 40, 4, h + 40);
+		Box seams = new Box(width + 40, 4, height + 40);
 		seams.setMaterial(ArenaMaterials.material(Color.web("#e4f3ff")));
 		seams.setTranslateY(2.6);
 		host.arena.getChildren().addAll(ground, seams);
 	}
 
 	/** Each plate is a block of ice with its own veins, frost and cracks */
-	private void plates(double w, double h, Random crystals) {
+	private void plates(double width, double height, Random crystals) {
 		// Each plate is a block of ice with its own veins, frost and cracks
 		PhongMaterial[] ice = new PhongMaterial[3];
 		int[] tones = { 0x7fa9cc, 0x8cb8dc, 0x6f98c0 };
-		for (int i = 0; i < ice.length; i++) {
-			ice[i] = ArenaMaterials.textured(IceTexture.block(tones[i], 5 + i), Color.WHITE);
-			ice[i].setSpecularPower(90);
+		for (int index = 0; index < ice.length; index++) {
+			ice[index] = ArenaMaterials.textured(IceTexture.block(tones[index], 5 + index), Color.WHITE);
+			ice[index].setSpecularPower(90);
 		}
-		for (double x = 0; x < w; x += 100) {
-			for (double z = 0; z < h; z += 100) {
-				Box plate = ArenaMaterials.box(Math.min(100, w - x) - 2, 4, Math.min(100, h - z) - 2, x + Math.min(100, w - x) / 2 - w / 2, 2, z + Math.min(100, h - z) / 2 - h / 2,
+		for (double posX = 0; posX < width; posX += 100) {
+			for (double posZ = 0; posZ < height; posZ += 100) {
+				Box plate = ArenaMaterials.box(Math.min(100, width - posX) - 2, 4, Math.min(100, height - posZ) - 2, posX + Math.min(100, width - posX) / 2 - width / 2, 2, posZ + Math.min(100, height - posZ) / 2 - height / 2,
 						ice[crystals.nextInt(ice.length)]);
 				host.arena.getChildren().add(plate);
 			}
@@ -118,7 +118,7 @@ final class IceArena {
 	}
 
 	/** Snow piled outside the plates, with shards of ice standing in it */
-	private void shards(double w, double h, Random crystals) {
+	private void shards(double width, double height, Random crystals) {
 		// Snow piled outside the plates, with shards of ice standing in it
 		PhongMaterial snow = ArenaMaterials.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
@@ -127,28 +127,28 @@ final class IceArena {
 		shardMaterial.setSpecularPower(100);
 		TriangleMesh shards = new TriangleMesh();
 		shards.getTexCoords().addAll(0, 0);
-		for (int i = 0; i < 90; i++) {
+		for (int index = 0; index < 90; index++) {
 			// A point just outside one of the four edges of the field
 			int side = crystals.nextInt(4);
 			double off = 8 + crystals.nextDouble() * 40;
 			double along = crystals.nextDouble() - 0.5;
-			double x = side < 2 ? (side == 0 ? -1 : 1) * (w / 2 + off) : along * (w + 80);
-			double z = side < 2 ? along * (h + 80) : (side == 2 ? -1 : 1) * (h / 2 + off);
-			if (Math.hypot(x - this.seaX, z - this.seaZ) < this.seaRadius * 1.3) {
+			double posX = side < 2 ? (side == 0 ? -1 : 1) * (width / 2 + off) : along * (width + 80);
+			double posZ = side < 2 ? along * (height + 80) : (side == 2 ? -1 : 1) * (height / 2 + off);
+			if (Math.hypot(posX - this.seaX, posZ - this.seaZ) < this.seaRadius * 1.3) {
 				continue;
 			}
-			if (i % 3 == 0) {
+			if (index % 3 == 0) {
 				// A drift of snow, half sunk in the ground
 				double radius = 6 + crystals.nextDouble() * 14;
 				Sphere drift = new Sphere(radius, 10);
 				drift.setMaterial(snow);
 				drift.setScaleY(0.45);
-				drift.setTranslateX(x);
+				drift.setTranslateX(posX);
 				drift.setTranslateY(5 - radius * 0.2);
-				drift.setTranslateZ(z);
+				drift.setTranslateZ(posZ);
 				host.arena.getChildren().add(drift);
 			} else {
-				IceArena.crystal(shards, x, 5, z, 2 + crystals.nextDouble() * 3, 8 + crystals.nextDouble() * 14, 5, crystals);
+				IceArena.crystal(shards, posX, 5, posZ, 2 + crystals.nextDouble() * 3, 8 + crystals.nextDouble() * 14, 5, crystals);
 			}
 		}
 		this.addIce(shards, shardMaterial);
@@ -159,18 +159,18 @@ final class IceArena {
 		// Clusters of crystals far away, out of the sea
 		TriangleMesh far = new TriangleMesh();
 		far.getTexCoords().addAll(0, 0);
-		for (int i = 0; i < 12; i++) {
-			double angle = i * Math.PI * 2 / 12 + crystals.nextDouble() * 0.3;
+		for (int index = 0; index < 12; index++) {
+			double angle = index * Math.PI * 2 / 12 + crystals.nextDouble() * 0.3;
 			double distance = 900 + crystals.nextDouble() * 800;
-			double cx = Math.cos(angle) * distance;
-			double cz = Math.sin(angle) * distance;
-			if (Math.hypot(cx - this.seaX, cz - this.seaZ) < this.seaRadius * 1.4) {
+			double cxValue = Math.cos(angle) * distance;
+			double czValue = Math.sin(angle) * distance;
+			if (Math.hypot(cxValue - this.seaX, czValue - this.seaZ) < this.seaRadius * 1.4) {
 				continue;
 			}
 			int count = 3 + crystals.nextInt(3);
-			for (int k = 0; k < count; k++) {
+			for (int deepIndex = 0; deepIndex < count; deepIndex++) {
 				double height = 90 + crystals.nextDouble() * 240;
-				IceArena.crystal(far, cx + (crystals.nextDouble() - 0.5) * 120, 8, cz + (crystals.nextDouble() - 0.5) * 120, 18 + crystals.nextDouble() * 28, height, 6 + crystals.nextInt(2), crystals);
+				IceArena.crystal(far, cxValue + (crystals.nextDouble() - 0.5) * 120, 8, czValue + (crystals.nextDouble() - 0.5) * 120, 18 + crystals.nextDouble() * 28, height, 6 + crystals.nextInt(2), crystals);
 			}
 		}
 		PhongMaterial crystalMaterial = new PhongMaterial(Color.web("#a9dcf5"));
@@ -189,15 +189,15 @@ final class IceArena {
 		TriangleMesh water = new TriangleMesh();
 		water.getTexCoords().addAll(0, 0);
 		water.getPoints().addAll((float) centreX, (float) surface, (float) centreZ);
-		for (int i = 0; i < sides; i++) {
-			double angle = i * Math.PI * 2 / sides;
-			double r = shore(angle, radius);
-			water.getPoints().addAll((float) (centreX + Math.cos(angle) * r), (float) surface, (float) (centreZ + Math.sin(angle) * r));
+		for (int index = 0; index < sides; index++) {
+			double angle = index * Math.PI * 2 / sides;
+			double row = shore(angle, radius);
+			water.getPoints().addAll((float) (centreX + Math.cos(angle) * row), (float) surface, (float) (centreZ + Math.sin(angle) * row));
 		}
-		for (int i = 0; i < sides; i++) {
-			int a = 1 + i;
-			int b = 1 + (i + 1) % sides;
-			water.getFaces().addAll(0, 0, a, 0, b, 0);
+		for (int index2 = 0; index2 < sides; index2++) {
+			int first = 1 + index2;
+			int second = 1 + (index2 + 1) % sides;
+			water.getFaces().addAll(0, 0, first, 0, second, 0);
 		}
 		PhongMaterial sea = ArenaMaterials.material(Color.web("#14365e"));
 		sea.setSpecularColor(Color.WHITE);
@@ -206,28 +206,28 @@ final class IceArena {
 
 		// The floes: rough discs of cracked ice, in several sizes, kept off the shore
 		TriangleMesh floes = new TriangleMesh();
-		for (int i = 0; i < 150; i++) {
+		for (int index3 = 0; index3 < 150; index3++) {
 			double angle = random.nextDouble() * Math.PI * 2;
 			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.85;
-			double fx = centreX + Math.cos(angle) * distance;
-			double fz = centreZ + Math.sin(angle) * distance;
+			double fxValue = centreX + Math.cos(angle) * distance;
+			double fzValue = centreZ + Math.sin(angle) * distance;
 			double size = 14 + random.nextDouble() * 32;
 			int floeSides = 7 + random.nextInt(3);
 			int offset = floes.getPoints().size() / 3;
-			floes.getPoints().addAll((float) fx, (float) (surface - 0.2), (float) fz);
+			floes.getPoints().addAll((float) fxValue, (float) (surface - 0.2), (float) fzValue);
 			floes.getTexCoords().addAll(0.5f, 0.5f);
-			for (int k = 0; k < floeSides; k++) {
-				double a = k * Math.PI * 2 / floeSides + random.nextDouble() * 0.3;
-				double r = size * (0.7 + 0.35 * random.nextDouble());
-				double cos = Math.cos(a);
-				double sin = Math.sin(a);
-				floes.getPoints().addAll((float) (fx + cos * r), (float) (surface - 0.2 - random.nextDouble() * 0.3), (float) (fz + sin * r));
+			for (int deepIndex = 0; deepIndex < floeSides; deepIndex++) {
+				double first2 = deepIndex * Math.PI * 2 / floeSides + random.nextDouble() * 0.3;
+				double row2 = size * (0.7 + 0.35 * random.nextDouble());
+				double cos = Math.cos(first2);
+				double sin = Math.sin(first2);
+				floes.getPoints().addAll((float) (fxValue + cos * row2), (float) (surface - 0.2 - random.nextDouble() * 0.3), (float) (fzValue + sin * row2));
 				floes.getTexCoords().addAll((float) (0.5 + cos * 0.5), (float) (0.5 + sin * 0.5));
 			}
-			for (int k = 0; k < floeSides; k++) {
-				int a = offset + 1 + k;
-				int b = offset + 1 + (k + 1) % floeSides;
-				floes.getFaces().addAll(offset, offset, a, a, b, b);
+			for (int deepIndex2 = 0; deepIndex2 < floeSides; deepIndex2++) {
+				int first3 = offset + 1 + deepIndex2;
+				int second2 = offset + 1 + (deepIndex2 + 1) % floeSides;
+				floes.getFaces().addAll(offset, offset, first3, first3, second2, second2);
 			}
 		}
 		PhongMaterial floeIce = ArenaMaterials.textured(IceTexture.block(0xc4ecfa, 11), Color.WHITE);
@@ -237,7 +237,7 @@ final class IceArena {
 		// Icebergs standing in the water
 		TriangleMesh bergs = new TriangleMesh();
 		bergs.getTexCoords().addAll(0, 0);
-		for (int i = 0; i < 7; i++) {
+		for (int index4 = 0; index4 < 7; index4++) {
 			double angle = random.nextDouble() * Math.PI * 2;
 			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.6;
 			IceArena.crystal(bergs, centreX + Math.cos(angle) * distance, surface + 0.4, centreZ + Math.sin(angle) * distance, 40 + random.nextDouble() * 40, 30 + random.nextDouble() * 50, 8, random);
@@ -250,15 +250,15 @@ final class IceArena {
 		// Snow along the shore
 		PhongMaterial snow = ArenaMaterials.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
-		for (int i = 0; i < sides; i += 3) {
-			double angle = i * Math.PI * 2 / sides;
-			double r = shore(angle, radius) * 1.03;
+		for (int index5 = 0; index5 < sides; index5 += 3) {
+			double angle = index5 * Math.PI * 2 / sides;
+			double row3 = shore(angle, radius) * 1.03;
 			Sphere rim = new Sphere(9 + random.nextDouble() * 10, 8);
 			rim.setMaterial(snow);
 			rim.setScaleY(0.5);
-			rim.setTranslateX(centreX + Math.cos(angle) * r);
+			rim.setTranslateX(centreX + Math.cos(angle) * row3);
 			rim.setTranslateY(surface - 0.4);
-			rim.setTranslateZ(centreZ + Math.sin(angle) * r);
+			rim.setTranslateZ(centreZ + Math.sin(angle) * row3);
 			host.arena.getChildren().add(rim);
 		}
 	}
@@ -280,30 +280,30 @@ final class IceArena {
 	 * A crystal of ice: a faceted spike on its base, leaning, its tip off the middle.
 	 * It is added to the mesh, so many crystals make one mesh
 	 */
-	static void crystal(TriangleMesh mesh, double x, double baseY, double z, double radius, double height, int sides, Random random) {
+	static void crystal(TriangleMesh mesh, double posX, double baseY, double posZ, double radius, double height, int sides, Random random) {
 		int offset = mesh.getPoints().size() / 3;
-		double tipX = x + (random.nextDouble() - 0.5) * radius;
-		double tipZ = z + (random.nextDouble() - 0.5) * radius;
+		double tipX = posX + (random.nextDouble() - 0.5) * radius;
+		double tipZ = posZ + (random.nextDouble() - 0.5) * radius;
 		double turn = random.nextDouble() * Math.PI * 2;
-		double middleX = x + (tipX - x) * 0.5;
-		double middleZ = z + (tipZ - z) * 0.5;
-		for (int i = 0; i < sides; i++) {
-			double angle = turn + i * Math.PI * 2 / sides;
-			double r = radius * (0.75 + 0.35 * random.nextDouble());
-			mesh.getPoints().addAll((float) (x + Math.cos(angle) * r), (float) baseY, (float) (z + Math.sin(angle) * r));
+		double middleX = posX + (tipX - posX) * 0.5;
+		double middleZ = posZ + (tipZ - posZ) * 0.5;
+		for (int index = 0; index < sides; index++) {
+			double angle = turn + index * Math.PI * 2 / sides;
+			double row = radius * (0.75 + 0.35 * random.nextDouble());
+			mesh.getPoints().addAll((float) (posX + Math.cos(angle) * row), (float) baseY, (float) (posZ + Math.sin(angle) * row));
 		}
-		for (int i = 0; i < sides; i++) {
-			double angle = turn + (i + 0.5) * Math.PI * 2 / sides;
-			double r = radius * (0.5 + 0.3 * random.nextDouble());
-			mesh.getPoints().addAll((float) (middleX + Math.cos(angle) * r), (float) (baseY - height * 0.5), (float) (middleZ + Math.sin(angle) * r));
+		for (int index2 = 0; index2 < sides; index2++) {
+			double angle = turn + (index2 + 0.5) * Math.PI * 2 / sides;
+			double row2 = radius * (0.5 + 0.3 * random.nextDouble());
+			mesh.getPoints().addAll((float) (middleX + Math.cos(angle) * row2), (float) (baseY - height * 0.5), (float) (middleZ + Math.sin(angle) * row2));
 		}
 		mesh.getPoints().addAll((float) tipX, (float) (baseY - height), (float) tipZ);
 		int tip = offset + 2 * sides;
-		for (int i = 0; i < sides; i++) {
-			int base = offset + i;
-			int nextBase = offset + (i + 1) % sides;
-			int middle = offset + sides + i;
-			int nextMiddle = offset + sides + (i + 1) % sides;
+		for (int index3 = 0; index3 < sides; index3++) {
+			int base = offset + index3;
+			int nextBase = offset + (index3 + 1) % sides;
+			int middle = offset + sides + index3;
+			int nextMiddle = offset + sides + (index3 + 1) % sides;
 			mesh.getFaces().addAll(base, 0, nextBase, 0, nextMiddle, 0, base, 0, nextMiddle, 0, middle, 0);
 			mesh.getFaces().addAll(middle, 0, nextMiddle, 0, tip, 0);
 		}

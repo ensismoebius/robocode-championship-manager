@@ -61,17 +61,17 @@ public class TextTemplatePreprocessor {
 			String line = lines.get(lineIndex);
 
 			// Checks if the line has a block opener or ender
-			Matcher m = blockPattern.matcher(line);
-			if (m.find()) {
+			Matcher matcher2 = blockPattern.matcher(line);
+			if (matcher2.find()) {
 
 				// Its is a block opener or ender?
-				String startOrEnd = m.group(2).trim();
+				String startOrEnd = matcher2.group(2).trim();
 
 				// The of the new find blovk
-				String newBlockName = m.group(3).trim();
+				String newBlockName = matcher2.group(3).trim();
 
 				// The contents in the sameline of the block opener if any
-				String lineContent = startOrEnd.equals("begin") ? m.group(4) : "";
+				String lineContent = startOrEnd.equals("begin") ? matcher2.group(4) : "";
 
 				// Adds the contents of the sameline of the block opener if any
 				if (!lineContent.trim().equals("")) {

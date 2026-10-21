@@ -116,8 +116,8 @@ public class StartScreen extends StackPane {
 		ImageView robocodeLogo = new ImageView();
 		try (InputStream logo = StartScreen.class.getResourceAsStream("robocodeLogo.png")) {
 			robocodeLogo.setImage(new Image(logo));
-		} catch (IOException e) {
-			GameDialog.error(e.getMessage());
+		} catch (IOException ioException) {
+			GameDialog.error(ioException.getMessage());
 		}
 		robocodeLogo.setPreserveRatio(true);
 		robocodeLogo.setSmooth(true);
@@ -188,12 +188,12 @@ public class StartScreen extends StackPane {
 	private StackPane controlsArea() {
 		GridPane shortcuts = new GridPane();
 		shortcuts.getStyleClass().add("shortcuts");
-		for (int i = 0; i < SHORTCUTS.length; i++) {
-			Label cap = new Label(SHORTCUTS[i][0]);
+		for (int index = 0; index < SHORTCUTS.length; index++) {
+			Label cap = new Label(SHORTCUTS[index][0]);
 			cap.getStyleClass().add("keycap");
-			Label description = new Label(SHORTCUTS[i][1]);
+			Label description = new Label(SHORTCUTS[index][1]);
 			description.getStyleClass().add("shortcut-description");
-			shortcuts.addRow(i, cap, description);
+			shortcuts.addRow(index, cap, description);
 		}
 		Label controlsTitle = new Label("CONTROLES");
 		controlsTitle.getStyleClass().add("panel-title");

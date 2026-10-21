@@ -29,7 +29,7 @@ public final class Flashbacks {
 	 * battle keeps its photos: when there are more than the limit, each battle
 	 * gives evenly spaced ones, so no battle of the robot is left out.
 	 */
-	public static List<BattleMoment> of(List<BattleMoment> moments, long robotId, int limit) {
+	public static List<BattleMoment> select(List<BattleMoment> moments, long robotId, int limit) {
 		Map<String, List<BattleMoment>> battles = new LinkedHashMap<String, List<BattleMoment>>();
 		for (BattleMoment moment : moments) {
 			if (moment.getImage() != null && involves(moment, robotId)) {
@@ -70,8 +70,8 @@ public final class Flashbacks {
 		} else if (count == 1) {
 			chosen.add(items.get(items.size() - 1));
 		} else {
-			for (int i = 0; i < count; i++) {
-				chosen.add(items.get((int) Math.round(i * (items.size() - 1) / (double) (count - 1))));
+			for (int index = 0; index < count; index++) {
+				chosen.add(items.get((int) Math.round(index * (items.size() - 1) / (double) (count - 1))));
 			}
 		}
 		return chosen;

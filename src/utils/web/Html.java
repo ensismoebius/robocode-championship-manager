@@ -16,14 +16,14 @@ public class Html {
 		}
 
 		StringBuilder escaped = new StringBuilder(text.length());
-		for (char c : text.toCharArray()) {
-			switch (c) {
+		for (char column : text.toCharArray()) {
+			switch (column) {
 			case '&' -> escaped.append("&amp;");
 			case '<' -> escaped.append("&lt;");
 			case '>' -> escaped.append("&gt;");
 			case '"' -> escaped.append("&quot;");
 			case '\'' -> escaped.append("&#39;");
-			default -> escaped.append(c);
+			default -> escaped.append(column);
 			}
 		}
 		return escaped.toString();

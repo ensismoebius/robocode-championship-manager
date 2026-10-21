@@ -66,18 +66,18 @@ public class Podium extends StackPane {
 	/** Lands and bounces, like something heavy falling on the step */
 	static final Interpolator BOUNCE = new Interpolator() {
 		@Override
-		protected double curve(double t) {
-			if (t < 1 / 2.75) {
-				return 7.5625 * t * t;
-			} else if (t < 2 / 2.75) {
-				double u = t - 1.5 / 2.75;
-				return 7.5625 * u * u + 0.75;
-			} else if (t < 2.5 / 2.75) {
-				double u = t - 2.25 / 2.75;
-				return 7.5625 * u * u + 0.9375;
+		protected double curve(double time) {
+			if (time < 1 / 2.75) {
+				return 7.5625 * time * time;
+			} else if (time < 2 / 2.75) {
+				double uCoord = time - 1.5 / 2.75;
+				return 7.5625 * uCoord * uCoord + 0.75;
+			} else if (time < 2.5 / 2.75) {
+				double uCoord2 = time - 2.25 / 2.75;
+				return 7.5625 * uCoord2 * uCoord2 + 0.9375;
 			}
-			double u = t - 2.625 / 2.75;
-			return 7.5625 * u * u + 0.984375;
+			double uCoord3 = time - 2.625 / 2.75;
+			return 7.5625 * uCoord3 * uCoord3 + 0.984375;
 		}
 	};
 
@@ -122,8 +122,8 @@ public class Podium extends StackPane {
 	public Podium(List<Opponent> podium, List<BattleMoment> moments, Map<Long, Opponent> opponents) {
 		this.moments = moments;
 		this.opponents = opponents;
-		for (int i = 0; i < Math.min(3, podium.size()); i++) {
-			this.places[i + 1] = podium.get(i);
+		for (int index = 0; index < Math.min(3, podium.size()); index++) {
+			this.places[index + 1] = podium.get(index);
 		}
 		// The third, the second and then the first, the ones that exist
 		for (int place = 3; place >= 1; place--) {
@@ -355,9 +355,9 @@ public class Podium extends StackPane {
 			this.fireworks.burst(0.5, 0.2, Color.web("#ff3d6e"), 140);
 		}))).play();
 		Timeline barrage = new Timeline();
-		for (int i = 0; i < 14; i++) {
-			int index = i;
-			barrage.getKeyFrames().add(new KeyFrame(Duration.millis(delay * 1000 + 250 + i * 170), event -> this.fireworks.rocket(0.08 + this.random.nextDouble() * 0.84, colors[index % colors.length], 110)));
+		for (int index2 = 0; index2 < 14; index2++) {
+			int index = index2;
+			barrage.getKeyFrames().add(new KeyFrame(Duration.millis(delay * 1000 + 250 + index2 * 170), event -> this.fireworks.rocket(0.08 + this.random.nextDouble() * 0.84, colors[index % colors.length], 110)));
 		}
 		this.animate(barrage).play();
 		this.animate(new Timeline(new KeyFrame(Duration.millis(delay * 1000 + 1500), event -> {
@@ -390,14 +390,14 @@ public class Podium extends StackPane {
 		Color color = place == 1 ? GOLD : place == 2 ? SILVER : BRONZE;
 		this.stage.show(place);
 		Sfx.ceremony(place);
-		double x = this.stage.columnCenter(place);
+		double posX = this.stage.columnCenter(place);
 
 		this.animate(new Timeline(new KeyFrame(Duration.millis(750), event -> {
 			this.shake(this.stage, place == 1 ? 22 : 10, 450);
-			this.fireworks.popper(x, 0.7, place == 1 ? 90 : 45, color, Color.WHITE, color.brighter());
-			this.fireworks.burst(x, 0.28, color, place == 1 ? 150 : 100);
-			this.fireworks.burst(Math.max(0.1, x - 0.14), 0.36, Color.WHITE, 70);
-			this.fireworks.burst(Math.min(0.9, x + 0.14), 0.36, Color.WHITE, 70);
+			this.fireworks.popper(posX, 0.7, place == 1 ? 90 : 45, color, Color.WHITE, color.brighter());
+			this.fireworks.burst(posX, 0.28, color, place == 1 ? 150 : 100);
+			this.fireworks.burst(Math.max(0.1, posX - 0.14), 0.36, Color.WHITE, 70);
+			this.fireworks.burst(Math.min(0.9, posX + 0.14), 0.36, Color.WHITE, 70);
 			if (place != 1) {
 				this.fireworks.cannons(place == 2 ? 36 : 22);
 			}
@@ -413,7 +413,7 @@ public class Podium extends StackPane {
 			this.fireworks.setRain(22);
 			this.fireworks.setAutoFireworks(1.8, GOLD, Color.WHITE, Color.web("#ff3d6e"), Color.web("#2ec4ff"));
 		} else {
-			this.rays.setRays(color, x, 0.35);
+			this.rays.setRays(color, posX, 0.35);
 			this.rays.flare();
 		}
 	}
@@ -448,11 +448,11 @@ public class Podium extends StackPane {
 	Node title(String text, double heightFactor) {
 		HBox letters = new HBox();
 		letters.setAlignment(Pos.CENTER);
-		for (char c : text.toCharArray()) {
-			Label letter = new Label(String.valueOf(c == 'Ã' ? 'A' : c));
+		for (char column : text.toCharArray()) {
+			Label letter = new Label(String.valueOf(column == 'Ã' ? 'A' : column));
 			letter.getStyleClass().add("podium-title");
 			letter.styleProperty().bind(this.heightProperty().multiply(heightFactor).asString("-fx-font-size: %.0fpx;"));
-			if (c == 'Ã') {
+			if (column == 'Ã') {
 				Label tilde = new Label("~");
 				tilde.getStyleClass().add("podium-title");
 				tilde.styleProperty().bind(this.heightProperty().multiply(heightFactor * 0.8).asString("-fx-font-size: %.0fpx;"));
@@ -495,12 +495,12 @@ public class Podium extends StackPane {
 		shine.setContent("M32,8 L46,8 L50,52 C52,84 66,104 80,112 C52,104 34,84 32,50 Z");
 		shine.setFill(Color.color(1, 1, 1, 0.55));
 		Polygon star = new Polygon();
-		double cx = 80;
-		double cy = 52;
-		for (int i = 0; i < 10; i++) {
-			double radius = i % 2 == 0 ? 24 : 10;
-			double angle = -Math.PI / 2 + Math.PI * i / 5;
-			star.getPoints().addAll(cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+		double cxValue = 80;
+		double cyValue = 52;
+		for (int index = 0; index < 10; index++) {
+			double radius = index % 2 == 0 ? 24 : 10;
+			double angle = -Math.PI / 2 + Math.PI * index / 5;
+			star.getPoints().addAll(cxValue + Math.cos(angle) * radius, cyValue + Math.sin(angle) * radius);
 		}
 		star.setFill(Color.web("#fff6c0"));
 		star.setStroke(dark);
@@ -514,19 +514,19 @@ public class Podium extends StackPane {
 	 */
 	void sparkles(Group trophy) {
 		double[][] spots = { { -10, 10 }, { 170, 24 }, { 150, 120 }, { 4, 112 }, { 80, -22 } };
-		for (int i = 0; i < spots.length; i++) {
+		for (int index = 0; index < spots.length; index++) {
 			Polygon star = new Polygon(0, -14, 3.5, -3.5, 14, 0, 3.5, 3.5, 0, 14, -3.5, 3.5, -14, 0, -3.5, -3.5);
 			star.setFill(Color.WHITE);
 			star.setBlendMode(BlendMode.ADD);
-			star.setTranslateX(spots[i][0]);
-			star.setTranslateY(spots[i][1]);
+			star.setTranslateX(spots[index][0]);
+			star.setTranslateY(spots[index][1]);
 			star.setScaleX(0);
 			star.setScaleY(0);
 			trophy.getChildren().add(star);
 			Timeline twinkle = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(star.scaleXProperty(), 0), new KeyValue(star.scaleYProperty(), 0)),
 					new KeyFrame(Duration.millis(260), new KeyValue(star.scaleXProperty(), 1.4), new KeyValue(star.scaleYProperty(), 1.4)),
-					new KeyFrame(Duration.millis(620), new KeyValue(star.scaleXProperty(), 0), new KeyValue(star.scaleYProperty(), 0)), new KeyFrame(Duration.millis(1500 + i * 130)));
-			twinkle.setDelay(Duration.millis(900 + i * 260));
+					new KeyFrame(Duration.millis(620), new KeyValue(star.scaleXProperty(), 0), new KeyValue(star.scaleYProperty(), 0)), new KeyFrame(Duration.millis(1500 + index * 130)));
+			twinkle.setDelay(Duration.millis(900 + index * 260));
 			twinkle.setCycleCount(Animation.INDEFINITE);
 			this.animate(twinkle).play();
 		}
@@ -596,13 +596,13 @@ public class Podium extends StackPane {
 	 */
 	static Animation rise(Node node, double delay) {
 		node.setTranslateY(40);
-		TranslateTransition up = new TranslateTransition(Duration.millis(450), node);
-		up.setToY(0);
-		up.setInterpolator(Interpolator.EASE_OUT);
+		TranslateTransition translateTransition = new TranslateTransition(Duration.millis(450), node);
+		translateTransition.setToY(0);
+		translateTransition.setInterpolator(Interpolator.EASE_OUT);
 		FadeTransition fade = new FadeTransition(Duration.millis(450), node);
 		fade.setFromValue(0);
 		fade.setToValue(1);
-		ParallelTransition both = new ParallelTransition(up, fade);
+		ParallelTransition both = new ParallelTransition(translateTransition, fade);
 		both.setDelay(Duration.millis(delay));
 		return both;
 	}
@@ -613,9 +613,9 @@ public class Podium extends StackPane {
 	private void shake(Node node, double amplitude, double millis) {
 		Timeline shake = new Timeline();
 		int frames = (int) (millis / 30);
-		for (int i = 0; i < frames; i++) {
-			double decay = 1 - (double) i / frames;
-			shake.getKeyFrames().add(new KeyFrame(Duration.millis(i * 30), new KeyValue(node.translateXProperty(), (this.random.nextDouble() - 0.5) * 2 * amplitude * decay),
+		for (int index = 0; index < frames; index++) {
+			double decay = 1 - (double) index / frames;
+			shake.getKeyFrames().add(new KeyFrame(Duration.millis(index * 30), new KeyValue(node.translateXProperty(), (this.random.nextDouble() - 0.5) * 2 * amplitude * decay),
 					new KeyValue(node.translateYProperty(), (this.random.nextDouble() - 0.5) * 2 * amplitude * decay)));
 		}
 		shake.getKeyFrames().add(new KeyFrame(Duration.millis(millis), new KeyValue(node.translateXProperty(), 0), new KeyValue(node.translateYProperty(), 0)));

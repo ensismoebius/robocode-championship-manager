@@ -71,13 +71,13 @@ final class ArenaControls {
 			if (host.viewMode != ViewMode.FREE) {
 				return;
 			}
-			double dx = event.getX() - this.lastDragX;
-			double dy = event.getY() - this.lastDragY;
+			double deltaX = event.getX() - this.lastDragX;
+			double deltaY = event.getY() - this.lastDragY;
 			this.lastDragX = event.getX();
 			this.lastDragY = event.getY();
-			host.targetYaw += dx * 0.3;
-			host.yawSpeed = dx * 0.3 * 60;
-			host.freePitch = Math.max(-85, Math.min(-8, host.freePitch + dy * 0.2));
+			host.targetYaw += deltaX * 0.3;
+			host.yawSpeed = deltaX * 0.3 * 60;
+			host.freePitch = Math.max(-85, Math.min(-8, host.freePitch + deltaY * 0.2));
 		});
 		host.addEventFilter(ScrollEvent.SCROLL, event -> {
 			host.targetZoom = Math.max(0.45, Math.min(2.5, host.targetZoom * (event.getDeltaY() > 0 ? 0.9 : 1.1)));

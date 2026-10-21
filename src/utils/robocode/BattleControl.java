@@ -54,7 +54,7 @@ public class BattleControl {
 		Comparator<BattleResult> comparator() {
 			// The rank robocode reports may be computed before the last round
 			// counts, so the rounds won are used when known
-			Comparator<BattleResult> byRounds = (a, b) -> a.roundsWon() >= 0 && b.roundsWon() >= 0 ? Integer.compare(b.roundsWon(), a.roundsWon()) : Integer.compare(a.rank(), b.rank());
+			Comparator<BattleResult> byRounds = (first, second) -> first.roundsWon() >= 0 && second.roundsWon() >= 0 ? Integer.compare(second.roundsWon(), first.roundsWon()) : Integer.compare(first.rank(), second.rank());
 			Comparator<BattleResult> byScore = Comparator.comparingInt(BattleResult::score).reversed();
 			return this == RANK ? byRounds.thenComparing(byScore) : byScore.thenComparing(byRounds);
 		}
@@ -135,9 +135,9 @@ public class BattleControl {
 		Process process = builder.start();
 
 		List<String> output = new ArrayList<String>();
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
 			String line;
-			while ((line = br.readLine()) != null) {
+			while ((line = bufferedReader.readLine()) != null) {
 				// The turns are too many to log
 				if (!line.startsWith("#")) {
 					System.out.println(line);
@@ -149,7 +149,7 @@ public class BattleControl {
 
 		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
 		if (results.size() != opponents.size()) {
-			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(l -> !l.startsWith("#")).toList()));
+			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(length -> !length.startsWith("#")).toList()));
 		}
 		results.sort(criterion.comparator());
 		return new BattleOutcome(results, BattleRecording.parse(output));
@@ -177,7 +177,7 @@ public class BattleControl {
 			int score = fields.length > 2 && fields[2].trim().matches("-?[0-9]+") ? Integer.parseInt(fields[2].trim()) : 0;
 			int roundsWon = fields.length > 3 && fields[3].trim().matches("[0-9]+") ? Integer.parseInt(fields[3].trim()) : -1;
 			for (Opponent opponent : opponents) {
-				if (opponent.getFullName().equals(reportedName) && results.stream().noneMatch(r -> r.opponent() == opponent)) {
+				if (opponent.getFullName().equals(reportedName) && results.stream().noneMatch(row -> row.opponent() == opponent)) {
 					results.add(new BattleResult(opponent, Integer.parseInt(fields[0].trim()), score, roundsWon));
 					break;
 				}

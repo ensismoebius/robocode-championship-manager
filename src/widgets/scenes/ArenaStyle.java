@@ -54,7 +54,7 @@ public enum ArenaStyle {
 	public static ArenaStyle resolve(String configured, Random random) {
 		try {
 			return ArenaStyle.valueOf(configured);
-		} catch (IllegalArgumentException | NullPointerException e) {
+		} catch (IllegalArgumentException | NullPointerException nullPointerException) {
 			return ROTATION.next(random);
 		}
 	}

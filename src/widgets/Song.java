@@ -42,7 +42,7 @@ public enum Song {
 	public static Song resolve(String configured, Random random) {
 		try {
 			return Song.valueOf(configured);
-		} catch (IllegalArgumentException | NullPointerException e) {
+		} catch (IllegalArgumentException | NullPointerException nullPointerException) {
 			return ROTATION.next(random);
 		}
 	}

@@ -56,23 +56,23 @@ final class ArenaEffects {
 	 * A jagged bolt of lightning from a to b, with now and then a branch, as thin
 	 * tubes: a wide one that glows and a thin white core
 	 */
-	void bolt(LowPoly glow, LowPoly core, double[] from, double[] to, double radius, int depth) {
+	void bolt(LowPoly glow, LowPoly core, double[] from, double[] toValue, double radius, int depth) {
 		int steps = 7;
-		double length = Math.sqrt(Math.pow(to[0] - from[0], 2) + Math.pow(to[1] - from[1], 2) + Math.pow(to[2] - from[2], 2));
+		double length = Math.sqrt(Math.pow(toValue[0] - from[0], 2) + Math.pow(toValue[1] - from[1], 2) + Math.pow(toValue[2] - from[2], 2));
 		double[] previous = from;
-		for (int i = 1; i <= steps; i++) {
-			double t = (double) i / steps;
-			double jitter = i == steps ? 0 : length * 0.11;
+		for (int index = 1; index <= steps; index++) {
+			double time = (double) index / steps;
+			double jitter = index == steps ? 0 : length * 0.11;
 			double[] point = new double[3];
-			for (int k = 0; k < 3; k++) {
-				point[k] = from[k] + (to[k] - from[k]) * t + (host.random.nextDouble() - 0.5) * 2 * jitter;
+			for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+				point[deepIndex] = from[deepIndex] + (toValue[deepIndex] - from[deepIndex]) * time + (host.random.nextDouble() - 0.5) * 2 * jitter;
 			}
 			glow.tube(previous, point, radius * 3, 4);
 			core.tube(previous, point, radius, 4);
-			if (depth < 1 && i > 1 && i < steps && host.random.nextDouble() < 0.3) {
+			if (depth < 1 && index > 1 && index < steps && host.random.nextDouble() < 0.3) {
 				double[] branch = new double[3];
-				for (int k = 0; k < 3; k++) {
-					branch[k] = point[k] + (to[k] - from[k]) * 0.3 + (host.random.nextDouble() - 0.5) * length * 0.5;
+				for (int deepIndex2 = 0; deepIndex2 < 3; deepIndex2++) {
+					branch[deepIndex2] = point[deepIndex2] + (toValue[deepIndex2] - from[deepIndex2]) * 0.3 + (host.random.nextDouble() - 0.5) * length * 0.5;
 				}
 				this.bolt(glow, core, point, branch, radius * 0.7, depth + 1);
 			}
@@ -96,9 +96,9 @@ final class ArenaEffects {
 		for (int frame = 0; frame < 3; frame++) {
 			LowPoly glow = new LowPoly();
 			LowPoly core = new LowPoly();
-			for (int i = 0; i < bolts; i++) {
+			for (int index = 0; index < bolts; index++) {
 				double angle = host.random.nextDouble() * Math.PI * 2;
-				double rise = i % 3 == 0 ? 0.05 : host.random.nextDouble() * 1.4 - 0.3;
+				double rise = index % 3 == 0 ? 0.05 : host.random.nextDouble() * 1.4 - 0.3;
 				double flat = Math.sqrt(Math.max(0.05, 1 - Math.min(0.9, rise * rise * 0.5)));
 				double length = reach * (0.55 + host.random.nextDouble() * 0.6);
 				double[] end = { center[0] + Math.cos(angle) * length * flat, Math.min(floorY - 1, center[1] - rise * length * 0.8), center[2] + Math.sin(angle) * length * flat };
@@ -112,11 +112,11 @@ final class ArenaEffects {
 		// Rapid flicker between the shapes, then gone
 		Timeline flicker = new Timeline();
 		int[] order = { 0, 1, 2, 0, 2, 1, 0 };
-		for (int i = 0; i < order.length; i++) {
-			int shown = order[i];
-			flicker.getKeyFrames().add(new KeyFrame(Duration.millis(i * 45), event -> {
-				for (int k = 0; k < frames.size(); k++) {
-					frames.get(k).setVisible(k == shown);
+		for (int index2 = 0; index2 < order.length; index2++) {
+			int shown = order[index2];
+			flicker.getKeyFrames().add(new KeyFrame(Duration.millis(index2 * 45), event -> {
+				for (int deepIndex = 0; deepIndex < frames.size(); deepIndex++) {
+					frames.get(deepIndex).setVisible(deepIndex == shown);
 				}
 			}));
 		}
@@ -130,7 +130,7 @@ final class ArenaEffects {
 	 */
 	void sparks(Group blast, ParallelTransition all, double[] center, double floorY, int count, double reach, double size, Color color, double millis) {
 		PhongMaterial material = energy(color, 1);
-		for (int i = 0; i < count; i++) {
+		for (int index = 0; index < count; index++) {
 			MeshView spark = shape(CRYSTAL, material);
 			double scale = size * (0.5 + host.random.nextDouble() * 0.8);
 			spark.setScaleX(scale);
@@ -214,10 +214,10 @@ final class ArenaEffects {
 		all.getChildren().add(spread);
 	}
 
-	void muzzleFlash(double x, double z, Color tint) {
+	void muzzleFlash(double posX, double posZ, Color tint) {
 		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.8), 1));
-		flash.setTranslateX(x);
-		flash.setTranslateZ(z);
+		flash.setTranslateX(posX);
+		flash.setTranslateZ(posZ);
 		flash.setTranslateY(-21);
 		host.effects.getChildren().add(flash);
 		ScaleTransition out = this.effect(new ScaleTransition(Duration.millis(140), flash));
@@ -235,10 +235,10 @@ final class ArenaEffects {
 	 * An electric blast: a flash, bolts of lightning crackling out and sparks
 	 * thrown in an arc, in the color of the shooter
 	 */
-	void explosion(double x, double z, double size, Color tint) {
+	void explosion(double posX, double posZ, double size, Color tint) {
 		Group blast = new Group();
-		blast.setTranslateX(x);
-		blast.setTranslateZ(z);
+		blast.setTranslateX(posX);
+		blast.setTranslateZ(posZ);
 		blast.setTranslateY(-18);
 
 		MeshView flash = shape(CRYSTAL, energy(tint.interpolate(Color.WHITE, 0.9), 0.6));
@@ -252,19 +252,19 @@ final class ArenaEffects {
 		host.effects.getChildren().add(blast);
 		this.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
 		all.play();
-		this.lightFlash(x, z, tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.5);
+		this.lightFlash(posX, posZ, tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.5);
 	}
 
 	/**
 	 * A piece flying in an arc: up, then down to the floor
 	 */
-	Timeline fly(Node piece, double dx, double dz, double height, double millis) {
+	Timeline fly(Node piece, double deltaX, double deltaZ, double height, double millis) {
 		double baseY = piece.getTranslateY();
 		return new Timeline( //
 				new KeyFrame(Duration.millis(millis * 0.4), new KeyValue(piece.translateYProperty(), baseY - height, Interpolator.EASE_OUT)), //
 				new KeyFrame(Duration.millis(millis), //
-						new KeyValue(piece.translateXProperty(), piece.getTranslateX() + dx, Interpolator.EASE_OUT), //
-						new KeyValue(piece.translateZProperty(), piece.getTranslateZ() + dz, Interpolator.EASE_OUT), //
+						new KeyValue(piece.translateXProperty(), piece.getTranslateX() + deltaX, Interpolator.EASE_OUT), //
+						new KeyValue(piece.translateZProperty(), piece.getTranslateZ() + deltaZ, Interpolator.EASE_OUT), //
 						new KeyValue(piece.translateYProperty(), Math.max(baseY, 16), Interpolator.EASE_IN), //
 						new KeyValue(piece.rotateProperty(), 540 + Math.random() * 360, Interpolator.LINEAR), //
 						new KeyValue(piece.scaleXProperty(), 0.3), new KeyValue(piece.scaleYProperty(), 0.3), new KeyValue(piece.scaleZProperty(), 0.3)));
@@ -273,9 +273,9 @@ final class ArenaEffects {
 	/**
 	 * The explosions light up the arena for a moment
 	 */
-	void lightFlash(double x, double z, Color color, double seconds) {
-		host.flashLight.setTranslateX(x);
-		host.flashLight.setTranslateZ(z);
+	void lightFlash(double posX, double posZ, Color color, double seconds) {
+		host.flashLight.setTranslateX(posX);
+		host.flashLight.setTranslateZ(posZ);
 		host.flashLight.setTranslateY(-60);
 		host.flashLight.setColor(color);
 		this.effect(new Timeline(new KeyFrame(Duration.seconds(seconds), new KeyValue(host.flashLight.colorProperty(), Color.BLACK)))).play();

@@ -31,8 +31,8 @@ public class Database {
 			Path file = Path.of(Configuration.getDatabaseFile()).toAbsolutePath();
 			try {
 				Files.createDirectories(file.getParent());
-			} catch (IOException e) {
-				throw new UncheckedIOException(e);
+			} catch (IOException ioException) {
+				throw new UncheckedIOException(ioException);
 			}
 
 			Map<String, Object> persistenceMap = new HashMap<String, Object>();
@@ -57,11 +57,11 @@ public class Database {
 			T result = work.apply(entityManager);
 			transaction.commit();
 			return result;
-		} catch (RuntimeException e) {
+		} catch (RuntimeException runtimeException) {
 			if (transaction.isActive()) {
 				transaction.rollback();
 			}
-			throw e;
+			throw runtimeException;
 		} finally {
 			entityManager.close();
 		}

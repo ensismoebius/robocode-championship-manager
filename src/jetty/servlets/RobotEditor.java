@@ -151,9 +151,9 @@ public class RobotEditor extends HttpServlet {
 			resp.setStatus(HttpServletResponse.SC_SEE_OTHER);
 			resp.setHeader("Location", "/robotEditor?action=edit&saved=1");
 
-		} catch (RuntimeException e) {
-			e.printStackTrace();
-			this.showRobotEditionScreen(resp, action, robot, Html.escape("Algum erro inesperado aconteceu: " + e.getMessage()));
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showRobotEditionScreen(resp, action, robot, Html.escape("Algum erro inesperado aconteceu: " + runtimeException.getMessage()));
 		}
 	}
 
@@ -452,11 +452,11 @@ public class RobotEditor extends HttpServlet {
 	 */
 	private static void fillAuthors(Opponent robot, String[] arrName, String[] arrEmail, String login, String passwordHash) {
 		List<Author> authors = new ArrayList<Author>();
-		for (int i = 0; i < arrName.length; i++) {
-			String mail = arrEmail[i].trim();
+		for (int index = 0; index < arrName.length; index++) {
+			String mail = arrEmail[index].trim();
 
-			Author author = robot.getAuthors().stream().filter(a -> a.getMail().equals(mail)).findFirst().orElseGet(Author::new);
-			author.setName(arrName[i].trim());
+			Author author = robot.getAuthors().stream().filter(first -> first.getMail().equals(mail)).findFirst().orElseGet(Author::new);
+			author.setName(arrName[index].trim());
 			author.setMail(mail);
 			author.setLogin(login);
 			author.setPassword(passwordHash);
@@ -476,18 +476,18 @@ public class RobotEditor extends HttpServlet {
 	 * @return true if another team already uses this login
 	 */
 	private boolean loginTaken(String login, long opponentId) {
-		List<Long> owners = Database.read(em -> em.createQuery("select o.id from Opponent o join o.authors a where a.login = :login", Long.class)
+		List<Long> owners = Database.read(emValue -> emValue.createQuery("select o.id from Opponent o join o.authors a where a.login = :login", Long.class)
 				.setParameter("login", login).getResultList());
-		return owners.stream().anyMatch(id -> id != opponentId);
+		return owners.stream().anyMatch(identifier -> identifier != opponentId);
 	}
 
 	/**
 	 * @return true if another team already has a robot with this name
 	 */
 	private boolean robotNameTaken(String team, String name, long opponentId) {
-		List<Long> owners = Database.read(em -> em.createQuery("select o.id from Opponent o where o.team = :team and o.name = :name", Long.class)
+		List<Long> owners = Database.read(emValue -> emValue.createQuery("select o.id from Opponent o where o.team = :team and o.name = :name", Long.class)
 				.setParameter("team", team).setParameter("name", name).getResultList());
-		return owners.stream().anyMatch(id -> id != opponentId);
+		return owners.stream().anyMatch(identifier -> identifier != opponentId);
 	}
 
 	/**
@@ -496,20 +496,20 @@ public class RobotEditor extends HttpServlet {
 	 * @return the robot or null if it does not exist
 	 */
 	private Opponent loadOpponent(long opponentId) {
-		return Database.read(em -> em.find(Opponent.class, opponentId));
+		return Database.read(emValue -> emValue.find(Opponent.class, opponentId));
 	}
 
 	/**
 	 * Saves robot to database
 	 */
 	private Opponent saveOpponent(Opponent opponent) {
-		return Database.inTransaction(em -> {
+		return Database.inTransaction(emValue -> {
 			// Saves or update depending if it already exists or not
 			if (opponent.getId() == 0) {
-				em.persist(opponent);
+				emValue.persist(opponent);
 				return opponent;
 			}
-			return em.merge(opponent);
+			return emValue.merge(opponent);
 		});
 	}
 }

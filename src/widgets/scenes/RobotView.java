@@ -74,10 +74,10 @@ final class RobotView {
 
 	private static double beltLength() {
 		double length = 0;
-		for (int i = 0; i < BELT.length; i++) {
-			double[] a = BELT[i];
-			double[] b = BELT[(i + 1) % BELT.length];
-			length += Math.hypot(b[0] - a[0], b[1] - a[1]);
+		for (int index = 0; index < BELT.length; index++) {
+			double[] first = BELT[index];
+			double[] second = BELT[(index + 1) % BELT.length];
+			length += Math.hypot(second[0] - first[0], second[1] - first[1]);
 		}
 		return length;
 	}
@@ -87,34 +87,34 @@ final class RobotView {
 	 * and its y in the body, and the angle of the outline there (turned round x).
 	 * The links follow the shape of the track, its chamfers included.
 	 */
-	private static double[] beltPoint(double s) {
-		double rest = s;
-		for (int i = 0; i < BELT.length - 1; i++) {
-			double[] a = BELT[i];
-			double[] b = BELT[i + 1];
-			double dz = b[0] - a[0];
-			double dy = b[1] - a[1];
-			double length = Math.hypot(dz, dy);
+	private static double[] beltPoint(double text) {
+		double rest = text;
+		for (int index = 0; index < BELT.length - 1; index++) {
+			double[] first = BELT[index];
+			double[] second = BELT[index + 1];
+			double deltaZ = second[0] - first[0];
+			double deltaY = second[1] - first[1];
+			double length = Math.hypot(deltaZ, deltaY);
 			if (rest <= length) {
-				return new double[] { a[0] + dz * rest / length, a[1] + dy * rest / length, Math.atan2(-dy, dz) };
+				return new double[] { first[0] + deltaZ * rest / length, first[1] + deltaY * rest / length, Math.atan2(-deltaY, deltaZ) };
 			}
 			rest -= length;
 		}
 		// The last piece of the outline, back to its start
-		double[] a = BELT[BELT.length - 1];
-		double[] b = BELT[0];
-		double dz = b[0] - a[0];
-		double dy = b[1] - a[1];
-		double length = Math.hypot(dz, dy);
-		return new double[] { a[0] + dz * rest / length, a[1] + dy * rest / length, Math.atan2(-dy, dz) };
+		double[] first2 = BELT[BELT.length - 1];
+		double[] second2 = BELT[0];
+		double deltaZ2 = second2[0] - first2[0];
+		double deltaY2 = second2[1] - first2[1];
+		double length = Math.hypot(deltaZ2, deltaY2);
+		return new double[] { first2[0] + deltaZ2 * rest / length, first2[1] + deltaY2 * rest / length, Math.atan2(-deltaY2, deltaZ2) };
 	}
 
 	/**
 	 * A point on one side of the hull, in the arena (side 0 is the left)
 	 */
-	private static double[] sidePoint(double x, double z, double heading, int side) {
+	private static double[] sidePoint(double posX, double posZ, double heading, int side) {
 		double sideways = side == 0 ? -BELT_CENTER : BELT_CENTER;
-		return new double[] { x + sideways * Math.cos(heading), z - sideways * Math.sin(heading) };
+		return new double[] { posX + sideways * Math.cos(heading), posZ - sideways * Math.sin(heading) };
 	}
 
 	final Group root = new Group();
@@ -195,7 +195,7 @@ final class RobotView {
 	}
 
 	/** The hull, the tracks with their links, the armor and the lights: a modern tank of angular armor */
-	private void buildBody(Materials m) {
+	private void buildBody(Materials materials) {
 		// A modern tank of angular armor, pointing to +Z (north when the heading
 		// is 0): a low wedge hull, tracks hidden by skirts of hexagonal plates, a
 		// long flat turret and a very long gun. Flat facets, a few meshes.
@@ -220,7 +220,7 @@ final class RobotView {
 			for (int link = 0; link < TREAD_LINKS; link++) {
 				LowPoly piece = new LowPoly();
 				piece.box(0, 0, 0, BELT_WIDTH, 1.2, 2.4);
-				MeshView linkView = piece.view(m.dark());
+				MeshView linkView = piece.view(materials.dark());
 				Rotate turn = new Rotate(0, Rotate.X_AXIS);
 				linkView.getTransforms().add(turn);
 				this.body.getChildren().add(linkView);
@@ -228,17 +228,17 @@ final class RobotView {
 				this.treadTurns[index][link] = turn;
 			}
 			// Hexagonal armor under the skirt, fixed to the hull
-			for (double z = -15; z <= 15; z += 6) {
-				armor.hexPlate(z, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
+			for (double posZ = -15; posZ <= 15; posZ += 6) {
+				armor.hexPlate(posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
 			}
 			// The skirt leans out at the top
 			hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
 			// Hexagonal plates on it, in two rows
 			for (int row = 0; row < 2; row++) {
-				double y = row == 0 ? -10 : -7.2;
-				double face = 17.5 + (-5 - y) / 7.5 * 2;
-				for (double z = row == 0 ? -15 : -12; z <= 16; z += 6) {
-					plates.hexPlate(z, y, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
+				double posY = row == 0 ? -10 : -7.2;
+				double face = 17.5 + (-5 - posY) / 7.5 * 2;
+				for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
+					plates.hexPlate(posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
 				}
 			}
 			// A strip of light in the color of the player, lamps and rear lights
@@ -247,15 +247,15 @@ final class RobotView {
 			glowWarning.box(side * 9, -10, -22.6, 3, 1.2, 1);
 		}
 		glowCyan.box(0, -9, 22.9, 14, 0.9, 0.6); // visor on the front
-		for (double x = -4; x <= 4; x += 4) {
-			glowCyan.box(x, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
+		for (double posX = -4; posX <= 4; posX += 4) {
+			glowCyan.box(posX, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
 		}
-		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(m.dark()), armor.view(m.steel()), plates.view(m.plate()), glowCyan.view(m.cyan()), glowIdentity.view(m.identity()),
-				glowWarning.view(m.warning()), glowLamp.view(m.lamp()));
+		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()), armor.view(materials.steel()), plates.view(materials.plate()), glowCyan.view(materials.cyan()), glowIdentity.view(materials.identity()),
+				glowWarning.view(materials.warning()), glowLamp.view(materials.lamp()));
 	}
 
 	/** The turret and the gun, which turn on their own: a long wedge, a flat wing over the gun, a remote weapon station and antennas */
-	private void buildTurret(Materials m) {
+	private void buildTurret(Materials materials) {
 		// Turret and the gun turn on their own: a long wedge, a flat wing over the
 		// gun, a remote weapon station and antennas
 		this.turret.getTransforms().add(this.gunRotate);
@@ -270,13 +270,13 @@ final class RobotView {
 		shell.box(0, -17.4, 12, 7, 4.6, 5); // gun mantlet
 		// The flanks, with plates like the skirts
 		for (int side = -1; side <= 1; side += 2) {
-			for (int i = 0; i < 3; i++) {
-				double z = -4.5 + i * 4.5;
-				double y = i == 1 ? -16.2 : -17.9;
-				double t = (y + 14.8) / -4.7;
-				double edge = z < -3 ? 9 + (z + 12) / 3 : 12 - (z + 3) * 2 / 9;
-				double face = edge * (1 - 0.28 * t);
-				turretPlates.hexPlate(z, y, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
+			for (int index = 0; index < 3; index++) {
+				double posZ = -4.5 + index * 4.5;
+				double posY = index == 1 ? -16.2 : -17.9;
+				double time = (posY + 14.8) / -4.7;
+				double edge = posZ < -3 ? 9 + (posZ + 12) / 3 : 12 - (posZ + 3) * 2 / 9;
+				double face = edge * (1 - 0.28 * time);
+				turretPlates.hexPlate(posZ, posY, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
 			}
 			turretCyan.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1); // sensors on the cheeks
 			turretWarning.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5); // lights on the antennas
@@ -293,11 +293,11 @@ final class RobotView {
 		turretCyan.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
 		shell.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
 		turretCyan.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(m.dark()), turretPlates.view(m.plate()), turretCyan.view(m.cyan()), turretWarning.view(m.warning()));
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretPlates.view(materials.plate()), turretCyan.view(materials.cyan()), turretWarning.view(materials.warning()));
 	}
 
 	/** The radar: a flat panel on a mast, turning over the roof */
-	private void buildRadar(Materials m, PhongMaterial radarMaterial) {
+	private void buildRadar(Materials materials, PhongMaterial radarMaterial) {
 		// The radar: a flat panel on a mast, turning over the roof
 		this.radar.getTransforms().add(this.radarRotate);
 		LowPoly panel = new LowPoly();
@@ -307,7 +307,7 @@ final class RobotView {
 		panel.box(0, -26, 0, 8, 3.6, 1.2);
 		panelCyan.box(0, -26, 0.7, 6, 0.6, 0.3);
 		mast.cylinderY(3, 0, 0.25, -31, -27.8, 5);
-		this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(m.dark()), panelCyan.view(m.cyan()));
+		this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(materials.dark()), panelCyan.view(materials.cyan()));
 	}
 
 	/** Balloon over the robot: its name and its energy */
@@ -337,9 +337,9 @@ final class RobotView {
 		return new double[] { this.root.getTranslateX(), 0, this.root.getTranslateZ() };
 	}
 
-	void place(double x, double z, double body, double gun, double radar) {
-		this.root.setTranslateX(x);
-		this.root.setTranslateZ(z);
+	void place(double posX, double posZ, double body, double gun, double radar) {
+		this.root.setTranslateX(posX);
+		this.root.setTranslateZ(posZ);
 		this.bodyRotate.setAngle(Math.toDegrees(body));
 		if (!this.dead) {
 			this.gunRotate.setAngle(Math.toDegrees(gun));
@@ -356,10 +356,10 @@ final class RobotView {
 	 * Below half of the energy the robot catches fire. The less energy, the more
 	 * burning spots, the stronger the flames and the thicker the smoke.
 	 *
-	 * @param dt
+	 * @param deltaTime
 	 *            seconds, slower in the replay
 	 */
-	void burn(double dt) {
+	void burn(double deltaTime) {
 		double damage = this.dead ? 0 : Math.max(0, Math.min(1, (BURN_ENERGY - this.energy) / BURN_ENERGY));
 		if (damage <= 0 || !this.root.isVisible()) {
 			this.flameDebt = this.smokeDebt = this.sparkDebt = 0;
@@ -367,21 +367,21 @@ final class RobotView {
 			return;
 		}
 		// The flames go with the robot, the smoke stays behind as a trail
-		double x = this.root.getTranslateX();
-		double z = this.root.getTranslateZ();
-		if (dt > 0) {
-			double sx = Double.isNaN(this.lastX) ? 0 : (x - this.lastX) / dt;
-			double sz = Double.isNaN(this.lastX) ? 0 : (z - this.lastZ) / dt;
+		double posX = this.root.getTranslateX();
+		double posZ = this.root.getTranslateZ();
+		if (deltaTime > 0) {
+			double sxValue = Double.isNaN(this.lastX) ? 0 : (posX - this.lastX) / deltaTime;
+			double szValue = Double.isNaN(this.lastX) ? 0 : (posZ - this.lastZ) / deltaTime;
 			// A jump (new round, replay) is not a movement
-			if (Math.hypot(sx, sz) * dt > 60) {
-				sx = sz = 0;
+			if (Math.hypot(sxValue, szValue) * deltaTime > 60) {
+				sxValue = szValue = 0;
 			}
-			double ease = 1 - Math.exp(-12 * dt);
-			this.speedX += (sx - this.speedX) * ease;
-			this.speedZ += (sz - this.speedZ) * ease;
+			double ease = 1 - Math.exp(-12 * deltaTime);
+			this.speedX += (sxValue - this.speedX) * ease;
+			this.speedZ += (szValue - this.speedZ) * ease;
 		}
-		this.lastX = x;
-		this.lastZ = z;
+		this.lastX = posX;
+		this.lastZ = posZ;
 
 		Random random = host.random;
 		int spots = damage < 0.3 ? 1 : damage < 0.6 ? 2 : 3;
@@ -389,27 +389,27 @@ final class RobotView {
 		double cos = Math.cos(heading);
 		double sin = Math.sin(heading);
 
-		this.flameDebt += dt * (40 + 70 * damage);
-		this.smokeDebt += dt * (5 + 16 * damage);
-		this.sparkDebt += dt * (1.5 + 7 * damage);
+		this.flameDebt += deltaTime * (40 + 70 * damage);
+		this.smokeDebt += deltaTime * (5 + 16 * damage);
+		this.sparkDebt += deltaTime * (1.5 + 7 * damage);
 		while (this.flameDebt >= 1 || this.smokeDebt >= 1 || this.sparkDebt >= 1) {
 			// A burning spot of the hull, turning with the body
 			double[] spot = BURN_SPOTS[host.random.nextInt(spots)];
-			double lx = spot[0] + (host.random.nextDouble() - 0.5) * 6;
-			double lz = spot[2] + (host.random.nextDouble() - 0.5) * 6;
-			double wx = x + lx * cos + lz * sin;
-			double wz = z - lx * sin + lz * cos;
+			double lxValue = spot[0] + (host.random.nextDouble() - 0.5) * 6;
+			double lzValue = spot[2] + (host.random.nextDouble() - 0.5) * 6;
+			double wxValue = posX + lxValue * cos + lzValue * sin;
+			double wzValue = posZ - lxValue * sin + lzValue * cos;
 			if (this.flameDebt >= 1) {
 				this.flameDebt--;
 				// Anchored to the robot, its position is relative to it
-				Particle flame = host.fire.spawn(ParticleKind.FLAME, wx - x, spot[1], wz - z, damage);
+				Particle flame = host.fire.spawn(ParticleKind.FLAME, wxValue - posX, spot[1], wzValue - posZ, damage);
 				flame.anchor = this;
 			} else if (this.smokeDebt >= 1) {
 				this.smokeDebt--;
-				host.fire.spawn(ParticleKind.SMOKE, wx, spot[1] - 6, wz, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
+				host.fire.spawn(ParticleKind.SMOKE, wxValue, spot[1] - 6, wzValue, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
 			} else {
 				this.sparkDebt--;
-				host.fire.spawn(ParticleKind.SPARK, wx, spot[1], wz, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
+				host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
 			}
 		}
 	}
@@ -419,48 +419,48 @@ final class RobotView {
 	 * the hull covered since the last frame, so a robot turning in place runs its
 	 * two belts the opposite way. Dead robots stop.
 	 */
-	void roll(double dt) {
+	void roll(double deltaTime) {
 		// The turret against the hull: a robot turning in place with its tracks carries the
 		// turret along, but that is not the turret turning
 		double gun = this.gunRotate.getAngle() - this.bodyRotate.getAngle();
 		this.treadSpeed = 0;
 		this.turretSpeed = 0;
-		double x = this.root.getTranslateX();
-		double z = this.root.getTranslateZ();
+		double posX = this.root.getTranslateX();
+		double posZ = this.root.getTranslateZ();
 		double heading = Math.toRadians(this.bodyRotate.getAngle());
 		// A jump (new round, replay) is not a movement
-		if (!Double.isNaN(this.rollX) && !this.dead && Math.hypot(x - this.rollX, z - this.rollZ) < 60) {
+		if (!Double.isNaN(this.rollX) && !this.dead && Math.hypot(posX - this.rollX, posZ - this.rollZ) < 60) {
 			double fastest = 0;
 			for (int side = 0; side < 2; side++) {
 				double[] from = sidePoint(this.rollX, this.rollZ, this.rollHeading, side);
-				double[] to = sidePoint(x, z, heading, side);
+				double[] toValue = sidePoint(posX, posZ, heading, side);
 				// How far that side went forward, along the hull
-				double forward = (to[0] - from[0]) * Math.sin(heading) + (to[1] - from[1]) * Math.cos(heading);
+				double forward = (toValue[0] - from[0]) * Math.sin(heading) + (toValue[1] - from[1]) * Math.cos(heading);
 				this.treadShift[side] = (this.treadShift[side] + forward) % BELT_LENGTH;
 				fastest = Math.max(fastest, Math.abs(forward));
 			}
-			if (dt > 0) {
-				this.treadSpeed = fastest / dt;
+			if (deltaTime > 0) {
+				this.treadSpeed = fastest / deltaTime;
 			}
 		}
 		// The turret: how far it turned on the hull since the last frame, round the short way
-		if (!Double.isNaN(this.lastGun) && !this.dead && dt > 0) {
+		if (!Double.isNaN(this.lastGun) && !this.dead && deltaTime > 0) {
 			double turn = Math.IEEEremainder(gun - this.lastGun, 360);
 			if (Math.abs(turn) < 90) {
-				this.turretSpeed = Math.abs(turn) / dt;
+				this.turretSpeed = Math.abs(turn) / deltaTime;
 			}
 		}
 		this.lastGun = gun;
-		this.rollX = x;
-		this.rollZ = z;
+		this.rollX = posX;
+		this.rollZ = posZ;
 		this.rollHeading = heading;
 
 		for (int side = 0; side < 2; side++) {
 			for (int link = 0; link < TREAD_LINKS; link++) {
-				double s = link * BELT_LENGTH / TREAD_LINKS + this.treadShift[side];
+				double text = link * BELT_LENGTH / TREAD_LINKS + this.treadShift[side];
 				// Round the belt: a link that leaves one end comes back at the other
-				s -= BELT_LENGTH * Math.floor(s / BELT_LENGTH);
-				double[] point = beltPoint(s);
+				text -= BELT_LENGTH * Math.floor(text / BELT_LENGTH);
+				double[] point = beltPoint(text);
 				MeshView linkView = this.treadLinks[side][link];
 				linkView.setTranslateX(side == 0 ? -BELT_CENTER : BELT_CENTER);
 				linkView.setTranslateY(point[1]);
@@ -492,15 +492,15 @@ final class RobotView {
 			return;
 		}
 		this.dead = true;
-		double x = this.root.getTranslateX();
-		double z = this.root.getTranslateZ();
+		double posX = this.root.getTranslateX();
+		double posZ = this.root.getTranslateZ();
 		Group blast = new Group();
-		blast.setTranslateX(x);
-		blast.setTranslateZ(z);
+		blast.setTranslateX(posX);
+		blast.setTranslateZ(posZ);
 		ParallelTransition all = new ParallelTransition();
 		Color tint = this.playerColor;
 		this.burst(blast, all, tint);
-		this.smoke(x, z);
+		this.smoke(posX, posZ);
 		this.throwDebris(all);
 		this.throwTurretAndRadar(all);
 		this.throwHull(all);
@@ -509,7 +509,7 @@ final class RobotView {
 		host.fx.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
 		this.running.add(all);
 		all.play();
-		host.fx.lightFlash(x, z, tint, 1.4);
+		host.fx.lightFlash(posX, posZ, tint, 1.4);
 
 		this.nameLabel.setText("☠ " + this.displayName);
 		this.balloon.setOpacity(0.6);
@@ -543,14 +543,14 @@ final class RobotView {
 	}
 
 	/** The smoke rising from the wreck: particles, like the fire of the burning robots, thick and dark since it is destroyed */
-	private void smoke(double x, double z) {
+	private void smoke(double posX, double posZ) {
 		// The smoke rising from the wreck: particles, like the fire of the burning robots,
 		// thick and dark since it is destroyed
 		Timeline smoke = new Timeline();
-		for (int i = 0; i < 40; i++) {
-			smoke.getKeyFrames().add(new KeyFrame(Duration.millis(i * 90), event -> {
+		for (int index = 0; index < 40; index++) {
+			smoke.getKeyFrames().add(new KeyFrame(Duration.millis(index * 90), event -> {
 				for (int puff = 0; puff < 2; puff++) {
-					host.fire.spawn(ParticleKind.SMOKE, x + (host.random.nextDouble() - 0.5) * 40, -20, z + (host.random.nextDouble() - 0.5) * 40, 0.8);
+					host.fire.spawn(ParticleKind.SMOKE, posX + (host.random.nextDouble() - 0.5) * 40, -20, posZ + (host.random.nextDouble() - 0.5) * 40, 0.8);
 				}
 			}));
 		}
@@ -561,11 +561,11 @@ final class RobotView {
 	/** Debris in the colors of the robot, thrown across the arena */
 	private void throwDebris(ParallelTransition all) {
 		PhongMaterial[] colors = { this.bodyMaterial, this.gunMaterial, new PhongMaterial(Color.web("#22252e")), new PhongMaterial(Color.web("#ffb000")) };
-		for (int i = 0; i < 26; i++) {
-			double angle = Math.PI * 2 * i / 26 + host.random.nextDouble() * 0.3;
+		for (int index = 0; index < 26; index++) {
+			double angle = Math.PI * 2 * index / 26 + host.random.nextDouble() * 0.3;
 			double size = 3 + host.random.nextDouble() * 5;
 			Box piece = new Box(size, size, size);
-			piece.setMaterial(colors[i % colors.length]);
+			piece.setMaterial(colors[index % colors.length]);
 			piece.setTranslateY(-15);
 			this.debris.getChildren().add(piece);
 			double reach = 120 + host.random.nextDouble() * 180;
@@ -613,9 +613,9 @@ final class RobotView {
 	 */
 	PhongMaterial glow(Color color) {
 		WritableImage map = new WritableImage(2, 2);
-		for (int y = 0; y < 2; y++) {
-			for (int x = 0; x < 2; x++) {
-				map.getPixelWriter().setColor(x, y, color);
+		for (int posY = 0; posY < 2; posY++) {
+			for (int posX = 0; posX < 2; posX++) {
+				map.getPixelWriter().setColor(posX, posY, color);
 			}
 		}
 		PhongMaterial material = new PhongMaterial(color.darker().darker());
@@ -625,9 +625,9 @@ final class RobotView {
 		return material;
 	}
 
-	void setGlowing(boolean on) {
-		for (int i = 0; i < this.glows.size(); i++) {
-			this.glows.get(i).setSelfIlluminationMap(on ? this.glowMaps.get(i) : null);
+	void setGlowing(boolean onValue) {
+		for (int index = 0; index < this.glows.size(); index++) {
+			this.glows.get(index).setSelfIlluminationMap(onValue ? this.glowMaps.get(index) : null);
 		}
 	}
 

@@ -16,24 +16,24 @@ import java.util.Enumeration;
 public class Network {
 
 	public static String getLocalIpAddress() {
-		Enumeration<NetworkInterface> en;
+		Enumeration<NetworkInterface> enumeration;
 		try {
-			en = NetworkInterface.getNetworkInterfaces();
+			enumeration = NetworkInterface.getNetworkInterfaces();
 
-			while (en.hasMoreElements()) {
-				NetworkInterface ni = en.nextElement();
-				Enumeration<InetAddress> ee = ni.getInetAddresses();
+			while (enumeration.hasMoreElements()) {
+				NetworkInterface networkInterface = enumeration.nextElement();
+				Enumeration<InetAddress> enumeration2 = networkInterface.getInetAddresses();
 
-				while (ee.hasMoreElements()) {
-					InetAddress ia = ee.nextElement();
+				while (enumeration2.hasMoreElements()) {
+					InetAddress inetAddress = enumeration2.nextElement();
 
-					if (ia.isSiteLocalAddress()) {
-						return ia.getHostAddress();
+					if (inetAddress.isSiteLocalAddress()) {
+						return inetAddress.getHostAddress();
 					}
 				}
 			}
-		} catch (SocketException e) {
-			e.printStackTrace();
+		} catch (SocketException socketException) {
+			socketException.printStackTrace();
 		}
 		return "localhost";
 	}

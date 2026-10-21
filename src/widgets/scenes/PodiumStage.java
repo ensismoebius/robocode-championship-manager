@@ -174,20 +174,20 @@ final class PodiumStage extends Pane {
 		double baseline = height * 0.9;
 		double stepWidth = width * Podium.COLUMN_WIDTH;
 		for (int place = 1; place <= 3; place++) {
-			double cx = this.columnCenter(place) * width;
+			double cxValue = this.columnCenter(place) * width;
 			double top = baseline - this.stepHeight(place);
-			this.steps[place].setX(cx - stepWidth / 2);
+			this.steps[place].setX(cxValue - stepWidth / 2);
 			this.steps[place].setY(top);
 			this.steps[place].setWidth(stepWidth);
 			this.steps[place].setHeight(this.stepHeight(place));
 			Label number = this.numbers[place];
 			number.autosize();
-			number.relocate(cx - number.getWidth() / 2, top + (this.stepHeight(place) - number.getHeight()) / 2);
-			this.spots[place].getPoints().setAll(cx - stepWidth * 0.1, 0.0, cx + stepWidth * 0.1, 0.0, cx + stepWidth * 0.75, top, cx - stepWidth * 0.75, top);
+			number.relocate(cxValue - number.getWidth() / 2, top + (this.stepHeight(place) - number.getHeight()) / 2);
+			this.spots[place].getPoints().setAll(cxValue - stepWidth * 0.1, 0.0, cxValue + stepWidth * 0.1, 0.0, cxValue + stepWidth * 0.75, top, cxValue - stepWidth * 0.75, top);
 			VBox figure = this.figures[place];
 			if (figure != null) {
 				figure.autosize();
-				figure.relocate(cx - figure.getWidth() / 2, top - figure.getHeight());
+				figure.relocate(cxValue - figure.getWidth() / 2, top - figure.getHeight());
 			}
 		}
 		for (int place = 1; place <= 3; place++) {

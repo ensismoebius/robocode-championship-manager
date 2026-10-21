@@ -46,12 +46,12 @@ public class Style extends HttpServlet {
 			resp.setHeader("Cache-Control", "max-age=300");
 		}
 
-		try (InputStream is = getClass().getResourceAsStream(resource)) {
-			if (is == null) {
+		try (InputStream inputStream = getClass().getResourceAsStream(resource)) {
+			if (inputStream == null) {
 				resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 				return;
 			}
-			is.transferTo(resp.getOutputStream());
+			inputStream.transferTo(resp.getOutputStream());
 		}
 	}
 }

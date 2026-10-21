@@ -208,10 +208,10 @@ public final class BattleAudio {
 	 * Where the listener is and where it faces, on the floor: the camera. The sounds
 	 * come from the side of the screen where they happen, in the headphones.
 	 */
-	public void setListener(double x, double z, double facingX, double facingZ) {
+	public void setListener(double posX, double posZ, double facingX, double facingZ) {
 		double length = Math.hypot(facingX, facingZ);
-		this.listenerX = x;
-		this.listenerZ = z;
+		this.listenerX = posX;
+		this.listenerZ = posZ;
 		if (length > 1e-9) {
 			// The right hand of the facing, on the floor, as the camera has it
 			this.rightX = facingZ / length;
@@ -224,7 +224,7 @@ public final class BattleAudio {
 	 * second), how fast its turret turns (degrees a second) and where it is on the
 	 * floor. Each robot has its own sound, from where it is.
 	 */
-	public void setMachine(int robot, double treadSpeed, double turretSpeed, double x, double z) {
+	public void setMachine(int robot, double treadSpeed, double turretSpeed, double posX, double posZ) {
 		Machine machine = this.machinesById.get(robot);
 		if (machine == null) {
 			machine = new Machine();
@@ -233,7 +233,7 @@ public final class BattleAudio {
 		}
 		machine.treadSpeed = treadSpeed;
 		machine.turretSpeed = turretSpeed;
-		double[] gains = this.spatial(x, z);
+		double[] gains = this.spatial(posX, posZ);
 		machine.leftGain = gains[0];
 		machine.rightGain = gains[1];
 	}
@@ -242,19 +242,19 @@ public final class BattleAudio {
 	 * The gains of the left and the right ear for a sound at x, z: panned by where it
 	 * is from the listener, quieter with the distance. Centered, both are 1.
 	 */
-	double[] spatial(double x, double z) {
-		double dx = x - this.listenerX;
-		double dz = z - this.listenerZ;
-		double distance = Math.hypot(dx, dz);
-		double pan = distance < 1 ? 0 : (dx * this.rightX + dz * this.rightZ) / distance;
+	double[] spatial(double posX, double posZ) {
+		double deltaX = posX - this.listenerX;
+		double deltaZ = posZ - this.listenerZ;
+		double distance = Math.hypot(deltaX, deltaZ);
+		double pan = distance < 1 ? 0 : (deltaX * this.rightX + deltaZ * this.rightZ) / distance;
 		double angle = (pan + 1) * Math.PI / 4;
 		double loudness = 1 / (1 + distance / 600);
 		return new double[] { Math.sqrt(2) * Math.cos(angle) * loudness, Math.sqrt(2) * Math.sin(angle) * loudness };
 	}
 
 	/** Runs a sound placed at x, z: the shot, the hit or the rest, heard from where it is */
-	private void placedAt(double x, double z, Runnable sound) {
-		this.placement = this.spatial(x, z);
+	private void placedAt(double posX, double posZ, Runnable sound) {
+		this.placement = this.spatial(posX, posZ);
 		try {
 			sound.run();
 		} finally {
@@ -262,28 +262,28 @@ public final class BattleAudio {
 		}
 	}
 
-	public void shotAt(double power, double x, double z) {
-		this.placedAt(x, z, () -> this.shot(power));
+	public void shotAt(double power, double posX, double posZ) {
+		this.placedAt(posX, posZ, () -> this.shot(power));
 	}
 
-	public void hitAt(double power, double x, double z) {
-		this.placedAt(x, z, () -> this.hit(power));
+	public void hitAt(double power, double posX, double posZ) {
+		this.placedAt(posX, posZ, () -> this.hit(power));
 	}
 
-	public void sparkAt(double x, double z) {
-		this.placedAt(x, z, this::spark);
+	public void sparkAt(double posX, double posZ) {
+		this.placedAt(posX, posZ, this::spark);
 	}
 
-	public void thudAt(double x, double z) {
-		this.placedAt(x, z, this::thud);
+	public void thudAt(double posX, double posZ) {
+		this.placedAt(posX, posZ, this::thud);
 	}
 
-	public void lowEnergyAt(double x, double z) {
-		this.placedAt(x, z, this::lowEnergy);
+	public void lowEnergyAt(double posX, double posZ) {
+		this.placedAt(posX, posZ, this::lowEnergy);
 	}
 
-	public void destroyedAt(double x, double z) {
-		this.placedAt(x, z, this::destroyed);
+	public void destroyedAt(double posX, double posZ) {
+		this.placedAt(posX, posZ, this::destroyed);
 	}
 
 	public void setSong(Song song) {
@@ -396,9 +396,9 @@ public final class BattleAudio {
 	/** Entering the replay: a reversed rising whoosh */
 	public void whoosh() {
 		double[] rise = Synth.lowpass(Synth.noise(0.9, 0), 0.25);
-		for (int i = 0; i < rise.length; i++) {
-			double t = (double) i / rise.length;
-			rise[i] *= t * t;
+		for (int index = 0; index < rise.length; index++) {
+			double time = (double) index / rise.length;
+			rise[index] *= time * time;
 		}
 		this.sfx(Synth.mix(rise, Synth.sineSweep(200, 900, 0.9), 0.3), 0.6, 1);
 	}
@@ -421,9 +421,9 @@ public final class BattleAudio {
 		audio.musicLevel = 0;
 		double[] samples = new double[(int) (seconds * Synth.RATE)];
 		double[] frame = new double[2];
-		for (int i = 0; i < samples.length; i++) {
+		for (int index = 0; index < samples.length; index++) {
 			audio.nextFrame(frame);
-			samples[i] = (frame[0] + frame[1]) / 2;
+			samples[index] = (frame[0] + frame[1]) / 2;
 		}
 		return samples;
 	}
@@ -437,9 +437,9 @@ public final class BattleAudio {
 		audio.musicVolume = 1;
 		double[] samples = new double[(int) (seconds * Synth.RATE)];
 		double[] frame = new double[2];
-		for (int i = 0; i < samples.length; i++) {
+		for (int index = 0; index < samples.length; index++) {
 			audio.nextFrame(frame);
-			samples[i] = (frame[0] + frame[1]) / 2;
+			samples[index] = (frame[0] + frame[1]) / 2;
 		}
 		return samples;
 	}
@@ -479,19 +479,19 @@ public final class BattleAudio {
 				if (this.fadeSeconds > 0) {
 					faded = Math.max(0, faded - CHUNK / (Synth.RATE * this.fadeSeconds));
 				}
-				for (int i = 0; i < CHUNK; i++) {
+				for (int index = 0; index < CHUNK; index++) {
 					this.nextFrame(frame);
 					int left = (int) (frame[0] * fadeOut * faded * Short.MAX_VALUE);
 					int right = (int) (frame[1] * fadeOut * faded * Short.MAX_VALUE);
-					pcm[4 * i] = (byte) left;
-					pcm[4 * i + 1] = (byte) (left >> 8);
-					pcm[4 * i + 2] = (byte) right;
-					pcm[4 * i + 3] = (byte) (right >> 8);
+					pcm[4 * index] = (byte) left;
+					pcm[4 * index + 1] = (byte) (left >> 8);
+					pcm[4 * index + 2] = (byte) right;
+					pcm[4 * index + 3] = (byte) (right >> 8);
 				}
 				line.write(pcm, 0, pcm.length);
 			}
 			line.drain();
-		} catch (LineUnavailableException | IllegalArgumentException e) {
+		} catch (LineUnavailableException | IllegalArgumentException illegalArgumentException) {
 			// No sound card: the battle is still shown
 			this.running = false;
 		}
@@ -515,13 +515,13 @@ public final class BattleAudio {
 
 		this.effects[0] = 0;
 		this.effects[1] = 0;
-		for (Iterator<Voice> it = this.sfxVoices.iterator(); it.hasNext();) {
-			Voice playing = it.next();
+		for (Iterator<Voice> iterator2 = this.sfxVoices.iterator(); iterator2.hasNext();) {
+			Voice playing = iterator2.next();
 			double value = playing.next();
 			this.effects[0] += value * playing.left;
 			this.effects[1] += value * playing.right;
 			if (playing.finished()) {
-				it.remove();
+				iterator2.remove();
 			}
 		}
 		this.mixMachines(this.effects);
@@ -617,11 +617,11 @@ public final class BattleAudio {
 		}
 
 		double voices = 0;
-		for (Iterator<Voice> it = this.musicVoices.iterator(); it.hasNext();) {
-			Voice playing = it.next();
+		for (Iterator<Voice> iterator2 = this.musicVoices.iterator(); iterator2.hasNext();) {
+			Voice playing = iterator2.next();
 			voices += playing.next();
 			if (playing.finished()) {
-				it.remove();
+				iterator2.remove();
 			}
 		}
 		return pad + voices;

@@ -142,14 +142,14 @@ public class Bracket {
 		private Integer winnerScore;
 		private Integer loserScore;
 
-		private Match(String code, Side side, int round, int position, Slot a, Slot b) {
+		private Match(String code, Side side, int round, int position, Slot slot, Slot slot2) {
 			this.code = code;
 			this.side = side;
 			this.round = round;
 			this.position = position;
-			this.a = a;
-			this.b = b;
-			this.depth = 1 + Math.max(depthOf(a), depthOf(b));
+			this.a = slot;
+			this.b = slot2;
+			this.depth = 1 + Math.max(depthOf(slot), depthOf(slot2));
 		}
 
 		private static int depthOf(Slot slot) {
@@ -282,8 +282,8 @@ public class Bracket {
 		this.update();
 	}
 
-	private Match add(String code, Side side, int round, int position, Slot a, Slot b) {
-		Match match = new Match(code, side, round, position, a, b);
+	private Match add(String code, Side side, int round, int position, Slot slot, Slot slot2) {
+		Match match = new Match(code, side, round, position, slot, slot2);
 		this.matches.add(match);
 		this.byCode.put(code, match);
 		return match;
@@ -298,19 +298,19 @@ public class Bracket {
 
 		// Main bracket
 		int[] order = Bracket.seedingOrder(size);
-		for (int r = 1; r <= rounds; r++) {
+		for (int row = 1; row <= rounds; row++) {
 			List<Match> round = new ArrayList<Match>();
-			for (int i = 0; i < size >> r; i++) {
-				Slot a, b;
-				if (r == 1) {
-					a = new Slot(this.seed(order[2 * i]));
-					b = new Slot(this.seed(order[2 * i + 1]));
+			for (int index = 0; index < size >> row; index++) {
+				Slot slot, slot2;
+				if (row == 1) {
+					slot = new Slot(this.seed(order[2 * index]));
+					slot2 = new Slot(this.seed(order[2 * index + 1]));
 				} else {
-					List<Match> previous = this.winnersRounds.get(r - 2);
-					a = new Slot(previous.get(2 * i), true);
-					b = new Slot(previous.get(2 * i + 1), true);
+					List<Match> previous = this.winnersRounds.get(row - 2);
+					slot = new Slot(previous.get(2 * index), true);
+					slot2 = new Slot(previous.get(2 * index + 1), true);
 				}
-				round.add(this.add("V" + r + "-" + (i + 1), Side.WINNERS, r, i + 1, a, b));
+				round.add(this.add("V" + row + "-" + (index + 1), Side.WINNERS, row, index + 1, slot, slot2));
 			}
 			this.winnersRounds.add(round);
 		}
@@ -324,28 +324,28 @@ public class Bracket {
 
 		// Repechage bracket. Odd rounds: the repechage survivors play each other.
 		// Even rounds: they play the losers of the next main bracket round
-		for (int j = 1; j <= 2 * (rounds - 1); j++) {
+		for (int innerIndex = 1; innerIndex <= 2 * (rounds - 1); innerIndex++) {
 			List<Match> round = new ArrayList<Match>();
 
-			if (j == 1) {
+			if (innerIndex == 1) {
 				List<Match> firstRound = this.winnersRounds.get(0);
-				for (int i = 0; i < size / 4; i++) {
-					round.add(this.add("R1-" + (i + 1), Side.LOSERS, 1, i + 1, new Slot(firstRound.get(2 * i), false), new Slot(firstRound.get(2 * i + 1), false)));
+				for (int index2 = 0; index2 < size / 4; index2++) {
+					round.add(this.add("R1-" + (index2 + 1), Side.LOSERS, 1, index2 + 1, new Slot(firstRound.get(2 * index2), false), new Slot(firstRound.get(2 * index2 + 1), false)));
 				}
-			} else if (j % 2 == 0) {
-				List<Match> previous = this.losersRounds.get(j - 2);
-				List<Match> dropping = this.winnersRounds.get(j / 2);
+			} else if (innerIndex % 2 == 0) {
+				List<Match> previous = this.losersRounds.get(innerIndex - 2);
+				List<Match> dropping = this.winnersRounds.get(innerIndex / 2);
 				// Alternating the order of who comes from the main bracket avoids
 				// repeating early matches
-				boolean reversed = (j / 2) % 2 == 1;
-				for (int i = 0; i < previous.size(); i++) {
-					Match from = dropping.get(reversed ? dropping.size() - 1 - i : i);
-					round.add(this.add("R" + j + "-" + (i + 1), Side.LOSERS, j, i + 1, new Slot(previous.get(i), true), new Slot(from, false)));
+				boolean reversed = (innerIndex / 2) % 2 == 1;
+				for (int index3 = 0; index3 < previous.size(); index3++) {
+					Match from = dropping.get(reversed ? dropping.size() - 1 - index3 : index3);
+					round.add(this.add("R" + innerIndex + "-" + (index3 + 1), Side.LOSERS, innerIndex, index3 + 1, new Slot(previous.get(index3), true), new Slot(from, false)));
 				}
 			} else {
-				List<Match> previous = this.losersRounds.get(j - 2);
-				for (int i = 0; i < previous.size() / 2; i++) {
-					round.add(this.add("R" + j + "-" + (i + 1), Side.LOSERS, j, i + 1, new Slot(previous.get(2 * i), true), new Slot(previous.get(2 * i + 1), true)));
+				List<Match> previous = this.losersRounds.get(innerIndex - 2);
+				for (int index4 = 0; index4 < previous.size() / 2; index4++) {
+					round.add(this.add("R" + innerIndex + "-" + (index4 + 1), Side.LOSERS, innerIndex, index4 + 1, new Slot(previous.get(2 * index4), true), new Slot(previous.get(2 * index4 + 1), true)));
 				}
 			}
 			this.losersRounds.add(round);
@@ -505,7 +505,7 @@ public class Bracket {
 	 * bracket first
 	 */
 	public Optional<Match> getNextMatch() {
-		return this.matches.stream().filter(m -> m.status == Status.READY)
+		return this.matches.stream().filter(matrix -> matrix.status == Status.READY)
 				.min(Comparator.comparingInt(Match::getDepth).thenComparing(Match::getSide).thenComparingInt(Match::getRound).thenComparingInt(Match::getPosition));
 	}
 
@@ -537,9 +537,9 @@ public class Bracket {
 		}
 
 		List<Long> ranked = new ArrayList<Long>(eliminatedAt.keySet());
-		ranked.sort(Comparator.comparing((Long p) -> eliminatedAt.get(p)).reversed());
+		ranked.sort(Comparator.comparing((Long point) -> eliminatedAt.get(point)).reversed());
 
-		int stillPlaying = (int) this.participants.stream().filter(p -> !eliminatedAt.containsKey(p) && !p.equals(champion)).count();
+		int stillPlaying = (int) this.participants.stream().filter(point2 -> !eliminatedAt.containsKey(point2) && !point2.equals(champion)).count();
 
 		Map<Long, Integer> placements = new LinkedHashMap<Long, Integer>();
 		if (champion != null) {
@@ -547,7 +547,7 @@ public class Bracket {
 		}
 		for (Long participant : ranked) {
 			int depth = eliminatedAt.get(participant);
-			long better = eliminatedAt.values().stream().filter(d -> d > depth).count();
+			long better = eliminatedAt.values().stream().filter(delta -> delta > depth).count();
 			placements.put(participant, 1 + stillPlaying + (champion != null ? 1 : 0) + (int) better);
 		}
 		return placements;
@@ -568,7 +568,7 @@ public class Bracket {
 		podium.add(this.getChampion());
 		for (int place = 2; place <= 3; place++) {
 			final int wanted = place;
-			placements.entrySet().stream().filter(e -> e.getValue() == wanted).map(Map.Entry::getKey).findFirst().ifPresent(podium::add);
+			placements.entrySet().stream().filter(event -> event.getValue() == wanted).map(Map.Entry::getKey).findFirst().ifPresent(podium::add);
 		}
 		return podium;
 	}

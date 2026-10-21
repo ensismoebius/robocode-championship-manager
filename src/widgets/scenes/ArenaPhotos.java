@@ -38,13 +38,13 @@ final class ArenaPhotos {
 	 * Takes the photos that are due, at the end of the frame: the robots and the
 	 * camera are then where they are drawn
 	 */
-	void flushPhotos(double dt) {
+	void flushPhotos(double deltaTime) {
 		if (host.pendingPhotos.isEmpty()) {
 			return;
 		}
 		List<PendingPhoto> waiting = new ArrayList<PendingPhoto>();
 		for (PendingPhoto pending : host.pendingPhotos) {
-			double remaining = pending.remaining() - dt;
+			double remaining = pending.remaining() - deltaTime;
 			if (remaining > 0) {
 				waiting.add(new PendingPhoto(remaining, pending.round(), pending.destruction(), pending.subject(), pending.power()));
 			} else if (host.phase != Phase.FINISHED && host.phase != Phase.LOADING) {
@@ -61,9 +61,9 @@ final class ArenaPhotos {
 		}
 		try {
 			host.photos.add(new BattlePhoto(pending.round(), pending.destruction(), pending.subject(), pending.power(), encodePhoto(host.subScene.snapshot(null, null))));
-		} catch (IOException | RuntimeException e) {
+		} catch (IOException | RuntimeException runtimeException) {
 			// A photo is a bonus: the battle goes on without it
-			e.printStackTrace();
+			runtimeException.printStackTrace();
 		}
 	}
 
@@ -77,26 +77,26 @@ final class ArenaPhotos {
 		int[] pixels = new int[width * height];
 		view.getPixelReader().getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
 		int[] small = new int[PHOTO_WIDTH * PHOTO_HEIGHT];
-		for (int y = 0; y < PHOTO_HEIGHT; y++) {
-			int top = y * height / PHOTO_HEIGHT;
-			int bottom = Math.max(top + 1, (y + 1) * height / PHOTO_HEIGHT);
-			for (int x = 0; x < PHOTO_WIDTH; x++) {
-				int left = x * width / PHOTO_WIDTH;
-				int right = Math.max(left + 1, (x + 1) * width / PHOTO_WIDTH);
+		for (int posY = 0; posY < PHOTO_HEIGHT; posY++) {
+			int top = posY * height / PHOTO_HEIGHT;
+			int bottom = Math.max(top + 1, (posY + 1) * height / PHOTO_HEIGHT);
+			for (int posX = 0; posX < PHOTO_WIDTH; posX++) {
+				int left = posX * width / PHOTO_WIDTH;
+				int right = Math.max(left + 1, (posX + 1) * width / PHOTO_WIDTH);
 				int red = 0;
 				int green = 0;
 				int blue = 0;
 				int count = 0;
-				for (int sy = top; sy < bottom; sy++) {
-					for (int sx = left; sx < right; sx++) {
-						int argb = pixels[sy * width + sx];
+				for (int syValue = top; syValue < bottom; syValue++) {
+					for (int sxValue = left; sxValue < right; sxValue++) {
+						int argb = pixels[syValue * width + sxValue];
 						red += argb >> 16 & 0xff;
 						green += argb >> 8 & 0xff;
 						blue += argb & 0xff;
 						count++;
 					}
 				}
-				small[y * PHOTO_WIDTH + x] = (red / count) << 16 | (green / count) << 8 | blue / count;
+				small[posY * PHOTO_WIDTH + posX] = (red / count) << 16 | (green / count) << 8 | blue / count;
 			}
 		}
 		BufferedImage photo = new BufferedImage(PHOTO_WIDTH, PHOTO_HEIGHT, BufferedImage.TYPE_INT_RGB);

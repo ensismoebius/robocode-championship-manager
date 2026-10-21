@@ -130,8 +130,8 @@ public class Opponent {
 		this.compiledRobot = jarBytes;
 	}
 
-	public void setId(long id) {
-		this.id = id;
+	public void setId(long identifier) {
+		this.id = identifier;
 	}
 
 	public void setImage(byte[] pictureBytes) {

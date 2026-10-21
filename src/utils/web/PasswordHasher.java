@@ -54,7 +54,7 @@ public class PasswordHasher {
 			byte[] salt = decoder.decode(parts[2]);
 			byte[] expected = decoder.decode(parts[3]);
 			return MessageDigest.isEqual(expected, PasswordHasher.pbkdf2(password, salt, iterations));
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException illegalArgumentException) {
 			return false;
 		}
 	}
@@ -63,8 +63,8 @@ public class PasswordHasher {
 		try {
 			PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, iterations, HASH_BITS);
 			return SecretKeyFactory.getInstance(ALGORITHM).generateSecret(spec).getEncoded();
-		} catch (GeneralSecurityException e) {
-			throw new IllegalStateException(e);
+		} catch (GeneralSecurityException generalSecurityException) {
+			throw new IllegalStateException(generalSecurityException);
 		}
 	}
 }

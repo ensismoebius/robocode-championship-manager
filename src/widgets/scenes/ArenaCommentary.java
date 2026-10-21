@@ -142,9 +142,9 @@ final class ArenaCommentary {
 	 */
 	private int orderOf(int robot) {
 		List<BattleRecording.Robot> list = host.recording.getRobots();
-		for (int i = 0; i < list.size(); i++) {
-			if (list.get(i).getIndex() == robot) {
-				return i;
+		for (int index = 0; index < list.size(); index++) {
+			if (list.get(index).getIndex() == robot) {
+				return index;
 			}
 		}
 		return -1;
@@ -214,7 +214,7 @@ final class ArenaCommentary {
 			return;
 		}
 		this.commentQueue.add(new QueuedComment(message, this.commentClock));
-		this.commentQueue.sort((a, b) -> Integer.compare(b.message().priority(), a.message().priority()));
+		this.commentQueue.sort((first, second) -> Integer.compare(second.message().priority(), first.message().priority()));
 		while (this.commentQueue.size() > 3) {
 			this.commentQueue.remove(this.commentQueue.size() - 1);
 		}
@@ -263,11 +263,11 @@ final class ArenaCommentary {
 		return true;
 	}
 
-	void tick(double dt) {
-		this.commentClock += dt;
-		this.presenter.tick(dt);
+	void tick(double deltaTime) {
+		this.commentClock += deltaTime;
+		this.presenter.tick(deltaTime);
 		if (this.comment != null) {
-			this.commentAge += dt;
+			this.commentAge += deltaTime;
 			if (this.commentAge > COMMENT_SECONDS) {
 				this.comment = null;
 				FadeTransition fade = new FadeTransition(Duration.millis(250), this.ticker);

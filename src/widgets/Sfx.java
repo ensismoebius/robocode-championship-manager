@@ -74,20 +74,20 @@ public class Sfx {
 	 *            1, 2 or 3
 	 */
 	public static void ceremony(int place) {
-		double[] c = { 261.63, 329.63, 392.00, 523.25 };
-		double[] f = { 349.23, 440.00, 523.25, 698.46 };
-		double[] g = { 392.00, 493.88, 587.33, 783.99 };
+		double[] column = { 261.63, 329.63, 392.00, 523.25 };
+		double[] factor = { 349.23, 440.00, 523.25, 698.46 };
+		double[] graphics = { 392.00, 493.88, 587.33, 783.99 };
 		double[] top = { 523.25, 659.25, 783.99, 1046.50 };
 		double[] sound;
 		if (place == 3) {
-			sound = Synth.concat(brass(0.12, 3, c), brass(0.12, 3, c), brass(0.5, 2.5, f));
+			sound = Synth.concat(brass(0.12, 3, column), brass(0.12, 3, column), brass(0.5, 2.5, factor));
 		} else if (place == 2) {
-			sound = Synth.concat(brass(0.12, 3, c), brass(0.12, 3, c), brass(0.12, 3, c), brass(0.3, 2.5, f), brass(0.14, 3, g), brass(0.7, 2, top));
+			sound = Synth.concat(brass(0.12, 3, column), brass(0.12, 3, column), brass(0.12, 3, column), brass(0.3, 2.5, factor), brass(0.14, 3, graphics), brass(0.7, 2, top));
 		} else {
 			double[] tail = Synth.mix(brass(1.8, 1.4, top), brass(1.8, 1.4, 130.81, 261.63), 0.8);
 			tail = Synth.mix(tail, Synth.sineSweep(110, 30, 1.2), 0.9);
 			tail = Synth.mix(tail, Synth.lowpass(Synth.noise(1.6, 1.8), 0.5), 0.5);
-			sound = Synth.concat(brass(0.13, 3, c), brass(0.13, 3, c), brass(0.13, 3, c), brass(0.34, 2.5, f), brass(0.13, 3, g), brass(0.13, 3, g), brass(0.13, 3, g), brass(0.4, 2.5, top),
+			sound = Synth.concat(brass(0.13, 3, column), brass(0.13, 3, column), brass(0.13, 3, column), brass(0.34, 2.5, factor), brass(0.13, 3, graphics), brass(0.13, 3, graphics), brass(0.13, 3, graphics), brass(0.4, 2.5, top),
 					tail);
 		}
 		Sfx.play(sound);
@@ -98,10 +98,10 @@ public class Sfx {
 	 */
 	static byte[] toPcm(double[] samples) {
 		byte[] pcm = new byte[samples.length * 2];
-		for (int i = 0; i < samples.length; i++) {
-			int value = (int) (Math.max(-1, Math.min(1, samples[i])) * VOLUME * Short.MAX_VALUE);
-			pcm[2 * i] = (byte) value;
-			pcm[2 * i + 1] = (byte) (value >> 8);
+		for (int index = 0; index < samples.length; index++) {
+			int value = (int) (Math.max(-1, Math.min(1, samples[index])) * VOLUME * Short.MAX_VALUE);
+			pcm[2 * index] = (byte) value;
+			pcm[2 * index + 1] = (byte) (value >> 8);
 		}
 		return pcm;
 	}
@@ -113,7 +113,7 @@ public class Sfx {
 			line.start();
 			line.write(pcm, 0, pcm.length);
 			line.drain();
-		} catch (LineUnavailableException | IllegalArgumentException e) {
+		} catch (LineUnavailableException | IllegalArgumentException illegalArgumentException) {
 			// Sound effects are optional
 		}
 	}

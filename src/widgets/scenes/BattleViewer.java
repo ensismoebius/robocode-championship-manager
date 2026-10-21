@@ -56,10 +56,10 @@ public class BattleViewer extends StackPane {
 	public BattleViewer() {
 		super();
 
-		try (InputStream vs = getClass().getResourceAsStream("vs.gif")) {
-			this.vsImage.setImage(new Image(vs));
-		} catch (IOException e) {
-			GameDialog.error(e.getMessage());
+		try (InputStream inputStream = getClass().getResourceAsStream("vs.gif")) {
+			this.vsImage.setImage(new Image(inputStream));
+		} catch (IOException ioException) {
+			GameDialog.error(ioException.getMessage());
 		}
 		this.vsImage.setPreserveRatio(true);
 		this.vsImage.fitWidthProperty().bind(this.widthProperty().multiply(0.16));
@@ -181,13 +181,13 @@ public class BattleViewer extends StackPane {
 		FadeTransition appear = new FadeTransition(Duration.millis(220), this.vsImage);
 		appear.setFromValue(0);
 		appear.setToValue(1);
-		ParallelTransition vs = new ParallelTransition(slam, appear);
-		vs.setOnFinished(event -> {
+		ParallelTransition parallelTransition = new ParallelTransition(slam, appear);
+		parallelTransition.setOnFinished(event -> {
 			Sfx.slam();
 			this.flashAndShake();
 		});
 
-		new SequentialTransition(new ParallelTransition(in1, in2), new PauseTransition(Duration.millis(150)), vs).play();
+		new SequentialTransition(new ParallelTransition(in1, in2), new PauseTransition(Duration.millis(150)), parallelTransition).play();
 	}
 
 	private void flashAndShake() {
@@ -198,8 +198,8 @@ public class BattleViewer extends StackPane {
 
 		Timeline shake = new Timeline();
 		double[] offsets = { 14, -12, 9, -7, 4, -2, 0 };
-		for (int i = 0; i < offsets.length; i++) {
-			shake.getKeyFrames().add(new KeyFrame(Duration.millis(40 * (i + 1)), new KeyValue(this.layout.translateXProperty(), offsets[i])));
+		for (int index = 0; index < offsets.length; index++) {
+			shake.getKeyFrames().add(new KeyFrame(Duration.millis(40 * (index + 1)), new KeyValue(this.layout.translateXProperty(), offsets[index])));
 		}
 		shake.play();
 	}

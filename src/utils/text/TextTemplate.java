@@ -112,11 +112,11 @@ public class TextTemplate {
 
 		List<Object> tempItens = new ArrayList<Object>();
 
-		for (int i = 0; i < itens.size(); i++) {
+		for (int index = 0; index < itens.size(); index++) {
 
-			if (itens.get(i) instanceof String) {
+			if (itens.get(index) instanceof String) {
 
-				String line = (String) itens.get(i);
+				String line = (String) itens.get(index);
 
 				if (line.equals(TextTemplate.BEGIN_PARSED)) {
 					continue;
@@ -127,17 +127,17 @@ public class TextTemplate {
 				}
 
 				// Replaces every placeholder of the line by its assigned value
-				Matcher m = placeHoldersPattern.matcher(line);
+				Matcher matcher2 = placeHoldersPattern.matcher(line);
 				StringBuilder replaced = new StringBuilder();
-				while (m.find()) {
-					Object value = this.assignments.get(m.group(1));
-					m.appendReplacement(replaced, Matcher.quoteReplacement(value == null ? "" : value.toString()));
+				while (matcher2.find()) {
+					Object value = this.assignments.get(matcher2.group(1));
+					matcher2.appendReplacement(replaced, Matcher.quoteReplacement(value == null ? "" : value.toString()));
 				}
-				m.appendTail(replaced);
+				matcher2.appendTail(replaced);
 				tempItens.add(replaced.toString());
 			} else {
 
-				HashMap<String, Object> hashMap = (HashMap<String, Object>) itens.get(i);
+				HashMap<String, Object> hashMap = (HashMap<String, Object>) itens.get(index);
 
 				String itemName = (String) hashMap.keySet().toArray()[0];
 
@@ -214,19 +214,19 @@ public class TextTemplate {
 		List<Object> indexes = new ArrayList<Object>();
 
 		// Checks each element of the template
-		for (int i = 0; i < template.size(); i++) {
+		for (int index = 0; index < template.size(); index++) {
 
 			// We are looking for blocks, so we must check only if element is a hashmap
-			if (template.get(i) instanceof HashMap) {
+			if (template.get(index) instanceof HashMap) {
 
-				HashMap<String, Object> map = (HashMap<String, Object>) template.get(i);
+				HashMap<String, Object> map = (HashMap<String, Object>) template.get(index);
 
 				// Checks the block name matches
 				if (map.get(blockNameToFind) != null) {
 					if (currentBlock != null) {
 						indexes.add(currentBlock);
 					}
-					indexes.add(i);
+					indexes.add(index);
 					indexes.add(blockNameToFind);
 					return indexes;
 				}
@@ -240,7 +240,7 @@ public class TextTemplate {
 					if (currentBlock != null) {
 						indexes.add(currentBlock);
 					}
-					indexes.add(i);
+					indexes.add(index);
 					indexes.addAll(res);
 				}
 			} else {

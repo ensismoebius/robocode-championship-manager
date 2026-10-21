@@ -32,8 +32,8 @@ class FlashbacksTest {
 	@Test
 	void aRobotSeesOnlyTheBattlesItFought() {
 		List<BattleMoment> moments = List.of(moment("V1-1", 1, 2), moment("V1-2", 3, 4), moment("F1", 2, 4));
-		assertEquals(List.of("V1-1", "F1"), codes(Flashbacks.of(moments, 2, Flashbacks.LIMIT)));
-		assertEquals(List.of(), codes(Flashbacks.of(moments, 9, Flashbacks.LIMIT)));
+		assertEquals(List.of("V1-1", "F1"), codes(Flashbacks.select(moments, 2, Flashbacks.LIMIT)));
+		assertEquals(List.of(), codes(Flashbacks.select(moments, 9, Flashbacks.LIMIT)));
 	}
 
 	@Test
@@ -44,7 +44,7 @@ class FlashbacksTest {
 				moments.add(moment(match, 1, 2));
 			}
 		}
-		List<String> chosen = codes(Flashbacks.of(moments, 1, 12));
+		List<String> chosen = codes(Flashbacks.select(moments, 1, 12));
 		assertEquals(12, chosen.size());
 		for (String match : List.of("V1-1", "V1-2", "V2-1")) {
 			assertEquals(4, chosen.stream().filter(match::equals).count(), match);
@@ -55,7 +55,7 @@ class FlashbacksTest {
 	void photosWithoutPictureAreLeftOut() {
 		BattleMoment blank = moment("V1-1", 1, 2);
 		blank.setImage(null);
-		assertEquals(List.of("V1-2"), codes(Flashbacks.of(List.of(blank, moment("V1-2", 1, 2)), 1, Flashbacks.LIMIT)));
+		assertEquals(List.of("V1-2"), codes(Flashbacks.select(List.of(blank, moment("V1-2", 1, 2)), 1, Flashbacks.LIMIT)));
 	}
 
 	@Test

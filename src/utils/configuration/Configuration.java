@@ -125,7 +125,7 @@ public class Configuration {
 	public static int parseInt(String value, int defaultValue) {
 		try {
 			return Integer.parseInt(value.trim());
-		} catch (NullPointerException | NumberFormatException e) {
+		} catch (NullPointerException | NumberFormatException numberFormatException) {
 			return defaultValue;
 		}
 	}
@@ -140,12 +140,12 @@ public class Configuration {
 			return null;
 		}
 
-		try (InputStream is = Files.newInputStream(Configuration.CONFIG_FILE)) {
+		try (InputStream inputStream = Files.newInputStream(Configuration.CONFIG_FILE)) {
 			Properties properties = new Properties();
-			properties.load(is);
+			properties.load(inputStream);
 			return properties;
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
 			return null;
 		}
 	}
@@ -156,22 +156,22 @@ public class Configuration {
 	 * @return
 	 */
 	private static synchronized boolean saveConfigurations() {
-		try (OutputStream os = Files.newOutputStream(Configuration.CONFIG_FILE)) {
-			Configuration.configurations.store(os, "RobocodeChampManagerConfiguration");
+		try (OutputStream outputStream = Files.newOutputStream(Configuration.CONFIG_FILE)) {
+			Configuration.configurations.store(outputStream, "RobocodeChampManagerConfiguration");
 			return true;
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException ioException) {
+			ioException.printStackTrace();
 			return false;
 		}
 	}
 
-	public static synchronized void setEnabledRegistration(boolean b) {
+	public static synchronized void setEnabledRegistration(boolean second) {
 		if (Configuration.configurations == null) {
 			throw new IllegalStateException("Configuration not loaded, call askForProperties() first");
 		}
-		Object old = Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(b));
+		Object old = Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(second));
 		Configuration.saveConfigurations();
-		if (!String.valueOf(b).equals(old)) {
+		if (!String.valueOf(second).equals(old)) {
 			Configuration.notifyListeners();
 		}
 	}
@@ -212,7 +212,7 @@ public class Configuration {
 		String value = Configuration.getConfiguration(INewConfigurationHandle.WINNER_CRITERION);
 		try {
 			return value == null ? WinnerCriterion.RANK : WinnerCriterion.valueOf(value);
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException illegalArgumentException) {
 			return WinnerCriterion.RANK;
 		}
 	}
@@ -291,7 +291,7 @@ public class Configuration {
 		try {
 			String value = Configuration.getConfiguration(INewConfigurationHandle.BATTLE_SPEED);
 			wanted = value == null ? DEFAULT_BATTLE_SPEED : Double.parseDouble(value.trim().replace(',', '.'));
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException numberFormatException) {
 			wanted = DEFAULT_BATTLE_SPEED;
 		}
 		double best = DEFAULT_BATTLE_SPEED;
@@ -336,7 +336,7 @@ public class Configuration {
 			if (Files.isRegularFile(location)) {
 				return location.toAbsolutePath().getParent();
 			}
-		} catch (URISyntaxException | RuntimeException e) {
+		} catch (URISyntaxException | RuntimeException runtimeException) {
 			// No code source to tell where the program is: the working folder
 		}
 		return Path.of("").toAbsolutePath();

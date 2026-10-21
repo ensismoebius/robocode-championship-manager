@@ -71,7 +71,7 @@ final class PodiumFlashback {
 	 */
 	void show(int place) {
 		Opponent robot = host.places[place];
-		List<BattleMoment> chosen = Flashbacks.of(host.moments, robot.getId(), Flashbacks.LIMIT);
+		List<BattleMoment> chosen = Flashbacks.select(host.moments, robot.getId(), Flashbacks.LIMIT);
 		if (chosen.isEmpty()) {
 			return;
 		}
@@ -130,17 +130,17 @@ final class PodiumFlashback {
 	 */
 	private Clip clip(BattleMoment moment, Opponent robot) {
 		Opponent rival = host.opponents.get(Flashbacks.opponentOf(moment, robot.getId()));
-		String me = upper(robot.getName());
+		String string = upper(robot.getName());
 		String rivalName = rival == null ? "?" : upper(rival.getName());
 		String rivalTeam = rival == null ? "" : "TIME " + upper(rival.getTeam());
 		String power = String.format("%.1f", moment.getPower());
 		String event;
 		if (moment.isDestruction()) {
-			event = moment.getSubjectId() == robot.getId() ? me + " FOI DESTRUÍDO" : me + " DESTRUIU " + rivalName;
+			event = moment.getSubjectId() == robot.getId() ? string + " FOI DESTRUÍDO" : string + " DESTRUIU " + rivalName;
 		} else if (moment.getSubjectId() == robot.getId()) {
-			event = me + " ACERTOU " + rivalName + " COM FORÇA " + power;
+			event = string + " ACERTOU " + rivalName + " COM FORÇA " + power;
 		} else {
-			event = rivalName + " ACERTOU " + me + " COM FORÇA " + power;
+			event = rivalName + " ACERTOU " + string + " COM FORÇA " + power;
 		}
 		return new Clip(new Image(new ByteArrayInputStream(moment.getImage())), "ROUND " + moment.getRoundNumber() + " · VS " + rivalName, rivalTeam, event);
 	}
@@ -188,7 +188,7 @@ final class PodiumFlashback {
 
 		HBox dots = new HBox(8);
 		dots.setAlignment(Pos.CENTER);
-		for (int i = 0; i < count; i++) {
+		for (int index = 0; index < count; index++) {
 			Circle dot = new Circle(5, Color.web("#ffffff", 0.3));
 			this.flashbackDots.add(dot);
 			dots.getChildren().add(dot);
@@ -205,9 +205,9 @@ final class PodiumFlashback {
 	 */
 	private Timeline cycle(List<Clip> clips) {
 		Timeline timeline = new Timeline();
-		for (int k = 0; k < clips.size(); k++) {
-			int index = k;
-			double start = k * FLASHBACK_SLIDE;
+		for (int deepIndex = 0; deepIndex < clips.size(); deepIndex++) {
+			int index = deepIndex;
+			double start = deepIndex * FLASHBACK_SLIDE;
 			timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(start), event -> this.showClip(clips.get(index), index), new KeyValue(this.flashbackImage.opacityProperty(), 0)));
 			timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(start + FLASHBACK_FADE), new KeyValue(this.flashbackImage.opacityProperty(), 1)));
 			timeline.getKeyFrames().add(new KeyFrame(Duration.seconds(start + FLASHBACK_SLIDE - FLASHBACK_FADE), new KeyValue(this.flashbackImage.opacityProperty(), 1)));
@@ -222,8 +222,8 @@ final class PodiumFlashback {
 		this.flashbackRound.setText(clip.round());
 		this.flashbackTeam.setText(clip.team());
 		this.flashbackEvent.setText(clip.event());
-		for (int i = 0; i < this.flashbackDots.size(); i++) {
-			this.flashbackDots.get(i).setFill(i == index ? Color.web("#ffd400") : Color.web("#ffffff", 0.3));
+		for (int index2 = 0; index2 < this.flashbackDots.size(); index2++) {
+			this.flashbackDots.get(index2).setFill(index2 == index ? Color.web("#ffd400") : Color.web("#ffffff", 0.3));
 		}
 	}
 

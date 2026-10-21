@@ -42,8 +42,8 @@ final class ArenaMaterials {
 		return dome;
 	}
 
-	static double distance2(double[] a, double[] b) {
-		return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
+	static double distance2(double[] first, double[] second) {
+		return (first[0] - second[0]) * (first[0] - second[0]) + (first[1] - second[1]) * (first[1] - second[1]) + (first[2] - second[2]) * (first[2] - second[2]);
 	}
 
 	/**
@@ -64,22 +64,22 @@ final class ArenaMaterials {
 		return material;
 	}
 
-	static Cylinder cylinder(double radius, double height, int divisions, double x, double y, double z, Point3D axis, double angle, PhongMaterial material) {
+	static Cylinder cylinder(double radius, double height, int divisions, double posX, double posY, double posZ, Point3D axis, double angle, PhongMaterial material) {
 		Cylinder cylinder = new Cylinder(radius, height, divisions);
-		cylinder.setTranslateX(x);
-		cylinder.setTranslateY(y);
-		cylinder.setTranslateZ(z);
+		cylinder.setTranslateX(posX);
+		cylinder.setTranslateY(posY);
+		cylinder.setTranslateZ(posZ);
 		cylinder.setRotationAxis(axis);
 		cylinder.setRotate(angle);
 		cylinder.setMaterial(material);
 		return cylinder;
 	}
 
-	static Box box(double w, double h, double d, double x, double y, double z, PhongMaterial material) {
-		Box box = new Box(w, h, d);
-		box.setTranslateX(x);
-		box.setTranslateY(y);
-		box.setTranslateZ(z);
+	static Box box(double width, double height, double delta, double posX, double posY, double posZ, PhongMaterial material) {
+		Box box = new Box(width, height, delta);
+		box.setTranslateX(posX);
+		box.setTranslateY(posY);
+		box.setTranslateZ(posZ);
 		box.setMaterial(material);
 		return box;
 	}
@@ -123,14 +123,14 @@ final class ArenaMaterials {
 		return view;
 	}
 
-	static ScaleTransition grow(Node node, double from, double to, double millis) {
+	static ScaleTransition grow(Node node, double from, double toValue, double millis) {
 		ScaleTransition grow = new ScaleTransition(Duration.millis(millis), node);
 		grow.setFromX(from);
 		grow.setFromY(from);
 		grow.setFromZ(from);
-		grow.setToX(to);
-		grow.setToY(to);
-		grow.setToZ(to);
+		grow.setToX(toValue);
+		grow.setToY(toValue);
+		grow.setToZ(toValue);
 		grow.setInterpolator(Interpolator.EASE_OUT);
 		return grow;
 	}

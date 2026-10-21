@@ -130,7 +130,7 @@ public final class BattleRecording {
 			}
 			try {
 				recording.parseLine(line);
-			} catch (RuntimeException e) {
+			} catch (RuntimeException runtimeException) {
 				// A broken line costs a turn, not the battle
 				System.err.println("Linha da batalha ignorada: " + line);
 			}
@@ -180,18 +180,18 @@ public final class BattleRecording {
 		List<RobotState> robotStates = new ArrayList<RobotState>();
 		if (parts.length > 1 && !parts[1].isEmpty()) {
 			for (String robot : parts[1].split(";")) {
-				String[] f = robot.split(" ");
-				robotStates.add(new RobotState(Integer.parseInt(f[0]), Double.parseDouble(f[1]), Double.parseDouble(f[2]), Double.parseDouble(f[3]), Double.parseDouble(f[4]),
-						Double.parseDouble(f[5]), Double.parseDouble(f[6]), Integer.parseInt(f[7])));
+				String[] string = robot.split(" ");
+				robotStates.add(new RobotState(Integer.parseInt(string[0]), Double.parseDouble(string[1]), Double.parseDouble(string[2]), Double.parseDouble(string[3]), Double.parseDouble(string[4]),
+						Double.parseDouble(string[5]), Double.parseDouble(string[6]), Integer.parseInt(string[7])));
 			}
 		}
 
 		List<Bullet> bullets = new ArrayList<Bullet>();
 		if (parts.length > 2 && !parts[2].isEmpty()) {
 			for (String bullet : parts[2].split(";")) {
-				String[] f = bullet.split(" ");
-				bullets.add(new Bullet(Integer.parseInt(f[0]), Integer.parseInt(f[1]), Double.parseDouble(f[2]), Double.parseDouble(f[3]), Double.parseDouble(f[4]),
-						Integer.parseInt(f[5]), Integer.parseInt(f[6])));
+				String[] string2 = bullet.split(" ");
+				bullets.add(new Bullet(Integer.parseInt(string2[0]), Integer.parseInt(string2[1]), Double.parseDouble(string2[2]), Double.parseDouble(string2[3]), Double.parseDouble(string2[4]),
+						Integer.parseInt(string2[5]), Integer.parseInt(string2[6])));
 			}
 		}
 

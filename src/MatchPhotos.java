@@ -43,8 +43,8 @@ final class MatchPhotos {
 		}
 		try {
 			BattleMomentService.save(championshipId, match.getCode(), moments);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
 		}
 	}
 
@@ -54,19 +54,19 @@ final class MatchPhotos {
 	static void forget(long championshipId, String matchCode) {
 		try {
 			BattleMomentService.delete(championshipId, matchCode);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
 		}
 	}
 
 	/**
 	 * The photos of the battles of the robots, when they can be read
 	 */
-	static List<BattleMoment> of(long championshipId, List<Long> robots) {
+	static List<BattleMoment> photosOf(long championshipId, List<Long> robots) {
 		try {
-			return BattleMomentService.of(championshipId, robots);
-		} catch (RuntimeException e) {
-			e.printStackTrace();
+			return BattleMomentService.photosOf(championshipId, robots);
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
 			return List.of();
 		}
 	}

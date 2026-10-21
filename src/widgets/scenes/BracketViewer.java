@@ -205,13 +205,13 @@ public class BracketViewer extends StackPane {
 			banner.setMaxWidth(Region.USE_PREF_SIZE);
 			header.getChildren().add(banner);
 		} else {
-			Label next = new Label(this.bracket.getNextMatch().map(m -> {
-				Bracket.Importance importance = this.bracket.importance(m);
-				String stage = importance == Bracket.Importance.REGULAR ? "" : "★ " + this.bracket.roundName(m).toUpperCase() + " ★  ";
-				return stage + "Próxima partida: " + m.getCode() + " — " + this.nameOf(m.getA().getParticipant()) + " × " + this.nameOf(m.getB().getParticipant());
+			Label next = new Label(this.bracket.getNextMatch().map(matrix -> {
+				Bracket.Importance importance = this.bracket.importance(matrix);
+				String stage = importance == Bracket.Importance.REGULAR ? "" : "★ " + this.bracket.roundName(matrix).toUpperCase() + " ★  ";
+				return stage + "Próxima partida: " + matrix.getCode() + " — " + this.nameOf(matrix.getA().getParticipant()) + " × " + this.nameOf(matrix.getB().getParticipant());
 			}).orElse(""));
 			next.getStyleClass().add("subtitle");
-			if (this.bracket.getNextMatch().map(m -> this.bracket.importance(m) != Bracket.Importance.REGULAR).orElse(false)) {
+			if (this.bracket.getNextMatch().map(matrix2 -> this.bracket.importance(matrix2) != Bracket.Importance.REGULAR).orElse(false)) {
 				next.setStyle("-fx-text-fill: #ffd54a;");
 			}
 			header.getChildren().add(next);
@@ -283,7 +283,7 @@ public class BracketViewer extends StackPane {
 	}
 
 	private String statusText(Match match) {
-		boolean isNext = this.bracket.getNextMatch().map(m -> m == match).orElse(false);
+		boolean isNext = this.bracket.getNextMatch().map(matrix -> matrix == match).orElse(false);
 		return switch (match.getStatus()) {
 		case WAITING -> "aguardando";
 		case READY -> match.getCode().equals(this.selected) ? "▶ SELECIONADA" : isNext ? "próxima" : "pronta";
@@ -350,7 +350,7 @@ public class BracketViewer extends StackPane {
 		if (opponent == null || opponent.getImage() == null) {
 			return null;
 		}
-		Image image = this.logos.computeIfAbsent(participant, id -> new Image(new ByteArrayInputStream(opponent.getImage()), 160, 120, true, true));
+		Image image = this.logos.computeIfAbsent(participant, identifier -> new Image(new ByteArrayInputStream(opponent.getImage()), 160, 120, true, true));
 		ImageView view = new ImageView(image);
 		view.setFitWidth(width);
 		view.setFitHeight(height);
@@ -422,7 +422,7 @@ public class BracketViewer extends StackPane {
 	}
 
 	private String codeOf(VBox card) {
-		return this.cards.entrySet().stream().filter(e -> e.getValue() == card).map(Map.Entry::getKey).findFirst().orElseThrow();
+		return this.cards.entrySet().stream().filter(event -> event.getValue() == card).map(Map.Entry::getKey).findFirst().orElseThrow();
 	}
 
 	// ----------------------------------------------------------------- camera
@@ -547,26 +547,26 @@ public class BracketViewer extends StackPane {
 	 * Keeps the camera over the content: a dimension smaller than the screen is
 	 * centered, a bigger one does not show what is beyond its borders
 	 */
-	private double[] clamp(double x, double y, double zoom) {
+	private double[] clamp(double posX, double posY, double zoom) {
 		zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
 		double width = this.content.getLayoutBounds().getWidth();
 		double height = this.content.getLayoutBounds().getHeight();
 		double halfWidth = this.viewport.getWidth() / 2 / zoom;
 		double halfHeight = this.viewport.getHeight() / 2 / zoom;
-		x = width <= 2 * halfWidth ? width / 2 : Math.max(halfWidth, Math.min(width - halfWidth, x));
-		y = height <= 2 * halfHeight ? height / 2 : Math.max(halfHeight, Math.min(height - halfHeight, y));
-		return new double[] { x, y, zoom };
+		posX = width <= 2 * halfWidth ? width / 2 : Math.max(halfWidth, Math.min(width - halfWidth, posX));
+		posY = height <= 2 * halfHeight ? height / 2 : Math.max(halfHeight, Math.min(height - halfHeight, posY));
+		return new double[] { posX, posY, zoom };
 	}
 
 	/**
 	 * Moves the camera at once (duration null) or smoothly
 	 */
-	void moveTo(double x, double y, double zoom, Duration duration) {
+	void moveTo(double posX, double posY, double zoom, Duration duration) {
 		if (duration == null) {
 			if (this.cameraMove != null) {
 				this.cameraMove.stop();
 			}
-			double[] target = this.clamp(x, y, zoom);
+			double[] target = this.clamp(posX, posY, zoom);
 			this.targetX = target[0];
 			this.targetY = target[1];
 			this.targetZoom = target[2];
@@ -574,7 +574,7 @@ public class BracketViewer extends StackPane {
 			this.cameraY.set(target[1]);
 			this.cameraZoom.set(target[2]);
 		} else {
-			this.moveCamera(new double[] { x, y, zoom }, duration);
+			this.moveCamera(new double[] { posX, posY, zoom }, duration);
 		}
 	}
 
@@ -608,13 +608,13 @@ public class BracketViewer extends StackPane {
 	/**
 	 * Smooth zoom keeping the point under (x, y) of the screen in place
 	 */
-	private void zoomAt(double x, double y, double factor) {
+	private void zoomAt(double posX, double posY, double factor) {
 		double zoom = this.targetZoom;
 		// The point of the content under the mouse, where the camera is going
-		double pointX = this.targetX + (x - this.viewport.getWidth() / 2) / zoom;
-		double pointY = this.targetY + (y - this.viewport.getHeight() / 2) / zoom;
+		double pointX = this.targetX + (posX - this.viewport.getWidth() / 2) / zoom;
+		double pointY = this.targetY + (posY - this.viewport.getHeight() / 2) / zoom;
 		double newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
-		this.moveCamera(new double[] { pointX - (x - this.viewport.getWidth() / 2) / newZoom, pointY - (y - this.viewport.getHeight() / 2) / newZoom, newZoom }, Duration.millis(220));
+		this.moveCamera(new double[] { pointX - (posX - this.viewport.getWidth() / 2) / newZoom, pointY - (posY - this.viewport.getHeight() / 2) / newZoom, newZoom }, Duration.millis(220));
 	}
 
 	/**
@@ -674,15 +674,15 @@ public class BracketViewer extends StackPane {
 		List<Map.Entry<Long, Integer>> entries = new ArrayList<Map.Entry<Long, Integer>>(placements.entrySet());
 		entries.sort(Map.Entry.comparingByValue());
 		int perColumn = Math.max(10, (entries.size() + 1) / 2);
-		for (int i = 0; i < entries.size(); i++) {
-			Map.Entry<Long, Integer> entry = entries.get(i);
+		for (int index = 0; index < entries.size(); index++) {
+			Map.Entry<Long, Integer> entry = entries.get(index);
 			Label place = new Label(entry.getValue() + "º");
 			place.getStyleClass().add("place");
 			Label name = new Label(this.nameOf(entry.getKey()));
 			name.getStyleClass().add("place-name");
-			int column = (i / perColumn) * 2;
-			grid.add(place, column, i % perColumn);
-			grid.add(name, column + 1, i % perColumn);
+			int column = (index / perColumn) * 2;
+			grid.add(place, column, index % perColumn);
+			grid.add(name, column + 1, index % perColumn);
 		}
 
 		box.getChildren().addAll(title, grid);

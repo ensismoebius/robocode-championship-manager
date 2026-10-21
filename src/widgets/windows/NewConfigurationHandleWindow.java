@@ -257,10 +257,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		private Tab systemTab() {
 			Button chooseDatabaseFile = new Button("Escolher...");
 			chooseDatabaseFile.setOnAction(event -> {
-				FileChooser fc = new FileChooser();
-				fc.setTitle("Arquivo do banco de dados (é criado se não existir)");
-				fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("Banco SQLite", "*.db", "*.sqlite", "*.sqlite3"));
-				File chosen = fc.showSaveDialog(GameWindow.getWindow());
+				FileChooser fileChooser = new FileChooser();
+				fileChooser.setTitle("Arquivo do banco de dados (é criado se não existir)");
+				fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Banco SQLite", "*.db", "*.sqlite", "*.sqlite3"));
+				File chosen = fileChooser.showSaveDialog(GameWindow.getWindow());
 				if (chosen != null) {
 					this.databaseFile.setText(chosen.getPath());
 				}
@@ -268,9 +268,9 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 			Button chooseRobocodeDirectory = new Button("Escolher...");
 			chooseRobocodeDirectory.setOnAction(event -> {
-				DirectoryChooser dc = new DirectoryChooser();
-				dc.setTitle("Escolha o diretório onde está instalado o robocode");
-				File chosen = dc.showDialog(GameWindow.getWindow());
+				DirectoryChooser directoryChooser = new DirectoryChooser();
+				directoryChooser.setTitle("Escolha o diretório onde está instalado o robocode");
+				File chosen = directoryChooser.showDialog(GameWindow.getWindow());
 				if (chosen != null) {
 					this.robocodeDirectory.setText(chosen.getPath());
 				}
@@ -342,13 +342,13 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		double speed = Configuration.DEFAULT_BATTLE_SPEED;
 		try {
 			speed = configured == null ? speed : Double.parseDouble(configured.trim());
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException numberFormatException) {
 			// The default one
 		}
 		int best = 0;
-		for (int i = 0; i < Configuration.BATTLE_SPEEDS.length; i++) {
-			if (Math.abs(Configuration.BATTLE_SPEEDS[i] - speed) < Math.abs(Configuration.BATTLE_SPEEDS[best] - speed)) {
-				best = i;
+		for (int index = 0; index < Configuration.BATTLE_SPEEDS.length; index++) {
+			if (Math.abs(Configuration.BATTLE_SPEEDS[index] - speed) < Math.abs(Configuration.BATTLE_SPEEDS[best] - speed)) {
+				best = index;
 			}
 		}
 		return best;
@@ -358,9 +358,9 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 	 * The position of the configured option, after the random one (0)
 	 */
 	private static int choiceIndex(String configured, Enum<?>[] options) {
-		for (int i = 0; i < options.length; i++) {
-			if (options[i].name().equals(configured)) {
-				return i + 1;
+		for (int index = 0; index < options.length; index++) {
+			if (options[index].name().equals(configured)) {
+				return index + 1;
 			}
 		}
 		return 0;

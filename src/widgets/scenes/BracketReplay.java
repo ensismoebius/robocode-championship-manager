@@ -99,13 +99,13 @@ final class BracketReplay {
 		List<Arrival> arrivals = new ArrayList<Arrival>();
 		for (Match match : host.bracket.getMatches()) {
 			Slot[] slots = { match.getA(), match.getB() };
-			for (int i = 0; i < 2; i++) {
-				if (slots[i].getSource() == finished && slots[i].getParticipant() != null) {
-					arrivals.add(new Arrival(match, host.rows.get(match.getCode())[i], slots[i].isSourceWinner()));
+			for (int index = 0; index < 2; index++) {
+				if (slots[index].getSource() == finished && slots[index].getParticipant() != null) {
+					arrivals.add(new Arrival(match, host.rows.get(match.getCode())[index], slots[index].isSourceWinner()));
 				}
 			}
 		}
-		arrivals.sort((a, b) -> Boolean.compare(b.winner(), a.winner()));
+		arrivals.sort((first, second) -> Boolean.compare(second.winner(), first.winner()));
 		return arrivals;
 	}
 
@@ -172,8 +172,8 @@ final class BracketReplay {
 			} else {
 				Timeline shake = new Timeline();
 				double[] offsets = { 10, -9, 7, -5, 3, -1, 0 };
-				for (int i = 0; i < offsets.length; i++) {
-					shake.getKeyFrames().add(new KeyFrame(Duration.millis(45 * (i + 1)), new KeyValue(row.translateXProperty(), offsets[i])));
+				for (int index = 0; index < offsets.length; index++) {
+					shake.getKeyFrames().add(new KeyFrame(Duration.millis(45 * (index + 1)), new KeyValue(row.translateXProperty(), offsets[index])));
 				}
 				reveal.getChildren().add(shake);
 			}
@@ -221,7 +221,7 @@ final class BracketReplay {
 			flash.setSpread(0.4);
 			row.setEffect(flash);
 			Timeline fade = new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(flash.radiusProperty(), 0)));
-			fade.setOnFinished(e -> row.setEffect(null));
+			fade.setOnFinished(event2 -> row.setEffect(null));
 			fade.play();
 		});
 
@@ -239,8 +239,8 @@ final class BracketReplay {
 		drawing.getStyleClass().addAll("connector", "done", "drawing");
 
 		double length = 0;
-		for (int i = 2; i < line.getPoints().size(); i += 2) {
-			length += Math.hypot(line.getPoints().get(i) - line.getPoints().get(i - 2), line.getPoints().get(i + 1) - line.getPoints().get(i - 1));
+		for (int index = 2; index < line.getPoints().size(); index += 2) {
+			length += Math.hypot(line.getPoints().get(index) - line.getPoints().get(index - 2), line.getPoints().get(index + 1) - line.getPoints().get(index - 1));
 		}
 		drawing.getStrokeDashArray().setAll(length, length);
 		drawing.setStrokeDashOffset(length);

@@ -132,7 +132,7 @@ final class ArenaShowcase {
 		host.lastTurnProcessed = -1;
 		host.rounds.showTurn(host.turns());
 
-		String names = String.join("  ×  ", host.recording.getRobots().stream().map(r -> host.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
+		String names = String.join("  ×  ", host.recording.getRobots().stream().map(row -> host.robots.get(row.getIndex()).displayName.toUpperCase()).toList());
 		host.hud.showBanner("VS", names + "\n\nARENA: " + host.style.label.toUpperCase());
 		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
 		host.announcer.announce(switch (host.stageImportance) {
@@ -171,9 +171,9 @@ final class ArenaShowcase {
 		if (view == null) {
 			return;
 		}
-		double t = host.phaseTime;
-		double body = host.shotSeed + t * 0.35;
-		view.place(0, 0, body, body + 0.7 * Math.sin(t * 1.4), t * 5);
+		double time = host.phaseTime;
+		double body = host.shotSeed + time * 0.35;
+		view.place(0, 0, body, body + 0.7 * Math.sin(time * 1.4), time * 5);
 	}
 
 	/**
@@ -181,23 +181,23 @@ final class ArenaShowcase {
 	 * robot stays on the side opposite to its card.
 	 */
 	void showcaseShot(double[] robot) {
-		double t = host.phaseTime;
-		double crane = Math.max(0, 1 - t / 2.5);
+		double time = host.phaseTime;
+		double crane = Math.max(0, 1 - time / 2.5);
 		crane = crane * crane;
-		double angle = host.shotSeed + Math.PI - t * 0.3;
-		double radius = 175 - Math.min(30, t * 4.5) + 120 * crane;
-		double ex = robot[0] + Math.cos(angle) * radius;
-		double ez = robot[2] + Math.sin(angle) * radius;
-		double ey = -30 - 150 * crane;
+		double angle = host.shotSeed + Math.PI - time * 0.3;
+		double radius = 175 - Math.min(30, time * 4.5) + 120 * crane;
+		double exValue = robot[0] + Math.cos(angle) * radius;
+		double ezValue = robot[2] + Math.sin(angle) * radius;
+		double eyValue = -30 - 150 * crane;
 
 		// Screen right of the camera, the look point moves to the side of the card
-		double fx = robot[0] - ex;
-		double fz = robot[2] - ez;
-		double length = Math.max(1, Math.hypot(fx, fz));
-		double rightX = fz / length;
-		double rightZ = -fx / length;
+		double fxValue = robot[0] - exValue;
+		double fzValue = robot[2] - ezValue;
+		double length = Math.max(1, Math.hypot(fxValue, fzValue));
+		double rightX = fzValue / length;
+		double rightZ = -fxValue / length;
 		double offset = (host.showcaseOrder % 2 == 0 ? -1 : 1) * 34;
-		host.director.setShot(ex, ey, ez, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
+		host.director.setShot(exValue, eyValue, ezValue, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
 		host.rollTarget = (host.showcaseOrder % 2 == 0 ? 1 : -1) * 2.5 * crane;
 	}
 
@@ -286,12 +286,12 @@ final class ArenaShowcase {
 		List<Turn> turns = host.turns();
 		// (a bullet stays in the records for a while after its hit, exploding: the
 		// hit is the turn it changes to HIT_VICTIM, the last one before the death)
-		for (int t = Math.min(turns.size() - 1, turn + 1); t >= Math.max(1, turn - 3) && host.fatalBullet < 0; t--) {
-			for (Bullet bullet : turns.get(t).bullets()) {
-				Bullet before = findBullet(turns.get(t - 1), bullet.id());
+		for (int time = Math.min(turns.size() - 1, turn + 1); time >= Math.max(1, turn - 3) && host.fatalBullet < 0; time--) {
+			for (Bullet bullet : turns.get(time).bullets()) {
+				Bullet before = findBullet(turns.get(time - 1), bullet.id());
 				if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && bullet.victim() == robot && (before == null || !before.isHit())) {
 					host.fatalBullet = bullet.id();
-					host.impactTurn = t;
+					host.impactTurn = time;
 					break;
 				}
 			}

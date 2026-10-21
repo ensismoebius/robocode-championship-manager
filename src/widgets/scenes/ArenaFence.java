@@ -27,15 +27,15 @@ final class ArenaFence {
 	/**
 	 * Invisible panels around the field, they flash when hit
 	 */
-	void buildFence(double w, double h) {
+	void buildFence(double width, double height) {
 		// Force field panels: 100% transparent/invisible until hit
 		double wallHeight = 80;
 		for (int wall = 0; wall < 4; wall++) {
-			double span = wall <= 1 ? w : h;
+			double span = wall <= 1 ? width : height;
 			int count = (int) Math.round(span / 100);
 			for (int index = 0; index < count; index++) {
 				double along = index * 100 + 50 - span / 2;
-				double normal = wall <= 1 ? h / 2 : w / 2;
+				double normal = wall <= 1 ? height / 2 : width / 2;
 				PhongMaterial panelMaterial = material(FENCE_BASE);
 				Box panel = wall <= 1 ? box(98, wallHeight, 1.0, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
 						: box(1.0, wallHeight, 98, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);

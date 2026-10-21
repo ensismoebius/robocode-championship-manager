@@ -40,14 +40,14 @@ public class Sound {
 	 * @return the sound or null if the resource does not exist
 	 */
 	public static Sound fromResource(Class<?> base, String resource) {
-		try (InputStream is = base.getResourceAsStream(resource)) {
-			if (is == null) {
+		try (InputStream inputStream = base.getResourceAsStream(resource)) {
+			if (inputStream == null) {
 				System.err.println("Áudio não encontrado: " + resource);
 				return null;
 			}
-			return new Sound(is.readAllBytes(), resource);
-		} catch (IOException e) {
-			System.err.println("Não foi possível ler " + resource + ": " + e.getMessage());
+			return new Sound(inputStream.readAllBytes(), resource);
+		} catch (IOException ioException) {
+			System.err.println("Não foi possível ler " + resource + ": " + ioException.getMessage());
 			return null;
 		}
 	}
@@ -72,7 +72,7 @@ public class Sound {
 		try (AudioInputStream decoded = Sound.decode(audio)) {
 			// Decodes the first frames, a broken file fails here
 			return decoded.read(new byte[4096]) > 0;
-		} catch (IOException | UnsupportedAudioFileException | IllegalArgumentException e) {
+		} catch (IOException | UnsupportedAudioFileException | IllegalArgumentException illegalArgumentException) {
 			return false;
 		}
 	}
@@ -122,9 +122,9 @@ public class Sound {
 	 */
 	public void stop() {
 		this.stopped = true;
-		Thread t = this.thread;
-		if (t != null) {
-			t.interrupt();
+		Thread thread2 = this.thread;
+		if (thread2 != null) {
+			thread2.interrupt();
 		}
 	}
 
@@ -152,9 +152,9 @@ public class Sound {
 			if (!this.stopped) {
 				line.drain();
 			}
-		} catch (IOException | UnsupportedAudioFileException | LineUnavailableException | IllegalArgumentException e) {
+		} catch (IOException | UnsupportedAudioFileException | LineUnavailableException | IllegalArgumentException illegalArgumentException) {
 			if (!this.stopped) {
-				System.err.println("Não foi possível tocar " + this.name + ": " + e);
+				System.err.println("Não foi possível tocar " + this.name + ": " + illegalArgumentException);
 			}
 		} finally {
 			if (line != null) {
@@ -170,15 +170,15 @@ public class Sound {
 	 * audio systems offer a gain control
 	 */
 	private void applyVolume(byte[] buffer, int length) {
-		double v = this.volume;
-		if (v >= 1.0) {
+		double vCoord = this.volume;
+		if (vCoord >= 1.0) {
 			return;
 		}
-		for (int i = 0; i + 1 < length; i += 2) {
-			int sample = (short) ((buffer[i] & 0xff) | (buffer[i + 1] << 8));
-			sample = (int) (sample * v);
-			buffer[i] = (byte) sample;
-			buffer[i + 1] = (byte) (sample >> 8);
+		for (int index = 0; index + 1 < length; index += 2) {
+			int sample = (short) ((buffer[index] & 0xff) | (buffer[index + 1] << 8));
+			sample = (int) (sample * vCoord);
+			buffer[index] = (byte) sample;
+			buffer[index + 1] = (byte) (sample >> 8);
 		}
 	}
 }

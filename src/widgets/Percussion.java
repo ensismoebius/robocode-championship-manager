@@ -38,8 +38,8 @@ final class Percussion {
 		double[] noise = Synth.noise(0.05, 6);
 		// High pass: noise minus its low pass
 		double[] low = Synth.lowpass(noise.clone(), 0.3);
-		for (int i = 0; i < noise.length; i++) {
-			noise[i] -= low[i];
+		for (int index = 0; index < noise.length; index++) {
+			noise[index] -= low[index];
 		}
 		return noise;
 	}

@@ -84,9 +84,9 @@ final class ArenaRounds {
 	}
 
 	/** The round is played: the turns shown as the battle goes on */
-	void updatePlaying(double dt) {
+	void updatePlaying(double deltaTime) {
 		if (!host.paused) {
-			host.turnPosition += dt * TPS * SPEEDS[host.speed];
+			host.turnPosition += deltaTime * TPS * SPEEDS[host.speed];
 		}
 		List<Turn> turns = host.turns();
 		if (host.turnPosition >= turns.size() - 1) {
@@ -101,10 +101,10 @@ final class ArenaRounds {
 	}
 
 	/** The replay of the moments before a robot is destroyed, slowed down */
-	void updateReplay(double dt) {
+	void updateReplay(double deltaTime) {
 		int turn = (int) host.turnPosition;
 		double rate = turn >= host.deathTurn ? REPLAY_AFTER_SPEED : host.impactTurn >= 0 && host.impactTurn - turn <= 3 ? REPLAY_IMPACT_SPEED : REPLAY_SPEED;
-		host.turnPosition += dt * TPS * rate;
+		host.turnPosition += deltaTime * TPS * rate;
 		if (host.turnPosition >= host.replayTo) {
 			host.turnPosition = host.replayTo;
 			this.showTurn(host.turns());
@@ -212,9 +212,9 @@ final class ArenaRounds {
 		host.audio.setMusicOn(true);
 		// The fly by ends framing both robots, where the battle starts
 		RobotView subject = host.robots.get(host.shotSubject);
-		RobotView other = host.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
-		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
-		host.director.frameFighters(0, a, other == null ? a : other.position());
+		RobotView other = host.robots.values().stream().filter(vCoord -> vCoord != subject).findFirst().orElse(subject);
+		double[] first = subject == null ? new double[] { 0, 0, 0 } : subject.position();
+		host.director.frameFighters(0, first, other == null ? first : other.position());
 		System.arraycopy(host.eyeTarget, 0, this.flyEyeEnd, 0, 3);
 		System.arraycopy(host.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = host.fovTarget;
@@ -244,25 +244,25 @@ final class ArenaRounds {
 	 * the arena, low, that end framing both robots, where the battle starts
 	 */
 	void flyByPose(double progress) {
-		double w = host.fieldWidth;
-		double h = host.fieldHeight;
-		double mx = this.flyMirrorX;
-		double mz = this.flyMirrorZ;
-		double[][] eyes = { { -0.8 * w * mx, -120, -1.0 * h * mz }, { -0.05 * w * mx, -50, -0.85 * h * mz }, { 0.85 * w * mx, -75, -0.1 * h * mz }, this.flyEyeEnd };
-		double[][] looks = { { 0.1 * w * mx, -40, 0.2 * h * mz }, { 0.25 * w * mx, -25, 0.1 * h * mz }, { -0.2 * w * mx, -20, 0 }, this.flyLookEnd };
+		double width = host.fieldWidth;
+		double height = host.fieldHeight;
+		double mxValue = this.flyMirrorX;
+		double mzValue = this.flyMirrorZ;
+		double[][] eyes = { { -0.8 * width * mxValue, -120, -1.0 * height * mzValue }, { -0.05 * width * mxValue, -50, -0.85 * height * mzValue }, { 0.85 * width * mxValue, -75, -0.1 * height * mzValue }, this.flyEyeEnd };
+		double[][] looks = { { 0.1 * width * mxValue, -40, 0.2 * height * mzValue }, { 0.25 * width * mxValue, -25, 0.1 * height * mzValue }, { -0.2 * width * mxValue, -20, 0 }, this.flyLookEnd };
 		if (host.flyFocus != null) {
 			// Starts looking at the critter, from its outer side, a little above it
-			double fx = host.flyFocus[0];
-			double fz = host.flyFocus[2];
-			double length = Math.max(1, Math.hypot(fx, fz));
-			eyes[0] = new double[] { fx + fx / length * 45, host.flyFocus[1] - 22, fz + fz / length * 45 };
+			double fxValue = host.flyFocus[0];
+			double fzValue = host.flyFocus[2];
+			double length = Math.max(1, Math.hypot(fxValue, fzValue));
+			eyes[0] = new double[] { fxValue + fxValue / length * 45, host.flyFocus[1] - 22, fzValue + fzValue / length * 45 };
 			looks[0] = host.flyFocus;
 		}
 		// Slow at the start and at the end, quick in the middle
 		double smooth = progress * progress * (3 - 2 * progress);
-		double u = 0.3 * progress + 0.7 * smooth;
-		catmull(eyes, u, host.eyeTarget);
-		catmull(looks, u, host.lookTarget);
+		double uCoord = 0.3 * progress + 0.7 * smooth;
+		catmull(eyes, uCoord, host.eyeTarget);
+		catmull(looks, uCoord, host.lookTarget);
 		host.fovTarget = 62 + (this.flyFovEnd - 62) * smooth;
 		host.rollTarget = 3 * Math.sin(progress * Math.PI * 2) * (1 - smooth);
 		host.follow = 40;
@@ -271,17 +271,17 @@ final class ArenaRounds {
 	/**
 	 * A point along a smooth curve that goes through all the points, u from 0 to 1
 	 */
-	static void catmull(double[][] points, double u, double[] out) {
+	static void catmull(double[][] points, double uCoord, double[] out) {
 		int segments = points.length - 1;
-		double position = Math.max(0, Math.min(1, u)) * segments;
-		int i = Math.min(segments - 1, (int) position);
-		double t = position - i;
-		double[] p0 = points[Math.max(0, i - 1)];
-		double[] p1 = points[i];
-		double[] p2 = points[i + 1];
-		double[] p3 = points[Math.min(segments, i + 2)];
-		for (int k = 0; k < 3; k++) {
-			out[k] = 0.5 * (2 * p1[k] + (p2[k] - p0[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t * t + (3 * p1[k] - p0[k] - 3 * p2[k] + p3[k]) * t * t * t);
+		double position = Math.max(0, Math.min(1, uCoord)) * segments;
+		int index = Math.min(segments - 1, (int) position);
+		double time = position - index;
+		double[] p0Value = points[Math.max(0, index - 1)];
+		double[] p1Value = points[index];
+		double[] p2Value = points[index + 1];
+		double[] p3Value = points[Math.min(segments, index + 2)];
+		for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+			out[deepIndex] = 0.5 * (2 * p1Value[deepIndex] + (p2Value[deepIndex] - p0Value[deepIndex]) * time + (2 * p0Value[deepIndex] - 5 * p1Value[deepIndex] + 4 * p2Value[deepIndex] - p3Value[deepIndex]) * time * time + (3 * p1Value[deepIndex] - p0Value[deepIndex] - 3 * p2Value[deepIndex] + p3Value[deepIndex]) * time * time * time);
 		}
 	}
 
@@ -289,7 +289,7 @@ final class ArenaRounds {
 		host.phase = Phase.ROUND_END;
 		host.phaseTime = 0;
 
-		List<RobotState> alive = turns.get(turns.size() - 1).robots().stream().filter(r -> !r.isDead()).toList();
+		List<RobotState> alive = turns.get(turns.size() - 1).robots().stream().filter(row -> !row.isDead()).toList();
 		host.announcer.say(host.commentary.roundEnd(alive.size() == 1 ? alive.get(0).index() : -1));
 		if (host.round + 1 == host.recording.getRounds().size()) {
 			host.headline = host.commentary.battleEnd();
@@ -319,8 +319,8 @@ final class ArenaRounds {
 	 * How tense the fight is: low energy, the end of the round, the deciding
 	 * round and recent hits make the music grow
 	 */
-	void updateTension(double dt) {
-		host.hitTension *= Math.exp(-0.5 * dt);
+	void updateTension(double deltaTime) {
+		host.hitTension *= Math.exp(-0.5 * deltaTime);
 		if (host.recording == null || host.phase == Phase.LOADING) {
 			host.audio.setIntensity(0);
 			return;
@@ -350,8 +350,8 @@ final class ArenaRounds {
 		Turn current = turns.get(index);
 		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
 
-		for (int t = host.lastTurnProcessed + 1; t <= index; t++) {
-			host.shots.turnEvents(turns.get(t), t == 0 ? null : turns.get(t - 1), t);
+		for (int time = host.lastTurnProcessed + 1; time <= index; time++) {
+			host.shots.turnEvents(turns.get(time), time == 0 ? null : turns.get(time - 1), time);
 		}
 		host.lastTurnProcessed = Math.max(host.lastTurnProcessed, index);
 

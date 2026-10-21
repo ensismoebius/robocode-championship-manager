@@ -47,7 +47,7 @@ final class ArenaCamera {
 	 * tense
 	 */
 	void pickShot(boolean cut) {
-		List<Integer> alive = host.robots.entrySet().stream().filter(e -> !e.getValue().dead).map(Map.Entry::getKey).toList();
+		List<Integer> alive = host.robots.entrySet().stream().filter(event -> !event.getValue().dead).map(Map.Entry::getKey).toList();
 		double tension = Math.min(1, 0.55 * host.hitTension * 4 + this.lowestEnergyTension());
 
 		Shot[] options = { Shot.WIDE, Shot.CHASE, Shot.CHASE, Shot.LOW_TRACK, Shot.LOW_TRACK, Shot.CLOSE, Shot.CRANE };
@@ -95,42 +95,42 @@ final class ArenaCamera {
 		host.closeDistance = 90;
 	}
 
-	void updateCamera(double dt) {
-		host.shotTime += dt;
+	void updateCamera(double deltaTime) {
+		host.shotTime += deltaTime;
 		if (host.viewMode == ViewMode.CINEMATIC || host.phase == Phase.REPLAY || host.phase == Phase.FREEZE || host.phase == Phase.SHOWCASE || host.phase == Phase.FLYBY) {
 			if (host.shotTime > host.shotDuration && host.phase == Phase.PLAYING) {
 				this.pickShot(false);
 			}
-			this.directShot(dt);
+			this.directShot(deltaTime);
 		} else {
-			this.freeCamera(dt);
+			this.freeCamera(deltaTime);
 		}
 
-		double ease = 1 - Math.exp(-host.follow * dt);
-		for (int i = 0; i < 3; i++) {
-			host.eye[i] += (host.eyeTarget[i] - host.eye[i]) * ease;
-			host.look[i] += (host.lookTarget[i] - host.look[i]) * ease;
+		double ease = 1 - Math.exp(-host.follow * deltaTime);
+		for (int index = 0; index < 3; index++) {
+			host.eye[index] += (host.eyeTarget[index] - host.eye[index]) * ease;
+			host.look[index] += (host.lookTarget[index] - host.look[index]) * ease;
 		}
 		host.fov += (host.fovTarget - host.fov) * ease;
 		host.roll += (host.rollTarget - host.roll) * ease;
 
 		// Shake of the explosions
-		host.shake = Math.min(40, host.shake) * Math.exp(-5 * dt);
-		double sx = (host.random.nextDouble() - 0.5) * host.shake;
-		double sy = (host.random.nextDouble() - 0.5) * host.shake;
-		double sz = (host.random.nextDouble() - 0.5) * host.shake;
+		host.shake = Math.min(40, host.shake) * Math.exp(-5 * deltaTime);
+		double sxValue = (host.random.nextDouble() - 0.5) * host.shake;
+		double syValue = (host.random.nextDouble() - 0.5) * host.shake;
+		double szValue = (host.random.nextDouble() - 0.5) * host.shake;
 
-		double fx = host.look[0] - host.eye[0];
-		double fy = host.look[1] - host.eye[1];
-		double fz = host.look[2] - host.eye[2];
-		double distance = Math.max(1, Math.sqrt(fx * fx + fy * fy + fz * fz));
+		double fxValue = host.look[0] - host.eye[0];
+		double fyValue = host.look[1] - host.eye[1];
+		double fzValue = host.look[2] - host.eye[2];
+		double distance = Math.max(1, Math.sqrt(fxValue * fxValue + fyValue * fyValue + fzValue * fzValue));
 
 		host.camera.setFieldOfView(host.fov);
-		host.cameraLook.setX(host.look[0] + sx);
-		host.cameraLook.setY(host.look[1] + sy);
-		host.cameraLook.setZ(host.look[2] + sz);
-		host.cameraYaw.setAngle(Math.toDegrees(Math.atan2(fx, fz)));
-		host.cameraPitch.setAngle(Math.toDegrees(Math.asin(-fy / distance)));
+		host.cameraLook.setX(host.look[0] + sxValue);
+		host.cameraLook.setY(host.look[1] + syValue);
+		host.cameraLook.setZ(host.look[2] + szValue);
+		host.cameraYaw.setAngle(Math.toDegrees(Math.atan2(fxValue, fzValue)));
+		host.cameraPitch.setAngle(Math.toDegrees(Math.asin(-fyValue / distance)));
 		host.cameraRoll.setAngle(host.roll + (host.random.nextDouble() - 0.5) * host.shake * 0.1);
 		host.cameraDistance.setZ(-distance);
 	}
@@ -138,13 +138,13 @@ final class ArenaCamera {
 	/**
 	 * Free (orbit), isometric and top views
 	 */
-	void freeCamera(double dt) {
+	void freeCamera(double deltaTime) {
 		if (host.viewMode == ViewMode.FREE && Math.abs(host.yawSpeed) > 0.1) {
 			// Momentum after a drag
-			host.targetYaw += host.yawSpeed * dt;
-			host.yawSpeed *= Math.exp(-4 * dt);
+			host.targetYaw += host.yawSpeed * deltaTime;
+			host.yawSpeed *= Math.exp(-4 * deltaTime);
 		}
-		double ease = 1 - Math.exp(-5 * dt);
+		double ease = 1 - Math.exp(-5 * deltaTime);
 		host.yaw += (host.targetYaw - host.yaw) * ease;
 		double wantedPitch = host.viewMode == ViewMode.FREE ? host.freePitch : host.viewMode.pitch;
 		host.pitch += (wantedPitch - host.pitch) * ease;
@@ -163,15 +163,15 @@ final class ArenaCamera {
 		double yawRad = Math.toRadians(host.yaw);
 		double pitchRad = Math.toRadians(host.pitch);
 		// Forward of the camera for this yaw and pitch
-		double fx = Math.cos(pitchRad) * Math.sin(yawRad);
-		double fy = -Math.sin(pitchRad);
-		double fz = Math.cos(pitchRad) * Math.cos(yawRad);
+		double fxValue = Math.cos(pitchRad) * Math.sin(yawRad);
+		double fyValue = -Math.sin(pitchRad);
+		double fzValue = Math.cos(pitchRad) * Math.cos(yawRad);
 		host.lookTarget[0] = 0;
 		host.lookTarget[1] = -10;
 		host.lookTarget[2] = 0;
-		host.eyeTarget[0] = -fx * distance;
-		host.eyeTarget[1] = -10 - fy * distance;
-		host.eyeTarget[2] = -fz * distance;
+		host.eyeTarget[0] = -fxValue * distance;
+		host.eyeTarget[1] = -10 - fyValue * distance;
+		host.eyeTarget[2] = -fzValue * distance;
 		host.fovTarget = host.viewMode.fov;
 		host.rollTarget = 0;
 		host.follow = 6;
@@ -180,11 +180,11 @@ final class ArenaCamera {
 	/**
 	 * Where the cinematic camera is and looks, for the current shot
 	 */
-	void directShot(double dt) {
+	void directShot(double deltaTime) {
 		RobotView subject = host.robots.get(host.shotSubject);
-		RobotView other = host.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
-		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
-		double[] b = other == null ? a : other.position();
+		RobotView other = host.robots.values().stream().filter(vCoord -> vCoord != subject).findFirst().orElse(subject);
+		double[] first = subject == null ? new double[] { 0, 0, 0 } : subject.position();
+		double[] second = other == null ? first : other.position();
 		host.rollTarget = 0;
 
 		if (host.phase == Phase.FLYBY) {
@@ -202,14 +202,14 @@ final class ArenaCamera {
 		}
 
 		if (host.shot == Shot.FATAL) {
-			this.fatalShot(a);
+			this.fatalShot(first);
 			this.keepClear();
 			host.eyeTarget[1] = Math.min(host.eyeTarget[1], -10);
 			return;
 		}
 
 		// When a bot wins, focus the camera directly on the victor!
-		List<RobotView> livingRobots = host.robots.values().stream().filter(v -> !v.dead).toList();
+		List<RobotView> livingRobots = host.robots.values().stream().filter(vCoord2 -> !vCoord2.dead).toList();
 		boolean roundOver = host.phase == Phase.ROUND_END || host.phase == Phase.FINISHED;
 		RobotView winner = null;
 		// Not while a death is held on screen: the wreck is framed then, see freezeForReplay
@@ -220,7 +220,7 @@ final class ArenaCamera {
 		}
 
 		if (winner != null) {
-			host.cinematicOrbitAngle += dt * 0.35;
+			host.cinematicOrbitAngle += deltaTime * 0.35;
 			double[] winPos = winner.position();
 			double winDist = 175.0; // Heroic victory framing
 			double winHeight = -42.0; // Elevated view looking proud at the victor
@@ -234,24 +234,24 @@ final class ArenaCamera {
 			return;
 		}
 
-		this.frameFighters(dt, a, b);
+		this.frameFighters(deltaTime, first, second);
 	}
 
 	/**
 	 * Frames both fighters: the camera circles them on a flank, looking at the
 	 * middle between them, far enough away to keep both in view
 	 */
-	void frameFighters(double dt, double[] a, double[] b) {
-		double[] mid = { (a[0] + b[0]) / 2, -16, (a[2] + b[2]) / 2 };
-		double dx = b[0] - a[0];
-		double dz = b[2] - a[2];
-		double separation = Math.max(10, Math.hypot(dx, dz));
-		double ux = dx / separation;
-		double uz = dz / separation;
+	void frameFighters(double deltaTime, double[] first, double[] second) {
+		double[] mid = { (first[0] + second[0]) / 2, -16, (first[2] + second[2]) / 2 };
+		double deltaX = second[0] - first[0];
+		double deltaZ = second[2] - first[2];
+		double separation = Math.max(10, Math.hypot(deltaX, deltaZ));
+		double uxValue = deltaX / separation;
+		double uzValue = deltaZ / separation;
 		// Perpendicular to the line between them
-		double px = -uz * host.shotSide;
-		double pz = ux * host.shotSide;
-		host.cinematicOrbitAngle += dt * 0.25;
+		double posX = -uzValue * host.shotSide;
+		double posZ = uxValue * host.shotSide;
+		host.cinematicOrbitAngle += deltaTime * 0.25;
 
 		// Calculate distance required to guarantee both robots are comfortably inside the field of view
 		// Fit the bounding circle encompassing both combatants to the horizontal field of view
@@ -267,8 +267,8 @@ final class ArenaCamera {
 		double curAngle = Math.atan2(curDz, curDx);
 
 		// The two flanks perpendicular to the combat line
-		double flankAngle1 = Math.atan2(pz, px);
-		double flankAngle2 = Math.atan2(-pz, -px);
+		double flankAngle1 = Math.atan2(posZ, posX);
+		double flankAngle2 = Math.atan2(-posZ, -posX);
 
 		// Maintain continuity with the referee's current position around the fighters
 		double diff1 = Math.abs(Math.atan2(Math.sin(flankAngle1 - curAngle), Math.cos(flankAngle1 - curAngle)));
@@ -310,18 +310,18 @@ final class ArenaCamera {
 	void keepClear() {
 		for (RobotView view : host.robots.values()) {
 			double[] position = view.position();
-			double dx = host.eyeTarget[0] - position[0];
-			double dz = host.eyeTarget[2] - position[2];
-			double distance = Math.hypot(dx, dz);
+			double deltaX = host.eyeTarget[0] - position[0];
+			double deltaZ = host.eyeTarget[2] - position[2];
+			double distance = Math.hypot(deltaX, deltaZ);
 			double minimum = 65;
 			if (distance < minimum && host.eyeTarget[1] > -80) {
 				if (distance < 1) {
-					dx = 1;
-					dz = 0;
+					deltaX = 1;
+					deltaZ = 0;
 					distance = 1;
 				}
-				host.eyeTarget[0] = position[0] + dx / distance * minimum;
-				host.eyeTarget[2] = position[2] + dz / distance * minimum;
+				host.eyeTarget[0] = position[0] + deltaX / distance * minimum;
+				host.eyeTarget[2] = position[2] + deltaZ / distance * minimum;
 				host.eyeTarget[1] = Math.min(host.eyeTarget[1], -45);
 			}
 		}
@@ -335,14 +335,14 @@ final class ArenaCamera {
 		Group bullet = host.bullets.get(host.fatalBullet);
 		double turn = host.turnPosition;
 		if (bullet != null && host.impactTurn >= 0 && turn < host.impactTurn) {
-			double bx = bullet.getTranslateX();
-			double bz = bullet.getTranslateZ();
-			double dx = victim[0] - bx;
-			double dz = victim[2] - bz;
-			double length = Math.max(1, Math.hypot(dx, dz));
-			double ux = dx / length;
-			double uz = dz / length;
-			this.setShot(bx - ux * 120 - uz * 22 * host.shotSide, -30, bz - uz * 120 + ux * 22 * host.shotSide, bx + ux * 140, -20, bz + uz * 140, 38, 9);
+			double bxValue = bullet.getTranslateX();
+			double bzValue = bullet.getTranslateZ();
+			double deltaX = victim[0] - bxValue;
+			double deltaZ = victim[2] - bzValue;
+			double length = Math.max(1, Math.hypot(deltaX, deltaZ));
+			double uxValue = deltaX / length;
+			double uzValue = deltaZ / length;
+			this.setShot(bxValue - uxValue * 120 - uzValue * 22 * host.shotSide, -30, bzValue - uzValue * 120 + uxValue * 22 * host.shotSide, bxValue + uxValue * 140, -20, bzValue + uzValue * 140, 38, 9);
 			host.rollTarget = -5 * host.shotSide;
 		} else {
 			// Side view of the victim, slowly getting closer
@@ -353,13 +353,13 @@ final class ArenaCamera {
 		}
 	}
 
-	void setShot(double ex, double ey, double ez, double lx, double ly, double lz, double fov, double follow) {
-		host.eyeTarget[0] = ex;
-		host.eyeTarget[1] = ey;
-		host.eyeTarget[2] = ez;
-		host.lookTarget[0] = lx;
-		host.lookTarget[1] = ly;
-		host.lookTarget[2] = lz;
+	void setShot(double exValue, double eyValue, double ezValue, double lxValue, double lyValue, double lzValue, double fov, double follow) {
+		host.eyeTarget[0] = exValue;
+		host.eyeTarget[1] = eyValue;
+		host.eyeTarget[2] = ezValue;
+		host.lookTarget[0] = lxValue;
+		host.lookTarget[1] = lyValue;
+		host.lookTarget[2] = lzValue;
 		host.fovTarget = fov;
 		host.follow = follow;
 	}

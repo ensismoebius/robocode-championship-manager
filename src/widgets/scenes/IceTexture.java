@@ -23,18 +23,18 @@ final class IceTexture {
 	 */
 	static Image block(int base, int seed) {
 		int[] pixels = new int[SIZE * SIZE];
-		for (int py = 0; py < SIZE; py++) {
-			for (int px = 0; px < SIZE; px++) {
-				double u = (double) px / SIZE * LavaTexture.PERIOD;
-				double v = (double) py / SIZE * LavaTexture.PERIOD;
-				double body = LavaTexture.fbm(u, v, 4, seed);
-				double vein = 1 - Math.abs(2 * LavaTexture.fbm(u + 3, v + 8, 3, seed + 1) - 1);
-				double frost = Math.max(0, LavaTexture.fbm(u * 3, v * 3, 3, seed + 2) - 0.66) * 3;
+		for (int posY = 0; posY < SIZE; posY++) {
+			for (int posX = 0; posX < SIZE; posX++) {
+				double uCoord = (double) posX / SIZE * LavaTexture.PERIOD;
+				double vCoord = (double) posY / SIZE * LavaTexture.PERIOD;
+				double body = LavaTexture.fbm(uCoord, vCoord, 4, seed);
+				double vein = 1 - Math.abs(2 * LavaTexture.fbm(uCoord + 3, vCoord + 8, 3, seed + 1) - 1);
+				double frost = Math.max(0, LavaTexture.fbm(uCoord * 3, vCoord * 3, 3, seed + 2) - 0.66) * 3;
 				double crack = Math.pow(vein, 18);
 				int color = TextureMath.mix(0x1d3a55, base, body * 1.4 - 0.2);
 				color = TextureMath.mix(color, 0xeaf8ff, Math.min(1, frost));
 				color = TextureMath.mix(color, 0x0f2438, crack * 0.9);
-				pixels[py * SIZE + px] = 0xff000000 | color;
+				pixels[posY * SIZE + posX] = 0xff000000 | color;
 			}
 		}
 		return JungleTexture.image(pixels);

@@ -146,10 +146,10 @@ final class ArenaHud {
 		host.hudTop.getChildren().clear();
 
 		List<BattleRecording.Robot> list = host.recording.getRobots();
-		for (int i = 0; i < list.size() && i < 2; i++) {
-			BattleRecording.Robot robot = list.get(i);
+		for (int index = 0; index < list.size() && index < 2; index++) {
+			BattleRecording.Robot robot = list.get(index);
 			Opponent opponent = host.opponentOf(robot);
-			Color color = PLAYER_COLORS[i];
+			Color color = PLAYER_COLORS[index];
 
 			Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
 			name.getStyleClass().add("arena-player-name");
@@ -175,10 +175,10 @@ final class ArenaHud {
 			bar.setMinSize(HUD_BAR_WIDTH, height);
 			bar.setPrefSize(HUD_BAR_WIDTH, height);
 			bar.setMaxSize(HUD_BAR_WIDTH, height);
-			Pos anchor = i == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
+			Pos anchor = index == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
 			StackPane.setAlignment(lag, anchor);
 			StackPane.setAlignment(energy, anchor);
-			double[] corners = i == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
+			double[] corners = index == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
 					: new double[] { 0, 0, HUD_BAR_WIDTH - slant, 0, HUD_BAR_WIDTH, height, 0, height };
 			bar.setClip(new Polygon(corners));
 			Polygon outline = new Polygon(corners);
@@ -192,15 +192,15 @@ final class ArenaHud {
 			energyText.setStyle("-fx-text-fill: " + css + "; -fx-border-color: " + css + ";");
 			HBox pips = new HBox(6);
 
-			HBox nameRow = i == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
-			nameRow.setAlignment(i == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
-			HBox barRow = i == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
+			HBox nameRow = index == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
+			nameRow.setAlignment(index == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
+			HBox barRow = index == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
 			barRow.setAlignment(Pos.CENTER);
 			VBox panel = new VBox(6, nameRow, barRow, pips);
-			panel.setAlignment(i == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
+			panel.setAlignment(index == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
 
 			host.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, lag, energyText, pips));
-			if (i == 1) {
+			if (index == 1) {
 				host.hudTop.getChildren().addAll(spacer(), host.roundLabel, spacer());
 			}
 			host.hudTop.getChildren().add(panel);
@@ -234,9 +234,9 @@ final class ArenaHud {
 		for (HudPlayer player : host.hudPlayers) {
 			player.pips().getChildren().clear();
 			int wins = host.roundWins.getOrDefault(player.index(), 0);
-			for (int i = 0; i < rounds; i++) {
+			for (int index2 = 0; index2 < rounds; index2++) {
 				Label pip = new Label("◆");
-				pip.getStyleClass().add(i < wins ? "arena-pip-won" : "arena-pip");
+				pip.getStyleClass().add(index2 < wins ? "arena-pip-won" : "arena-pip");
 				player.pips().getChildren().add(pip);
 			}
 		}

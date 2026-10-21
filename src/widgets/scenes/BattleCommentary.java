@@ -164,7 +164,7 @@ public final class BattleCommentary {
 			} else if (bullet.state() == BattleRecording.BULLET_HIT_BULLET) {
 				this.lastActionTurn = turn.turn();
 				// Both bullets end in the same turn, said once
-				if (messages.stream().noneMatch(m -> m.text().equals("TIROS ANULADOS!"))) {
+				if (messages.stream().noneMatch(matrix -> matrix.text().equals("TIROS ANULADOS!"))) {
 					messages.add(new Message(true, "TIROS ANULADOS!", -1, Tone.NEUTRAL, 2, Topic.AIM));
 					messages.add(this.comment(-1, 2, Topic.AIM, "Tiro contra tiro! Os projéteis se anularam no ar!", "Que reflexo! Bala na bala!"));
 				}
@@ -267,7 +267,7 @@ public final class BattleCommentary {
 	 * How far behind each one was, and who leads in energy
 	 */
 	private void deficitsAndLead(List<Message> messages) {
-		List<Integer> alive = this.stats.entrySet().stream().filter(e -> !e.getValue().dead).map(Map.Entry::getKey).toList();
+		List<Integer> alive = this.stats.entrySet().stream().filter(event -> !event.getValue().dead).map(Map.Entry::getKey).toList();
 		for (Map.Entry<Integer, Stats> entry : this.stats.entrySet()) {
 			double best = 0;
 			for (Map.Entry<Integer, Stats> other : this.stats.entrySet()) {
@@ -280,9 +280,9 @@ public final class BattleCommentary {
 		if (alive.size() != 2) {
 			return;
 		}
-		Stats a = this.stats.get(alive.get(0));
-		Stats b = this.stats.get(alive.get(1));
-		int ahead = a.energy - b.energy >= LEAD_MARGIN ? alive.get(0) : b.energy - a.energy >= LEAD_MARGIN ? alive.get(1) : -1;
+		Stats stats2 = this.stats.get(alive.get(0));
+		Stats stats3 = this.stats.get(alive.get(1));
+		int ahead = stats2.energy - stats3.energy >= LEAD_MARGIN ? alive.get(0) : stats3.energy - stats2.energy >= LEAD_MARGIN ? alive.get(1) : -1;
 		if (ahead >= 0 && ahead != this.leader) {
 			if (this.leader >= 0) {
 				messages.add(this.comment(ahead, 3, Topic.PACE, "Reviravolta! {A} assume a liderança!", "{A} vira o jogo e passa à frente!", "Agora quem manda é {A}!"));
@@ -358,13 +358,13 @@ public final class BattleCommentary {
 	 */
 	public Headline battleEnd() {
 		int best = this.roundWins.values().stream().mapToInt(Integer::intValue).max().orElse(0);
-		List<Integer> leaders = this.roundWins.entrySet().stream().filter(e -> e.getValue() == best).map(Map.Entry::getKey).toList();
+		List<Integer> leaders = this.roundWins.entrySet().stream().filter(event -> event.getValue() == best).map(Map.Entry::getKey).toList();
 		if (best == 0 || leaders.size() != 1 || this.roundsPlayed < 2) {
 			return null;
 		}
 		int winner = leaders.get(0);
 		String name = this.names.get(winner);
-		int other = this.roundWins.entrySet().stream().filter(e -> e.getKey() != winner).mapToInt(Map.Entry::getValue).max().orElse(0);
+		int other = this.roundWins.entrySet().stream().filter(event2 -> event2.getKey() != winner).mapToInt(Map.Entry::getValue).max().orElse(0);
 		String score = best + " a " + other;
 
 		if (this.wereBehind.contains(winner)) {
@@ -384,9 +384,9 @@ public final class BattleCommentary {
 	 */
 	private Message comment(int robot, int priority, Topic topic, String... texts) {
 		String text = texts[this.random.nextInt(texts.length)];
-		String a = robot >= 0 ? this.names.getOrDefault(robot, "?") : "";
-		String b = this.names.entrySet().stream().filter(e -> e.getKey() != robot).map(Map.Entry::getValue).findFirst().orElse("");
-		return new Message(false, text.replace("{A}", a).replace("{B}", b), robot, Tone.PLAYER, priority, topic);
+		String string = robot >= 0 ? this.names.getOrDefault(robot, "?") : "";
+		String string2 = this.names.entrySet().stream().filter(event -> event.getKey() != robot).map(Map.Entry::getValue).findFirst().orElse("");
+		return new Message(false, text.replace("{A}", string).replace("{B}", string2), robot, Tone.PLAYER, priority, topic);
 	}
 
 	private static RobotState find(Turn turn, int index) {

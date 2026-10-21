@@ -42,10 +42,10 @@ public class Theme {
 	 */
 	public static final Interpolator OVERSHOOT = new Interpolator() {
 		@Override
-		protected double curve(double t) {
-			double s = 1.70158;
-			double u = t - 1;
-			return u * u * ((s + 1) * u + s) + 1;
+		protected double curve(double time) {
+			double text = 1.70158;
+			double uCoord = time - 1;
+			return uCoord * uCoord * ((text + 1) * uCoord + text) + 1;
 		}
 	};
 
@@ -64,9 +64,9 @@ public class Theme {
 			return;
 		}
 		for (String font : FONTS) {
-			try (InputStream is = Theme.class.getResourceAsStream("fonts/" + font)) {
-				Font.loadFont(is, 12);
-			} catch (IOException | NullPointerException e) {
+			try (InputStream inputStream = Theme.class.getResourceAsStream("fonts/" + font)) {
+				Font.loadFont(inputStream, 12);
+			} catch (IOException | NullPointerException nullPointerException) {
 				System.err.println("Fonte não carregada: " + font);
 			}
 		}

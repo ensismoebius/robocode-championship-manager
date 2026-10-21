@@ -117,18 +117,18 @@ public class Celebration extends TimedPane {
 	/**
 	 * A firework that bursts at once at a point of the screen (0 to 1)
 	 */
-	public void burst(double x, double y, Color color, int count) {
+	public void burst(double posX, double posY, Color color, int count) {
 		double width = Math.max(1, this.canvas.getWidth());
 		double height = Math.max(1, this.canvas.getHeight());
-		this.explode(x * width, y * height, color, count);
+		this.explode(posX * width, posY * height, color, count);
 	}
 
 	/**
 	 * A rocket that rises from the bottom and bursts
 	 */
-	public void rocket(double x, Color color, int count) {
+	public void rocket(double posX, Color color, int count) {
 		Rocket rocket = new Rocket();
-		rocket.x = x * Math.max(1, this.canvas.getWidth());
+		rocket.x = posX * Math.max(1, this.canvas.getWidth());
 		rocket.y = this.canvas.getHeight();
 		double height = Math.max(1, this.canvas.getHeight());
 		rocket.vy = -(height * (0.9 + this.random.nextDouble() * 0.5));
@@ -145,7 +145,7 @@ public class Celebration extends TimedPane {
 		double width = Math.max(1, this.canvas.getWidth());
 		double height = Math.max(1, this.canvas.getHeight());
 		for (int side = 0; side < 2; side++) {
-			for (int i = 0; i < perCannon; i++) {
+			for (int index = 0; index < perCannon; index++) {
 				Piece piece = this.piece();
 				piece.x = side == 0 ? 0 : width;
 				piece.y = height * 0.95;
@@ -162,16 +162,16 @@ public class Celebration extends TimedPane {
 	/**
 	 * Confetti thrown up from the point (0 to 1), like a party popper
 	 */
-	public void popper(double x, double y, int count, Color... colors) {
+	public void popper(double posX, double posY, int count, Color... colors) {
 		double width = Math.max(1, this.canvas.getWidth());
 		double height = Math.max(1, this.canvas.getHeight());
-		for (int i = 0; i < count; i++) {
+		for (int index = 0; index < count; index++) {
 			Piece piece = this.piece();
 			if (colors != null && colors.length > 0) {
 				piece.color = colors[this.random.nextInt(colors.length)];
 			}
-			piece.x = x * width;
-			piece.y = y * height;
+			piece.x = posX * width;
+			piece.y = posY * height;
 			double angle = Math.toRadians(60 + this.random.nextDouble() * 60);
 			double speed = height * (0.4 + this.random.nextDouble() * 0.6);
 			piece.vx = Math.cos(angle) * speed * (this.random.nextBoolean() ? 1 : -1) * 0.8;
@@ -198,22 +198,22 @@ public class Celebration extends TimedPane {
 		return piece;
 	}
 
-	private void explode(double x, double y, Color color, int count) {
+	private void explode(double posX, double posY, Color color, int count) {
 		double height = Math.max(1, this.canvas.getHeight());
 		double power = height * 0.5;
 		// Some bursts have a ring, some are round, all with a few white sparks
 		boolean ring = this.random.nextInt(3) == 0;
-		for (int i = 0; i < count; i++) {
+		for (int index = 0; index < count; index++) {
 			Spark spark = new Spark();
-			spark.x = spark.previousX = x;
-			spark.y = spark.previousY = y;
+			spark.x = spark.previousX = posX;
+			spark.y = spark.previousY = posY;
 			double angle = this.random.nextDouble() * Math.PI * 2;
 			double speed = power * (ring ? 0.85 + this.random.nextDouble() * 0.1 : 0.15 + this.random.nextDouble() * 0.85);
 			spark.vx = Math.cos(angle) * speed;
 			spark.vy = Math.sin(angle) * speed;
 			spark.life = 1.1 + this.random.nextDouble() * 0.9;
 			spark.size = 2 + this.random.nextDouble() * 2.2;
-			spark.color = i % 7 == 0 ? Color.WHITE : color;
+			spark.color = index % 7 == 0 ? Color.WHITE : color;
 			this.sparks.add(spark);
 		}
 	}
@@ -227,16 +227,16 @@ public class Celebration extends TimedPane {
 		if (width < 2 || height < 2) {
 			return;
 		}
-		GraphicsContext g = this.canvas.getGraphicsContext2D();
-		g.clearRect(0, 0, width, height);
-		g.setGlobalBlendMode(BlendMode.SRC_OVER);
+		GraphicsContext graphicsContext = this.canvas.getGraphicsContext2D();
+		graphicsContext.clearRect(0, 0, width, height);
+		graphicsContext.setGlobalBlendMode(BlendMode.SRC_OVER);
 
 		this.boost = Math.max(0, this.boost - delta * 0.9);
-		this.drawRays(g, width, height, seconds);
+		this.drawRays(graphicsContext, width, height, seconds);
 		this.launch(delta, width, height);
 		this.flyRockets(delta, height);
-		this.drawSparks(g, delta, height);
-		this.drawPieces(g, delta, height, seconds);
+		this.drawSparks(graphicsContext, delta, height);
+		this.drawPieces(graphicsContext, delta, height, seconds);
 	}
 
 	/** Rockets launched on their own and the confetti raining */
@@ -261,8 +261,8 @@ public class Celebration extends TimedPane {
 
 	/** The rockets rise, leaving sparks, and burst */
 	private void flyRockets(double delta, double height) {
-		for (int i = this.rockets.size() - 1; i >= 0; i--) {
-			Rocket rocket = this.rockets.get(i);
+		for (int index = this.rockets.size() - 1; index >= 0; index--) {
+			Rocket rocket = this.rockets.get(index);
 			rocket.fuse -= delta;
 			rocket.y += rocket.vy * delta;
 			rocket.vy *= Math.exp(-1.2 * delta);
@@ -277,20 +277,20 @@ public class Celebration extends TimedPane {
 			this.sparks.add(trail);
 			if (rocket.fuse <= 0) {
 				this.explode(rocket.x, rocket.y, rocket.color, rocket.count);
-				this.rockets.remove(i);
+				this.rockets.remove(index);
 			}
 		}
 
 	}
 
 	/** The sparks of the fireworks add their light */
-	private void drawSparks(GraphicsContext g, double delta, double height) {
-		g.setGlobalBlendMode(BlendMode.ADD);
-		for (int i = this.sparks.size() - 1; i >= 0; i--) {
-			Spark spark = this.sparks.get(i);
+	private void drawSparks(GraphicsContext graphicsContext, double delta, double height) {
+		graphicsContext.setGlobalBlendMode(BlendMode.ADD);
+		for (int index = this.sparks.size() - 1; index >= 0; index--) {
+			Spark spark = this.sparks.get(index);
 			spark.age += delta;
 			if (spark.age >= spark.life) {
-				this.sparks.remove(i);
+				this.sparks.remove(index);
 				continue;
 			}
 			spark.previousX = spark.x;
@@ -301,21 +301,21 @@ public class Celebration extends TimedPane {
 			spark.x += spark.vx * delta;
 			spark.y += spark.vy * delta;
 			double fade = 1 - spark.age / spark.life;
-			g.setStroke(Color.color(spark.color.getRed(), spark.color.getGreen(), spark.color.getBlue(), Math.min(1, fade * 1.4)));
-			g.setLineWidth(spark.size * (0.5 + 0.5 * fade));
-			g.strokeLine(spark.previousX, spark.previousY, spark.x, spark.y);
+			graphicsContext.setStroke(Color.color(spark.color.getRed(), spark.color.getGreen(), spark.color.getBlue(), Math.min(1, fade * 1.4)));
+			graphicsContext.setLineWidth(spark.size * (0.5 + 0.5 * fade));
+			graphicsContext.strokeLine(spark.previousX, spark.previousY, spark.x, spark.y);
 		}
-		g.setGlobalBlendMode(BlendMode.SRC_OVER);
+		graphicsContext.setGlobalBlendMode(BlendMode.SRC_OVER);
 
 	}
 
 	/** Confetti flips like paper falling */
-	private void drawPieces(GraphicsContext g, double delta, double height, double seconds) {
-		for (int i = this.pieces.size() - 1; i >= 0; i--) {
-			Piece piece = this.pieces.get(i);
+	private void drawPieces(GraphicsContext graphicsContext, double delta, double height, double seconds) {
+		for (int index = this.pieces.size() - 1; index >= 0; index--) {
+			Piece piece = this.pieces.get(index);
 			piece.age += delta;
 			if (piece.age >= piece.life || piece.y > height + 20) {
-				this.pieces.remove(i);
+				this.pieces.remove(index);
 				continue;
 			}
 			piece.vx *= Math.exp(-0.9 * delta);
@@ -325,37 +325,37 @@ public class Celebration extends TimedPane {
 			piece.x += (piece.vx + Math.sin(seconds * 2.5 + piece.phase) * 36) * delta;
 			piece.y += piece.vy * delta;
 			double flip = Math.abs(Math.cos(seconds * 6 + piece.phase));
-			g.setFill(piece.color);
-			g.fillRect(piece.x, piece.y, piece.size, Math.max(2, piece.size * flip));
+			graphicsContext.setFill(piece.color);
+			graphicsContext.fillRect(piece.x, piece.y, piece.size, Math.max(2, piece.size * flip));
 		}
 	}
 
-	private void drawRays(GraphicsContext g, double width, double height, double seconds) {
+	private void drawRays(GraphicsContext graphicsContext, double width, double height, double seconds) {
 		if (this.rayColor == null) {
 			return;
 		}
-		double cx = this.rayCenterX * width;
-		double cy = this.rayCenterY * height;
-		double reach = Math.hypot(Math.max(cx, width - cx), Math.max(cy, height - cy)) * 1.1;
+		double cxValue = this.rayCenterX * width;
+		double cyValue = this.rayCenterY * height;
+		double reach = Math.hypot(Math.max(cxValue, width - cxValue), Math.max(cyValue, height - cyValue)) * 1.1;
 		if (this.rayPaint == null || this.rayPaintSize != reach) {
-			Color c = this.rayColor;
-			this.rayPaint = new RadialGradient(0, 0, cx, cy, reach, false, CycleMethod.NO_CYCLE, new Stop(0, Color.color(c.getRed(), c.getGreen(), c.getBlue(), 0.55)),
-					new Stop(0.6, Color.color(c.getRed(), c.getGreen(), c.getBlue(), 0.16)), new Stop(1, Color.color(c.getRed(), c.getGreen(), c.getBlue(), 0)));
+			Color color2 = this.rayColor;
+			this.rayPaint = new RadialGradient(0, 0, cxValue, cyValue, reach, false, CycleMethod.NO_CYCLE, new Stop(0, Color.color(color2.getRed(), color2.getGreen(), color2.getBlue(), 0.55)),
+					new Stop(0.6, Color.color(color2.getRed(), color2.getGreen(), color2.getBlue(), 0.16)), new Stop(1, Color.color(color2.getRed(), color2.getGreen(), color2.getBlue(), 0)));
 			this.rayPaintSize = reach;
 		}
-		g.setGlobalBlendMode(BlendMode.ADD);
-		g.setGlobalAlpha(Math.min(1, 0.75 + this.boost));
-		g.setFill(this.rayPaint);
+		graphicsContext.setGlobalBlendMode(BlendMode.ADD);
+		graphicsContext.setGlobalAlpha(Math.min(1, 0.75 + this.boost));
+		graphicsContext.setFill(this.rayPaint);
 		int rays = 16;
 		double turn = seconds * this.raySpeed;
-		for (int i = 0; i < rays; i++) {
+		for (int index = 0; index < rays; index++) {
 			// Wide and narrow rays alternate and breathe
-			double angle = turn + Math.PI * 2 * i / rays;
-			double half = Math.PI / rays * (0.35 + 0.2 * Math.sin(seconds * 1.7 + i * 1.3) + (i % 2 == 0 ? 0.15 : 0));
-			g.fillPolygon(new double[] { cx, cx + Math.cos(angle - half) * reach, cx + Math.cos(angle + half) * reach }, new double[] { cy, cy + Math.sin(angle - half) * reach,
-					cy + Math.sin(angle + half) * reach }, 3);
+			double angle = turn + Math.PI * 2 * index / rays;
+			double half = Math.PI / rays * (0.35 + 0.2 * Math.sin(seconds * 1.7 + index * 1.3) + (index % 2 == 0 ? 0.15 : 0));
+			graphicsContext.fillPolygon(new double[] { cxValue, cxValue + Math.cos(angle - half) * reach, cxValue + Math.cos(angle + half) * reach }, new double[] { cyValue, cyValue + Math.sin(angle - half) * reach,
+					cyValue + Math.sin(angle + half) * reach }, 3);
 		}
-		g.setGlobalAlpha(1);
-		g.setGlobalBlendMode(BlendMode.SRC_OVER);
+		graphicsContext.setGlobalAlpha(1);
+		graphicsContext.setGlobalBlendMode(BlendMode.SRC_OVER);
 	}
 }

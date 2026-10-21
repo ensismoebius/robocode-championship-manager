@@ -37,23 +37,23 @@ final class LowPoly {
 	 * them and a cap on each
 	 */
 	void solid(double[][] bottom, double[][] top) {
-		int n = bottom.length;
+		int count = bottom.length;
 		double[] center = new double[3];
 		for (double[][] polygon : new double[][][] { bottom, top }) {
-			for (double[] p : polygon) {
-				for (int k = 0; k < 3; k++) {
-					center[k] += p[k] / (2 * n);
+			for (double[] point : polygon) {
+				for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+					center[deepIndex] += point[deepIndex] / (2 * count);
 				}
 			}
 		}
-		for (int i = 1; i < n - 1; i++) {
-			this.triangle(bottom[0], bottom[i], bottom[i + 1], center);
-			this.triangle(top[0], top[i], top[i + 1], center);
+		for (int index = 1; index < count - 1; index++) {
+			this.triangle(bottom[0], bottom[index], bottom[index + 1], center);
+			this.triangle(top[0], top[index], top[index + 1], center);
 		}
-		for (int i = 0; i < n; i++) {
-			int j = (i + 1) % n;
-			this.triangle(bottom[i], bottom[j], top[j], center);
-			this.triangle(bottom[i], top[j], top[i], center);
+		for (int index2 = 0; index2 < count; index2++) {
+			int innerIndex = (index2 + 1) % count;
+			this.triangle(bottom[index2], bottom[innerIndex], top[innerIndex], center);
+			this.triangle(bottom[index2], top[innerIndex], top[index2], center);
 		}
 	}
 
@@ -61,45 +61,45 @@ final class LowPoly {
 	 * A triangle facing away from the center (JavaFX takes the counter clockwise
 	 * side as the front)
 	 */
-	private void triangle(double[] a, double[] b, double[] c, double[] center) {
-		double[] u = { b[0] - a[0], b[1] - a[1], b[2] - a[2] };
-		double[] v = { c[0] - a[0], c[1] - a[1], c[2] - a[2] };
-		double[] normal = { u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0] };
+	private void triangle(double[] first, double[] second, double[] column, double[] center) {
+		double[] uCoord = { second[0] - first[0], second[1] - first[1], second[2] - first[2] };
+		double[] vCoord = { column[0] - first[0], column[1] - first[1], column[2] - first[2] };
+		double[] normal = { uCoord[1] * vCoord[2] - uCoord[2] * vCoord[1], uCoord[2] * vCoord[0] - uCoord[0] * vCoord[2], uCoord[0] * vCoord[1] - uCoord[1] * vCoord[0] };
 		double dot = 0;
-		for (int k = 0; k < 3; k++) {
-			dot += normal[k] * ((a[k] + b[k] + c[k]) / 3 - center[k]);
+		for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+			dot += normal[deepIndex] * ((first[deepIndex] + second[deepIndex] + column[deepIndex]) / 3 - center[deepIndex]);
 		}
 		if (dot < 0) {
-			double[] swap = b;
-			b = c;
-			c = swap;
+			double[] swap = second;
+			second = column;
+			column = swap;
 		}
 		int base = this.mesh.getPoints().size() / 3;
-		this.mesh.getPoints().addAll((float) a[0], (float) a[1], (float) a[2], (float) b[0], (float) b[1], (float) b[2], (float) c[0], (float) c[1], (float) c[2]);
+		this.mesh.getPoints().addAll((float) first[0], (float) first[1], (float) first[2], (float) second[0], (float) second[1], (float) second[2], (float) column[0], (float) column[1], (float) column[2]);
 		this.mesh.getFaces().addAll(base, 0, base + 1, 0, base + 2, 0);
 	}
 
-	void box(double cx, double cy, double cz, double sx, double sy, double sz) {
-		this.frustum(new double[][] { { cx - sx / 2, cz - sz / 2 }, { cx + sx / 2, cz - sz / 2 }, { cx + sx / 2, cz + sz / 2 }, { cx - sx / 2, cz + sz / 2 } }, cy + sy / 2, cy - sy / 2, 1);
+	void box(double cxValue, double cyValue, double czValue, double sxValue, double syValue, double szValue) {
+		this.frustum(new double[][] { { cxValue - sxValue / 2, czValue - szValue / 2 }, { cxValue + sxValue / 2, czValue - szValue / 2 }, { cxValue + sxValue / 2, czValue + szValue / 2 }, { cxValue - sxValue / 2, czValue + szValue / 2 } }, cyValue + syValue / 2, cyValue - syValue / 2, 1);
 	}
 
 	/**
 	 * A polygon seen from above {x, z}, from y0 up to y1, the top scaled around
 	 * the middle: sloped sides
 	 */
-	void frustum(double[][] outline, double y0, double y1, double topScale) {
-		int n = outline.length;
-		double cx = 0;
-		double cz = 0;
-		for (double[] p : outline) {
-			cx += p[0] / n;
-			cz += p[1] / n;
+	void frustum(double[][] outline, double y0Value, double y1Value, double topScale) {
+		int count = outline.length;
+		double cxValue = 0;
+		double czValue = 0;
+		for (double[] point : outline) {
+			cxValue += point[0] / count;
+			czValue += point[1] / count;
 		}
-		double[][] bottom = new double[n][];
-		double[][] top = new double[n][];
-		for (int i = 0; i < n; i++) {
-			bottom[i] = new double[] { outline[i][0], y0, outline[i][1] };
-			top[i] = new double[] { cx + (outline[i][0] - cx) * topScale, y1, cz + (outline[i][1] - cz) * topScale };
+		double[][] bottom = new double[count][];
+		double[][] top = new double[count][];
+		for (int index = 0; index < count; index++) {
+			bottom[index] = new double[] { outline[index][0], y0Value, outline[index][1] };
+			top[index] = new double[] { cxValue + (outline[index][0] - cxValue) * topScale, y1Value, czValue + (outline[index][1] - czValue) * topScale };
 		}
 		this.solid(bottom, top);
 	}
@@ -107,53 +107,53 @@ final class LowPoly {
 	/**
 	 * A profile {z, y} pushed along x
 	 */
-	void prismZY(double[][] profile, double x0, double x1) {
-		int n = profile.length;
-		double[][] a = new double[n][];
-		double[][] b = new double[n][];
-		for (int i = 0; i < n; i++) {
-			a[i] = new double[] { x0, profile[i][1], profile[i][0] };
-			b[i] = new double[] { x1, profile[i][1], profile[i][0] };
+	void prismZY(double[][] profile, double x0Value, double x1Value) {
+		int count = profile.length;
+		double[][] first = new double[count][];
+		double[][] second = new double[count][];
+		for (int index = 0; index < count; index++) {
+			first[index] = new double[] { x0Value, profile[index][1], profile[index][0] };
+			second[index] = new double[] { x1Value, profile[index][1], profile[index][0] };
 		}
-		this.solid(a, b);
+		this.solid(first, second);
 	}
 
 	/**
 	 * A profile {x, y} pushed along z
 	 */
-	void prismXY(double[][] profile, double z0, double z1) {
-		int n = profile.length;
-		double[][] a = new double[n][];
-		double[][] b = new double[n][];
-		for (int i = 0; i < n; i++) {
-			a[i] = new double[] { profile[i][0], profile[i][1], z0 };
-			b[i] = new double[] { profile[i][0], profile[i][1], z1 };
+	void prismXY(double[][] profile, double z0Value, double z1Value) {
+		int count = profile.length;
+		double[][] first = new double[count][];
+		double[][] second = new double[count][];
+		for (int index = 0; index < count; index++) {
+			first[index] = new double[] { profile[index][0], profile[index][1], z0Value };
+			second[index] = new double[] { profile[index][0], profile[index][1], z1Value };
 		}
-		this.solid(a, b);
+		this.solid(first, second);
 	}
 
 	/**
 	 * A hexagon in the z, y plane, pushed along x: a plate of armor
 	 */
-	void hexPlate(double z, double y, double radiusZ, double radiusY, double x0, double x1) {
+	void hexPlate(double posZ, double posY, double radiusZ, double radiusY, double x0Value, double x1Value) {
 		double[][] hexagon = new double[6][];
-		for (int i = 0; i < 6; i++) {
-			hexagon[i] = new double[] { z + radiusZ * Math.cos(Math.PI / 3 * i), y + radiusY * Math.sin(Math.PI / 3 * i) };
+		for (int index = 0; index < 6; index++) {
+			hexagon[index] = new double[] { posZ + radiusZ * Math.cos(Math.PI / 3 * index), posY + radiusY * Math.sin(Math.PI / 3 * index) };
 		}
-		this.prismZY(hexagon, x0, x1);
+		this.prismZY(hexagon, x0Value, x1Value);
 	}
 
 	/**
 	 * A vertical cylinder
 	 */
-	void cylinderY(double cx, double cz, double radius, double y0, double y1, int sides) {
+	void cylinderY(double cxValue, double czValue, double radius, double y0Value, double y1Value, int sides) {
 		double[][] bottom = new double[sides][];
 		double[][] top = new double[sides][];
-		for (int i = 0; i < sides; i++) {
-			double x = cx + radius * Math.cos(Math.PI * 2 * i / sides);
-			double z = cz + radius * Math.sin(Math.PI * 2 * i / sides);
-			bottom[i] = new double[] { x, y0, z };
-			top[i] = new double[] { x, y1, z };
+		for (int index = 0; index < sides; index++) {
+			double posX = cxValue + radius * Math.cos(Math.PI * 2 * index / sides);
+			double posZ = czValue + radius * Math.sin(Math.PI * 2 * index / sides);
+			bottom[index] = new double[] { posX, y0Value, posZ };
+			top[index] = new double[] { posX, y1Value, posZ };
 		}
 		this.solid(bottom, top);
 	}
@@ -161,26 +161,26 @@ final class LowPoly {
 	/**
 	 * A cylinder along z, like a gun barrel
 	 */
-	void cylinderZ(double cx, double cy, double radius, double z0, double z1, int sides) {
+	void cylinderZ(double cxValue, double cyValue, double radius, double z0Value, double z1Value, int sides) {
 		double[][] profile = new double[sides][];
-		for (int i = 0; i < sides; i++) {
-			profile[i] = new double[] { cx + radius * Math.cos(Math.PI * 2 * i / sides), cy + radius * Math.sin(Math.PI * 2 * i / sides) };
+		for (int index = 0; index < sides; index++) {
+			profile[index] = new double[] { cxValue + radius * Math.cos(Math.PI * 2 * index / sides), cyValue + radius * Math.sin(Math.PI * 2 * index / sides) };
 		}
-		this.prismXY(profile, z0, z1);
+		this.prismXY(profile, z0Value, z1Value);
 	}
 
 	/**
 	 * A spindle along z, pointed at both ends: a hexagon ring in the middle (at z)
 	 * and a tip in front and another behind
 	 */
-	void spindle(double cx, double cy, double z, double radius, double front, double back, int sides) {
+	void spindle(double cxValue, double cyValue, double posZ, double radius, double front, double back, int sides) {
 		double[][] ring = new double[sides][];
 		double[][] nose = new double[sides][];
 		double[][] tail = new double[sides][];
-		for (int i = 0; i < sides; i++) {
-			ring[i] = new double[] { cx + radius * Math.cos(Math.PI * 2 * i / sides), cy + radius * Math.sin(Math.PI * 2 * i / sides), z };
-			nose[i] = new double[] { cx, cy, z + front };
-			tail[i] = new double[] { cx, cy, z - back };
+		for (int index = 0; index < sides; index++) {
+			ring[index] = new double[] { cxValue + radius * Math.cos(Math.PI * 2 * index / sides), cyValue + radius * Math.sin(Math.PI * 2 * index / sides), posZ };
+			nose[index] = new double[] { cxValue, cyValue, posZ + front };
+			tail[index] = new double[] { cxValue, cyValue, posZ - back };
 		}
 		this.solid(ring, nose);
 		this.solid(ring, tail);
@@ -189,31 +189,31 @@ final class LowPoly {
 	/**
 	 * A thin tube from a to b, like a segment of a lightning bolt
 	 */
-	void tube(double[] a, double[] b, double radius, int sides) {
-		double[] direction = { b[0] - a[0], b[1] - a[1], b[2] - a[2] };
+	void tube(double[] first, double[] second, double radius, int sides) {
+		double[] direction = { second[0] - first[0], second[1] - first[1], second[2] - first[2] };
 		double length = Math.sqrt(direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2]);
 		if (length < 1e-6) {
 			return;
 		}
-		for (int k = 0; k < 3; k++) {
-			direction[k] /= length;
+		for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
+			direction[deepIndex] /= length;
 		}
 		double[] reference = Math.abs(direction[1]) < 0.9 ? new double[] { 0, 1, 0 } : new double[] { 1, 0, 0 };
-		double[] u = { direction[1] * reference[2] - direction[2] * reference[1], direction[2] * reference[0] - direction[0] * reference[2], direction[0] * reference[1] - direction[1] * reference[0] };
-		double size = Math.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
-		for (int k = 0; k < 3; k++) {
-			u[k] /= size;
+		double[] uCoord = { direction[1] * reference[2] - direction[2] * reference[1], direction[2] * reference[0] - direction[0] * reference[2], direction[0] * reference[1] - direction[1] * reference[0] };
+		double size = Math.sqrt(uCoord[0] * uCoord[0] + uCoord[1] * uCoord[1] + uCoord[2] * uCoord[2]);
+		for (int deepIndex2 = 0; deepIndex2 < 3; deepIndex2++) {
+			uCoord[deepIndex2] /= size;
 		}
-		double[] v = { direction[1] * u[2] - direction[2] * u[1], direction[2] * u[0] - direction[0] * u[2], direction[0] * u[1] - direction[1] * u[0] };
+		double[] vCoord = { direction[1] * uCoord[2] - direction[2] * uCoord[1], direction[2] * uCoord[0] - direction[0] * uCoord[2], direction[0] * uCoord[1] - direction[1] * uCoord[0] };
 		double[][] bottom = new double[sides][3];
 		double[][] top = new double[sides][3];
-		for (int i = 0; i < sides; i++) {
-			double cos = Math.cos(Math.PI * 2 * i / sides) * radius;
-			double sin = Math.sin(Math.PI * 2 * i / sides) * radius;
-			for (int k = 0; k < 3; k++) {
-				double offset = u[k] * cos + v[k] * sin;
-				bottom[i][k] = a[k] + offset;
-				top[i][k] = b[k] + offset;
+		for (int index = 0; index < sides; index++) {
+			double cos = Math.cos(Math.PI * 2 * index / sides) * radius;
+			double sin = Math.sin(Math.PI * 2 * index / sides) * radius;
+			for (int deepIndex3 = 0; deepIndex3 < 3; deepIndex3++) {
+				double offset = uCoord[deepIndex3] * cos + vCoord[deepIndex3] * sin;
+				bottom[index][deepIndex3] = first[deepIndex3] + offset;
+				top[index][deepIndex3] = second[deepIndex3] + offset;
 			}
 		}
 		this.solid(bottom, top);
@@ -222,12 +222,12 @@ final class LowPoly {
 	/**
 	 * A flat ring on the floor plane, from y0 to y1
 	 */
-	void ring(double inner, double outer, double y0, double y1, int segments) {
-		for (int i = 0; i < segments; i++) {
-			double a = Math.PI * 2 * i / segments;
-			double b = Math.PI * 2 * (i + 1) / segments;
-			this.frustum(new double[][] { { inner * Math.cos(a), inner * Math.sin(a) }, { outer * Math.cos(a), outer * Math.sin(a) }, { outer * Math.cos(b), outer * Math.sin(b) },
-					{ inner * Math.cos(b), inner * Math.sin(b) } }, y0, y1, 1);
+	void ring(double inner, double outer, double y0Value, double y1Value, int segments) {
+		for (int index = 0; index < segments; index++) {
+			double first = Math.PI * 2 * index / segments;
+			double second = Math.PI * 2 * (index + 1) / segments;
+			this.frustum(new double[][] { { inner * Math.cos(first), inner * Math.sin(first) }, { outer * Math.cos(first), outer * Math.sin(first) }, { outer * Math.cos(second), outer * Math.sin(second) },
+					{ inner * Math.cos(second), inner * Math.sin(second) } }, y0Value, y1Value, 1);
 		}
 	}
 
@@ -241,17 +241,17 @@ final class LowPoly {
 	 * @param roughness
 	 *            how far the points move, 0.3 to 0.7
 	 */
-	void rock(double cx, double cz, double baseY, double height, double radiusX, double radiusZ, int sides, double topScale, double roughness, java.util.Random random) {
+	void rock(double cxValue, double czValue, double baseY, double height, double radiusX, double radiusZ, int sides, double topScale, double roughness, java.util.Random random) {
 		double[][] bottom = new double[sides][];
 		double[][] top = new double[sides][];
 		double shiftX = (random.nextDouble() - 0.5) * radiusX * 0.5;
 		double shiftZ = (random.nextDouble() - 0.5) * radiusZ * 0.5;
-		for (int i = 0; i < sides; i++) {
-			double angle = Math.PI * 2 * (i + (random.nextDouble() - 0.5) * 0.5) / sides;
-			double r = 1 - roughness * 0.5 + random.nextDouble() * roughness;
+		for (int index = 0; index < sides; index++) {
+			double angle = Math.PI * 2 * (index + (random.nextDouble() - 0.5) * 0.5) / sides;
+			double row = 1 - roughness * 0.5 + random.nextDouble() * roughness;
 			double scale = topScale * (0.8 + random.nextDouble() * 0.4);
-			bottom[i] = new double[] { cx + Math.cos(angle) * radiusX * r, baseY, cz + Math.sin(angle) * radiusZ * r };
-			top[i] = new double[] { cx + shiftX + Math.cos(angle) * radiusX * r * scale, baseY - height * (0.8 + random.nextDouble() * 0.3), cz + shiftZ + Math.sin(angle) * radiusZ * r * scale };
+			bottom[index] = new double[] { cxValue + Math.cos(angle) * radiusX * row, baseY, czValue + Math.sin(angle) * radiusZ * row };
+			top[index] = new double[] { cxValue + shiftX + Math.cos(angle) * radiusX * row * scale, baseY - height * (0.8 + random.nextDouble() * 0.3), czValue + shiftZ + Math.sin(angle) * radiusZ * row * scale };
 		}
 		this.solid(bottom, top);
 	}

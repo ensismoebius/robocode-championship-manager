@@ -57,14 +57,14 @@ public final class GameDialog {
 	 *         Escape)
 	 */
 	public static boolean confirm(String title, Node content) {
-		Button ok = new Button("OK");
-		ok.getStyleClass().add("primary");
+		Button button = new Button("OK");
+		button.getStyleClass().add("primary");
 		Button cancel = new Button("Cancelar");
-		VBox panel = GameDialog.panel(title, content, cancel, ok);
-		ok.setOnAction(event -> GameWindow.close(panel, Boolean.TRUE));
+		VBox panel = GameDialog.panel(title, content, cancel, button);
+		button.setOnAction(event -> GameWindow.close(panel, Boolean.TRUE));
 		cancel.setOnAction(event -> GameWindow.close(panel, Boolean.FALSE));
 		Sfx.blip();
-		return GameWindow.showModal(panel, ok, cancel) == Boolean.TRUE;
+		return GameWindow.showModal(panel, button, cancel) == Boolean.TRUE;
 	}
 
 	public static void error(String message) {
@@ -78,14 +78,14 @@ public final class GameDialog {
 	}
 
 	private static void inform(String title, String message, String styleClass) {
-		Button ok = new Button("OK");
-		ok.getStyleClass().add("primary");
-		VBox panel = GameDialog.panel(title, GameDialog.message(message), ok);
+		Button button = new Button("OK");
+		button.getStyleClass().add("primary");
+		VBox panel = GameDialog.panel(title, GameDialog.message(message), button);
 		if (styleClass != null) {
 			panel.getStyleClass().add(styleClass);
 		}
-		ok.setOnAction(event -> GameWindow.close(panel, null));
-		GameWindow.showModal(panel, ok, ok);
+		button.setOnAction(event -> GameWindow.close(panel, null));
+		GameWindow.showModal(panel, button, button);
 	}
 
 	/**
@@ -115,12 +115,12 @@ public final class GameDialog {
 			Sfx.blip();
 		}
 
-		TranslateTransition in = new TranslateTransition(Duration.millis(200), label);
-		in.setFromY(-60);
-		in.setToY(84);
+		TranslateTransition translateTransition = new TranslateTransition(Duration.millis(200), label);
+		translateTransition.setFromY(-60);
+		translateTransition.setToY(84);
 		FadeTransition out = new FadeTransition(Duration.millis(400), label);
 		out.setToValue(0);
-		SequentialTransition life = new SequentialTransition(in, new PauseTransition(Duration.seconds(2.5)), out);
+		SequentialTransition life = new SequentialTransition(translateTransition, new PauseTransition(Duration.seconds(2.5)), out);
 		life.setOnFinished(event -> GameWindow.removeNotice(label));
 		life.play();
 	}

@@ -30,8 +30,8 @@ public class ServletAuthenticator {
 		if (session == null) {
 			return null;
 		}
-		Object id = session.getAttribute(SESSION_KEY);
-		return id instanceof Long ? (Long) id : null;
+		Object object = session.getAttribute(SESSION_KEY);
+		return object instanceof Long ? (Long) object : null;
 	}
 
 	public static boolean isAuthenticated(HttpServletRequest request) {
@@ -46,7 +46,7 @@ public class ServletAuthenticator {
 			return false;
 		}
 
-		List<Object[]> rows = Database.read(em -> em
+		List<Object[]> rows = Database.read(emValue -> emValue
 				.createQuery("select o.id, a from Opponent o join o.authors a where a.login = :login", Object[].class)
 				.setParameter("login", login).getResultList());
 

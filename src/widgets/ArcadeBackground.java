@@ -89,51 +89,51 @@ public class ArcadeBackground extends Pane {
 		if (width <= 0 || height <= 0) {
 			return;
 		}
-		GraphicsContext g = this.canvas.getGraphicsContext2D();
+		GraphicsContext graphicsContext = this.canvas.getGraphicsContext2D();
 		double horizon = height * HORIZON;
 
 		// Sky
-		g.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#05060c")), new Stop(0.58, Color.web("#1a1033")), new Stop(1, Color.web("#0b0e14"))));
-		g.fillRect(0, 0, width, height);
+		graphicsContext.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#05060c")), new Stop(0.58, Color.web("#1a1033")), new Stop(1, Color.web("#0b0e14"))));
+		graphicsContext.fillRect(0, 0, width, height);
 
 		// Stars
 		for (double[] star : this.stars) {
 			double twinkle = 0.35 + 0.65 * Math.abs(Math.sin(seconds * 1.3 + star[2]));
-			g.setFill(Color.gray(1, twinkle * 0.8));
+			graphicsContext.setFill(Color.gray(1, twinkle * 0.8));
 			double size = star[2] > 5 ? 2.5 : 1.5;
-			g.fillRect(star[0] * width, star[1] * height, size, size);
+			graphicsContext.fillRect(star[0] * width, star[1] * height, size, size);
 		}
 
 		// Glow on the horizon
-		g.setFill(new RadialGradient(0, 0, width / 2, horizon, width * 0.45, false, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ff3d6e", 0.35)), new Stop(1, Color.TRANSPARENT)));
-		g.fillRect(0, 0, width, height);
+		graphicsContext.setFill(new RadialGradient(0, 0, width / 2, horizon, width * 0.45, false, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ff3d6e", 0.35)), new Stop(1, Color.TRANSPARENT)));
+		graphicsContext.fillRect(0, 0, width, height);
 
 		// Floor
-		g.setFill(Color.web("#07080f"));
-		g.fillRect(0, horizon, width, height - horizon);
+		graphicsContext.setFill(Color.web("#07080f"));
+		graphicsContext.fillRect(0, horizon, width, height - horizon);
 
-		g.setLineWidth(1.5);
+		graphicsContext.setLineWidth(1.5);
 
 		// Lines going to the vanishing point
 		double vanishX = width / 2;
-		for (int i = -24; i <= 24; i++) {
-			double bottomX = vanishX + i * width / 12;
-			g.setStroke(this.gridColor.deriveColor(0, 1, 1, 0.45));
-			g.strokeLine(vanishX + i * 6, horizon, bottomX, height);
+		for (int index = -24; index <= 24; index++) {
+			double bottomX = vanishX + index * width / 12;
+			graphicsContext.setStroke(this.gridColor.deriveColor(0, 1, 1, 0.45));
+			graphicsContext.strokeLine(vanishX + index * 6, horizon, bottomX, height);
 		}
 
 		// Horizontal lines moving towards the viewer
 		double offset = (seconds * 0.6) % 1.0;
-		for (int i = 0; i < 16; i++) {
-			double depth = (i + offset) / 16;
-			double y = horizon + (height - horizon) * depth * depth;
-			g.setStroke(this.gridColor.deriveColor(0, 1, 1, 0.15 + 0.6 * depth));
-			g.strokeLine(0, y, width, y);
+		for (int index2 = 0; index2 < 16; index2++) {
+			double depth = (index2 + offset) / 16;
+			double posY = horizon + (height - horizon) * depth * depth;
+			graphicsContext.setStroke(this.gridColor.deriveColor(0, 1, 1, 0.15 + 0.6 * depth));
+			graphicsContext.strokeLine(0, posY, width, posY);
 		}
 
 		// The horizon line itself
-		g.setStroke(Color.web("#ff3d6e", 0.9));
-		g.setLineWidth(2);
-		g.strokeLine(0, horizon, width, horizon);
+		graphicsContext.setStroke(Color.web("#ff3d6e", 0.9));
+		graphicsContext.setLineWidth(2);
+		graphicsContext.strokeLine(0, horizon, width, horizon);
 	}
 }

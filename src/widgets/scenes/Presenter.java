@@ -68,11 +68,11 @@ final class Presenter extends ImageView {
 	/**
 	 * Goes down when nothing is said for a while
 	 */
-	void tick(double dt) {
+	void tick(double deltaTime) {
 		if (!this.up) {
 			return;
 		}
-		this.hold -= dt;
+		this.hold -= deltaTime;
 		if (this.hold <= 0) {
 			this.up = false;
 			this.topic = null;
@@ -80,15 +80,15 @@ final class Presenter extends ImageView {
 		}
 	}
 
-	private void slide(double from, double to, double delay, boolean bounce) {
+	private void slide(double from, double toValue, double delay, boolean bounce) {
 		if (this.slide != null) {
 			this.slide.stop();
 		}
 		this.slide = new TranslateTransition(Duration.millis(bounce ? 320 : 280), this);
-		this.slide.setFromY(bounce ? to : from);
-		this.slide.setToY(bounce ? 0 : to);
+		this.slide.setFromY(bounce ? toValue : from);
+		this.slide.setToY(bounce ? 0 : toValue);
 		this.slide.setInterpolator(bounce ? Theme.OVERSHOOT : Interpolator.EASE_BOTH);
-		if (!bounce && to > 0) {
+		if (!bounce && toValue > 0) {
 			this.slide.setOnFinished(event -> this.setVisible(this.up));
 		}
 		this.slide.play();
@@ -98,11 +98,11 @@ final class Presenter extends ImageView {
 	 * The picture, null if it does not exist
 	 */
 	private Image image(Topic topic) {
-		return this.images.computeIfAbsent(topic, t -> {
-			try (InputStream in = Presenter.class.getResourceAsStream(t.image())) {
+		return this.images.computeIfAbsent(topic, time -> {
+			try (InputStream inputStream = Presenter.class.getResourceAsStream(time.image())) {
 				// Loaded bigger than shown, it stays sharp
-				return in == null ? null : new Image(in, 0, this.getFitHeight() * 2, true, true);
-			} catch (IOException e) {
+				return inputStream == null ? null : new Image(inputStream, 0, this.getFitHeight() * 2, true, true);
+			} catch (IOException ioException) {
 				return null;
 			}
 		});
