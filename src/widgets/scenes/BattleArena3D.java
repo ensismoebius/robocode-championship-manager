@@ -16,10 +16,7 @@ import java.util.function.Supplier;
 import javax.imageio.ImageIO;
 
 import javafx.animation.AnimationTimer;
-import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
 import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
@@ -119,11 +116,11 @@ public class BattleArena3D extends StackPane {
 	private static final int PHOTO_WIDTH = 640;
 	private static final int PHOTO_HEIGHT = 360;
 	/** A hit this strong (power) makes a photo: the first one of each round */
-	private static final double PHOTO_HIT_POWER = 2.5;
+	static final double PHOTO_HIT_POWER = 2.5;
 	/** Seconds from a hit to its photo, so the flash of the impact has grown */
-	private static final double PHOTO_HIT_DELAY = 0.2;
+	static final double PHOTO_HIT_DELAY = 0.2;
 	/** Seconds from a destruction to its photo: the tank is falling, the battle is held (see freezeForReplay) */
-	private static final double PHOTO_DESTRUCTION_DELAY = 1.0;
+	static final double PHOTO_DESTRUCTION_DELAY = 1.0;
 	/** Turns of the replay before and after the death */
 	private static final int REPLAY_BEFORE = 30;
 	private static final int REPLAY_AFTER = 10;
@@ -133,7 +130,7 @@ public class BattleArena3D extends StackPane {
 	private static final double REPLAY_AFTER_SPEED = 0.22;
 
 	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
-	private static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
+	static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
 	enum ViewMode {
 		CINEMATIC("CINEMATOGRÁFICA", -30, 45), FREE("LIVRE", -38, 38), ISOMETRIC("ISOMÉTRICA", -35.26, 12), TOP_DOWN("VISTA DE CIMA", -89.5, 12);
@@ -160,7 +157,7 @@ public class BattleArena3D extends StackPane {
 
 	private final List<Opponent> fighters;
 	private Runnable onFinished;
-	private final BattleAudio audio = new BattleAudio();
+	final BattleAudio audio = new BattleAudio();
 	final Random random = new Random();
 
 	// 3D
@@ -168,7 +165,7 @@ public class BattleArena3D extends StackPane {
 	final Group arena = new Group();
 	final Group effects = new Group();
 	private final Group robotLayer = new Group();
-	private final Group bulletLayer = new Group();
+	final Group bulletLayer = new Group();
 	/**
 	 * The cage panels. JavaFX does not sort translucent shapes: they are drawn in
 	 * the order of the scene graph and hide what is drawn after them, so the
@@ -195,8 +192,9 @@ public class BattleArena3D extends StackPane {
 	final ArenaHud hud = new ArenaHud(this);
 	final VolcanoArena volcano = new VolcanoArena(this);
 	final JungleArena jungle = new JungleArena(this);
+	final ArenaBullets shots = new ArenaBullets(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
-	private final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
+	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
 	final PerspectiveCamera camera = new PerspectiveCamera(true);
 	private final Translate cameraLook = new Translate();
@@ -223,7 +221,7 @@ public class BattleArena3D extends StackPane {
 	private double roll = 0;
 	private double rollTarget = 0;
 	private double follow = 4;
-	private double shake = 0;
+	double shake = 0;
 	private double cinematicOrbitAngle = 0;
 
 	// Free, isometric and top views
@@ -266,22 +264,22 @@ public class BattleArena3D extends StackPane {
 	final HBox replayTag = new HBox(14);
 	/** The card of the robot being presented */
 	private final StackPane showcaseLayer = new StackPane();
-	private final Region whiteFlash = new Region();
+	final Region whiteFlash = new Region();
 
 	// Playback
 	BattleRecording recording;
 	double fieldWidth = 800;
 	double fieldHeight = 600;
 	final Map<Integer, RobotView> robots = new HashMap<Integer, RobotView>();
-	private final Map<Integer, Group> bullets = new HashMap<Integer, Group>();
-	private final Set<Integer> bulletsSeen = new HashSet<Integer>();
-	private final Set<Integer> bulletsExploded = new HashSet<Integer>();
-	private final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
+	final Map<Integer, Group> bullets = new HashMap<Integer, Group>();
+	final Set<Integer> bulletsSeen = new HashSet<Integer>();
+	final Set<Integer> bulletsExploded = new HashSet<Integer>();
+	final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
 	final Map<Integer, Integer> roundWins = new HashMap<Integer, Integer>();
 	Phase phase = Phase.LOADING;
 	private double phaseTime = 0;
 	int round = 0;
-	private double turnPosition = 0;
+	double turnPosition = 0;
 	private int lastTurnProcessed = -1;
 	/** Index in SPEEDS, starts with the configured one */
 	int speed;
@@ -295,7 +293,7 @@ public class BattleArena3D extends StackPane {
 	/** Where the critter the fly by starts on is now, while the camera stays on it */
 	private Supplier<double[]> flyFocusSource;
 	/** The animals that live around the field */
-	private Critters critters;
+	Critters critters;
 	/** The glacial sea of the ice arena: its middle and its radius, 0 when there is none */
 	private final double[] flyLookEnd = new double[3];
 	private double flyFovEnd;
@@ -306,7 +304,7 @@ public class BattleArena3D extends StackPane {
 	private String roundTitle = "";
 	private String roundSubtitle;
 	boolean paused = false;
-	private double hitTension = 0;
+	double hitTension = 0;
 	/** Animations of effects run slower in the replay */
 	double effectRate = 1;
 
@@ -317,15 +315,15 @@ public class BattleArena3D extends StackPane {
 	private int replayTo;
 	private int fatalBullet = -1;
 	private int impactTurn = -1;
-	private boolean replayed = false;
+	boolean replayed = false;
 	// The photos of the key moments of the battle, see takePhoto
 	private final List<BattlePhoto> photos = new ArrayList<BattlePhoto>();
-	private final List<PendingPhoto> pendingPhotos = new ArrayList<PendingPhoto>();
-	private boolean hitPhotoTaken = false;
+	final List<PendingPhoto> pendingPhotos = new ArrayList<PendingPhoto>();
+	boolean hitPhotoTaken = false;
 
 	// Callouts and comments
-	private BattleCommentary commentary;
-	private final ArenaCommentary announcer = new ArenaCommentary(this);
+	BattleCommentary commentary;
+	final ArenaCommentary announcer = new ArenaCommentary(this);
 	private BattleCommentary.Headline headline;
 	private boolean headlineShown = false;
 
@@ -758,7 +756,7 @@ public class BattleArena3D extends StackPane {
 	/**
 	 * One segment of the invisible force field. It only appears when struck.
 	 */
-	private static class FenceSegment {
+	static class FenceSegment {
 		final int wall;
 		final int index;
 		final Box box;
@@ -793,11 +791,11 @@ public class BattleArena3D extends StackPane {
 	 * Robocode position to the world: the field is centered, north is +Z, up is
 	 * -Y
 	 */
-	private double worldX(double x) {
+	double worldX(double x) {
 		return x - this.fieldWidth / 2;
 	}
 
-	private double worldZ(double y) {
+	double worldZ(double y) {
 		return y - this.fieldHeight / 2;
 	}
 
@@ -1176,10 +1174,10 @@ public class BattleArena3D extends StackPane {
 		this.bulletsSeen.clear();
 		this.bulletsExploded.clear();
 		this.lowEnergyWarned.clear();
-		this.clearBullets();
+		this.shots.clearBullets();
 		this.effects.getChildren().clear();
 		this.fire.clear();
-		this.resetFence();
+		this.shots.resetFence();
 		if (this.commentary != null) {
 			this.commentary.startRound();
 			if (round > 0 && round + 1 == this.recording.getRounds().size()) {
@@ -1385,7 +1383,7 @@ public class BattleArena3D extends StackPane {
 		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
 
 		for (int t = this.lastTurnProcessed + 1; t <= index; t++) {
-			this.turnEvents(turns.get(t), t == 0 ? null : turns.get(t - 1), t);
+			this.shots.turnEvents(turns.get(t), t == 0 ? null : turns.get(t - 1), t);
 		}
 		this.lastTurnProcessed = Math.max(this.lastTurnProcessed, index);
 
@@ -1404,14 +1402,14 @@ public class BattleArena3D extends StackPane {
 		}
 		this.hud.updateHud(energies);
 
-		this.showBullets(turns, index, fraction);
+		this.shots.showBullets(turns, index, fraction);
 	}
 
 	/**
 	 * Where a robot is drawn at a moment (in turns, with the fraction) and its
 	 * heading, as showTurn places it
 	 */
-	private static double[] pose(List<Turn> turns, int robot, double time) {
+	static double[] pose(List<Turn> turns, int robot, double time) {
 		int index = Math.max(0, Math.min((int) Math.floor(time), turns.size() - 1));
 		double fraction = Math.max(0, Math.min(1, time - index));
 		RobotState state = find(turns.get(index).robots(), robot, null);
@@ -1422,7 +1420,7 @@ public class BattleArena3D extends StackPane {
 		return new double[] { lerp(state.x(), after.x(), fraction), lerp(state.y(), after.y(), fraction), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction) };
 	}
 
-	private static Bullet findBullet(Turn turn, int id) {
+	static Bullet findBullet(Turn turn, int id) {
 		for (Bullet bullet : turn.bullets()) {
 			if (bullet.id() == id) {
 				return bullet;
@@ -1460,246 +1458,10 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/** A photo waiting for its moment: the seconds left, then it is taken */
-	private record PendingPhoto(double remaining, int round, boolean destruction, Opponent subject, double power) {
+	record PendingPhoto(double remaining, int round, boolean destruction, Opponent subject, double power) {
 	}
 
-	private record Flight(double sx, double sy, double ux, double uy, double total, double born, double duration, Bullet hit, double side, double ahead) {
-	}
-
-	/**
-	 * Robocode hits with a square of 36 that does not turn with the robot, the
-	 * tank is narrower (and longer): a bullet that grazes a corner of the square
-	 * would pass by the side of the tank. The point of the hit is brought well
-	 * inside the hull (13.5 to each side, 22 to the front and to the back), so
-	 * the bolt always goes into it.
-	 */
-	private static final double HULL_SIDE = 8;
-	private static final double HULL_AHEAD = 15;
-	/** The height of the gun, where the bolts leave */
-	private static final double BARREL_HEIGHT = -17.2;
-	/**
-	 * The height of the middle of the hull (from -7 to -13.5): the tank is low,
-	 * at the height of the gun a bolt would pass over it
-	 */
-	private static final double HULL_HEIGHT = -10.5;
-
-	/** How far the end of the gun is from the center of the tank */
-	private static final double MUZZLE = 44;
-
-	private final Map<Integer, Flight> flights = new HashMap<Integer, Flight>();
-
-	/**
-	 * The records only say where a bullet is at the end of each turn, one step
-	 * after it left the center of the shooter, and the last one is the point of
-	 * the hit (that follows the victim). So the flight is made from the whole
-	 * path: the bolt comes out of the muzzle of the gun and goes straight to the
-	 * point of the hit, always at the same pace, and explodes when it gets there.
-	 */
-	private Flight flight(List<Turn> turns, int index, Bullet seen) {
-		Flight known = this.flights.get(seen.id());
-		if (known != null) {
-			return known;
-		}
-		int first = index;
-		while (first > 0 && findBullet(turns.get(first - 1), seen.id()) != null) {
-			first--;
-		}
-		Bullet start = findBullet(turns.get(first), seen.id());
-		if (start == null) {
-			first = index + 1;
-			start = seen;
-		}
-		Bullet last = start;
-		Bullet previous = start;
-		Bullet hit = null;
-		int end = first;
-		for (int k = first + 1; k < turns.size(); k++) {
-			Bullet now = findBullet(turns.get(k), seen.id());
-			if (now == null) {
-				break;
-			}
-			end = k;
-			if (now.isHit()) {
-				hit = now;
-				last = now;
-				break;
-			}
-			previous = now;
-			last = now;
-		}
-		double speed = 20 - 3 * start.power();
-		double dx = last.x() - start.x();
-		double dy = last.y() - start.y();
-		double length = Math.hypot(dx, dy);
-		Flight flight = null;
-		if (length > 1e-6 && !start.isHit()) {
-			dx /= length;
-			dy /= length;
-			double born = first - 1;
-			// Gets there when the last step is done
-			double duration = hit != null ? end - 1 - born + Math.hypot(hit.x() - previous.x(), hit.y() - previous.y()) / speed : end - born;
-			duration = Math.max(0.01, duration);
-			double sx = start.x() - dx * speed;
-			double sy = start.y() - dy * speed;
-			double ex = last.x();
-			double ey = last.y();
-			// Where it hits the victim, in the frame of the tank (across and ahead),
-			// and where that point of the hull is drawn when the bolt gets there: the
-			// bolt flies straight to it
-			double side = 0;
-			double ahead = 0;
-			if (hit != null && hit.state() == BattleRecording.BULLET_HIT_VICTIM) {
-				RobotState victim = find(turns.get(end).robots(), hit.victim(), null);
-				double[] pose = pose(turns, hit.victim(), born + duration);
-				if (victim != null && pose != null) {
-					double ox = hit.x() - victim.x();
-					double oy = hit.y() - victim.y();
-					double heading = victim.bodyHeading();
-					side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, ox * Math.cos(heading) - oy * Math.sin(heading)));
-					ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, ox * Math.sin(heading) + oy * Math.cos(heading)));
-					ex = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
-					ey = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
-				}
-			}
-			double total = Math.hypot(ex - sx, ey - sy);
-			if (total > 1e-6) {
-				flight = new Flight(sx, sy, (ex - sx) / total, (ey - sy) / total, total, born, duration, hit, side, ahead);
-			}
-		}
-		// A bullet with no flight is never drawn: it was born hitting
-		this.flights.put(seen.id(), flight == null ? new Flight(0, 0, 0, 0, 0, 0, 0, null, 0, 0) : flight);
-		return this.flights.get(seen.id());
-	}
-
-	private void showBullets(List<Turn> turns, int index, double fraction) {
-		Turn current = turns.get(index);
-		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
-		Set<Integer> flying = new HashSet<Integer>();
-		for (Turn turn : next == current ? List.of(current) : List.of(current, next)) {
-			for (Bullet bullet : turn.bullets()) {
-				if (bullet.isHit() || bullet.state() > BattleRecording.BULLET_HIT_WALL || flying.contains(bullet.id())) {
-					continue;
-				}
-				Flight flight = this.flight(turns, turn == current ? index : index + 1, bullet);
-				if (flight.total() <= 0) {
-					continue;
-				}
-				double progress = (this.turnPosition - flight.born()) / flight.duration();
-				if (progress < 0) {
-					continue;
-				}
-				if (progress >= 1) {
-					if (flight.hit() != null) {
-						double[] target = this.target(flight);
-						this.bulletHit(flight.hit(), target[0], target[1]);
-						continue;
-					}
-					progress = 1;
-				}
-				// From the muzzle to the end, the speed is the same all the way
-				double distance = flight.total() > MUZZLE ? MUZZLE + (flight.total() - MUZZLE) * progress : flight.total() * progress;
-				double x = flight.sx() + flight.ux() * distance;
-				double y = flight.sy() + flight.uy() * distance;
-				// The ones that hit a tank come down, little by little, from the height of
-				// the gun to the middle of the hull
-				double height = BARREL_HEIGHT;
-				if (flight.hit() != null && flight.hit().state() == BattleRecording.BULLET_HIT_VICTIM) {
-					double along = flight.total() > MUZZLE ? (distance - MUZZLE) / (flight.total() - MUZZLE) : progress;
-					height += (HULL_HEIGHT - BARREL_HEIGHT) * Math.max(0, Math.min(1, along));
-				}
-				if (distance >= MUZZLE) {
-					this.bulletFired(bullet, flight.sx() + flight.ux() * MUZZLE, flight.sy() + flight.uy() * MUZZLE);
-				} else if (this.bulletsSeen.contains(bullet.id()) == false) {
-					this.bulletFired(bullet, flight.sx() + flight.ux() * Math.min(MUZZLE, flight.total()), flight.sy() + flight.uy() * Math.min(MUZZLE, flight.total()));
-				}
-				this.placeBullet(bullet, flying, x, y, flight.ux(), flight.uy(), height);
-			}
-		}
-		this.bullets.entrySet().removeIf(entry -> {
-			if (!flying.contains(entry.getKey())) {
-				this.bulletLayer.getChildren().remove(entry.getValue());
-				return true;
-			}
-			return false;
-		});
-	}
-
-	private void placeBullet(Bullet bullet, Set<Integer> flying, double x, double y, double dx, double dy, double height) {
-		flying.add(bullet.id());
-		Group shot = this.bullets.computeIfAbsent(bullet.id(), id -> this.newBullet(bullet));
-		shot.setTranslateX(this.worldX(x));
-		shot.setTranslateZ(this.worldZ(y));
-		shot.setTranslateY(height);
-		// The bolt points to where it goes, turned around its head
-		((Rotate) shot.getTransforms().get(0)).setAngle(Math.toDegrees(Math.atan2(dx, dy)));
-	}
-
-	/**
-	 * Where the flight ends now: the point of the hit on the victim as it is drawn
-	 * at this moment, or the end of the path
-	 */
-	private double[] target(Flight flight) {
-		Bullet hit = flight.hit();
-		RobotView victim = hit == null || hit.state() != BattleRecording.BULLET_HIT_VICTIM ? null : this.robots.get(hit.victim());
-		if (victim == null) {
-			return new double[] { flight.sx() + flight.ux() * flight.total(), flight.sy() + flight.uy() * flight.total() };
-		}
-		double x = victim.root.getTranslateX() + this.fieldWidth / 2;
-		double y = victim.root.getTranslateZ() + this.fieldHeight / 2;
-		double heading = Math.toRadians(victim.bodyRotate.getAngle());
-		return new double[] { x + flight.side() * Math.cos(heading) + flight.ahead() * Math.sin(heading), y - flight.side() * Math.sin(heading) + flight.ahead() * Math.cos(heading) };
-	}
-
-	/** Something happens in the battle at this world point: the critters nearby react to it */
-	private void startle(double worldX, double worldZ, double radius, double strength) {
-		if (this.critters != null) {
-			this.critters.alarm(worldX, worldZ, radius, strength);
-		}
-	}
-
-	/**
-	 * The shot, once: the sound and the flash at the gun
-	 */
-	private void bulletFired(Bullet bullet, double x, double y) {
-		if (this.bulletsSeen.add(bullet.id())) {
-			this.audio.shotAt(bullet.power(), this.worldX(x), this.worldZ(y));
-			this.fx.muzzleFlash(this.worldX(x), this.worldZ(y), this.shooterColor(bullet));
-			this.startle(this.worldX(x), this.worldZ(y), 150, 0.4);
-		}
-	}
-
-	/**
-	 * The hit, once: the explosion where the bullet stopped and what the victim
-	 * feels
-	 */
-	private void bulletHit(Bullet bullet, double x, double y) {
-		if (!this.bulletsExploded.add(bullet.id())) {
-			return;
-		}
-		this.fx.explosion(this.worldX(x), this.worldZ(y), 8 + bullet.power() * 6, this.shooterColor(bullet));
-		this.startle(this.worldX(x), this.worldZ(y), 220, 0.7);
-		RobotView victim = this.robots.get(bullet.victim());
-		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
-			victim.flash();
-			this.audio.hitAt(bullet.power(), this.worldX(x), this.worldZ(y));
-			this.hitTension = Math.min(0.25, this.hitTension + 0.08 + bullet.power() * 0.03);
-			this.shake += 3 + bullet.power() * 3;
-			this.impactCut(bullet.victim(), bullet.power());
-			// The first hit that hurts of the round is kept as a photo
-			RobotView shooter = this.robots.get(bullet.owner());
-			if (this.phase == Phase.PLAYING && !this.hitPhotoTaken && bullet.power() >= PHOTO_HIT_POWER && shooter != null) {
-				this.hitPhotoTaken = true;
-				this.pendingPhotos.add(new PendingPhoto(PHOTO_HIT_DELAY, this.round + 1, false, shooter.opponent, bullet.power()));
-			}
-		} else {
-			this.audio.sparkAt(this.worldX(x), this.worldZ(y));
-			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
-				this.flashFence(bullet.x(), bullet.y());
-			}
-		}
-	}
-
-	private static RobotState find(List<RobotState> states, int index, RobotState fallback) {
+	static RobotState find(List<RobotState> states, int index, RobotState fallback) {
 		for (RobotState state : states) {
 			if (state.index() == index) {
 				return state;
@@ -1709,97 +1471,9 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
-	 * Shots, hits and deaths happen once, when their turn is reached
-	 */
-	private void turnEvents(Turn turn, Turn previous, int turnIndex) {
-		this.announcer.say(this.commentary.turn(turn, previous));
-		for (Bullet bullet : turn.bullets()) {
-			if (!bullet.isHit()) {
-				this.bulletFired(bullet, bullet.x(), bullet.y());
-			} else {
-				this.bulletsSeen.add(bullet.id());
-				this.bulletHit(bullet, bullet.x(), bullet.y());
-			}
-		}
-		for (RobotState state : turn.robots()) {
-			RobotState before = previous == null ? null : find(previous.robots(), state.index(), null);
-			RobotView view = this.robots.get(state.index());
-			if (view == null) {
-				continue;
-			}
-			if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
-				this.audio.thudAt(this.worldX(state.x()), this.worldZ(state.y()));
-				this.startle(this.worldX(state.x()), this.worldZ(state.y()), 120, 0.3);
-				this.shake += 1.5;
-				if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
-					this.flashFence(state.x(), state.y());
-				}
-			}
-			if (!state.isDead() && state.energy() < 20 && this.lowEnergyWarned.add(state.index())) {
-				this.audio.lowEnergyAt(view.position()[0], view.position()[2]);
-			}
-			if (state.isDead() && before != null && !before.isDead() && !view.dead) {
-				view.destroy();
-				this.audio.destroyedAt(view.position()[0], view.position()[2]);
-				this.startle(view.position()[0], view.position()[2], 340, 1);
-				this.shake += 22;
-				this.whiteFlash();
-				if (this.phase == Phase.PLAYING) {
-					this.pendingPhotos.add(new PendingPhoto(PHOTO_DESTRUCTION_DELAY, this.round + 1, true, view.opponent, 0));
-				}
-				if (this.phase == Phase.PLAYING && !this.replayed) {
-					this.freezeForReplay(state.index(), turnIndex);
-				}
-			}
-		}
-	}
-
-	/**
-	 * The color of the robot that fired the bullet
-	 */
-	private Color shooterColor(Bullet bullet) {
-		RobotView owner = this.robots.get(bullet.owner());
-		return owner == null ? Color.web("#38e6ff") : owner.playerColor;
-	}
-
-	/**
-	 * A plasma bolt: a bright spindle of facets, a halo around it and a long tail
-	 * behind, in the color of the robot that fired it. It points to +Z and is
-	 * turned to where it goes.
-	 */
-	private Group newBullet(Bullet bullet) {
-		Color tint = this.shooterColor(bullet);
-		double r = 2.2 + bullet.power() * 0.7;
-		LowPoly core = new LowPoly();
-		core.spindle(0, 0, 0, r, r * 3.4, r * 2.2, 6);
-		LowPoly halo = new LowPoly();
-		halo.spindle(0, 0, 0, r * 1.9, r * 3.8, r * 2.8, 6);
-		LowPoly tail = new LowPoly();
-		tail.spindle(0, 0, -r * 2, r * 0.9, 0, r * 12, 6);
-
-		Color hot = tint.interpolate(Color.WHITE, 0.75);
-		PhongMaterial coreMaterial = new PhongMaterial(hot);
-		coreMaterial.setSelfIlluminationMap(solidMap(hot));
-		// The halo and the tail are see through and shine by themselves
-		PhongMaterial haloMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.28));
-		haloMaterial.setSelfIlluminationMap(solidMap(tint));
-		PhongMaterial tailMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.4));
-		tailMaterial.setSelfIlluminationMap(solidMap(tint));
-		Group shot = new Group(tail.view(tailMaterial), halo.view(haloMaterial), core.view(coreMaterial));
-		// Turned around the head, where the bullet is. Not with setRotate: it turns
-		// around the middle of the bolt, the long tail moves it there, and the head
-		// would be drawn up to 40 units away from the bullet, to the side of the
-		// robot it hits.
-		shot.getTransforms().add(new Rotate(0, Rotate.Y_AXIS));
-		shot.setTranslateY(BARREL_HEIGHT);
-		this.bulletLayer.getChildren().add(shot);
-		return shot;
-	}
-
-	/**
 	 * A small picture of one color, for materials that shine by themselves
 	 */
-	private static WritableImage solidMap(Color color) {
+	static WritableImage solidMap(Color color) {
 		WritableImage map = new WritableImage(2, 2);
 		for (int y = 0; y < 2; y++) {
 			for (int x = 0; x < 2; x++) {
@@ -1807,117 +1481,6 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 		return map;
-	}
-
-	private void clearBullets() {
-		for (Group bullet : this.bullets.values()) {
-			this.bulletLayer.getChildren().remove(bullet);
-		}
-		this.bullets.clear();
-		this.flights.clear();
-	}
-
-	private void whiteFlash() {
-		FadeTransition flash = new FadeTransition(Duration.millis(380), this.whiteFlash);
-		flash.setFromValue(0.75);
-		flash.setToValue(0);
-		flash.play();
-	}
-
-	/**
-	 * The cage lights up where a robot or a bullet hit it, the glow spreads to
-	 * the neighboring panels like a shockwave
-	 */
-	private void flashFence(double x, double y) {
-		double w = this.fieldWidth;
-		double h = this.fieldHeight;
-		double cx = Math.max(0, Math.min(w, x));
-		double cy = Math.max(0, Math.min(h, y));
-
-		double[] distances = { cy, h - cy, cx, w - cx };
-		int wall = 0;
-		for (int i = 1; i < distances.length; i++) {
-			if (distances[i] < distances[wall]) {
-				wall = i;
-			}
-		}
-
-		double along = wall <= 1 ? cx : cy;
-		int count = (int) Math.round((wall <= 1 ? w : h) / 100);
-		int index = Math.max(0, Math.min(count - 1, (int) Math.floor(along / 100)));
-
-		this.flashSegment(wall, index, 1.0, Duration.ZERO);
-		this.flashSegment(wall, index - 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index + 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index - 2, 0.3, Duration.millis(120));
-		this.flashSegment(wall, index + 2, 0.3, Duration.millis(120));
-	}
-
-	private void flashSegment(int wall, int index, double intensity, Duration delay) {
-		for (FenceSegment segment : this.fenceSegments) {
-			if (segment.wall() != wall || segment.index() != index) {
-				continue;
-			}
-			if (segment.animation != null) {
-				segment.animation.stop();
-				segment.animation = null;
-			}
-
-			segment.box().setVisible(true);
-
-			// Electric force field energy flare: transparent translucent barrier
-			double peakAlpha = 0.20 + 0.08 * Math.min(1.0, intensity);
-			Color tint = this.style.fence;
-			Color shieldBright = Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), peakAlpha);
-			Color shieldMid = Color.color(tint.getRed() * 0.6, tint.getGreen() * 0.8, tint.getBlue(), peakAlpha * 0.45);
-			Color shieldFade = Color.color(tint.getRed() * 0.4, tint.getGreen() * 0.8, tint.getBlue(), 0.0);
-
-			segment.material().setSpecularColor(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.20));
-
-			Timeline flash = new Timeline();
-			flash.getKeyFrames().addAll(
-					new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), shieldBright)),
-					new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(segment.material().diffuseColorProperty(), shieldMid)),
-					new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(segment.material().diffuseColorProperty(), shieldFade)));
-			flash.setOnFinished(e -> {
-				segment.box().setVisible(false);
-				segment.material().setDiffuseColor(FENCE_BASE);
-				segment.material().setSpecularColor(Color.TRANSPARENT);
-				segment.animation = null;
-			});
-			segment.animation = flash;
-			flash.play();
-
-			if (intensity >= 0.8) {
-				ScaleTransition pulse = new ScaleTransition(Duration.millis(90), segment.box());
-				pulse.setFromX(1);
-				pulse.setToX(1.04);
-				pulse.setFromY(1);
-				pulse.setToY(1.04);
-				pulse.setFromZ(1);
-				pulse.setToZ(1.04);
-				pulse.setCycleCount(2);
-				pulse.setAutoReverse(true);
-				pulse.play();
-			}
-			return;
-		}
-	}
-
-	/** Back to the base look when a new round starts */
-	private void resetFence() {
-		for (FenceSegment segment : this.fenceSegments) {
-			if (segment.animation != null) {
-				segment.animation.stop();
-				segment.animation = null;
-			}
-			segment.box().setVisible(false);
-			segment.material().setDiffuseColor(FENCE_BASE);
-			segment.material().setSpecularColor(Color.TRANSPARENT);
-			segment.box().setScaleX(1);
-			segment.box().setScaleY(1);
-			segment.box().setScaleZ(1);
-		}
 	}
 
 	// ---------------------------------------------------------------- effects
@@ -2206,7 +1769,7 @@ public class BattleArena3D extends StackPane {
 	 * A robot died: the action stops for a moment, then the last second is
 	 * shown again in slow motion
 	 */
-	private void freezeForReplay(int robot, int turn) {
+	void freezeForReplay(int robot, int turn) {
 		this.phase = Phase.FREEZE;
 		this.phaseTime = 0;
 		this.deadRobot = robot;
@@ -2254,7 +1817,7 @@ public class BattleArena3D extends StackPane {
 		this.lastTurnProcessed = this.replayFrom - 1;
 		this.bulletsSeen.clear();
 		this.bulletsExploded.clear();
-		this.clearBullets();
+		this.shots.clearBullets();
 		this.effects.getChildren().clear();
 		for (RobotView view : this.robots.values()) {
 			view.reset();
@@ -2359,7 +1922,7 @@ public class BattleArena3D extends StackPane {
 	/**
 	 * A strong hit may cut to the victim
 	 */
-	private void impactCut(int victim, double power) {
+	void impactCut(int victim, double power) {
 		if (this.viewMode != ViewMode.CINEMATIC || this.phase != Phase.PLAYING || this.shotTime < 1.2 || this.random.nextDouble() > 0.25 + power * 0.15) {
 			return;
 		}
