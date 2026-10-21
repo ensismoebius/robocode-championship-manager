@@ -35,7 +35,7 @@ public final class BattleAudio {
 	private static final double SFX_GAIN = 0.9;
 	private static final double MACHINE_GAIN = 0.8;
 	/** The drive of the tracks, over the machines: how loud the hum and the rumble are */
-	private static final double TRACK_GAIN = 2.5;
+	private static final double TRACK_GAIN = 3.0;
 	/** The placement of a sound in the middle: both ears hear it the same */
 	private static final double[] CENTER = { 1, 1 };
 	/** The distance between two links of a track, in arena units */

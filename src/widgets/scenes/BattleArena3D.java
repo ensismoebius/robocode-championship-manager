@@ -2708,6 +2708,18 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
+	 * A see through bubble: the color with a low opacity and no light of its own, so
+	 * the arena shows through it. A light map would make it opaque.
+	 */
+	private static PhongMaterial bubble(Color color) {
+		Color light = color.interpolate(Color.WHITE, 0.5);
+		PhongMaterial material = new PhongMaterial(Color.color(light.getRed(), light.getGreen(), light.getBlue(), 0.3));
+		material.setSpecularColor(Color.color(1, 1, 1, 0.6));
+		material.setSpecularPower(64);
+		return material;
+	}
+
+	/**
 	 * A see through material that shines in the color by itself
 	 */
 	private static PhongMaterial energy(Color color, double opacity) {
@@ -2857,10 +2869,30 @@ public class BattleArena3D extends StackPane {
 		ringFade.setFromValue(1);
 		ringFade.setToValue(0);
 		ringFade.setInterpolator(Interpolator.EASE_IN);
-		spread.getChildren().addAll(ringSpread, ringFade);
+		// The bubble of the same wave: a see through dome that grows as the ring does
+		Sphere bubble = new Sphere(1, 32);
+		bubble.setMaterial(bubble(color));
+		bubble.setCullFace(CullFace.NONE);
+		bubble.setTranslateY(floorY - 0.5);
+		bubble.setVisible(false);
+		blast.getChildren().add(bubble);
+		ScaleTransition bubbleSpread = new ScaleTransition(Duration.millis(millis), bubble);
+		bubbleSpread.setFromX(radius * 0.05);
+		bubbleSpread.setFromY(radius * 0.05);
+		bubbleSpread.setFromZ(radius * 0.05);
+		bubbleSpread.setToX(radius);
+		bubbleSpread.setToY(radius);
+		bubbleSpread.setToZ(radius);
+		bubbleSpread.setInterpolator(Interpolator.EASE_OUT);
+		FadeTransition bubbleFade = new FadeTransition(Duration.millis(millis), bubble);
+		bubbleFade.setFromValue(1);
+		bubbleFade.setToValue(0);
+		bubbleFade.setInterpolator(Interpolator.EASE_IN);
+		spread.getChildren().addAll(ringSpread, ringFade, bubbleSpread, bubbleFade);
 		spread.setDelay(Duration.millis(delay));
 		spread.statusProperty().addListener((observable, before, now) -> {
 			ring.setVisible(now == Animation.Status.RUNNING);
+			bubble.setVisible(now == Animation.Status.RUNNING);
 		});
 		all.getChildren().add(spread);
 	}
@@ -3851,8 +3883,8 @@ public class BattleArena3D extends StackPane {
 	/** The length of the outline: one turn of the belt */
 	private static final double BELT_LENGTH = beltLength();
 	/** The width of a belt, sideways, from its inner face to its outer one, where the links are */
-	private static final double BELT_INNER = 10.5;
-	private static final double BELT_OUTER = 21;
+	private static final double BELT_INNER = 8;
+	private static final double BELT_OUTER = 17.5;
 	private static final double BELT_CENTER = (BELT_INNER + BELT_OUTER) / 2;
 	private static final double BELT_WIDTH = BELT_OUTER - BELT_INNER;
 
@@ -4247,13 +4279,13 @@ public class BattleArena3D extends StackPane {
 			}
 			this.bodyMaterial.setDiffuseColor(Color.WHITE);
 			PauseTransition back = BattleArena3D.this.effect(new PauseTransition(Duration.millis(110)));
-			back.setOnFinished(event -> this.bodyMaterial.setDiffuseColor(this.dead ? Color.web("#262626") : this.bodyColor));
+			back.setOnFinished(event -> this.bodyMaterial.setDiffuseColor(this.bodyColor));
 			back.play();
 		}
 
 		/**
-		 * Blows up: fireballs, a shockwave, smoke, debris, the turret thrown in the
-		 * air and a burnt wreck, the pieces stay in the arena
+		 * Blows up in its own colors: fireballs, shock waves seen as bubbles, smoke,
+		 * debris, the hull, the turret and the radar thrown across the arena
 		 */
 		void destroy() {
 			if (this.dead) {
@@ -4294,36 +4326,30 @@ public class BattleArena3D extends StackPane {
 			BattleArena3D.this.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
 			BattleArena3D.this.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
 
-			// Smoke rising
-			PhongMaterial smoke = new PhongMaterial(Color.web("#2b2b33"));
-			for (int i = 0; i < 7; i++) {
-				Sphere puff = new Sphere(10 + BattleArena3D.this.random.nextDouble() * 8, 8);
-				puff.setMaterial(smoke);
-				puff.setTranslateX((BattleArena3D.this.random.nextDouble() - 0.5) * 30);
-				puff.setTranslateZ((BattleArena3D.this.random.nextDouble() - 0.5) * 30);
-				puff.setTranslateY(-20);
-				puff.setScaleX(0.1);
-				puff.setScaleY(0.1);
-				puff.setScaleZ(0.1);
-				blast.getChildren().add(0, puff);
-				Timeline rise = new Timeline(new KeyFrame(Duration.millis(2200), //
-						new KeyValue(puff.translateYProperty(), -90 - BattleArena3D.this.random.nextDouble() * 60, Interpolator.EASE_OUT), //
-						new KeyValue(puff.scaleXProperty(), 2.2), new KeyValue(puff.scaleYProperty(), 2.2), new KeyValue(puff.scaleZProperty(), 2.2)));
-				rise.setDelay(Duration.millis(200 + i * 70));
-				all.getChildren().addAll(rise, shrink(puff, 2400, 600));
+			// The smoke rising from the wreck: particles, like the fire of the burning robots,
+			// thick and dark since it is destroyed
+			Timeline smoke = new Timeline();
+			for (int i = 0; i < 40; i++) {
+				smoke.getKeyFrames().add(new KeyFrame(Duration.millis(i * 90), event -> {
+					for (int puff = 0; puff < 2; puff++) {
+						BattleArena3D.this.spawn(ParticleKind.SMOKE, x + (BattleArena3D.this.random.nextDouble() - 0.5) * 40, -20, z + (BattleArena3D.this.random.nextDouble() - 0.5) * 40, 0.8);
+					}
+				}));
 			}
+			this.running.add(smoke);
+			smoke.play();
 
 			// Debris in the colors of the robot
 			PhongMaterial[] colors = { this.bodyMaterial, this.gunMaterial, new PhongMaterial(Color.web("#22252e")), new PhongMaterial(Color.web("#ffb000")) };
-			for (int i = 0; i < 18; i++) {
-				double angle = Math.PI * 2 * i / 18 + BattleArena3D.this.random.nextDouble() * 0.3;
+			for (int i = 0; i < 26; i++) {
+				double angle = Math.PI * 2 * i / 26 + BattleArena3D.this.random.nextDouble() * 0.3;
 				double size = 3 + BattleArena3D.this.random.nextDouble() * 5;
 				Box piece = new Box(size, size, size);
 				piece.setMaterial(colors[i % colors.length]);
 				piece.setTranslateY(-15);
 				this.debris.getChildren().add(piece);
-				double reach = 60 + BattleArena3D.this.random.nextDouble() * 90;
-				all.getChildren().add(BattleArena3D.this.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 40 + BattleArena3D.this.random.nextDouble() * 90, 1300));
+				double reach = 120 + BattleArena3D.this.random.nextDouble() * 180;
+				all.getChildren().add(BattleArena3D.this.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 70 + BattleArena3D.this.random.nextDouble() * 120, 1500));
 			}
 
 			// The turret and the radar are thrown in the air
@@ -4334,21 +4360,26 @@ public class BattleArena3D extends StackPane {
 					new KeyFrame(Duration.millis(550), new KeyValue(this.turret.translateYProperty(), -140, Interpolator.EASE_OUT), new KeyValue(this.radar.translateYProperty(), -190, Interpolator.EASE_OUT)), //
 					new KeyFrame(Duration.millis(1400), //
 							new KeyValue(this.turret.translateYProperty(), 14, Interpolator.EASE_IN), //
-							new KeyValue(this.turret.translateXProperty(), Math.cos(throwAngle) * 70, Interpolator.EASE_OUT), //
-							new KeyValue(this.turret.translateZProperty(), Math.sin(throwAngle) * 70, Interpolator.EASE_OUT), //
+							new KeyValue(this.turret.translateXProperty(), Math.cos(throwAngle) * 170, Interpolator.EASE_OUT), //
+							new KeyValue(this.turret.translateZProperty(), Math.sin(throwAngle) * 170, Interpolator.EASE_OUT), //
 							new KeyValue(this.turret.rotateProperty(), 720, Interpolator.LINEAR), //
 							new KeyValue(this.radar.translateYProperty(), 24, Interpolator.EASE_IN), //
-							new KeyValue(this.radar.translateXProperty(), -Math.cos(throwAngle) * 90, Interpolator.EASE_OUT), //
-							new KeyValue(this.radar.translateZProperty(), -Math.sin(throwAngle) * 90, Interpolator.EASE_OUT), //
+							new KeyValue(this.radar.translateXProperty(), -Math.cos(throwAngle) * 200, Interpolator.EASE_OUT), //
+							new KeyValue(this.radar.translateZProperty(), -Math.sin(throwAngle) * 200, Interpolator.EASE_OUT), //
 							new KeyValue(this.radar.rotateProperty(), -900, Interpolator.LINEAR)));
 			all.getChildren().add(thrown);
 
-			// Burnt wreck, a bit tilted
-			this.bodyMaterial.setDiffuseColor(Color.web("#262626"));
-			this.gunMaterial.setDiffuseColor(Color.web("#303030"));
-			this.setGlowing(false);
-			this.body.setRotationAxis(Rotate.Z_AXIS);
-			all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(300), new KeyValue(this.body.rotateProperty(), 9, Interpolator.EASE_OUT))));
+			// The hull is thrown too: it flies over the arena, turns over and lands tilted
+			double hullAngle = BattleArena3D.this.random.nextDouble() * Math.PI * 2;
+			double hullReach = 130 + BattleArena3D.this.random.nextDouble() * 80;
+			double hullX = Math.cos(hullAngle) * hullReach;
+			double hullZ = Math.sin(hullAngle) * hullReach;
+			this.body.setRotationAxis(new Point3D(-Math.sin(hullAngle), 0, Math.cos(hullAngle)));
+			all.getChildren().add(new Timeline( //
+					new KeyFrame(Duration.millis(450), new KeyValue(this.body.translateYProperty(), -80, Interpolator.EASE_OUT), new KeyValue(this.body.translateXProperty(), hullX * 0.5, Interpolator.EASE_OUT),
+							new KeyValue(this.body.translateZProperty(), hullZ * 0.5, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 60, Interpolator.LINEAR)), //
+					new KeyFrame(Duration.millis(1300), new KeyValue(this.body.translateYProperty(), 0, Interpolator.EASE_IN), new KeyValue(this.body.translateXProperty(), hullX, Interpolator.EASE_OUT),
+							new KeyValue(this.body.translateZProperty(), hullZ, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 35, Interpolator.EASE_OUT))));
 
 			BattleArena3D.this.effects.getChildren().add(blast);
 			BattleArena3D.this.effect(all).setOnFinished(event -> BattleArena3D.this.effects.getChildren().remove(blast));
