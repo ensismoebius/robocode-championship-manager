@@ -13,7 +13,6 @@ import java.util.function.Supplier;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.ScaleTransition;
-import javafx.animation.Timeline;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -56,6 +55,7 @@ import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
 import widgets.scenes.ArenaHud.HudPlayer;
+import widgets.scenes.ArenaFence.FenceSegment;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -135,7 +135,7 @@ public class BattleArena3D extends StackPane {
 	 * the order of the scene graph and hide what is drawn after them, so the
 	 * panels must come last for the robots to be seen through them
 	 */
-	private final Group fence = new Group();
+	final Group fence = new Group();
 	/** The looks of the arena */
 	final ArenaStyle style;
 	/** Parts of the arena that glow, like lava: lit by the fire glow */
@@ -163,6 +163,7 @@ public class BattleArena3D extends StackPane {
 	final ArenaControls controls = new ArenaControls(this);
 	final LavaFlows lavaFlows = new LavaFlows(this);
 	final ArenaPhotos photographer = new ArenaPhotos(this);
+	final ArenaFence forceField = new ArenaFence(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	final SubScene subScene;
@@ -445,7 +446,7 @@ public class BattleArena3D extends StackPane {
 		case JUNGLE -> this.jungle.build(w, h);
 		}
 		this.arena.getChildren().add(this.glowing);
-		this.buildFence(w, h);
+		this.forceField.buildFence(w, h);
 		this.critters = new Critters(this.style, w, h, this.random);
 		this.arena.getChildren().add(this.critters.root());
 		if (this.style == ArenaStyle.ICE && this.ice.seaRadius() > 0) {
@@ -526,28 +527,6 @@ public class BattleArena3D extends StackPane {
 		return view;
 	}
 
-	/**
-	 * Invisible panels around the field, they flash when hit
-	 */
-	private void buildFence(double w, double h) {
-		// Force field panels: 100% transparent/invisible until hit
-		double wallHeight = 80;
-		for (int wall = 0; wall < 4; wall++) {
-			double span = wall <= 1 ? w : h;
-			int count = (int) Math.round(span / 100);
-			for (int index = 0; index < count; index++) {
-				double along = index * 100 + 50 - span / 2;
-				double normal = wall <= 1 ? h / 2 : w / 2;
-				PhongMaterial panelMaterial = material(FENCE_BASE);
-				Box panel = wall <= 1 ? box(98, wallHeight, 1.0, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
-						: box(1.0, wallHeight, 98, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);
-				panel.setVisible(false);
-				this.fence.getChildren().add(panel);
-				this.fenceSegments.add(new FenceSegment(wall, index, panel, panelMaterial));
-			}
-		}
-	}
-
 	static PhongMaterial material(Color color) {
 		PhongMaterial material = new PhongMaterial(color);
 		material.setSpecularColor(color.brighter());
@@ -573,40 +552,6 @@ public class BattleArena3D extends StackPane {
 		box.setTranslateZ(z);
 		box.setMaterial(material);
 		return box;
-	}
-
-	/**
-	 * One segment of the invisible force field. It only appears when struck.
-	 */
-	static class FenceSegment {
-		final int wall;
-		final int index;
-		final Box box;
-		final PhongMaterial material;
-		Timeline animation;
-
-		FenceSegment(int wall, int index, Box box, PhongMaterial material) {
-			this.wall = wall;
-			this.index = index;
-			this.box = box;
-			this.material = material;
-		}
-
-		int wall() {
-			return wall;
-		}
-
-		int index() {
-			return index;
-		}
-
-		Box box() {
-			return box;
-		}
-
-		PhongMaterial material() {
-			return material;
-		}
 	}
 
 	/**

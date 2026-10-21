@@ -27,7 +27,7 @@ import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import utils.robocode.BattleRecording;
-import widgets.scenes.BattleArena3D.FenceSegment;
+import widgets.scenes.ArenaFence.FenceSegment;
 import widgets.scenes.BattleArena3D.PendingPhoto;
 import widgets.scenes.BattleArena3D.Phase;
 
