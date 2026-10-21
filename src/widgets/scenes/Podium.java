@@ -826,6 +826,8 @@ public class Podium extends StackPane {
 		private final Polygon[] spots = new Polygon[4];
 		private final Label banner = new Label();
 		private final Group[] trophies = new Group[4];
+		/** How big each trophy is drawn, for the height of the screen: the gold one the biggest */
+		private final double[] trophyScales = { 0, 0.00068, 0.00056, 0.00048 };
 
 		PodiumStage() {
 			this.setMouseTransparent(true);
@@ -880,11 +882,17 @@ public class Podium extends StackPane {
 					this.figures[place] = figure;
 				}
 			}
-			Group trophy = trophy(GOLD);
-			trophy.scaleXProperty().bind(Podium.this.heightProperty().multiply(0.00068));
-			trophy.scaleYProperty().bind(Podium.this.heightProperty().multiply(0.00068));
-			trophy.setVisible(false);
-			this.trophies[1] = trophy;
+			// A trophy for everyone on the podium: gold, silver and bronze
+			for (int place = 1; place <= 3; place++) {
+				if (this.figures[place] == null) {
+					continue;
+				}
+				Group trophy = trophy(colors[place]);
+				trophy.scaleXProperty().bind(Podium.this.heightProperty().multiply(this.trophyScales[place]));
+				trophy.scaleYProperty().bind(Podium.this.heightProperty().multiply(this.trophyScales[place]));
+				trophy.setVisible(false);
+				this.trophies[place] = trophy;
+			}
 
 			this.banner.getStyleClass().add("podium-banner");
 			this.banner.setVisible(false);
@@ -896,12 +904,18 @@ public class Podium extends StackPane {
 			for (int place = 1; place <= 3; place++) {
 				this.getChildren().addAll(this.steps[place], this.numbers[place]);
 			}
+			// The trophies behind the names: drawn first, the robots and their names over them
+			for (int place = 1; place <= 3; place++) {
+				if (this.trophies[place] != null) {
+					this.getChildren().add(this.trophies[place]);
+				}
+			}
 			for (int place = 1; place <= 3; place++) {
 				if (this.figures[place] != null) {
 					this.getChildren().add(this.figures[place]);
 				}
 			}
-			this.getChildren().addAll(trophy, this.banner);
+			this.getChildren().add(this.banner);
 		}
 
 		/** Where the center of the column of the place is, from 0 to 1 */
@@ -936,13 +950,20 @@ public class Podium extends StackPane {
 					figure.relocate(cx - figure.getWidth() / 2, top - figure.getHeight());
 				}
 			}
-			double top1 = baseline - this.stepHeight(1);
-			VBox champion = this.figures[1];
-			double figureHeight = champion == null ? 0 : champion.getHeight();
-			// The trophy is scaled around its center (95 high before the scale)
-			this.trophies[1].relocate(width / 2 - 80, top1 - figureHeight - height * 0.075 - 95);
+			for (int place = 1; place <= 3; place++) {
+				Group trophy = this.trophies[place];
+				if (trophy == null) {
+					continue;
+				}
+				double top = baseline - this.stepHeight(place);
+				double figureHeight = this.figures[place].getHeight();
+				// The trophy is scaled around its center (160 wide and 95 down to the middle before
+				// the scale): it stands over the name of its place
+				double half = 95 * this.trophyScales[place] * height;
+				trophy.relocate(this.columnCenter(place) * width - 80, top - figureHeight - half - height * 0.04 - 95);
+			}
 			this.banner.autosize();
-			this.banner.relocate((width - this.banner.getWidth()) / 2, height * 0.04);
+			this.banner.relocate((width - this.banner.getWidth()) / 2, height * 0.01);
 		}
 
 		/**
@@ -987,9 +1008,9 @@ public class Podium extends StackPane {
 					Podium.this.animate(pulse).play();
 				}
 			}
-			if (place == 1) {
-				// The trophy comes down over the champion
-				Group trophy = this.trophies[1];
+			Group trophy = this.trophies[place];
+			if (trophy != null) {
+				// The trophy of the place comes down over the robot
 				trophy.setVisible(true);
 				trophy.setOpacity(0);
 				trophy.setTranslateY(-this.getHeight());
@@ -1014,8 +1035,10 @@ public class Podium extends StackPane {
 				this.figures[place].setVisible(false);
 			}
 			this.spots[place].setOpacity(0);
+			if (this.trophies[place] != null) {
+				this.trophies[place].setVisible(false);
+			}
 			if (place == 1) {
-				this.trophies[1].setVisible(false);
 				Podium.this.fireworks.setRain(0);
 				Podium.this.fireworks.setAutoFireworks(0);
 			}

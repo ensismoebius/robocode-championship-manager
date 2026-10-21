@@ -461,15 +461,18 @@
 	-fx-font-family: "Press Start 2P";
 }
 
+/* A black outline around the letters keeps the names readable over the trophies, the rays and the confetti */
 .podium-name {
 	-fx-font-family: "Press Start 2P";
 	-fx-text-fill: -rc-text;
 	-fx-text-alignment: center;
+	-fx-effect: dropshadow(gaussian, black, 4, 1.0, 0, 0);
 }
 
 .podium-team {
 	-fx-text-fill: -rc-info;
 	-fx-font-weight: bold;
+	-fx-effect: dropshadow(gaussian, black, 3, 1.0, 0, 0);
 }
 
 .podium-cry {
