@@ -88,15 +88,15 @@ During a battle, **presenters** comment on what is happening, and **critters** l
 
 Each kind of event has its own presenter. When something important happens, the presenter comes up from the bottom of the screen to comment, and goes down when there is nothing more to say.
 
-| Presenter | Comments on | Personality |
-|---|---|---|
-| **Kayodê** | Start and end of the round, knockouts and the final headlines (such as *VIRADA HISTÓRICA!*, "historic comeback") | The master of ceremonies: lively, with a microphone in hand and a taste for big moments. |
-| **Benê** | Numbers and achievements: accuracy, *PERFECT!*, landslide wins | The experienced analyst: calm, with a headset and a tablet, speaks in data. |
-| **Zuri** | Walls and collisions, such as "ran into the force field!" | The referee: in a striped shirt, points out when someone hits a wall and lets nothing slide. |
-| **Dandara** | Hits, critical damage and combos (such as "Maximum power!" and "Relentless streak!") | The confident fighter: direct and intense, celebrates every clean hit. |
-| **Luana** | Long shots, bullets that cancel each other and misses (such as "Recalibrate that aim!") | The cheerful aiming expert: relaxed, with a rocket-patched jacket and a peace sign. |
-| **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
-| **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
+| Photo | Presenter | Comments on | Personality |
+|---|---|---|---|
+| <img src="docs/images/apresentador-kayode.png" height="110" alt="Kayodê"> | **Kayodê** | Start and end of the round, knockouts and the final headlines (such as *VIRADA HISTÓRICA!*, "historic comeback") | The master of ceremonies: lively, with a microphone in hand and a taste for big moments. |
+| <img src="docs/images/apresentador-bene.png" height="110" alt="Benê"> | **Benê** | Numbers and achievements: accuracy, *PERFECT!*, landslide wins | The experienced analyst: calm, with a headset and a tablet, speaks in data. |
+| <img src="docs/images/apresentador-zuri.png" height="110" alt="Zuri"> | **Zuri** | Walls and collisions, such as "ran into the force field!" | The referee: in a striped shirt, points out when someone hits a wall and lets nothing slide. |
+| <img src="docs/images/apresentador-dandara.png" height="110" alt="Dandara"> | **Dandara** | Hits, critical damage and combos (such as "Maximum power!" and "Relentless streak!") | The confident fighter: direct and intense, celebrates every clean hit. |
+| <img src="docs/images/apresentador-luana.png" height="110" alt="Luana"> | **Luana** | Long shots, bullets that cancel each other and misses (such as "Recalibrate that aim!") | The cheerful aiming expert: relaxed, with a rocket-patched jacket and a peace sign. |
+| <img src="docs/images/apresentador-caio.png" height="110" alt="Caio"> | **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
+| <img src="docs/images/apresentador-nala.png" height="110" alt="Nala"> | **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
 
 ### Arena critters
 

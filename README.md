@@ -88,15 +88,15 @@ Durante a batalha, **apresentadores** comentam o que acontece, e **bichos** vive
 
 Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer.
 
-| Apresentador | Comenta sobre | Como ele é |
-|---|---|---|
-| **Kayodê** | Início e fim do round, nocaute e as manchetes do final (como *VIRADA HISTÓRICA!*) | O mestre de cerimônias: animado, com microfone na mão e gosto por momentos grandes. |
-| **Benê** | Números e conquistas: precisão, *PERFECT!*, vitórias esmagadoras | O analista experiente: calmo, de headset e tablet na mão, fala com dados. |
-| **Zuri** | Paredes e colisões, como *"deu de cara com o campo de força!"* | A juíza da luta: de camisa listrada, aponta quando alguém bate na parede e não deixa passar nada. |
-| **Dandara** | Golpes, dano crítico e combos (como *"Potência máxima!"* e *"Sequência implacável!"*) | A lutadora confiante: direta e intensa, comemora cada pancada certeira. |
-| **Luana** | Tiros longos, tiros que se anulam e erros de mira (como *"calibra essa mira!"*) | A animada das manhas da pontaria: descontraída, com jaqueta de foguetes e sinal de paz. |
-| **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
-| **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
+| Foto | Apresentador | Comenta sobre | Como ele é |
+|---|---|---|---|
+| <img src="docs/images/apresentador-kayode.png" height="110" alt="Kayodê"> | **Kayodê** | Início e fim do round, nocaute e as manchetes do final (como *VIRADA HISTÓRICA!*) | O mestre de cerimônias: animado, com microfone na mão e gosto por momentos grandes. |
+| <img src="docs/images/apresentador-bene.png" height="110" alt="Benê"> | **Benê** | Números e conquistas: precisão, *PERFECT!*, vitórias esmagadoras | O analista experiente: calmo, de headset e tablet na mão, fala com dados. |
+| <img src="docs/images/apresentador-zuri.png" height="110" alt="Zuri"> | **Zuri** | Paredes e colisões, como *"deu de cara com o campo de força!"* | A juíza da luta: de camisa listrada, aponta quando alguém bate na parede e não deixa passar nada. |
+| <img src="docs/images/apresentador-dandara.png" height="110" alt="Dandara"> | **Dandara** | Golpes, dano crítico e combos (como *"Potência máxima!"* e *"Sequência implacável!"*) | A lutadora confiante: direta e intensa, comemora cada pancada certeira. |
+| <img src="docs/images/apresentador-luana.png" height="110" alt="Luana"> | **Luana** | Tiros longos, tiros que se anulam e erros de mira (como *"calibra essa mira!"*) | A animada das manhas da pontaria: descontraída, com jaqueta de foguetes e sinal de paz. |
+| <img src="docs/images/apresentador-caio.png" height="110" alt="Caio"> | **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
+| <img src="docs/images/apresentador-nala.png" height="110" alt="Nala"> | **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
 
 ### Bichos das arenas
 
