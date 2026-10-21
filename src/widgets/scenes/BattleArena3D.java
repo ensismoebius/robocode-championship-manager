@@ -30,10 +30,6 @@ import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -132,7 +128,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private final List<Opponent> fighters;
-	private Runnable onFinished;
+	Runnable onFinished;
 	final BattleAudio audio = new BattleAudio();
 	final Random random = new Random();
 
@@ -172,6 +168,7 @@ public class BattleArena3D extends StackPane {
 	final ArenaCamera director = new ArenaCamera(this);
 	final ArenaShowcase showcase = new ArenaShowcase(this);
 	final ArenaRounds rounds = new ArenaRounds(this);
+	final ArenaControls controls = new ArenaControls(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -211,9 +208,6 @@ public class BattleArena3D extends StackPane {
 	double zoom = 1;
 	double targetZoom = 1;
 	double yawSpeed = 0;
-	private double lastDragX;
-	private double lastDragY;
-
 	// Cinematic director
 	Shot shot = Shot.WIDE;
 	double shotTime = 0;
@@ -294,7 +288,7 @@ public class BattleArena3D extends StackPane {
 	boolean versus = false;
 	Sound showcaseMusic;
 
-	private final AnimationTimer timer = new AnimationTimer() {
+	final AnimationTimer timer = new AnimationTimer() {
 		private long last = -1;
 
 		@Override
@@ -372,7 +366,7 @@ public class BattleArena3D extends StackPane {
 
 		this.getChildren().setAll(this.subScene, this.balloons, this.hud.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.hud.buildHud(), this.whiteFlash, scanlines);
 
-		this.installControls();
+		this.controls.installControls();
 		this.hud.showBanner("", null);
 		this.loading.getStyleClass().add("arena-banner");
 		this.loading.setStyle("-fx-font-size: 30px;");
@@ -766,120 +760,9 @@ public class BattleArena3D extends StackPane {
 		return String.format("#%02x%02x%02x", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
 	}
 
-	// ---------------------------------------------------------------- controls
-
-	private void installControls() {
-		this.setFocusTraversable(true);
-		this.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-			// Quitting still works, the other shortcuts wait for the battle
-			if (event.isControlDown() && event.getCode() == KeyCode.Q) {
-				return;
-			}
-			switch (event.getCode()) {
-			case V -> this.cycleView();
-			case SPACE -> {
-				this.paused = !this.paused;
-				Sfx.blip();
-			}
-			case RIGHT, PLUS, EQUALS, ADD -> this.speed = Math.min(SPEEDS.length - 1, this.speed + 1);
-			case LEFT, MINUS, SUBTRACT -> this.speed = Math.max(0, this.speed - 1);
-			case ENTER -> this.skip(false);
-			case ESCAPE -> this.skip(true);
-			default -> {
-			}
-			}
-			this.hud.updateInfo();
-			// Nothing else happens during the battle (like declaring a winner by
-			// accident)
-			event.consume();
-		});
-
-		this.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
-			this.lastDragX = event.getX();
-			this.lastDragY = event.getY();
-			this.yawSpeed = 0;
-			this.requestFocus();
-		});
-		this.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
-			// Dragging takes the camera from the director
-			if (this.viewMode == ViewMode.CINEMATIC) {
-				this.setView(ViewMode.FREE);
-			}
-			if (this.viewMode != ViewMode.FREE) {
-				return;
-			}
-			double dx = event.getX() - this.lastDragX;
-			double dy = event.getY() - this.lastDragY;
-			this.lastDragX = event.getX();
-			this.lastDragY = event.getY();
-			this.targetYaw += dx * 0.3;
-			this.yawSpeed = dx * 0.3 * 60;
-			this.freePitch = Math.max(-85, Math.min(-8, this.freePitch + dy * 0.2));
-		});
-		this.addEventFilter(ScrollEvent.SCROLL, event -> {
-			this.targetZoom = Math.max(0.45, Math.min(2.5, this.targetZoom * (event.getDeltaY() > 0 ? 0.9 : 1.1)));
-		});
-	}
-
-	private void cycleView() {
-		this.setView(ViewMode.values()[(this.viewMode.ordinal() + 1) % ViewMode.values().length]);
+	void cycleView() {
+		this.controls.setView(ViewMode.values()[(this.viewMode.ordinal() + 1) % ViewMode.values().length]);
 		Sfx.blip();
-	}
-
-	private void setView(ViewMode mode) {
-		if (mode == ViewMode.FREE && this.viewMode == ViewMode.CINEMATIC) {
-			// Starts from where the director was
-			this.targetYaw = this.yaw = Math.toDegrees(Math.atan2(this.look[0] - this.eye[0], this.look[2] - this.eye[2]));
-		}
-		this.viewMode = mode;
-		this.targetYaw = switch (mode) {
-		case ISOMETRIC -> Math.round((this.targetYaw - 45) / 90) * 90 + 45;
-		case TOP_DOWN -> Math.round(this.targetYaw / 360) * 360;
-		default -> this.targetYaw;
-		};
-		this.yawSpeed = 0;
-		if (mode == ViewMode.CINEMATIC) {
-			this.director.pickShot(true);
-		}
-		this.hud.updateInfo();
-	}
-
-	/**
-	 * Enter: the next robot of the presentation, ends the replay, or the whole
-	 * battle. Escape skips the whole presentation.
-	 *
-	 * @param all
-	 *            skips the whole presentation
-	 */
-	private void skip(boolean all) {
-		if (this.phase == Phase.SHOWCASE) {
-			if (all || this.versus) {
-				this.showcase.endShowcase();
-			} else {
-				this.showcase.showcaseRobot(this.showcaseOrder + 1);
-			}
-		} else if (this.phase == Phase.FLYBY) {
-			this.rounds.endFlyBy();
-		} else if (this.phase == Phase.FREEZE || this.phase == Phase.REPLAY) {
-			this.showcase.endReplay();
-		} else if (this.phase != Phase.LOADING && this.phase != Phase.FINISHED) {
-			this.finish();
-		}
-	}
-
-	void finish() {
-		this.phase = Phase.FINISHED;
-		this.timer.stop();
-		this.stopShowcaseMusic();
-		if (this.onFinished != null) {
-			// The screen decides what comes next: the sound goes on until the arena
-			// leaves the screen, or fades out with {@link #fadeOutAudio}
-			Runnable callback = this.onFinished;
-			this.onFinished = null;
-			callback.run();
-		} else {
-			this.audio.stop();
-		}
 	}
 
 	/**

@@ -128,7 +128,7 @@ final class ArenaRounds {
 				host.banner.setStyle("-fx-font-size: 46px;");
 				Sfx.fanfare();
 			} else {
-				host.finish();
+				host.controls.finish();
 			}
 		}
 	}
