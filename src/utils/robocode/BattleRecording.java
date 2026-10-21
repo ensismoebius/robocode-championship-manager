@@ -32,6 +32,7 @@ public final class BattleRecording {
 		private int gunColor = 0xff2ec4ff;
 		private int radarColor = 0xffffd400;
 
+		/** A robot of the battle, with its index and name. */
 		Robot(int index, String name) {
 			this.index = index;
 			this.name = name;
@@ -65,13 +66,15 @@ public final class BattleRecording {
 		}
 	}
 
+	/** The state of a robot in a turn: its position, its heading and its energy. */
 	public record RobotState(int index, double x, double y, double bodyHeading, double gunHeading, double radarHeading, double energy, int state) {
-		/** Tells whether the dead. */
+		/** Tells whether the robot is dead. */
 		public boolean isDead() {
 			return this.state == ROBOT_DEAD;
 		}
 	}
 
+	/** A bullet in a turn: its owner, its position, its power and its state. */
 	public record Bullet(int id, int owner, double x, double y, double power, int state, int victim) {
 		/**
 		 * The bullet hit something and explodes in this turn
@@ -81,6 +84,7 @@ public final class BattleRecording {
 		}
 	}
 
+	/** The robots and the bullets of a turn of a round. */
 	public record Turn(int round, int turn, List<RobotState> robots, List<Bullet> bullets) {
 	}
 
@@ -104,6 +108,7 @@ public final class BattleRecording {
 		return this.robots;
 	}
 
+	/** The robot with the given index, or null when there is none. */
 	public Robot getRobot(int index) {
 		for (Robot robot : this.robots) {
 			if (robot.index == index) {
@@ -120,7 +125,7 @@ public final class BattleRecording {
 		return this.rounds;
 	}
 
-	/** Tells whether the empty. */
+	/** Tells whether the recording has no rounds with turns. */
 	public boolean isEmpty() {
 		return this.rounds.stream().allMatch(List::isEmpty);
 	}
@@ -147,6 +152,7 @@ public final class BattleRecording {
 		return recording;
 	}
 
+	/** Reads a line of the recording: a frame of the battle, a round or a turn. */
 	private void parseLine(String line) {
 		String body = line.substring(3);
 		switch (line.charAt(1)) {
@@ -180,6 +186,7 @@ public final class BattleRecording {
 		}
 	}
 
+	/** Reads the robots and the bullets of a turn of the recording. */
 	private void parseTurn(String body) {
 		String[] parts = body.split("\\|", -1);
 		String[] header = parts[0].split(" ");

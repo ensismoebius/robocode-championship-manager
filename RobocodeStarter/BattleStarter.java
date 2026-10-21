@@ -66,6 +66,7 @@ import robocode.control.snapshot.ITurnSnapshot;
  */
 public class BattleStarter {
 
+	/** Runs a battle from the command line: the robots, the number of rounds and the output for the manager. */
 	public static void main(String[] args) {
 		String robocodePath = "";
 		int rounds = 1;
@@ -173,21 +174,25 @@ public class BattleStarter {
 		private ITurnSnapshot lastTurn;
 		private BattleResults[] results = new BattleResults[0];
 
+		/** An observer that prints the turns of the battle when streaming, and keeps the results of a knockout. */
 		Observer(PrintStream out, boolean stream) {
 			this.out = out;
 			this.stream = stream;
 		}
 
+		/** Tells the observer that the rounds are a knockout, with the total number of rounds. */
 		void knockout(int totalRounds) {
 			this.knockout = true;
 			this.totalRounds = totalRounds;
 		}
 
+		/** Starts a new round, counting from the given index of the battle. */
 		void nextRound(int index) {
 			this.roundOffset = index;
 			this.lastTurn = null;
 		}
 
+		/** The results of the battle, when it is a knockout. */
 		BattleResults[] results() {
 			return this.results;
 		}
@@ -210,6 +215,7 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Prints the frame with the size of the battlefield, when streaming. */
 		public void onBattleStarted(BattleStartedEvent event) {
 			// A knockout is many battles, the frame is told once
 			if (this.stream && this.roundOffset == 0) {
@@ -219,6 +225,7 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Prints the start of a round with its robots, when streaming. */
 		public void onRoundStarted(RoundStartedEvent event) {
 			if (!this.stream) {
 				return;
@@ -235,6 +242,7 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Keeps the last turn and prints it, when streaming. */
 		public void onTurnEnded(TurnEndedEvent event) {
 			this.lastTurn = event.getTurnSnapshot();
 			if (this.stream) {
@@ -243,12 +251,14 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Prints the end of a round, when streaming. */
 		public void onRoundEnded(RoundEndedEvent event) {
 			if (this.stream) {
 				this.out.println("#E " + (event.getRound() + this.roundOffset) + " " + event.getTurns());
 			}
 		}
 
+		/** Prints the robots of a turn: position, energy and colours. */
 		private void printTurn(ITurnSnapshot turn) {
 			StringBuilder line = new StringBuilder(256);
 
@@ -317,6 +327,7 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Keeps the sorted results of a knockout, or prints the results of a battle. */
 		public void onBattleCompleted(BattleCompletedEvent event) {
 			if (this.knockout) {
 				this.results = event.getSortedResults();
@@ -329,6 +340,7 @@ public class BattleStarter {
 		}
 
 		@Override
+		/** Prints the error of the battle. */
 		public void onBattleError(BattleErrorEvent event) {
 			this.out.println("Err> " + event.getError());
 			this.out.flush();

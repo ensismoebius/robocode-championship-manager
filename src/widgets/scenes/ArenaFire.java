@@ -32,6 +32,7 @@ final class ArenaFire {
 	private final List<Particle> particles = new ArrayList<Particle>();
 	private final List<Particle> particlePool = new ArrayList<Particle>();
 
+	/** Creates the fire of the arena, drawn in the host scene. */
 	ArenaFire(BattleArena3D host) {
 		this.host = host;
 	}
@@ -62,6 +63,7 @@ final class ArenaFire {
 		return image;
 	}
 
+	/** A square sprite, two triangles, with its texture coordinates. */
 	private static TriangleMesh sprite() {
 		TriangleMesh mesh = new TriangleMesh();
 		mesh.getPoints().addAll(-0.5f, -0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0.5f, 0, -0.5f, 0.5f, 0);
@@ -147,26 +149,32 @@ final class ArenaFire {
 	private static final Color[] FIREFLY_COLORS = new Color[OPACITY_LEVELS];
 	private static final Color[] SNOW_COLORS = new Color[OPACITY_LEVELS];
 
+	/** The index of the life step of a particle, from its life between zero and one. */
 	private static int step(double time) {
 		return Math.max(0, Math.min(LIFE_STEPS - 1, (int) (time * LIFE_STEPS)));
 	}
 
+	/** The index of the opacity level closest to the given opacity. */
 	private static int level(double opacity) {
 		return Math.max(0, Math.min(OPACITY_LEVELS - 1, (int) Math.round(opacity * (OPACITY_LEVELS - 1))));
 	}
 
+	/** The middle of a life step, as a fraction of the life. */
 	private static double middle(int step) {
 		return (step + 0.5) / LIFE_STEPS;
 	}
 
+	/** The opacity of an opacity level. */
 	private static double opacity(int level) {
 		return (double) level / (OPACITY_LEVELS - 1);
 	}
 
+	/** The colour with the given opacity. */
 	private static Color withOpacity(Color color, double opacity) {
 		return Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity);
 	}
 
+	/** The colour of a flame, cached by its life step and opacity level. */
 	private static Color flameColor(boolean blue, int step, int level) {
 		int index = ((blue ? 1 : 0) * LIFE_STEPS + step) * OPACITY_LEVELS + level;
 		Color color = FLAME_COLORS[index];
@@ -189,6 +197,7 @@ final class ArenaFire {
 		return color;
 	}
 
+	/** The colour of a smoke particle, cached by its shade, life step and opacity level. */
 	private static Color smokeColor(int shade, int step, int level) {
 		int index = (shade * LIFE_STEPS + step) * OPACITY_LEVELS + level;
 		Color color = SMOKE_COLORS[index];
@@ -201,6 +210,7 @@ final class ArenaFire {
 		return color;
 	}
 
+	/** The colour of an ember, cached by its life step. */
 	private static Color emberColor(int step) {
 		Color color = EMBER_COLORS[step];
 		if (color == null) {
@@ -211,6 +221,7 @@ final class ArenaFire {
 		return color;
 	}
 
+	/** The colour of a spark, cached by its life step. */
 	private static Color sparkColor(int step) {
 		Color color = SPARK_COLORS[step];
 		if (color == null) {
@@ -220,10 +231,12 @@ final class ArenaFire {
 		return color;
 	}
 
+	/** The colour of a firefly for the given opacity level. */
 	private static Color fireflyColor(int level) {
 		return cachedColor(FIREFLY_COLORS, level, 0.78, 1, 0.35);
 	}
 
+	/** The colour of a snowflake for the given opacity level. */
 	private static Color snowColor(int level) {
 		return cachedColor(SNOW_COLORS, level, 0.94, 0.97, 1);
 	}
@@ -267,6 +280,7 @@ final class ArenaFire {
 			this.vz += speedZ;
 		}
 
+		/** Creates a particle with its view, material and transforms. */
 		Particle() {
 			this.view.setMaterial(this.material);
 			this.view.setCullFace(CullFace.NONE);
@@ -345,6 +359,7 @@ final class ArenaFire {
 	}
 	}
 
+	/** Spawns a particle of the given kind at the given position, with the damage it carries. */
 	Particle spawn(ParticleKind kind, double posX, double posY, double posZ, double damage) {
 		Particle particle = this.particlePool.isEmpty() ? new Particle() : this.particlePool.remove(this.particlePool.size() - 1);
 		particle.kind = kind;
@@ -544,6 +559,7 @@ final class ArenaFire {
 		particle.distance = deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
 	}
 
+	/** Removes every particle and returns them to the pool. */
 	void clear() {
 		this.particlePool.addAll(this.particles);
 		this.particles.clear();

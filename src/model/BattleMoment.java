@@ -102,7 +102,7 @@ public class BattleMoment {
 		this.roundNumber = roundNumber;
 	}
 
-	/** Tells whether the destruction. */
+	/** Tells whether the moment is the destruction of a robot. */
 	public boolean isDestruction() {
 		return destruction;
 	}

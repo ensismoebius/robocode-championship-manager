@@ -97,6 +97,7 @@ public class BattleArena3D extends StackPane {
 		final double pitch;
 		final double fov;
 
+		/** A camera view: its label, the pitch of the camera and its field of view. */
 		ViewMode(String label, double pitch, double fov) {
 			this.label = label;
 			this.pitch = pitch;
@@ -281,6 +282,7 @@ public class BattleArena3D extends StackPane {
 		private long last = -1;
 
 		@Override
+		/** Advances the battle by the time since the last frame. */
 		public void handle(long now) {
 			double deltaTime = this.last < 0 ? 0 : Math.min(0.1, (now - this.last) / 1e9);
 			this.last = now;
@@ -311,6 +313,7 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
+	/** Creates the arena of a battle between the fighters. */
 	public BattleArena3D(List<Opponent> fighters) {
 		this.fighters = fighters;
 		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
@@ -407,6 +410,7 @@ public class BattleArena3D extends StackPane {
 		this.showcase.startShowcase();
 	}
 
+	/** The fighter that drives the given robot of the recording, or null when it is not one of them. */
 	Opponent opponentOf(BattleRecording.Robot robot) {
 		String name = BattleControl.robotClassName(robot.getName());
 		return this.fighters.stream().filter(other -> other.getFullName().equals(name)).findFirst().orElse(null);
@@ -414,6 +418,7 @@ public class BattleArena3D extends StackPane {
 
 	// ------------------------------------------------------------------ scene
 
+	/** Lights the arena: the ambient light, a key light and the glow of the fire. */
 	private void buildLights() {
 		AmbientLight ambient = new AmbientLight(this.style.ambient);
 		PointLight key = new PointLight(this.style.key);
@@ -451,6 +456,7 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
+	/** A mesh view with the given material, visible from both sides. */
 	MeshView meshView(TriangleMesh mesh, PhongMaterial material) {
 		MeshView view = new MeshView(mesh);
 		view.setMaterial(material);
@@ -502,16 +508,19 @@ public class BattleArena3D extends StackPane {
 		return posX - this.fieldWidth / 2;
 	}
 
+	/** The z coordinate of the arena for a y coordinate of the recording. */
 	double worldZ(double posY) {
 		return posY - this.fieldHeight / 2;
 	}
 
 	// ------------------------------------------------------------------- HUD
 
+	/** The CSS colour of a colour, as #rrggbb. */
 	static String toCss(Color color) {
 		return String.format("#%02x%02x%02x", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
 	}
 
+	/** Switches to the next camera view. */
 	void cycleView() {
 		this.controls.setView(ViewMode.values()[(this.viewMode.ordinal() + 1) % ViewMode.values().length]);
 		Sfx.blip();
@@ -526,6 +535,7 @@ public class BattleArena3D extends StackPane {
 
 	// ----------------------------------------------------------------- update
 
+	/** Advances the battle state machine by the time since the last frame. */
 	private void update(double deltaTime) {
 		this.phaseTime += deltaTime;
 
@@ -613,6 +623,7 @@ public class BattleArena3D extends StackPane {
 		return List.copyOf(this.photos);
 	}
 
+	/** The turns of the current round of the recording. */
 	List<Turn> turns() {
 		return this.recording.getRounds().get(this.round);
 	}
@@ -632,6 +643,7 @@ public class BattleArena3D extends StackPane {
 		return new double[] { lerp(state.x(), after.x(), fraction), lerp(state.y(), after.y(), fraction), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction) };
 	}
 
+	/** The bullet with the given identifier in a turn, or null when there is none. */
 	static Bullet findBullet(Turn turn, int identifier) {
 		for (Bullet bullet : turn.bullets()) {
 			if (bullet.id() == identifier) {
@@ -673,6 +685,7 @@ public class BattleArena3D extends StackPane {
 	record PendingPhoto(double remaining, int round, boolean destruction, Opponent subject, double power) {
 	}
 
+	/** The state of the robot with the given index, or the fallback when it is not in the list. */
 	static RobotState find(List<RobotState> states, int index, RobotState fallback) {
 		for (RobotState state : states) {
 			if (state.index() == index) {
@@ -695,6 +708,7 @@ public class BattleArena3D extends StackPane {
 		return map;
 	}
 
+	/** Stops the music of the showcase, if it is playing. */
 	void stopShowcaseMusic() {
 		if (this.showcaseMusic != null) {
 			this.showcaseMusic.stop();
@@ -702,6 +716,7 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
+	/** Linear interpolation between two values. */
 	static double lerp(double first, double second, double time) {
 		return first + (second - first) * time;
 	}

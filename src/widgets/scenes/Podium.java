@@ -66,6 +66,7 @@ public class Podium extends StackPane {
 	/** Lands and bounces, like something heavy falling on the step */
 	static final Interpolator BOUNCE = new Interpolator() {
 		@Override
+		/** The bounce easing: the position of the animation at the given time, between zero and one. */
 		protected double curve(double time) {
 			if (time < 1 / 2.75) {
 				return 7.5625 * time * time;
@@ -213,6 +214,7 @@ public class Podium extends StackPane {
 		this.updateHint();
 	}
 
+	/** Stops the ceremony: the flashback, the animations and the music. */
 	public void stop() {
 		this.flashback.hide();
 		this.stopAnimations();
@@ -222,6 +224,7 @@ public class Podium extends StackPane {
 		}
 	}
 
+	/** Stops every animation in progress. */
 	private void stopAnimations() {
 		for (Animation animation : this.animations) {
 			animation.stop();
@@ -229,6 +232,7 @@ public class Podium extends StackPane {
 		this.animations.clear();
 	}
 
+	/** Keeps an animation until it finishes, so it can be stopped with the others. */
 	<T extends Animation> T animate(T animation) {
 		this.animations.add(animation);
 		animation.setOnFinished(event -> this.animations.remove(animation));
@@ -252,10 +256,12 @@ public class Podium extends StackPane {
 		}
 	}
 
+	/** The volume of the music, so that a slider can be bound to it. */
 	public DoubleProperty musicVolumeProperty() {
 		return this.musicVolume;
 	}
 
+	/** Shows the hint of the next key: start the ceremony or reveal the next place. */
 	void updateHint() {
 		if (this.step < this.reveals.size()) {
 			int next = this.reveals.get(this.step);
@@ -368,6 +374,7 @@ public class Podium extends StackPane {
 
 	// ----------------------------------------------------------- the ceremony
 
+	/** Shows the stage of the ceremony: the podium with the winners. */
 	private void showStage() {
 		this.stopAnimations();
 		this.fireworks.clear();

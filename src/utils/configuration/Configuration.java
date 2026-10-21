@@ -53,14 +53,17 @@ public class Configuration {
 	 */
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
+	/** Calls the listener every time the configuration changes. */
 	public static void addListener(Runnable listener) {
 		Configuration.listeners.add(listener);
 	}
 
+	/** Stops calling the listener when the configuration changes. */
 	public static void removeListener(Runnable listener) {
 		Configuration.listeners.remove(listener);
 	}
 
+	/** Calls every listener, because the configuration changed. */
 	private static void notifyListeners() {
 		for (Runnable listener : Configuration.listeners) {
 			listener.run();
@@ -115,6 +118,7 @@ public class Configuration {
 		return Configuration.configurations.getProperty(name);
 	}
 
+	/** The integer configuration with the given name, or the default when it is missing or invalid. */
 	private static int getIntConfiguration(String name, int defaultValue) {
 		return Configuration.parseInt(Configuration.getConfiguration(name), defaultValue);
 	}
@@ -165,13 +169,14 @@ public class Configuration {
 		}
 	}
 
-	public static synchronized void setEnabledRegistration(boolean second) {
+	/** Opens or closes the robot registration, and saves the configuration. */
+	public static synchronized void setEnabledRegistration(boolean enabled) {
 		if (Configuration.configurations == null) {
 			throw new IllegalStateException("Configuration not loaded, call askForProperties() first");
 		}
-		Object old = Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(second));
+		Object old = Configuration.configurations.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, String.valueOf(enabled));
 		Configuration.saveConfigurations();
-		if (!String.valueOf(second).equals(old)) {
+		if (!String.valueOf(enabled).equals(old)) {
 			Configuration.notifyListeners();
 		}
 	}
@@ -189,12 +194,13 @@ public class Configuration {
 		return file == null || file.isBlank() ? DEFAULT_DATABASE_FILE : file;
 	}
 
+	/** The folder of Robocode, or an empty text when it is not set. */
 	public static String getRobocodePath() {
 		String path = Configuration.getConfiguration(INewConfigurationHandle.ROBOCODE_PATH);
 		return path == null ? "" : path;
 	}
 
-	/** Tells whether the enabled registration. */
+	/** Tells whether the robot registration is open. */
 	public static boolean isEnabledRegistration() {
 		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.REGISTRATION_ENABLED));
 	}
@@ -315,6 +321,7 @@ public class Configuration {
 		return !"CLASSIC".equals(Configuration.getConfiguration(INewConfigurationHandle.BATTLE_VIEW));
 	}
 
+	/** The script that starts a battle on Robocode: a batch file on Windows, a shell script elsewhere. */
 	public static String getStartBattleScript() {
 		String osname = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 		String script = osname.contains("win") ? "start.bat" : "start.sh";

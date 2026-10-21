@@ -113,11 +113,13 @@ public class Main extends Application {
 	private boolean battleRunning = false;
 	private final KeyBindings keys = new KeyBindings(this);
 
+	/** Starts the application. */
 	public static void main(String[] args) {
 		launch(args);
 	}
 
 	@Override
+	/** Builds the only window, opens the start screen and wires the keys. */
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
 
@@ -160,6 +162,7 @@ public class Main extends Application {
 	}
 
 	@Override
+	/** Stops the web server and clears the scenes when the application closes. */
 	public void stop() {
 		this.resetAllScenes();
 		if (this.httpServer != null) {
@@ -189,12 +192,14 @@ public class Main extends Application {
 		return this.httpServer == null ? 0 : this.httpServer.getPort();
 	}
 
+	/** The database file named in the configuration, as an absolute path. */
 	private static Path configuredDatabaseFile() {
 		return Path.of(Configuration.getDatabaseFile()).toAbsolutePath().normalize();
 	}
 
 	// ---------------------------------------------------------- configuration
 
+	/** Opens the configuration window, unless a battle is running. */
 	void openConfiguration() {
 		if (this.battleRunning) {
 			this.showError("Aguarde a batalha terminar para mudar as configurações.");
@@ -247,6 +252,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Opens or closes the robot registration and tells the operator. */
 	void toggleRegistration() {
 		boolean enabled = !Configuration.isEnabledRegistration();
 		Configuration.setEnabledRegistration(enabled);
@@ -268,6 +274,7 @@ public class Main extends Application {
 		this.setChampionship(this.championship);
 	}
 
+	/** Shows the given championship and its bracket, or nothing when it is null. */
 	private void setChampionship(Championship championship) {
 		this.championship = championship;
 		if (championship == null) {
@@ -286,6 +293,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Draws a new championship from the registered robots. */
 	void newChampionship() {
 		long robots;
 		try {
@@ -324,6 +332,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Shows the bracket of the championship, creating it when needed. */
 	void showBracket() {
 		try {
 			this.loadChampionship();
@@ -410,6 +419,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Declares the winner of the selected match, the first or the second opponent. */
 	void declareWinner(boolean slotA) {
 		Optional<Match> playable = this.playableSelectedMatch();
 		if (playable.isEmpty()) {
@@ -423,6 +433,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Undoes the last result of the championship. */
 	void undoLastResult() {
 		if (this.championship == null || this.championship.getResults().isEmpty()) {
 			this.showError("Não há resultados para desfazer.");
@@ -447,6 +458,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** The name of an opponent for the messages, or a question mark when it is unknown. */
 	private String nameOf(Long identifier) {
 		Opponent opponent = this.opponents.get(identifier);
 		return opponent == null ? "?" : opponent.getFullName();
@@ -483,6 +495,7 @@ public class Main extends Application {
 		}
 	}
 
+	/** Shows the start screen with the web server address. */
 	protected void showStartScreen() {
 		this.startScene = new StartScreen(this.runningWebserverPort());
 
@@ -490,6 +503,7 @@ public class Main extends Application {
 		this.playMenuMusic(START_MUSIC_VOLUME);
 	}
 
+	/** Asks for the Robocode folder and starts a battle of the selected match. */
 	protected void startsBattle() {
 		if (this.battleRunning || !this.chooseRobocodeDir()) {
 			return;
@@ -520,6 +534,7 @@ public class Main extends Application {
 		// would freeze the screen
 		Task<BattleOutcome> battle = new Task<BattleOutcome>() {
 			@Override
+			/** Runs the battle on Robocode in a background thread. */
 			protected BattleOutcome call() throws Exception {
 				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
 			}
@@ -769,10 +784,12 @@ public class Main extends Application {
 		Theme.enter(screen);
 	}
 
+	/** Shows an error message in a dialog. */
 	private void showError(String message) {
 		GameDialog.error(message);
 	}
 
+	/** The message of the innermost cause of the exception. */
 	private static String rootCauseMessage(Throwable throwable) {
 		Throwable cause = throwable;
 		while (cause.getCause() != null && cause.getCause() != cause) {

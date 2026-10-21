@@ -45,6 +45,7 @@ import widgets.scenes.ArenaStyle;
 public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 	@Override
+	/** Shows the configuration form filled with the old properties, and returns the properties that the operator saved. */
 	public Properties askForProperties(Properties oldProperties) {
 		ConfigForm form = new ConfigForm(oldProperties == null ? new Properties() : oldProperties);
 
@@ -109,6 +110,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		final Tab soundTab;
 		final Tab systemTab;
 
+		/** The form fields, filled with the values of the old properties. */
 		ConfigForm(Properties old) {
 			this.title = new TextField(old.getProperty(TITLE, Configuration.DEFAULT_TITLE));
 			this.title.setPromptText(Configuration.DEFAULT_TITLE);
@@ -214,6 +216,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			explain.run();
 		}
 
+		/** The tab of the start screen: its title and its subtitle. */
 		private Tab startTab() {
 			GridPane grid = grid();
 			grid.add(field("Título da tela inicial", this.title), 0, 0);
@@ -223,6 +226,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			return new Tab("Tela inicial", grid);
 		}
 
+		/** The tab of the battles: the rounds, the rules, the speed and the view. */
 		private Tab battleTab() {
 			Label roundsCaption = new Label();
 			roundsCaption.getStyleClass().add("form-label");
@@ -241,6 +245,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			return new Tab("Batalha", grid);
 		}
 
+		/** The tab of the sounds: the volumes of the music and of the effects. */
 		private Tab soundTab() {
 			Label musicVolumeValue = new Label();
 			musicVolumeValue.setMinWidth(54);
@@ -254,6 +259,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			return new Tab("Arena e som", grid);
 		}
 
+		/** The tab of the system: the database file and the Robocode folder. */
 		private Tab systemTab() {
 			Button chooseDatabaseFile = new Button("Escolher...");
 			chooseDatabaseFile.setOnAction(event -> {
@@ -366,6 +372,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		return 0;
 	}
 
+	/** The speed as it is shown in the form: whole numbers without decimals. */
 	private static String formatSpeed(double speed) {
 		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
 	}

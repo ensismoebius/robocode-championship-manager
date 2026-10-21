@@ -178,6 +178,7 @@ public class BracketViewer extends StackPane {
 
 	// ------------------------------------------------------------------ header
 
+	/** The title of the bracket with the robots that are not in it. */
 	private Node buildHeader(String title, long robotsOutside) {
 		VBox header = new VBox(8);
 
@@ -233,6 +234,7 @@ public class BracketViewer extends StackPane {
 
 	// ------------------------------------------------------------------ cards
 
+	/** A card with the two slots of a match, its status and its code. */
 	VBox buildCard(Match match) {
 		VBox card = new VBox();
 		card.setPrefSize(CARD_W, CARD_H);
@@ -282,6 +284,7 @@ public class BracketViewer extends StackPane {
 		return card;
 	}
 
+	/** The status of a match, as the word shown in its card. */
 	private String statusText(Match match) {
 		boolean isNext = this.bracket.getNextMatch().map(matrix -> matrix == match).orElse(false);
 		return switch (match.getStatus()) {
@@ -292,6 +295,7 @@ public class BracketViewer extends StackPane {
 		};
 	}
 
+	/** A row of a slot, with the logo and the name of the robot in it. */
 	private HBox buildSlotRow(Match match, Slot slot) {
 		HBox row = new HBox();
 		row.getStyleClass().add("slot-row");
@@ -345,6 +349,7 @@ public class BracketViewer extends StackPane {
 		return row;
 	}
 
+	/** The picture of an opponent scaled to the given size, or null when it has none. */
 	private ImageView logo(Long participant, double width, double height) {
 		Opponent opponent = this.opponents.get(participant);
 		if (opponent == null || opponent.getImage() == null) {
@@ -359,6 +364,7 @@ public class BracketViewer extends StackPane {
 		return view;
 	}
 
+	/** The name and team of an opponent, or a question mark when it is unknown. */
 	private String nameOf(Long participant) {
 		Opponent opponent = this.opponents.get(participant);
 		return opponent == null ? "?" : opponent.getName() + " (" + opponent.getTeam() + ")";
@@ -401,6 +407,7 @@ public class BracketViewer extends StackPane {
 		Theme.blink(this.nextTag);
 	}
 
+	/** Removes the tag that shows the next match, if it is shown. */
 	private void removeNextTag() {
 		if (this.nextTag != null) {
 			this.canvas.getChildren().remove(this.nextTag);
@@ -408,6 +415,7 @@ public class BracketViewer extends StackPane {
 		}
 	}
 
+	/** Highlights a card as the selected match, or removes the highlight. */
 	void styleSelected(VBox card, boolean selected) {
 		card.getStyleClass().remove("selected");
 		if (selected) {
@@ -421,12 +429,14 @@ public class BracketViewer extends StackPane {
 		status.setText(this.statusText(match));
 	}
 
+	/** The code of the match of a card. */
 	private String codeOf(VBox card) {
 		return this.cards.entrySet().stream().filter(event -> event.getValue() == card).map(Map.Entry::getKey).findFirst().orElseThrow();
 	}
 
 	// ----------------------------------------------------------------- camera
 
+	/** Installs the mouse and keyboard controls of the bracket. */
 	private void installControls() {
 		// Ctrl + wheel zooms towards the mouse, the wheel alone moves
 		this.viewport.addEventFilter(ScrollEvent.SCROLL, event -> {
@@ -578,6 +588,7 @@ public class BracketViewer extends StackPane {
 		}
 	}
 
+	/** Moves the camera to the position in the given time, stopping the move in progress. */
 	private void moveCamera(double[] position, Duration duration) {
 		if (this.cameraMove != null) {
 			this.cameraMove.stop();
@@ -649,6 +660,7 @@ public class BracketViewer extends StackPane {
 		}
 	}
 
+	/** Starts the animation of the result of a match, dropping the pending one. */
 	private void startResultAnimation(String code) {
 		this.pendingResult = null;
 		this.replay.start(code);
@@ -657,6 +669,7 @@ public class BracketViewer extends StackPane {
 
 	// -------------------------------------------------------------- standings
 
+	/** The table of placements, or null when there are none yet. */
 	Node buildStandings() {
 		Map<Long, Integer> placements = this.bracket.getPlacements();
 		if (placements.isEmpty()) {

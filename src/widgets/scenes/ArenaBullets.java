@@ -64,10 +64,12 @@ final class ArenaBullets {
 
 	private final BattleArena3D host;
 
+	/** Creates the bullets of the arena, drawn in the host scene. */
 	ArenaBullets(BattleArena3D host) {
 		this.host = host;
 	}
 
+	/** The path of a bullet in the arena: where it starts, where it goes and when it lands. */
 	record Flight(double sx, double sy, double ux, double uy, double total, double born, double duration, Bullet hit, double side, double ahead) {
 	}
 
@@ -154,6 +156,7 @@ final class ArenaBullets {
 		return this.flights.get(seen.id());
 	}
 
+	/** Shows the bullets of a turn, placed between this turn and the next one by the fraction of the turn. */
 	void showBullets(List<Turn> turns, int index, double fraction) {
 		Turn current = turns.get(index);
 		Turn next = turns.get(Math.min(index + 1, turns.size() - 1));
@@ -207,6 +210,7 @@ final class ArenaBullets {
 		});
 	}
 
+	/** Places a bullet at the given position, turned to the direction it flies. */
 	void placeBullet(Bullet bullet, Set<Integer> flying, double posX, double posY, double deltaX, double deltaY, double height) {
 		flying.add(bullet.id());
 		Group shot = host.bullets.computeIfAbsent(bullet.id(), identifier -> this.newBullet(bullet));
@@ -370,6 +374,7 @@ final class ArenaBullets {
 		return shot;
 	}
 
+	/** Removes every bullet from the arena. */
 	void clearBullets() {
 		for (Group bullet : host.bullets.values()) {
 			host.bulletLayer.getChildren().remove(bullet);
@@ -378,6 +383,7 @@ final class ArenaBullets {
 		this.flights.clear();
 	}
 
+	/** Flashes the arena white and fades it out. */
 	void whiteFlash() {
 		FadeTransition flash = new FadeTransition(Duration.millis(380), host.whiteFlash);
 		flash.setFromValue(0.75);
@@ -414,6 +420,7 @@ final class ArenaBullets {
 		this.flashSegment(wall, index + 2, 0.3, Duration.millis(120));
 	}
 
+	/** Flashes the fence segments of a wall at the given index, with the given intensity, after the delay. */
 	void flashSegment(int wall, int index, double intensity, Duration delay) {
 		for (FenceSegment segment : host.fenceSegments) {
 			if (segment.wall() != wall || segment.index() != index) {

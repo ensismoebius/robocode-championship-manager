@@ -93,7 +93,7 @@ public class Championship {
 		this.createdAt = createdAt;
 	}
 
-	/** Tells whether the repechage. */
+	/** Tells whether the championship has a repechage, a second chance for the losers. */
 	public boolean isRepechage() {
 		return repechage;
 	}

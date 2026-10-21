@@ -27,6 +27,7 @@ import static widgets.scenes.BattleArena3D.solidMap;
  */
 final class ArenaMaterials {
 
+	/** The shared helpers are static: this class is not instantiated. */
 	private ArenaMaterials() {
 	}
 
@@ -42,6 +43,7 @@ final class ArenaMaterials {
 		return dome;
 	}
 
+	/** The squared distance between two points. */
 	static double distance2(double[] first, double[] second) {
 		return (first[0] - second[0]) * (first[0] - second[0]) + (first[1] - second[1]) * (first[1] - second[1]) + (first[2] - second[2]) * (first[2] - second[2]);
 	}
@@ -57,6 +59,7 @@ final class ArenaMaterials {
 		return material;
 	}
 
+	/** A shiny material of the given colour. */
 	static PhongMaterial material(Color color) {
 		PhongMaterial material = new PhongMaterial(color);
 		material.setSpecularColor(color.brighter());
@@ -64,6 +67,7 @@ final class ArenaMaterials {
 		return material;
 	}
 
+	/** A cylinder of the given radius and height, at the given position, turned by the angle around the axis. */
 	static Cylinder cylinder(double radius, double height, int divisions, double posX, double posY, double posZ, Point3D axis, double angle, PhongMaterial material) {
 		Cylinder cylinder = new Cylinder(radius, height, divisions);
 		cylinder.setTranslateX(posX);
@@ -75,8 +79,9 @@ final class ArenaMaterials {
 		return cylinder;
 	}
 
-	static Box box(double width, double height, double delta, double posX, double posY, double posZ, PhongMaterial material) {
-		Box box = new Box(width, height, delta);
+	/** A box of the given width, height and depth, at the given position. */
+	static Box box(double width, double height, double depth, double posX, double posY, double posZ, PhongMaterial material) {
+		Box box = new Box(width, height, depth);
 		box.setTranslateX(posX);
 		box.setTranslateY(posY);
 		box.setTranslateZ(posZ);
@@ -89,6 +94,7 @@ final class ArenaMaterials {
 	/** A crystal of light, built once: the flash of a shot, a spark */
 	static final TriangleMesh CRYSTAL = spindleMesh(1, 1, 1, 4);
 
+	/** The mesh of a spindle: a round shape with a front and a back. */
 	private static TriangleMesh spindleMesh(double radius, double front, double back, int sides) {
 		LowPoly shape = new LowPoly();
 		shape.spindle(0, 0, 0, radius, front, back, sides);
@@ -116,6 +122,7 @@ final class ArenaMaterials {
 		return material;
 	}
 
+	/** A view of a mesh with the given material, visible from both sides. */
 	static MeshView shape(TriangleMesh mesh, PhongMaterial material) {
 		MeshView view = new MeshView(mesh);
 		view.setMaterial(material);
@@ -123,6 +130,7 @@ final class ArenaMaterials {
 		return view;
 	}
 
+	/** Grows a node from the given scale to the target scale, in the given time. */
 	static ScaleTransition grow(Node node, double from, double toValue, double millis) {
 		ScaleTransition grow = new ScaleTransition(Duration.millis(millis), node);
 		grow.setFromX(from);
@@ -135,6 +143,7 @@ final class ArenaMaterials {
 		return grow;
 	}
 
+	/** Shrinks a node to nothing after the delay, in the given time. */
 	static ScaleTransition shrink(Node node, double delay, double millis) {
 		ScaleTransition vanish = new ScaleTransition(Duration.millis(millis), node);
 		vanish.setDelay(Duration.millis(delay));

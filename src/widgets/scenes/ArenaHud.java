@@ -48,6 +48,7 @@ final class ArenaHud {
 
 	private final BattleArena3D host;
 
+	/** Creates the head-up display of the arena, drawn over the 3D scene by the host. */
 	ArenaHud(BattleArena3D host) {
 		this.host = host;
 	}
@@ -62,6 +63,7 @@ final class ArenaHud {
 	/** The damage trails draining, one per player */
 	private final Map<Integer, Timeline> lagDrains = new HashMap<>();
 
+	/** Builds the head-up display: the banners, the labels and the player panels. */
 	Node buildHud() {
 		host.banner.getStyleClass().add("arena-banner");
 		host.subBanner.getStyleClass().add("arena-sub-banner");
@@ -122,6 +124,7 @@ final class ArenaHud {
 		return frame;
 	}
 
+	/** Shows or hides the black bars of the letterbox, at the top and at the bottom. */
 	void showLetterbox(boolean show) {
 		this.showLetterbox(show, show);
 	}
@@ -211,6 +214,7 @@ final class ArenaHud {
 		this.updatePips();
 	}
 
+	/** A region that takes the free space of a row. */
 	static Region spacer() {
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -229,6 +233,7 @@ final class ArenaHud {
 		return Math.max(1, BattleControl.roundsToWin(Configuration.getRobocodeRounds()));
 	}
 
+	/** Draws the pips of each player: one for each round it has won. */
 	void updatePips() {
 		int rounds = this.roundsToWin();
 		for (HudPlayer player : host.hudPlayers) {
@@ -242,6 +247,7 @@ final class ArenaHud {
 		}
 	}
 
+	/** Updates the energy bars of the players from the energy of each robot. */
 	void updateHud(Map<Integer, Double> energies) {
 		for (HudPlayer player : host.hudPlayers) {
 			double energy = Math.max(0, energies.getOrDefault(player.index(), 0.0));
@@ -272,6 +278,7 @@ final class ArenaHud {
 		}
 	}
 
+	/** Shows the speed, the paused state and the camera view. */
 	void updateInfo() {
 		host.speedLabel.setText(host.paused ? "❚❚ PAUSA" : "▶ " + formatSpeed(SPEEDS[host.speed]) + "x");
 		host.viewLabel.setText("◉ " + host.viewMode.label);
@@ -282,10 +289,12 @@ final class ArenaHud {
 		}
 	}
 
+	/** The speed as it is shown: whole numbers without decimals. */
 	static String formatSpeed(double speed) {
 		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
 	}
 
+	/** Shows a banner with a text and an optional sub-text. */
 	void showBanner(String text, String sub) {
 		host.banner.setStyle("");
 		host.banner.setText(text);
@@ -301,6 +310,7 @@ final class ArenaHud {
 		pop.play();
 	}
 
+	/** Hides the banner and its sub-text. */
 	void hideBanner() {
 		host.banner.setVisible(false);
 		host.subBanner.setVisible(false);

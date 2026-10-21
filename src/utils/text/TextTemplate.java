@@ -27,6 +27,7 @@ public class TextTemplate {
 	private ArrayList<HashMap<String, Object>> template;
 	private HashMap<String, Object> assignments;
 
+	/** Loads a template from the stream, with no values assigned yet. */
 	public TextTemplate(InputStream inputStream) throws IOException {
 		this.assignments = new HashMap<String, Object>();
 		this.template = new TextTemplatePreprocessor().loadTemplate(inputStream);
@@ -37,18 +38,22 @@ public class TextTemplate {
 		return assignments;
 	}
 
+	/** Replaces every value assigned to the template with the given ones. */
 	public void setAllAssignments(HashMap<String, Object> keyValues) {
 		this.assignments = keyValues;
 	}
 
+	/** Assigns a value to a place holder of the template. */
 	public void assign(String key, Object value) {
 		this.assignments.put(key, value);
 	}
 
+	/** The text of a block of the template, with the values assigned to it. */
 	public String out(String blockName) {
 		return this.out(this.template, blockName);
 	}
 
+	/** Parses a block of the template, keeping its place holders for the text of the block. */
 	public void parse(String blockName) {
 		List<Object> indexes = this.getBlockIndexes(this.template, blockName, null);
 
@@ -60,6 +65,7 @@ public class TextTemplate {
 	}
 
 	@SuppressWarnings("unchecked")
+	/** The text of a block of a parsed template, with the place holders replaced by their values. */
 	private String out(ArrayList<HashMap<String, Object>> template, String blockName) {
 		// the final result
 		StringBuilder finalText = new StringBuilder();
@@ -107,6 +113,7 @@ public class TextTemplate {
 	}
 
 	@SuppressWarnings("unchecked")
+	/** Splits the items of a block into text and place holders. */
 	private List<Object> parseBlockElements(List<Object> itens) {
 
 		Pattern placeHoldersPattern = Pattern.compile("\\{(\\w+)\\}");

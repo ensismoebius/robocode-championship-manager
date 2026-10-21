@@ -63,6 +63,7 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	@Override
+	/** Shows the robot editor for the logged author: the form of a new robot or of the robot being edited. */
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 
 		String action = this.getAction(req);
@@ -102,6 +103,7 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	@Override
+	/** Handles the robot editor form: saves the robot, or shows the errors that were found. */
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		req.setCharacterEncoding("UTF-8");
 
@@ -157,6 +159,7 @@ public class RobotEditor extends HttpServlet {
 		}
 	}
 
+	/** The action asked by the form, or an empty text when there is none. */
 	private String getAction(HttpServletRequest req) {
 		String action = req.getParameter("action");
 		return action == null ? "" : action;
@@ -353,6 +356,7 @@ public class RobotEditor extends HttpServlet {
 		return names;
 	}
 
+	/** Adds an error when the uploaded Java file is empty. */
 	private static void checkJava(List<String> errors, Upload robotJava) {
 		if (robotJava != null && robotJava.content().length == 0) {
 			errors.add("Arquivo .java inválido!");
@@ -362,6 +366,7 @@ public class RobotEditor extends HttpServlet {
 		}
 	}
 
+	/** Adds an error when the uploaded music is empty. */
 	private static void checkMusic(List<String> errors, Upload teamMusic) {
 		if (teamMusic != null && teamMusic.content().length == 0) {
 			errors.add("Arquivo música inválido!");
@@ -373,6 +378,7 @@ public class RobotEditor extends HttpServlet {
 		}
 	}
 
+	/** Checks the uploaded logo: its size, that it is an image and that it is not too large. */
 	private static void checkLogo(List<String> errors, Upload teamLogo) throws IOException {
 		if (teamLogo == null) {
 			return;
@@ -408,6 +414,7 @@ public class RobotEditor extends HttpServlet {
 		}
 	}
 
+	/** Adds an error when the battle cry is empty or too long. */
 	private static void checkWarcry(List<String> errors, String teamWarcry) {
 		if (teamWarcry.isEmpty()) {
 			errors.add("Informe seu lema");
@@ -468,6 +475,7 @@ public class RobotEditor extends HttpServlet {
 		robot.getAuthors().addAll(authors);
 	}
 
+	/** The text without the spaces around it, or an empty text when it is null. */
 	private static String trim(String value) {
 		return value == null ? "" : value.trim();
 	}

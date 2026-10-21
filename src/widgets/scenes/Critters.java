@@ -54,6 +54,7 @@ final class Critters {
 	/** Where there is water that penguins swim in, or null */
 	private BiPredicate<Double, Double> water;
 
+	/** Creates the critters of an arena style, placed on the field of the given size. */
 	Critters(ArenaStyle style, double width, double height, Random random) {
 		this.style = style;
 		this.halfWidth = width / 2;
@@ -66,6 +67,7 @@ final class Critters {
 		}
 	}
 
+	/** The group with every critter, to put in the arena. */
 	Group root() {
 		return this.root;
 	}
@@ -75,6 +77,7 @@ final class Critters {
 		this.water = water;
 	}
 
+	/** Moves every critter by the time that passed. */
 	void update(double deltaTime) {
 		for (Critter critter : this.critters) {
 			critter.update(deltaTime);
@@ -109,6 +112,7 @@ final class Critters {
 		return best == null ? null : () -> this.body(best);
 	}
 
+	/** The critter nearest to the given position, or null when there are none. */
 	private Critter closest(double posX, double posZ) {
 		Critter best = null;
 		double bestDistance = Double.MAX_VALUE;
@@ -122,6 +126,7 @@ final class Critters {
 		return best;
 	}
 
+	/** The position of the body of a critter, above its feet. */
 	private double[] body(Critter critter) {
 		return new double[] { critter.x, critter.y - 12 * SCALE, critter.z };
 	}
@@ -132,11 +137,13 @@ final class Critters {
 
 		final boolean flies;
 
+		/** The kind of a creature: whether it flies or walks. */
 		Kind(boolean flies) {
 			this.flies = flies;
 		}
 	}
 
+	/** The kind of the creature at the given index of an arena style. */
 	private static Kind kind(ArenaStyle style, int index) {
 		return switch (style) {
 		case JUNGLE -> index % 3 == 2 ? Kind.BIRD : Kind.MONKEY;
@@ -258,6 +265,7 @@ final class Critters {
 		private double threatZ;
 		private double time;
 
+		/** Creates a critter of the given kind, with its model. */
 		Critter(Kind kind) {
 			this.kind = kind;
 			this.root.getTransforms().add(this.turn);
@@ -284,6 +292,7 @@ final class Critters {
 			this.targetZ = goal[1];
 		}
 
+		/** Moves the critter towards its target and cools down its fear. */
 		void update(double deltaTime) {
 			this.time += deltaTime;
 			this.fear = Math.max(0, this.fear - deltaTime * 0.3);
@@ -505,6 +514,7 @@ final class Critters {
 		return box;
 	}
 
+	/** A material of the given colour and shine. */
 	private static PhongMaterial paint(Color color, double shine) {
 		PhongMaterial material = new PhongMaterial(color);
 		material.setSpecularColor(Color.gray(0.3));
@@ -512,19 +522,21 @@ final class Critters {
 		return material;
 	}
 
-	private static <T extends Shape3D> T part(T shape, PhongMaterial material, double posX, double posY, double posZ, double sxValue, double syValue, double szValue) {
+	/** Places a shape at the given position and scale, with the given material, and returns it. */
+	private static <T extends Shape3D> T part(T shape, PhongMaterial material, double posX, double posY, double posZ, double scaleX, double scaleY, double scaleZ) {
 		shape.setMaterial(material);
 		shape.setTranslateX(posX);
 		shape.setTranslateY(posY);
 		shape.setTranslateZ(posZ);
-		shape.setScaleX(sxValue);
-		shape.setScaleY(syValue);
-		shape.setScaleZ(szValue);
+		shape.setScaleX(scaleX);
+		shape.setScaleY(scaleY);
+		shape.setScaleZ(scaleZ);
 		return shape;
 	}
 
-	private static Box box(double sxValue, double syValue, double szValue, PhongMaterial material, double posX, double posY, double posZ) {
-		Box box = new Box(sxValue, syValue, szValue);
+	/** A box of the given size, placed at the given position. */
+	private static Box box(double sizeX, double sizeY, double sizeZ, PhongMaterial material, double posX, double posY, double posZ) {
+		Box box = new Box(sizeX, sizeY, sizeZ);
 		return (Box) part(box, material, posX, posY, posZ, 1, 1, 1);
 	}
 
@@ -577,10 +589,12 @@ final class Critters {
 		return cylinder;
 	}
 
+	/** A tail, pointing along z, from the given position. */
 	private static Node tail(PhongMaterial material, double posX, double posY, double posZ) {
 		return pointing(1.6, 16, material, posX, posY, posZ);
 	}
 
+	/** A beak, pointing along z, from the given position. */
 	private static Node beak(PhongMaterial material, double posX, double posY, double posZ) {
 		return pointing(1.2, 4, material, posX, posY, posZ);
 	}

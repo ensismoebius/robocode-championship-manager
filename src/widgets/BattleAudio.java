@@ -116,10 +116,12 @@ public final class BattleAudio {
 		final double left;
 		final double right;
 
+		/** A sound at the centre of the stereo field. */
 		Voice(double[] samples, double gain, double rate) {
 			this(samples, gain, rate, CENTER[0], CENTER[1]);
 		}
 
+		/** A sound that plays from the given stereo position. */
 		Voice(double[] samples, double gain, double rate, double left, double right) {
 			this.samples = samples;
 			this.gain = gain;
@@ -128,10 +130,12 @@ public final class BattleAudio {
 			this.right = right;
 		}
 
+		/** Tells whether the sound has played to its end. */
 		boolean finished() {
 			return this.position >= this.samples.length - 1;
 		}
 
+		/** The next sample of the sound, interpolated between the two closest ones. */
 		double next() {
 			int index = (int) this.position;
 			double fraction = this.position - index;
@@ -164,6 +168,7 @@ public final class BattleAudio {
 
 	// ------------------------------------------------------------------- control
 
+	/** Starts the mixer thread, once. */
 	public synchronized void start() {
 		if (this.running) {
 			return;
@@ -174,6 +179,7 @@ public final class BattleAudio {
 		this.thread.start();
 	}
 
+	/** Stops the mixer thread. */
 	public synchronized void stop() {
 		this.running = false;
 	}
@@ -263,26 +269,32 @@ public final class BattleAudio {
 		}
 	}
 
+	/** Plays a shot at the given position of the arena. */
 	public void shotAt(double power, double posX, double posZ) {
 		this.placedAt(posX, posZ, () -> this.shot(power));
 	}
 
+	/** Plays a hit at the given position of the arena. */
 	public void hitAt(double power, double posX, double posZ) {
 		this.placedAt(posX, posZ, () -> this.hit(power));
 	}
 
+	/** Plays a spark at the given position of the arena. */
 	public void sparkAt(double posX, double posZ) {
 		this.placedAt(posX, posZ, this::spark);
 	}
 
+	/** Plays a thud at the given position of the arena. */
 	public void thudAt(double posX, double posZ) {
 		this.placedAt(posX, posZ, this::thud);
 	}
 
+	/** Plays the low energy warning at the given position of the arena. */
 	public void lowEnergyAt(double posX, double posZ) {
 		this.placedAt(posX, posZ, this::lowEnergy);
 	}
 
+	/** Plays the destruction of a robot at the given position of the arena. */
 	public void destroyedAt(double posX, double posZ) {
 		this.placedAt(posX, posZ, this::destroyed);
 	}
@@ -431,6 +443,7 @@ public final class BattleAudio {
 		return samples;
 	}
 
+	/** Renders the music and the effects of the battle into samples, with the given mix, without playing them. */
 	static double[] render(Song song, double intensity, double seconds, double musicLevel) {
 		BattleAudio audio = new BattleAudio();
 		audio.song = song;
@@ -454,16 +467,19 @@ public final class BattleAudio {
 		this.fadeSeconds = Math.max(0.05, seconds);
 	}
 
+	/** A random factor close to one, so repeated sounds do not play exactly the same. */
 	private double vary() {
 		return 0.92 + this.random.nextDouble() * 0.16;
 	}
 
+	/** Queues a sound at the position where the next effect is placed. */
 	private void sfx(double[] samples, double gain, double rate) {
 		this.incoming.add(new Voice(samples, gain, rate, this.placement[0], this.placement[1]));
 	}
 
 	// -------------------------------------------------------------------- mixer
 
+	/** The mixer loop: fills the audio line with the music and the sounds in progress. */
 	private void run() {
 		AudioFormat format = new AudioFormat(Synth.RATE, 16, 2, true, false);
 		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
@@ -654,6 +670,7 @@ public final class BattleAudio {
 		}
 	}
 
+	/** Plays one step of the epic loop: the drums and the bass, more of them as the tension grows. */
 	private void epicStep(int step, int inBar, double root, boolean minor, double tension) {
 
 		boolean fourOnFloor = tension > 0.6;

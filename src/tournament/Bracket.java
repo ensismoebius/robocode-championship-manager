@@ -57,7 +57,7 @@ public class Bracket {
 		/** Decided without playing: one or both participants are missing */
 		BYE;
 
-		/** Tells whether the done. */
+		/** Tells whether the state is final: the match is finished or it is a bye. */
 		public boolean isDone() {
 			return this == FINISHED || this == BYE;
 		}
@@ -75,6 +75,7 @@ public class Bracket {
 		private boolean resolved;
 		private Long participant;
 
+		/** A slot filled by a seed of the championship. */
 		private Slot(Long seed) {
 			this.source = null;
 			this.sourceWinner = false;
@@ -82,6 +83,7 @@ public class Bracket {
 			this.resolved = true;
 		}
 
+		/** A slot that takes the winner or the loser of another match. */
 		private Slot(Match source, boolean sourceWinner) {
 			this.source = source;
 			this.sourceWinner = sourceWinner;
@@ -106,7 +108,7 @@ public class Bracket {
 			return source;
 		}
 
-		/** Tells whether the source winner. */
+		/** Tells whether the slot takes the winner of its source match, not the loser. */
 		public boolean isSourceWinner() {
 			return sourceWinner;
 		}
@@ -121,6 +123,7 @@ public class Bracket {
 			return (this.sourceWinner ? "Vencedor de " : "Perdedor de ") + this.source.getCode();
 		}
 
+		/** Fills the slot with the winner or the loser of its source match, once that match is done. */
 		private void resolve() {
 			if (!this.resolved && this.source != null && this.source.status.isDone()) {
 				this.participant = this.sourceWinner ? this.source.winner : this.source.loser;
@@ -145,6 +148,7 @@ public class Bracket {
 		private Integer winnerScore;
 		private Integer loserScore;
 
+		/** A match between two slots, in the given round and position of its side. */
 		private Match(String code, Side side, int round, int position, Slot slot, Slot slot2) {
 			this.code = code;
 			this.side = side;
@@ -155,6 +159,7 @@ public class Bracket {
 			this.depth = 1 + Math.max(depthOf(slot), depthOf(slot2));
 		}
 
+		/** How many matches come before a slot, following its sources. */
 		private static int depthOf(Slot slot) {
 			return slot.source == null ? 0 : slot.source.depth;
 		}
@@ -228,10 +233,12 @@ public class Bracket {
 			return loserScore;
 		}
 
+		/** Tells whether a participant takes part in this match. */
 		public boolean involves(Long participant) {
 			return participant != null && (participant.equals(this.a.participant) || participant.equals(this.b.participant));
 		}
 
+		/** Fills the slots when their sources are done, and makes the match ready when both are known. */
 		private void update() {
 			if (this.status != Status.WAITING) {
 				return;
@@ -253,6 +260,7 @@ public class Bracket {
 		}
 
 		@Override
+		/** The code of the match with its participants and status. */
 		public String toString() {
 			return this.code + "[" + this.a.participant + " x " + this.b.participant + " " + this.status + "]";
 		}
@@ -293,6 +301,7 @@ public class Bracket {
 		this.update();
 	}
 
+	/** Adds a match to the bracket and indexes it by its code. */
 	private Match add(String code, Side side, int round, int position, Slot slot, Slot slot2) {
 		Match match = new Match(code, side, round, position, slot, slot2);
 		this.matches.add(match);
@@ -300,6 +309,7 @@ public class Bracket {
 		return match;
 	}
 
+	/** Creates the matches of the bracket: the rounds of the winners, the losers and the finals. */
 	private void build() {
 		int size = 2;
 		while (size < this.participants.size()) {
@@ -371,6 +381,7 @@ public class Bracket {
 		this.decider = grandFinal;
 	}
 
+	/** The participant of a seed number, or null when there are fewer participants. */
 	private Long seed(int seedNumber) {
 		return seedNumber <= this.participants.size() ? this.participants.get(seedNumber - 1) : null;
 	}
@@ -436,6 +447,7 @@ public class Bracket {
 		return participants;
 	}
 
+	/** Tells whether the bracket has a losers bracket, the repechage. */
 	public boolean hasRepechage() {
 		return repechage;
 	}
@@ -447,6 +459,7 @@ public class Bracket {
 		return Collections.unmodifiableList(this.matches);
 	}
 
+	/** The match with the given code, or null when there is none. */
 	public Match getMatch(String code) {
 		return this.byCode.get(code);
 	}
@@ -524,7 +537,7 @@ public class Bracket {
 				.min(Comparator.comparingInt(Match::getDepth).thenComparing(Match::getSide).thenComparingInt(Match::getRound).thenComparingInt(Match::getPosition));
 	}
 
-	/** Tells whether the finished. */
+	/** Tells whether the bracket has a champion. */
 	public boolean isFinished() {
 		return this.getChampion() != null;
 	}
