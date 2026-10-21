@@ -81,6 +81,7 @@ import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import widgets.BattleAudio;
+import widgets.Song;
 import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
@@ -417,7 +418,7 @@ public class BattleArena3D extends StackPane {
 		this.fighters = fighters;
 		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
 		this.style = ArenaStyle.resolve(Configuration.getArena(), this.random);
-		this.audio.setSong(Configuration.isArenaMusic() ? this.style.song : BattleAudio.Song.resolve(Configuration.getBattleMusic(), this.random));
+		this.audio.setSong(Configuration.isArenaMusic() ? this.style.song : Song.resolve(Configuration.getBattleMusic(), this.random));
 		this.audio.setMusicLevel(Configuration.getMusicVolume() / 100.0);
 
 		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.sunbeams, this.fireLayer, this.fence);

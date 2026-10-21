@@ -31,6 +31,7 @@ import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.WinnerCriterion;
 import widgets.GameDialog;
 import widgets.BattleAudio;
+import widgets.Song;
 import widgets.GameWindow;
 import widgets.scenes.ArenaStyle;
 
@@ -150,10 +151,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 
 			this.music = new ChoiceBox<String>();
 			this.music.getItems().add("Aleatória, uma em cada batalha");
-			for (BattleAudio.Song song : BattleAudio.Song.values()) {
+			for (Song song : Song.values()) {
 				this.music.getItems().add(song.label);
 			}
-			this.music.getSelectionModel().select(choiceIndex(old.getProperty(BATTLE_MUSIC), BattleAudio.Song.values()));
+			this.music.getSelectionModel().select(choiceIndex(old.getProperty(BATTLE_MUSIC), Song.values()));
 			this.music.setMaxWidth(Double.MAX_VALUE);
 			this.arenaMusic = new CheckBox("Usar mesma música da arena");
 			this.arenaMusic.setSelected(Boolean.parseBoolean(old.getProperty(ARENA_MUSIC, "false")));
@@ -325,7 +326,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			int arenaIndex = this.arena.getSelectionModel().getSelectedIndex();
 			properties.setProperty(ARENA, arenaIndex <= 0 ? Configuration.RANDOM : ArenaStyle.values()[arenaIndex - 1].name());
 			int musicIndex = this.music.getSelectionModel().getSelectedIndex();
-			properties.setProperty(BATTLE_MUSIC, musicIndex <= 0 ? Configuration.RANDOM : BattleAudio.Song.values()[musicIndex - 1].name());
+			properties.setProperty(BATTLE_MUSIC, musicIndex <= 0 ? Configuration.RANDOM : Song.values()[musicIndex - 1].name());
 			properties.setProperty(ANTIALIASING, String.valueOf(this.antialiasing.isSelected()));
 			properties.setProperty(ARENA_MUSIC, String.valueOf(this.arenaMusic.isSelected()));
 			properties.setProperty(MUSIC_VOLUME, String.valueOf((int) Math.round(this.musicVolume.getValue())));

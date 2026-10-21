@@ -7,7 +7,7 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
-import widgets.BattleAudio.Song;
+import widgets.Song;
 
 class BattleAudioTest {
 

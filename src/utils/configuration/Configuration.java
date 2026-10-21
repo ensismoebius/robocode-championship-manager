@@ -244,7 +244,7 @@ public class Configuration {
 	}
 
 	/**
-	 * The song of the 3D battle (a name of widgets.BattleAudio.Song), or
+	 * The song of the 3D battle (a name of widgets.Song), or
 	 * {@link #RANDOM}
 	 */
 	public static String getBattleMusic() {

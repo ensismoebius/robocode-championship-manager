@@ -43,45 +43,6 @@ public final class BattleAudio {
 	/** The distance between two links of a track, in arena units */
 	private static final double TREAD_PITCH = 3.2;
 
-	/** The adaptive songs */
-	public enum Song {
-		/** A minor, i - VI - III - VII: pad, kick, snare, arpeggio */
-		EPIC("Épica", new double[] { 110.0, 87.31, 130.81, 98.0 }, new boolean[] { true, false, false, false }, 96, 54),
-		/** E minor, i - VI - VII - v: pumping pad, bouncing bass, lead and toms */
-		SYNTHWAVE("Synthwave", new double[] { 82.41, 65.41, 73.42, 61.74 }, new boolean[] { true, false, false, true }, 108, 44),
-		/** D minor groove: a wood block clave, syncopated taikos, small drums, a plucked bass, a kalimba that calls and answers, war horns */
-		WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 104, 44);
-
-		public final String label;
-		final double[] roots;
-		final boolean[] minor;
-		final double calmBpm;
-		final double tenseBpm;
-
-		Song(String label, double[] roots, boolean[] minor, double calmBpm, double moreBpm) {
-			this.label = label;
-			this.roots = roots;
-			this.minor = minor;
-			this.calmBpm = calmBpm;
-			this.tenseBpm = moreBpm;
-		}
-
-		/** Random songs do not repeat until all were played */
-		private static final Rotation<Song> ROTATION = new Rotation<Song>(values());
-
-		/**
-		 * The configured song, the next of the rotation if not a song (like
-		 * "RANDOM")
-		 */
-		public static Song resolve(String configured, Random random) {
-			try {
-				return Song.valueOf(configured);
-			} catch (IllegalArgumentException | NullPointerException e) {
-				return ROTATION.next(random);
-			}
-		}
-	}
-
 	/** Pentatonic minor, for the kalimba */
 	private static final double[] PENTATONIC = { 1, 1.189, 1.335, 1.498, 1.782, 2, 2.378, 2.67 };
 	/** The motif of the kalimba, as steps of the pentatonic, one per eighth note of a bar */
@@ -134,13 +95,13 @@ public final class BattleAudio {
 	private int echoPosition;
 
 	// Ready made sounds
-	private final double[] kick = kick();
-	private final double[] snare = snare();
-	private final double[] hat = hat();
-	private final double[] heart = heartbeat();
-	private final double[] taiko = taiko();
-	private final double[] smallDrum = smallDrum();
-	private final double[] woodBlock = woodBlock();
+	private final double[] kick = Percussion.kick();
+	private final double[] snare = Percussion.snare();
+	private final double[] hat = Percussion.hat();
+	private final double[] heart = Percussion.heartbeat();
+	private final double[] taiko = Percussion.taiko();
+	private final double[] smallDrum = Percussion.smallDrum();
+	private final double[] woodBlock = Percussion.woodBlock();
 	private final double[][] toms = { Synth.sineSweep(230, 115, 0.28), Synth.sineSweep(175, 88, 0.3), Synth.sineSweep(130, 62, 0.34) };
 
 	/**
@@ -810,39 +771,4 @@ public final class BattleAudio {
 	}
 
 	// ---------------------------------------------------------------- synthesis
-
-	private static double[] taiko() {
-		return Synth.mix(Synth.sineSweep(105, 40, 0.75), Synth.lowpass(Synth.noise(0.12, 7), 0.15), 0.6);
-	}
-
-	private static double[] smallDrum() {
-		return Synth.mix(Synth.sineSweep(260, 150, 0.16), Synth.lowpass(Synth.noise(0.08, 9), 0.4), 0.4);
-	}
-
-	/** A wood block: a short, hollow click */
-	private static double[] woodBlock() {
-		return Synth.mix(Synth.sine(1250, 0.07, 45), Synth.sine(2100, 0.04, 70), 0.4);
-	}
-
-	private static double[] kick() {
-		return Synth.mix(Synth.sineSweep(150, 42, 0.32), Synth.lowpass(Synth.noise(0.02, 8), 0.5), 0.15);
-	}
-
-	private static double[] snare() {
-		return Synth.mix(Synth.lowpass(Synth.noise(0.2, 3.5), 0.6), Synth.sine(190, 0.12, 20), 0.35);
-	}
-
-	private static double[] hat() {
-		double[] noise = Synth.noise(0.05, 6);
-		// High pass: noise minus its low pass
-		double[] low = Synth.lowpass(noise.clone(), 0.3);
-		for (int i = 0; i < noise.length; i++) {
-			noise[i] -= low[i];
-		}
-		return noise;
-	}
-
-	private static double[] heartbeat() {
-		return Synth.concat(Synth.sineSweep(70, 40, 0.16), Synth.silence(0.1), Synth.sineSweep(60, 35, 0.2));
-	}
 }
