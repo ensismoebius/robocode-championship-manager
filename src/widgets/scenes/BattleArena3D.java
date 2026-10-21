@@ -1126,6 +1126,8 @@ public class BattleArena3D extends StackPane {
 
 		// The sky: a green dome seen from inside
 		this.arena.getChildren().add(skyDome(JungleTexture.SKY));
+		// The dense forest all around, painted once
+		this.arena.getChildren().add(ForestBackdrop.ring());
 		this.buildSunbeams(w, h, wild);
 
 		// Ground: moss everywhere, a bit darker far away (it is the same texture,
@@ -1860,6 +1862,9 @@ public class BattleArena3D extends StackPane {
 		if (!this.flows.isEmpty()) {
 			this.updateFlows();
 		}
+		for (RobotView robotView : this.robots.values()) {
+			robotView.roll();
+		}
 		this.updateFire(dt * this.effectRate);
 		this.updateSunbeams(dt);
 		this.updateNeon(dt);
@@ -2022,9 +2027,6 @@ public class BattleArena3D extends StackPane {
 	 * where the battle starts
 	 */
 	private void beginFlyBy() {
-		System.arraycopy(this.eye, 0, this.flyEyeEnd, 0, 3);
-		System.arraycopy(this.look, 0, this.flyLookEnd, 0, 3);
-		this.flyFovEnd = this.fov;
 		this.flyMirrorX = this.random.nextBoolean() ? 1 : -1;
 		this.flyMirrorZ = this.random.nextBoolean() ? 1 : -1;
 		this.phase = Phase.FLYBY;
@@ -2032,6 +2034,14 @@ public class BattleArena3D extends StackPane {
 		this.hideBanner();
 		this.showLetterbox(true, false);
 		this.audio.setMusicOn(true);
+		// The fly by ends framing both robots, where the battle starts
+		RobotView subject = this.robots.get(this.shotSubject);
+		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
+		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
+		this.frameFighters(0, a, other == null ? a : other.position());
+		System.arraycopy(this.eyeTarget, 0, this.flyEyeEnd, 0, 3);
+		System.arraycopy(this.lookTarget, 0, this.flyLookEnd, 0, 3);
+		this.flyFovEnd = this.fovTarget;
 		// Starts at the first point of the path, no sliding to it
 		this.flyByPose(0);
 		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
@@ -2047,7 +2057,7 @@ public class BattleArena3D extends StackPane {
 
 	/**
 	 * Puts the camera where the fly by is at the moment: through points around
-	 * the arena, low, that end at the camera of the start of the battle
+	 * the arena, low, that end framing both robots, where the battle starts
 	 */
 	private void flyByPose(double progress) {
 		double w = this.fieldWidth;
@@ -3616,15 +3626,6 @@ public class BattleArena3D extends StackPane {
 		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
 		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
 		double[] b = other == null ? a : other.position();
-		double[] mid = { (a[0] + b[0]) / 2, -16, (a[2] + b[2]) / 2 };
-		double dx = b[0] - a[0];
-		double dz = b[2] - a[2];
-		double separation = Math.max(10, Math.hypot(dx, dz));
-		double ux = dx / separation;
-		double uz = dz / separation;
-		// Perpendicular to the line between them
-		double px = -uz * this.shotSide;
-		double pz = ux * this.shotSide;
 		this.rollTarget = 0;
 
 		if (this.phase == Phase.FLYBY) {
@@ -3669,6 +3670,23 @@ public class BattleArena3D extends StackPane {
 			return;
 		}
 
+		this.frameFighters(dt, a, b);
+	}
+
+	/**
+	 * Frames both fighters: the camera circles them on a flank, looking at the
+	 * middle between them, far enough away to keep both in view
+	 */
+	private void frameFighters(double dt, double[] a, double[] b) {
+		double[] mid = { (a[0] + b[0]) / 2, -16, (a[2] + b[2]) / 2 };
+		double dx = b[0] - a[0];
+		double dz = b[2] - a[2];
+		double separation = Math.max(10, Math.hypot(dx, dz));
+		double ux = dx / separation;
+		double uz = dz / separation;
+		// Perpendicular to the line between them
+		double px = -uz * this.shotSide;
+		double pz = ux * this.shotSide;
 		this.cinematicOrbitAngle += dt * 0.25;
 
 		// Calculate distance required to guarantee both robots are comfortably inside the field of view
@@ -3821,6 +3839,63 @@ public class BattleArena3D extends StackPane {
 	 * A low poly tank: treads, body, turret with the gun and the radar, each part
 	 * with the color the robot chose
 	 */
+	/** The links of a tread, which go round the belt of their side of the hull */
+	private static final int TREAD_LINKS = 30;
+	/** The belt in the side view, as a closed outline: its back, up, over the top, down and back along the bottom */
+	private static final double[][] BELT = { { -20, -1 }, { -21.5, -4 }, { -19.5, -9 }, { 18.5, -9 }, { 21.5, -4 }, { 20, -1 } };
+	/** The length of the outline: one turn of the belt */
+	private static final double BELT_LENGTH = beltLength();
+	/** The width of a belt, sideways, from its inner face to its outer one, where the links are */
+	private static final double BELT_INNER = 10.5;
+	private static final double BELT_OUTER = 21;
+	private static final double BELT_CENTER = (BELT_INNER + BELT_OUTER) / 2;
+	private static final double BELT_WIDTH = BELT_OUTER - BELT_INNER;
+
+	private static double beltLength() {
+		double length = 0;
+		for (int i = 0; i < BELT.length; i++) {
+			double[] a = BELT[i];
+			double[] b = BELT[(i + 1) % BELT.length];
+			length += Math.hypot(b[0] - a[0], b[1] - a[1]);
+		}
+		return length;
+	}
+
+	/**
+	 * Where a link is on the belt, s from 0 to BELT_LENGTH along its outline: its z
+	 * and its y in the body, and the angle of the outline there (turned round x).
+	 * The links follow the shape of the track, its chamfers included.
+	 */
+	private static double[] beltPoint(double s) {
+		double rest = s;
+		for (int i = 0; i < BELT.length - 1; i++) {
+			double[] a = BELT[i];
+			double[] b = BELT[i + 1];
+			double dz = b[0] - a[0];
+			double dy = b[1] - a[1];
+			double length = Math.hypot(dz, dy);
+			if (rest <= length) {
+				return new double[] { a[0] + dz * rest / length, a[1] + dy * rest / length, Math.atan2(-dy, dz) };
+			}
+			rest -= length;
+		}
+		// The last piece of the outline, back to its start
+		double[] a = BELT[BELT.length - 1];
+		double[] b = BELT[0];
+		double dz = b[0] - a[0];
+		double dy = b[1] - a[1];
+		double length = Math.hypot(dz, dy);
+		return new double[] { a[0] + dz * rest / length, a[1] + dy * rest / length, Math.atan2(-dy, dz) };
+	}
+
+	/**
+	 * A point on one side of the hull, in the arena (side 0 is the left)
+	 */
+	private static double[] sidePoint(double x, double z, double heading, int side) {
+		double sideways = side == 0 ? -BELT_CENTER : BELT_CENTER;
+		return new double[] { x + sideways * Math.cos(heading), z - sideways * Math.sin(heading) };
+	}
+
 	private final class RobotView {
 		final Group root = new Group();
 		final Group tank = new Group();
@@ -3856,6 +3931,15 @@ public class BattleArena3D extends StackPane {
 		double speedZ;
 		boolean dead = false;
 		double energy = 100;
+		/** The links of each tread, left side first */
+		final MeshView[][] treadLinks = new MeshView[2][TREAD_LINKS];
+		final Rotate[][] treadTurns = new Rotate[2][TREAD_LINKS];
+		/** How far each tread has slid along its belt */
+		final double[] treadShift = new double[2];
+		/** Where it was at the last frame, for the rolling */
+		double rollX = Double.NaN;
+		double rollZ;
+		double rollHeading;
 
 		RobotView(BattleRecording.Robot robot, Opponent opponent, int order) {
 			this.opponent = opponent;
@@ -3880,7 +3964,7 @@ public class BattleArena3D extends StackPane {
 			this.body.getTransforms().add(this.bodyRotate);
 			LowPoly hull = new LowPoly();
 			LowPoly tracks = new LowPoly();
-			LowPoly wheels = new LowPoly();
+			LowPoly armor = new LowPoly();
 			LowPoly plates = new LowPoly();
 			LowPoly glowCyan = new LowPoly();
 			LowPoly glowIdentity = new LowPoly();
@@ -3892,13 +3976,22 @@ public class BattleArena3D extends StackPane {
 			tracks.box(0, -14.5, -17.5, 14, 2.2, 6); // engine deck, dark
 			for (int side = -1; side <= 1; side += 2) {
 				// Track with chamfered ends, hidden above by the skirt
-				tracks.prismZY(new double[][] { { -20, -1 }, { -21.5, -4 }, { -19.5, -9 }, { 18.5, -9 }, { 21.5, -4 }, { 20, -1 } }, Math.min(side * 12.5, side * 19), Math.max(side * 12.5, side * 19));
-				for (double z = -18; z <= 18; z += 3.6) {
-					tracks.box(side * 19.3, -3, z, 0.6, 3.6, 1.4);
+				tracks.prismZY(BELT, Math.min(side * BELT_INNER, side * BELT_OUTER), Math.max(side * BELT_INNER, side * BELT_OUTER));
+				int index = side < 0 ? 0 : 1;
+				// The links of the belt, each one turned to the belt where it is
+				for (int link = 0; link < TREAD_LINKS; link++) {
+					LowPoly piece = new LowPoly();
+					piece.box(0, 0, 0, BELT_WIDTH, 1.2, 2.4);
+					MeshView linkView = piece.view(dark);
+					Rotate turn = new Rotate(0, Rotate.X_AXIS);
+					linkView.getTransforms().add(turn);
+					this.body.getChildren().add(linkView);
+					this.treadLinks[index][link] = linkView;
+					this.treadTurns[index][link] = turn;
 				}
-				// Road wheels, seen under the skirt
+				// Hexagonal armor under the skirt, fixed to the hull
 				for (double z = -15; z <= 15; z += 6) {
-					wheels.hexPlate(z, -3, 2.6, 2.6, Math.min(side * 18.9, side * 19.9), Math.max(side * 18.9, side * 19.9));
+					armor.hexPlate(z, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
 				}
 				// The skirt leans out at the top
 				hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
@@ -3919,7 +4012,7 @@ public class BattleArena3D extends StackPane {
 			for (double x = -4; x <= 4; x += 4) {
 				glowCyan.box(x, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
 			}
-			this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(dark), wheels.view(steel), plates.view(plateMaterial), glowCyan.view(cyan), glowIdentity.view(identity),
+			this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(dark), armor.view(steel), plates.view(plateMaterial), glowCyan.view(cyan), glowIdentity.view(identity),
 					glowWarning.view(warning), glowLamp.view(lamp));
 
 			// Turret and the gun turn on their own: a long wedge, a flat wing over the
@@ -4078,6 +4171,44 @@ public class BattleArena3D extends StackPane {
 				} else {
 					this.sparkDebt--;
 					BattleArena3D.this.spawn(ParticleKind.SPARK, wx, spot[1], wz, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
+				}
+			}
+		}
+
+		/**
+		 * The links go round the belts, which move with the ground that each side of
+		 * the hull covered since the last frame, so a robot turning in place runs its
+		 * two belts the opposite way. Dead robots stop.
+		 */
+		void roll() {
+			double x = this.root.getTranslateX();
+			double z = this.root.getTranslateZ();
+			double heading = Math.toRadians(this.bodyRotate.getAngle());
+			// A jump (new round, replay) is not a movement
+			if (!Double.isNaN(this.rollX) && !this.dead && Math.hypot(x - this.rollX, z - this.rollZ) < 60) {
+				for (int side = 0; side < 2; side++) {
+					double[] from = sidePoint(this.rollX, this.rollZ, this.rollHeading, side);
+					double[] to = sidePoint(x, z, heading, side);
+					// How far that side went forward, along the hull
+					double forward = (to[0] - from[0]) * Math.sin(heading) + (to[1] - from[1]) * Math.cos(heading);
+					this.treadShift[side] = (this.treadShift[side] - forward) % BELT_LENGTH;
+				}
+			}
+			this.rollX = x;
+			this.rollZ = z;
+			this.rollHeading = heading;
+
+			for (int side = 0; side < 2; side++) {
+				for (int link = 0; link < TREAD_LINKS; link++) {
+					double s = link * BELT_LENGTH / TREAD_LINKS + this.treadShift[side];
+					// Round the belt: a link that leaves one end comes back at the other
+					s -= BELT_LENGTH * Math.floor(s / BELT_LENGTH);
+					double[] point = beltPoint(s);
+					MeshView linkView = this.treadLinks[side][link];
+					linkView.setTranslateX(side == 0 ? -BELT_CENTER : BELT_CENTER);
+					linkView.setTranslateY(point[1]);
+					linkView.setTranslateZ(point[0]);
+					this.treadTurns[side][link].setAngle(Math.toDegrees(point[2]));
 				}
 			}
 		}

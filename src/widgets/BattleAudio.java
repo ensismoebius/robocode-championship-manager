@@ -37,8 +37,8 @@ public final class BattleAudio {
 		EPIC("Épica", new double[] { 110.0, 87.31, 130.81, 98.0 }, new boolean[] { true, false, false, false }, 96, 54),
 		/** E minor, i - VI - VII - v: pumping pad, bouncing bass, lead and toms */
 		SYNTHWAVE("Synthwave", new double[] { 82.41, 65.41, 73.42, 61.74 }, new boolean[] { true, false, false, true }, 108, 44),
-		/** D minor drone: taikos, small drums, a pentatonic flute and war horns */
-		WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 80, 56);
+		/** D minor groove: a wood block clave, syncopated taikos, small drums, a plucked bass, a kalimba that calls and answers, war horns */
+		WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 104, 44);
 
 		public final String label;
 		final double[] roots;
@@ -70,8 +70,10 @@ public final class BattleAudio {
 		}
 	}
 
-	/** Pentatonic minor, for the flute */
+	/** Pentatonic minor, for the kalimba */
 	private static final double[] PENTATONIC = { 1, 1.189, 1.335, 1.498, 1.782, 2, 2.378, 2.67 };
+	/** The motif of the kalimba, as steps of the pentatonic, one per eighth note of a bar */
+	private static final int[] MOTIF = { 0, 2, 4, 2, 1, 0, 2, 4 };
 
 	private final ConcurrentLinkedQueue<Voice> incoming = new ConcurrentLinkedQueue<Voice>();
 	private final Random random = new Random();
@@ -113,7 +115,7 @@ public final class BattleAudio {
 	private final double[] heart = heartbeat();
 	private final double[] taiko = taiko();
 	private final double[] smallDrum = smallDrum();
-	private final double[] rim = rim();
+	private final double[] woodBlock = woodBlock();
 	private final double[][] toms = { Synth.sineSweep(230, 115, 0.28), Synth.sineSweep(175, 88, 0.3), Synth.sineSweep(130, 62, 0.34) };
 
 	/**
@@ -436,7 +438,7 @@ public final class BattleAudio {
 		double raw = (this.padPhase1 * 2 - 1) + (this.padPhase2 * 2 - 1) * 0.7 + (this.padPhase3 * 2 - 1) * 0.5;
 		double cutoff = (current == Song.WAR_DRUMS ? 0.006 + 0.02 * tension : current == Song.SYNTHWAVE ? 0.02 + 0.05 * tension : 0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
 		this.padFilter += (raw - this.padFilter) * cutoff;
-		double pad = this.padFilter * (0.32 - 0.1 * tension);
+		double pad = this.padFilter * (current == Song.WAR_DRUMS ? 0.1 : 0.32 - 0.1 * tension);
 		if (current == Song.SYNTHWAVE && tension > 0.2 && this.slow < 0.5) {
 			// Pumps with the kick, the synthwave sound
 			double inBeat = this.beat - Math.floor(this.beat);
@@ -474,7 +476,7 @@ public final class BattleAudio {
 		switch (playing) {
 		case EPIC -> this.epicStep(step, inBar, root, minor, tension);
 		case SYNTHWAVE -> this.synthwaveStep(step, inBar, root, minor, tension);
-		case WAR_DRUMS -> this.drumsStep(step, inBar, root, tension);
+		case WAR_DRUMS -> this.drumsStep(step, inBar, bar, root, tension);
 		}
 	}
 
@@ -544,28 +546,50 @@ public final class BattleAudio {
 	}
 
 	/**
-	 * War drums: taikos even when calm, small drums and rims as it grows, a
-	 * pentatonic flute and war horns at the top
+	 * War drums, a groove: a wood block clave that never stops, taikos in a
+	 * syncopated ostinato, small drums answering them, hats and a plucked bass in
+	 * the pulse, and a kalimba motif that calls and answers. When the fight heats
+	 * up, the taikos fill the bar, the kick comes on every beat, the kalimba plays
+	 * eighths, and war horns close the phrases.
 	 */
-	private void drumsStep(int step, int inBar, double root, double tension) {
-		if (inBar == 0 || inBar == 6 || inBar == 10 || (tension > 0.55 && inBar == 14)) {
+	private void drumsStep(int step, int inBar, int bar, double root, double tension) {
+		// The wood block clave (3-2), the pulse under everything
+		if (inBar == 0 || inBar == 3 || inBar == 6 || inBar == 10 || inBar == 12) {
+			this.musicVoices.add(new Voice(this.woodBlock, inBar == 0 ? 0.5 : 0.36, 1));
+		}
+		// Taikos: a syncopated ostinato, sparse when calm, the whole pattern when tense
+		boolean calmTaiko = inBar == 0 || inBar == 8 || inBar == 10;
+		boolean tenseTaiko = calmTaiko || inBar == 3 || inBar == 6 || inBar == 12 || inBar == 14;
+		if (tension > 0.5 ? tenseTaiko : calmTaiko) {
 			this.musicVoices.add(new Voice(this.taiko, 0.45 + 0.5 * Math.min(1, tension * 1.6), inBar == 0 ? 1 : 1.12));
 		}
-		if (tension > 0.25 && (inBar == 3 || inBar == 7 || inBar == 11 || inBar == 13 || inBar == 15 || (tension > 0.65 && inBar % 2 == 1))) {
-			this.musicVoices.add(new Voice(this.smallDrum, 0.35, 0.95 + 0.1 * ((inBar * 7) % 3)));
+		// The kick on every beat when the fight heats up
+		if (tension > 0.6 && inBar % 4 == 0) {
+			this.musicVoices.add(new Voice(this.kick, 0.6, 1));
 		}
-		if (tension > 0.4 && (inBar == 4 || inBar == 12 || (tension > 0.8 && inBar % 4 == 2))) {
-			this.musicVoices.add(new Voice(this.rim, 0.3, 1));
+		// Small drums answer the taikos
+		if (tension > 0.2 && (inBar == 5 || inBar == 7 || inBar == 13 || inBar == 15 || (tension > 0.6 && inBar % 2 == 1))) {
+			this.musicVoices.add(new Voice(this.smallDrum, 0.3 + 0.15 * tension, 0.95 + 0.1 * ((inBar * 7) % 3)));
 		}
-		boolean phrase = tension > 0.8 ? inBar % 2 == 0 : inBar == 0 || inBar == 3 || inBar == 6 || inBar == 8 || inBar == 11 || inBar == 14;
-		if (tension > 0.45 && phrase) {
-			// A melody that walks the scale
-			int degree = Math.floorMod((int) (step * 0.75) + (step / 16) * 2 + (int) Math.round(Math.sin(step * 0.9) * 2), PENTATONIC.length);
-			double frequency = root * 4 * PENTATONIC[degree];
-			double[] flute = Synth.mix(Synth.sine(frequency, 0.32, 4), Synth.lowpass(Synth.noise(0.32, 6), 0.5), 0.04);
-			this.musicVoices.add(new Voice(flute, 0.2, 1));
+		// Hats on the eighths, ghost notes on the sixteenths
+		if (tension > 0.25 && (inBar % 2 == 0 || tension > 0.55)) {
+			double gain = inBar % 2 == 1 ? 0.08 : inBar % 4 == 2 ? 0.24 : 0.16;
+			this.musicVoices.add(new Voice(this.hat, gain, 1));
 		}
-		if (tension > 0.82 && inBar == 0 && (step / 16) % 2 == 0) {
+		// A plucked bass in the pulse: the root, and the octave on the off beats
+		if (tension > 0.15 && (inBar % 2 == 0 || tension > 0.5)) {
+			double frequency = root * (inBar % 4 == 2 ? 2 : 1);
+			this.musicVoices.add(new Voice(Synth.lowpass(Synth.saw(frequency, 0.14, 12), 0.25), 0.22 + 0.2 * tension, 1));
+		}
+		// The kalimba motif: the first two bars call, the next two answer two steps higher
+		if (tension > 0.12 && (inBar % 4 == 0 || (tension > 0.3 && inBar % 2 == 0))) {
+			int degree = MOTIF[(step / 2) % MOTIF.length] + (bar >= 2 ? 2 : 0);
+			double frequency = root * 4 * PENTATONIC[Math.floorMod(degree, PENTATONIC.length)];
+			double[] kalimba = Synth.mix(Synth.sine(frequency, 0.35, 7), Synth.sine(frequency * 2.01, 0.35, 16), 0.3);
+			this.musicVoices.add(new Voice(kalimba, 0.2 + 0.1 * tension, 1));
+		}
+		// War horns close the phrases at the top
+		if (tension > 0.8 && inBar == 0 && bar % 2 == 0) {
 			double[] horn = Synth.lowpass(Synth.mix(Synth.saw(root * 2, 1.5, 1.1), Synth.saw(root * 3, 1.5, 1.1), 0.6), 0.06);
 			this.musicVoices.add(new Voice(horn, 0.35, 1));
 		}
@@ -585,8 +609,9 @@ public final class BattleAudio {
 		return Synth.mix(Synth.sineSweep(260, 150, 0.16), Synth.lowpass(Synth.noise(0.08, 9), 0.4), 0.4);
 	}
 
-	private static double[] rim() {
-		return Synth.mix(Synth.sine(1650, 0.05, 45), hat(), 0.5);
+	/** A wood block: a short, hollow click */
+	private static double[] woodBlock() {
+		return Synth.mix(Synth.sine(1250, 0.07, 45), Synth.sine(2100, 0.04, 70), 0.4);
 	}
 
 	private static double[] kick() {
