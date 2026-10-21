@@ -2,8 +2,8 @@ package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.LAVA_FULL;
 import static widgets.scenes.BattleArena3D.LAVA_TILE;
-import static widgets.scenes.BattleArena3D.box;
-import static widgets.scenes.BattleArena3D.material;
+import static widgets.scenes.ArenaMaterials.box;
+import static widgets.scenes.ArenaMaterials.material;
 
 import java.util.ArrayList;
 import java.util.List;

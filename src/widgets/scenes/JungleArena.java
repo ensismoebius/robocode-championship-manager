@@ -1,9 +1,9 @@
 package widgets.scenes;
 
-import static widgets.scenes.BattleArena3D.box;
-import static widgets.scenes.BattleArena3D.material;
-import static widgets.scenes.BattleArena3D.skyDome;
-import static widgets.scenes.BattleArena3D.textured;
+import static widgets.scenes.ArenaMaterials.box;
+import static widgets.scenes.ArenaMaterials.material;
+import static widgets.scenes.ArenaMaterials.skyDome;
+import static widgets.scenes.ArenaMaterials.textured;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,11 +1,11 @@
 package widgets.scenes;
 
-import static widgets.scenes.BattleArena3D.CRYSTAL;
-import static widgets.scenes.BattleArena3D.bubble;
-import static widgets.scenes.BattleArena3D.energy;
-import static widgets.scenes.BattleArena3D.grow;
-import static widgets.scenes.BattleArena3D.shape;
-import static widgets.scenes.BattleArena3D.shrink;
+import static widgets.scenes.ArenaMaterials.CRYSTAL;
+import static widgets.scenes.ArenaMaterials.bubble;
+import static widgets.scenes.ArenaMaterials.energy;
+import static widgets.scenes.ArenaMaterials.grow;
+import static widgets.scenes.ArenaMaterials.shape;
+import static widgets.scenes.ArenaMaterials.shrink;
 
 import java.util.ArrayList;
 import java.util.List;

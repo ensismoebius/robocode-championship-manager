@@ -1,6 +1,6 @@
 package widgets.scenes;
 
-import static widgets.scenes.BattleArena3D.argb;
+import static widgets.scenes.ArenaMaterials.argb;
 import widgets.scenes.BattleArena3D.BattlePhoto;
 import widgets.scenes.BattleArena3D.PendingPhoto;
 import widgets.scenes.BattleArena3D.Phase;

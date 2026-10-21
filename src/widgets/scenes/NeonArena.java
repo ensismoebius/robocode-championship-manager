@@ -55,7 +55,7 @@ final class NeonArena {
 		this.pulseColors.clear();
 		this.pulsePhases.clear();
 
-		host.arena.getChildren().add(BattleArena3D.skyDome(NeonTexture.SKY));
+		host.arena.getChildren().add(ArenaMaterials.skyDome(NeonTexture.SKY));
 		this.sun(w, h, random);
 		this.floor(w, h, random);
 		this.grid(w, h, random);
@@ -89,16 +89,16 @@ final class NeonArena {
 	/** The floor: a dark slab with a panel texture, and the ground around it */
 	private void floor(double w, double h, Random random) {
 		Box ground = new Box(9000, 2, 9000);
-		ground.setMaterial(BattleArena3D.material(Color.web("#07080f")));
+		ground.setMaterial(ArenaMaterials.material(Color.web("#07080f")));
 		ground.setTranslateY(6);
 		host.arena.getChildren().add(ground);
 
 		// The floor: a slab with a panel texture over it
 		Box floor = new Box(w + 40, 4.4, h + 40);
-		floor.setMaterial(BattleArena3D.material(Color.web("#0d1020")));
+		floor.setMaterial(ArenaMaterials.material(Color.web("#0d1020")));
 		floor.setTranslateY(2.8);
 		host.arena.getChildren().add(floor);
-		PhongMaterial panels = BattleArena3D.textured(NeonTexture.FLOOR, Color.gray(0.3));
+		PhongMaterial panels = ArenaMaterials.textured(NeonTexture.FLOOR, Color.gray(0.3));
 		panels.setSpecularPower(34);
 		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -w / 2 - 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, h / 2 + 20 },
 				{ -w / 2 - 20, 0, h / 2 + 20 } }, panels, NeonTexture.FLOOR_TILE));
@@ -154,13 +154,13 @@ final class NeonArena {
 	/** Pylons in the corners, with a light on top and a vertical strip */
 	private void pylons(double w, double h, Random random) {
 		// Pylons in the corners, with a light on top and a vertical strip
-		PhongMaterial metal = BattleArena3D.material(Color.web("#171c32"));
+		PhongMaterial metal = ArenaMaterials.material(Color.web("#171c32"));
 		TriangleMesh pylonLights = new TriangleMesh();
 		for (int sx = -1; sx <= 1; sx += 2) {
 			for (int sz = -1; sz <= 1; sz += 2) {
 				double px = sx * (w / 2 + 16);
 				double pz = sz * (h / 2 + 16);
-				host.arena.getChildren().add(BattleArena3D.box(18, 74, 18, px, -37, pz, metal));
+				host.arena.getChildren().add(ArenaMaterials.box(18, 74, 18, px, -37, pz, metal));
 				NeonCity.box(pylonLights, px, -77, pz, 24, 6, 24);
 				NeonCity.box(pylonLights, px - sx * 9.5, -37, pz - sz * 9.5, 3, 60, 3);
 			}
@@ -210,7 +210,7 @@ final class NeonArena {
 	/** A scanner: a line of light that sweeps the field */
 	private void scanner(double w, double h, Random random) {
 		// A scanner: a line of light that sweeps the field
-		this.scanner = BattleArena3D.box(5, 0.6, h, -w / 2, -0.6, 0, this.neonGlow(Color.web("#ff3fa4"), false, random));
+		this.scanner = ArenaMaterials.box(5, 0.6, h, -w / 2, -0.6, 0, this.neonGlow(Color.web("#ff3fa4"), false, random));
 		host.glowing.getChildren().add(this.scanner);
 	}
 
@@ -230,12 +230,12 @@ final class NeonArena {
 	private void buildRoads(double[] roadsX, double[] roadsZ, Random random) {
 		double reach = NeonCity.ROAD_REACH;
 		double half = NeonCity.ROAD_WIDTH / 2;
-		PhongMaterial asphalt = BattleArena3D.material(Color.web("#12162c"));
+		PhongMaterial asphalt = ArenaMaterials.material(Color.web("#12162c"));
 		TriangleMesh edges = new TriangleMesh();
 		TriangleMesh dashes = new TriangleMesh();
 		// The streets that run along x are a little above those that run along z, so where they cross there is no flicker
 		for (double z : roadsZ) {
-			host.arena.getChildren().add(BattleArena3D.box(2 * reach, 1, NeonCity.ROAD_WIDTH, 0, 4.5, z, asphalt));
+			host.arena.getChildren().add(ArenaMaterials.box(2 * reach, 1, NeonCity.ROAD_WIDTH, 0, 4.5, z, asphalt));
 			for (double[] part : gaps(roadsX, -reach, reach)) {
 				double middle = (part[0] + part[1]) / 2;
 				NeonCity.box(edges, middle, 3.6, z - half + 3, part[1] - part[0], 0.5, 2.4);
@@ -248,7 +248,7 @@ final class NeonArena {
 			}
 		}
 		for (double x : roadsX) {
-			host.arena.getChildren().add(BattleArena3D.box(NeonCity.ROAD_WIDTH, 1, 2 * reach, x, 4.0, 0, asphalt));
+			host.arena.getChildren().add(ArenaMaterials.box(NeonCity.ROAD_WIDTH, 1, 2 * reach, x, 4.0, 0, asphalt));
 			for (double[] part : gaps(roadsZ, -reach, reach)) {
 				double middle = (part[0] + part[1]) / 2;
 				NeonCity.box(edges, x - half + 3, 3.1, middle, 3.4, 0.5, part[1] - part[0]);
@@ -275,7 +275,7 @@ final class NeonArena {
 					double start = (random.nextDouble() * 2 - 1) * reach;
 					double speed = (forward ? 1 : -1) * (130 + random.nextDouble() * 140);
 					double y = axis == 0 ? 2.2 : 1.7;
-					Box car = axis == 0 ? BattleArena3D.box(10, 3.6, 28, lane, y, start, forward ? going : coming) : BattleArena3D.box(28, 3.6, 10, start, y, lane, forward ? going : coming);
+					Box car = axis == 0 ? ArenaMaterials.box(10, 3.6, 28, lane, y, start, forward ? going : coming) : ArenaMaterials.box(28, 3.6, 10, start, y, lane, forward ? going : coming);
 					host.glowing.getChildren().add(car);
 					this.cars.add(new Car(car, axis == 0, lane, speed, new double[] { start }));
 				}

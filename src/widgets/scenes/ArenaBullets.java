@@ -4,7 +4,7 @@ import static widgets.scenes.BattleArena3D.FENCE_BASE;
 import static widgets.scenes.BattleArena3D.PHOTO_DESTRUCTION_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_POWER;
-import static widgets.scenes.BattleArena3D.energy;
+import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.BattleArena3D.findBullet;
 import static widgets.scenes.BattleArena3D.pose;
 

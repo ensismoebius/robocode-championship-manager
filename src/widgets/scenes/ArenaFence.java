@@ -1,8 +1,8 @@
 package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.FENCE_BASE;
-import static widgets.scenes.BattleArena3D.box;
-import static widgets.scenes.BattleArena3D.material;
+import static widgets.scenes.ArenaMaterials.box;
+import static widgets.scenes.ArenaMaterials.material;
 
 import javafx.animation.Timeline;
 import javafx.scene.paint.PhongMaterial;

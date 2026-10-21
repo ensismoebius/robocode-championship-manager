@@ -1,8 +1,8 @@
 package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.LAVA_TILE;
-import static widgets.scenes.BattleArena3D.distance2;
-import static widgets.scenes.BattleArena3D.material;
+import static widgets.scenes.ArenaMaterials.distance2;
+import static widgets.scenes.ArenaMaterials.material;
 import widgets.scenes.BattleArena3D.Flow;
 
 import javafx.scene.paint.PhongMaterial;

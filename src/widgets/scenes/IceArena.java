@@ -71,7 +71,7 @@ final class IceArena {
 		Random crystals = new Random(23);
 		// The sky keeps its color and has an aurora that waves over it
 		this.aurora = new Aurora(host.style.sky);
-		host.arena.getChildren().add(BattleArena3D.skyDome(this.aurora.image()));
+		host.arena.getChildren().add(ArenaMaterials.skyDome(this.aurora.image()));
 		this.floor(w, h);
 		this.plates(w, h, crystals);
 		// The glacial sea west of the field, beyond the snow of its edges
@@ -89,12 +89,12 @@ final class IceArena {
 	/** The ground around the field and the light seams under the plates */
 	private void floor(double w, double h) {
 		Box ground = new Box(w * 6, 2, h * 6);
-		ground.setMaterial(BattleArena3D.material(Color.web("#8ea4b8")));
+		ground.setMaterial(ArenaMaterials.material(Color.web("#8ea4b8")));
 		ground.setTranslateY(6);
 
 		// The seams: a light floor under the plates
 		Box seams = new Box(w + 40, 4, h + 40);
-		seams.setMaterial(BattleArena3D.material(Color.web("#e4f3ff")));
+		seams.setMaterial(ArenaMaterials.material(Color.web("#e4f3ff")));
 		seams.setTranslateY(2.6);
 		host.arena.getChildren().addAll(ground, seams);
 	}
@@ -105,12 +105,12 @@ final class IceArena {
 		PhongMaterial[] ice = new PhongMaterial[3];
 		int[] tones = { 0x7fa9cc, 0x8cb8dc, 0x6f98c0 };
 		for (int i = 0; i < ice.length; i++) {
-			ice[i] = BattleArena3D.textured(IceTexture.block(tones[i], 5 + i), Color.WHITE);
+			ice[i] = ArenaMaterials.textured(IceTexture.block(tones[i], 5 + i), Color.WHITE);
 			ice[i].setSpecularPower(90);
 		}
 		for (double x = 0; x < w; x += 100) {
 			for (double z = 0; z < h; z += 100) {
-				Box plate = BattleArena3D.box(Math.min(100, w - x) - 2, 4, Math.min(100, h - z) - 2, x + Math.min(100, w - x) / 2 - w / 2, 2, z + Math.min(100, h - z) / 2 - h / 2,
+				Box plate = ArenaMaterials.box(Math.min(100, w - x) - 2, 4, Math.min(100, h - z) - 2, x + Math.min(100, w - x) / 2 - w / 2, 2, z + Math.min(100, h - z) / 2 - h / 2,
 						ice[crystals.nextInt(ice.length)]);
 				host.arena.getChildren().add(plate);
 			}
@@ -120,9 +120,9 @@ final class IceArena {
 	/** Snow piled outside the plates, with shards of ice standing in it */
 	private void shards(double w, double h, Random crystals) {
 		// Snow piled outside the plates, with shards of ice standing in it
-		PhongMaterial snow = BattleArena3D.material(Color.web("#eef6fc"));
+		PhongMaterial snow = ArenaMaterials.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
-		PhongMaterial shardMaterial = BattleArena3D.material(Color.web("#d6f1ff"));
+		PhongMaterial shardMaterial = ArenaMaterials.material(Color.web("#d6f1ff"));
 		shardMaterial.setSpecularColor(Color.WHITE);
 		shardMaterial.setSpecularPower(100);
 		TriangleMesh shards = new TriangleMesh();
@@ -199,7 +199,7 @@ final class IceArena {
 			int b = 1 + (i + 1) % sides;
 			water.getFaces().addAll(0, 0, a, 0, b, 0);
 		}
-		PhongMaterial sea = BattleArena3D.material(Color.web("#14365e"));
+		PhongMaterial sea = ArenaMaterials.material(Color.web("#14365e"));
 		sea.setSpecularColor(Color.WHITE);
 		sea.setSpecularPower(90);
 		this.addIce(water, sea);
@@ -230,7 +230,7 @@ final class IceArena {
 				floes.getFaces().addAll(offset, offset, a, a, b, b);
 			}
 		}
-		PhongMaterial floeIce = BattleArena3D.textured(IceTexture.block(0xc4ecfa, 11), Color.WHITE);
+		PhongMaterial floeIce = ArenaMaterials.textured(IceTexture.block(0xc4ecfa, 11), Color.WHITE);
 		floeIce.setSpecularPower(60);
 		this.addIce(floes, floeIce);
 
@@ -242,13 +242,13 @@ final class IceArena {
 			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.6;
 			IceArena.crystal(bergs, centreX + Math.cos(angle) * distance, surface + 0.4, centreZ + Math.sin(angle) * distance, 40 + random.nextDouble() * 40, 30 + random.nextDouble() * 50, 8, random);
 		}
-		PhongMaterial berg = BattleArena3D.material(Color.web("#e8f8ff"));
+		PhongMaterial berg = ArenaMaterials.material(Color.web("#e8f8ff"));
 		berg.setSpecularColor(Color.WHITE);
 		berg.setSpecularPower(100);
 		this.addIce(bergs, berg);
 
 		// Snow along the shore
-		PhongMaterial snow = BattleArena3D.material(Color.web("#eef6fc"));
+		PhongMaterial snow = ArenaMaterials.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
 		for (int i = 0; i < sides; i += 3) {
 			double angle = i * Math.PI * 2 / sides;

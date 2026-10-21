@@ -2,15 +2,15 @@ package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.BURN_ENERGY;
 import static widgets.scenes.BattleArena3D.BURN_SPOTS;
-import static widgets.scenes.BattleArena3D.CRYSTAL;
+import static widgets.scenes.ArenaMaterials.CRYSTAL;
 import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
-import static widgets.scenes.BattleArena3D.argb;
-import static widgets.scenes.BattleArena3D.energy;
-import static widgets.scenes.BattleArena3D.grow;
-import static widgets.scenes.BattleArena3D.material;
-import static widgets.scenes.BattleArena3D.paint;
-import static widgets.scenes.BattleArena3D.shape;
-import static widgets.scenes.BattleArena3D.shrink;
+import static widgets.scenes.ArenaMaterials.argb;
+import static widgets.scenes.ArenaMaterials.energy;
+import static widgets.scenes.ArenaMaterials.grow;
+import static widgets.scenes.ArenaMaterials.material;
+import static widgets.scenes.ArenaMaterials.paint;
+import static widgets.scenes.ArenaMaterials.shape;
+import static widgets.scenes.ArenaMaterials.shrink;
 import static widgets.scenes.BattleArena3D.toCss;
 
 import java.io.ByteArrayInputStream;

@@ -1,7 +1,7 @@
 package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.FLYBY_SECONDS;
-import static widgets.scenes.BattleArena3D.energy;
+import static widgets.scenes.ArenaMaterials.energy;
 
 import java.util.List;
 import java.util.Map;
