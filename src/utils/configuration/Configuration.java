@@ -176,6 +176,7 @@ public class Configuration {
 		}
 	}
 
+	/** Returns the temp dir. */
 	public static String getTempDir() {
 		return System.getProperty("java.io.tmpdir");
 	}
@@ -193,14 +194,17 @@ public class Configuration {
 		return path == null ? "" : path;
 	}
 
+	/** Tells whether the enabled registration. */
 	public static boolean isEnabledRegistration() {
 		return Boolean.parseBoolean(Configuration.getConfiguration(INewConfigurationHandle.REGISTRATION_ENABLED));
 	}
 
+	/** Returns the webserver port. */
 	public static int getWebserverPort() {
 		return Configuration.getIntConfiguration(INewConfigurationHandle.WEBSERVER_PORT, DEFAULT_WEBSERVER_PORT);
 	}
 
+	/** Returns the robocode rounds. */
 	public static int getRobocodeRounds() {
 		return Math.max(1, Configuration.getIntConfiguration(INewConfigurationHandle.ROBOCODE_ROUNDS, DEFAULT_ROBOCODE_ROUNDS));
 	}

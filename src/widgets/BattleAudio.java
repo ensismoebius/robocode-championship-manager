@@ -192,6 +192,7 @@ public final class BattleAudio {
 		this.slowMotion = slowMotion;
 	}
 
+	/** Sets the music on. */
 	public void setMusicOn(boolean musicOn) {
 		this.musicOn = musicOn;
 	}
@@ -286,10 +287,12 @@ public final class BattleAudio {
 		this.placedAt(posX, posZ, this::destroyed);
 	}
 
+	/** Sets the song. */
 	public void setSong(Song song) {
 		this.song = song;
 	}
 
+	/** Returns the song. */
 	public Song getSong() {
 		return this.song;
 	}

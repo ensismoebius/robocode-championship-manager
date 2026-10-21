@@ -67,78 +67,97 @@ public class BattleMoment {
 	 */
 	private byte[] image;
 
+	/** Returns the id. */
 	public long getId() {
 		return id;
 	}
 
+	/** Returns the championship id. */
 	public long getChampionshipId() {
 		return championshipId;
 	}
 
+	/** Sets the championship id. */
 	public void setChampionshipId(long championshipId) {
 		this.championshipId = championshipId;
 	}
 
+	/** Returns the match code. */
 	public String getMatchCode() {
 		return matchCode;
 	}
 
+	/** Sets the match code. */
 	public void setMatchCode(String matchCode) {
 		this.matchCode = matchCode;
 	}
 
+	/** Returns the round number. */
 	public int getRoundNumber() {
 		return roundNumber;
 	}
 
+	/** Sets the round number. */
 	public void setRoundNumber(int roundNumber) {
 		this.roundNumber = roundNumber;
 	}
 
+	/** Tells whether the destruction. */
 	public boolean isDestruction() {
 		return destruction;
 	}
 
+	/** Sets the destruction. */
 	public void setDestruction(boolean destruction) {
 		this.destruction = destruction;
 	}
 
+	/** Returns the subject id. */
 	public long getSubjectId() {
 		return subjectId;
 	}
 
+	/** Sets the subject id. */
 	public void setSubjectId(long subjectId) {
 		this.subjectId = subjectId;
 	}
 
+	/** Returns the power. */
 	public double getPower() {
 		return power;
 	}
 
+	/** Sets the power. */
 	public void setPower(double power) {
 		this.power = power;
 	}
 
+	/** Returns the first id. */
 	public long getFirstId() {
 		return firstId;
 	}
 
+	/** Sets the first id. */
 	public void setFirstId(long firstId) {
 		this.firstId = firstId;
 	}
 
+	/** Returns the second id. */
 	public long getSecondId() {
 		return secondId;
 	}
 
+	/** Sets the second id. */
 	public void setSecondId(long secondId) {
 		this.secondId = secondId;
 	}
 
+	/** Returns the image. */
 	public byte[] getImage() {
 		return image;
 	}
 
+	/** Sets the image. */
 	public void setImage(byte[] image) {
 		this.image = image;
 	}

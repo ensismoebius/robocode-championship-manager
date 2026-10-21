@@ -32,6 +32,7 @@ public class TextTemplate {
 		this.template = new TextTemplatePreprocessor().loadTemplate(inputStream);
 	}
 
+	/** Returns the all assignments. */
 	public HashMap<String, Object> getAllAssignments() {
 		return assignments;
 	}

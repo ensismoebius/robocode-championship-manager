@@ -36,50 +36,62 @@ public class Author {
 	@Column(nullable = false)
 	private String mail;
 
+	/** Returns the mail. */
 	public String getMail() {
 		return mail;
 	}
 
+	/** Sets the mail. */
 	public void setMail(String mail) {
 		this.mail = mail;
 	}
 
+	/** Returns the login. */
 	public String getLogin() {
 		return login;
 	}
 
+	/** Sets the login. */
 	public void setLogin(String login) {
 		this.login = login;
 	}
 
+	/** Returns the password. */
 	public String getPassword() {
 		return password;
 	}
 
+	/** Sets the password. */
 	public void setPassword(String password) {
 		this.password = password;
 	}
 
+	/** Returns the id. */
 	public long getId() {
 		return id;
 	}
 
+	/** Sets the id. */
 	public void setId(long identifier) {
 		this.id = identifier;
 	}
 
+	/** Returns the name. */
 	public String getName() {
 		return name;
 	}
 
+	/** Sets the name. */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/** Returns the observations. */
 	public String getObservations() {
 		return observations;
 	}
 
+	/** Sets the observations. */
 	public void setObservations(String observations) {
 		this.observations = observations;
 	}

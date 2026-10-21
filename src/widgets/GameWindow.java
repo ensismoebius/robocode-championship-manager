@@ -128,6 +128,7 @@ public final class GameWindow {
 		}
 	}
 
+	/** Returns the window. */
 	public static Window getWindow() {
 		return GameWindow.stage;
 	}
@@ -165,6 +166,7 @@ public final class GameWindow {
 		}
 	}
 
+	/** Returns the screen. */
 	public static Parent getScreen() {
 		return GameWindow.screenLayer.getChildren().isEmpty() ? null : (Parent) GameWindow.screenLayer.getChildren().get(0);
 	}

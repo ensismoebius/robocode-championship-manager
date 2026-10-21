@@ -57,6 +57,7 @@ public class Bracket {
 		/** Decided without playing: one or both participants are missing */
 		BYE;
 
+		/** Tells whether the done. */
 		public boolean isDone() {
 			return this == FINISHED || this == BYE;
 		}
@@ -100,10 +101,12 @@ public class Bracket {
 			return resolved;
 		}
 
+		/** Returns the source. */
 		public Match getSource() {
 			return source;
 		}
 
+		/** Tells whether the source winner. */
 		public boolean isSourceWinner() {
 			return sourceWinner;
 		}
@@ -164,6 +167,7 @@ public class Bracket {
 			return code;
 		}
 
+		/** Returns the side. */
 		public Side getSide() {
 			return side;
 		}
@@ -182,10 +186,12 @@ public class Bracket {
 			return position;
 		}
 
+		/** Returns the a. */
 		public Slot getA() {
 			return a;
 		}
 
+		/** Returns the b. */
 		public Slot getB() {
 			return b;
 		}
@@ -197,22 +203,27 @@ public class Bracket {
 			return depth;
 		}
 
+		/** Returns the status. */
 		public Status getStatus() {
 			return status;
 		}
 
+		/** Returns the winner. */
 		public Long getWinner() {
 			return winner;
 		}
 
+		/** Returns the loser. */
 		public Long getLoser() {
 			return loser;
 		}
 
+		/** Returns the winner score. */
 		public Integer getWinnerScore() {
 			return winnerScore;
 		}
 
+		/** Returns the loser score. */
 		public Integer getLoserScore() {
 			return loserScore;
 		}
@@ -420,6 +431,7 @@ public class Bracket {
 		this.update();
 	}
 
+	/** Returns the participants. */
 	public List<Long> getParticipants() {
 		return participants;
 	}
@@ -439,14 +451,17 @@ public class Bracket {
 		return this.byCode.get(code);
 	}
 
+	/** Returns the winners rounds. */
 	public List<List<Match>> getWinnersRounds() {
 		return Collections.unmodifiableList(this.winnersRounds);
 	}
 
+	/** Returns the losers rounds. */
 	public List<List<Match>> getLosersRounds() {
 		return Collections.unmodifiableList(this.losersRounds);
 	}
 
+	/** Returns the finals. */
 	public List<Match> getFinals() {
 		return Collections.unmodifiableList(this.finals);
 	}
@@ -509,6 +524,7 @@ public class Bracket {
 				.min(Comparator.comparingInt(Match::getDepth).thenComparing(Match::getSide).thenComparingInt(Match::getRound).thenComparingInt(Match::getPosition));
 	}
 
+	/** Tells whether the finished. */
 	public boolean isFinished() {
 		return this.getChampion() != null;
 	}

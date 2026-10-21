@@ -347,6 +347,7 @@ final class RobotView {
 		}
 	}
 
+	/** Sets the energy. */
 	void setEnergy(double energy) {
 		this.energy = energy;
 		this.energyFill.setMaxWidth(90 * Math.max(0, Math.min(1, energy / 100)));

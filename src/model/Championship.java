@@ -68,38 +68,47 @@ public class Championship {
 	@OrderBy("id")
 	private List<MatchResult> results = new ArrayList<MatchResult>();
 
+	/** Returns the id. */
 	public long getId() {
 		return id;
 	}
 
+	/** Returns the name. */
 	public String getName() {
 		return name;
 	}
 
+	/** Sets the name. */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/** Returns the created at. */
 	public LocalDateTime getCreatedAt() {
 		return createdAt;
 	}
 
+	/** Sets the created at. */
 	public void setCreatedAt(LocalDateTime createdAt) {
 		this.createdAt = createdAt;
 	}
 
+	/** Tells whether the repechage. */
 	public boolean isRepechage() {
 		return repechage;
 	}
 
+	/** Sets the repechage. */
 	public void setRepechage(boolean repechage) {
 		this.repechage = repechage;
 	}
 
+	/** Returns the seeds. */
 	public List<Opponent> getSeeds() {
 		return seeds;
 	}
 
+	/** Returns the results. */
 	public List<MatchResult> getResults() {
 		return results;
 	}

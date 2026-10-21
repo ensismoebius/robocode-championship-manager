@@ -37,6 +37,7 @@ public final class BattleRecording {
 			this.name = name;
 		}
 
+		/** Returns the index. */
 		public int getIndex() {
 			return this.index;
 		}
@@ -48,20 +49,24 @@ public final class BattleRecording {
 			return this.name;
 		}
 
+		/** Returns the body color. */
 		public int getBodyColor() {
 			return this.bodyColor;
 		}
 
+		/** Returns the gun color. */
 		public int getGunColor() {
 			return this.gunColor;
 		}
 
+		/** Returns the radar color. */
 		public int getRadarColor() {
 			return this.radarColor;
 		}
 	}
 
 	public record RobotState(int index, double x, double y, double bodyHeading, double gunHeading, double radarHeading, double energy, int state) {
+		/** Tells whether the dead. */
 		public boolean isDead() {
 			return this.state == ROBOT_DEAD;
 		}
@@ -84,14 +89,17 @@ public final class BattleRecording {
 	private final List<Robot> robots = new ArrayList<Robot>();
 	private final List<List<Turn>> rounds = new ArrayList<List<Turn>>();
 
+	/** Returns the width. */
 	public int getWidth() {
 		return this.width;
 	}
 
+	/** Returns the height. */
 	public int getHeight() {
 		return this.height;
 	}
 
+	/** Returns the robots. */
 	public List<Robot> getRobots() {
 		return this.robots;
 	}
@@ -112,6 +120,7 @@ public final class BattleRecording {
 		return this.rounds;
 	}
 
+	/** Tells whether the empty. */
 	public boolean isEmpty() {
 		return this.rounds.stream().allMatch(List::isEmpty);
 	}
