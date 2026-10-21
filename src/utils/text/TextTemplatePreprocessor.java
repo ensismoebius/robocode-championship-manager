@@ -17,6 +17,9 @@ import java.util.stream.Collectors;
  * @author André Furlan - ensismoebius@gmail.com
  */
 public class TextTemplatePreprocessor {
+	/** Finds the block openers and enders: <!-- begin:name --> and <!-- end:name -->. */
+	private static final Pattern BLOCK_PATTERN = Pattern.compile("(<!--\\s?(begin|end):(.*)\\s?-->)(.*)", Pattern.CASE_INSENSITIVE);
+
 
 	/**
 	 * Used to parse the template to a data structure
@@ -51,17 +54,13 @@ public class TextTemplatePreprocessor {
 		// The list of object at the template
 		HashMap<String, Object> contents = new HashMap<String, Object>();
 
-		// Pattern to find the blocks
-		String pattern = "(<!--\\s?(begin|end):(.*)\\s?-->)(.*)";
-		Pattern blockPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
-
 		for (this.lineIndex = initialLineIndex; this.lineIndex < lines.size(); this.lineIndex++) {
 
 			// Read line by line
 			String line = lines.get(lineIndex);
 
 			// Checks if the line has a block opener or ender
-			Matcher matcher2 = blockPattern.matcher(line);
+			Matcher matcher2 = BLOCK_PATTERN.matcher(line);
 			if (matcher2.find()) {
 
 				// Its is a block opener or ender?
@@ -70,13 +69,8 @@ public class TextTemplatePreprocessor {
 				// The of the new find blovk
 				String newBlockName = matcher2.group(3).trim();
 
-				// The contents in the sameline of the block opener if any
-				String lineContent = startOrEnd.equals("begin") ? matcher2.group(4) : "";
-
 				// Adds the contents of the sameline of the block opener if any
-				if (!lineContent.trim().equals("")) {
-					this.putItem(contents, newBlockName, lineContent);
-				}
+				this.putSameLine(contents, newBlockName, startOrEnd.equals("begin") ? matcher2.group(4) : "");
 
 				// When block ends return its contents
 				if (startOrEnd.equals("end"))
@@ -88,17 +82,27 @@ public class TextTemplatePreprocessor {
 				this.putItem(contents, blockName, subContents);
 
 			} else {
-
-				// Stores the line at the current block
-				if (blockName == null || line.equals(""))
-					continue;
-
-				this.putItem(contents, blockName, line);
+				this.storeLine(contents, blockName, line);
 			}
 		}
 
 		// Return all the sweet things (yumi...)
 		return contents;
+	}
+
+	/** Adds the text written after a block opener, when there is some. */
+	private void putSameLine(HashMap<String, Object> contents, String blockName, String lineContent) {
+		if (!lineContent.trim().equals("")) {
+			this.putItem(contents, blockName, lineContent);
+		}
+	}
+
+	/** Stores a plain line at the current block: empty lines are skipped, and lines outside any block are ignored. */
+	private void storeLine(HashMap<String, Object> contents, String blockName, String line) {
+		if (blockName == null || line.equals("")) {
+			return;
+		}
+		this.putItem(contents, blockName, line);
 	}
 
 	/** Adds an item to a block of the template, creating the block the first time. */

@@ -137,6 +137,39 @@ public class RobotEditor extends HttpServlet {
 			return;
 		}
 
+		this.saveRobot(req, resp, action, robot);
+	}
+
+	/** Shows a row for each author of the robot, or an empty row when there is none. */
+	private static void assignAuthors(TextTemplate template, Opponent opponent) {
+		// Always show at least one author
+		List<Author> authors = opponent.getAuthors().isEmpty() ? List.of(new Author()) : opponent.getAuthors();
+		for (Author author : authors) {
+			template.assign("name", Html.escape(author.getName()));
+			template.assign("email", Html.escape(author.getMail()));
+			template.parse("author");
+		}
+	}
+
+	/** The submit button: disabled, with the message, while the registration of new robots is blocked. */
+	private static void assignSubmitButton(TextTemplate template, String message) {
+		if (Configuration.isEnabledRegistration()) {
+			template.assign("submitButton", "Salvar");
+			template.assign("submitDisabled", "");
+		} else {
+			template.assign("submitButton", "Cadastro de novos robôs bloqueado!!");
+			template.assign("submitDisabled", "disabled");
+			if (message.isEmpty()) {
+				template.assign("message", "Cadastro de novos robôs bloqueado!!");
+			}
+		}
+	}
+
+	/**
+	 * Fills the robot from the form and saves it. When something is wrong, shows the errors on the
+	 * editing screen; when it is saved, logs the author in and redirects to the editing screen.
+	 */
+	private void saveRobot(HttpServletRequest req, HttpServletResponse resp, String action, Opponent robot) throws ServletException, IOException {
 		try {
 			List<String> errors = this.fillOpponent(req, robot);
 
@@ -194,24 +227,8 @@ public class RobotEditor extends HttpServlet {
 				? Html.escape("Robô cadastrado: " + opponent.getFullName() + ". Envie novos arquivos apenas se quiser substituí-los.")
 				: "");
 
-		// Always show at least one author
-		List<Author> authors = opponent.getAuthors().isEmpty() ? List.of(new Author()) : opponent.getAuthors();
-		for (Author author : authors) {
-			template.assign("name", Html.escape(author.getName()));
-			template.assign("email", Html.escape(author.getMail()));
-			template.parse("author");
-		}
-
-		if (Configuration.isEnabledRegistration()) {
-			template.assign("submitButton", "Salvar");
-			template.assign("submitDisabled", "");
-		} else {
-			template.assign("submitButton", "Cadastro de novos robôs bloqueado!!");
-			template.assign("submitDisabled", "disabled");
-			if (message.isEmpty()) {
-				template.assign("message", "Cadastro de novos robôs bloqueado!!");
-			}
-		}
+		assignAuthors(template, opponent);
+		assignSubmitButton(template, message);
 
 		template.parse("main");
 
@@ -282,12 +299,23 @@ public class RobotEditor extends HttpServlet {
 		}
 
 		// Nothing is wrong, fill the robot!!
+		fillIdentity(robot, names, authorsForm, login, password, keepPassword);
+		copyUploads(robot, robotJar, robotJava, teamMusic, teamLogo);
+
+		return errors;
+	}
+
+	/** Fills the team, the robot name and the authors; the password is kept when the form did not send a new one. */
+	private static void fillIdentity(Opponent robot, Names names, String[][] authorsForm, String login, String password, boolean keepPassword) {
 		String passwordHash = keepPassword ? robot.getAuthors().get(0).getPassword() : PasswordHasher.hash(password);
 		fillAuthors(robot, authorsForm[0], authorsForm[1], login, passwordHash);
 
 		robot.setTeam(names == null ? robot.getTeam() : names.team());
 		robot.setName(names == null ? robot.getName() : names.robot());
+	}
 
+	/** Stores the files that were sent on the robot: the jar, the source, the music and the logo. */
+	private static void copyUploads(Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) {
 		if (robotJar != null) {
 			robot.setCompiledRobot(robotJar.content());
 		}
@@ -300,8 +328,6 @@ public class RobotEditor extends HttpServlet {
 		if (teamLogo != null) {
 			robot.setImage(teamLogo.content());
 		}
-
-		return errors;
 	}
 
 	/** The team and robot names read from the .jar file name */

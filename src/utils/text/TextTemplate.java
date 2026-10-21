@@ -96,20 +96,24 @@ public class TextTemplate {
 				if (object instanceof String) {
 					finalText.append(object).append(System.lineSeparator());
 				} else {
-
-					ArrayList<HashMap<String, Object>> mapList = new ArrayList<HashMap<String, Object>>();
-					HashMap<String, Object> map = new HashMap<String, Object>();
-					map.put("1", object);
-
-					mapList.add(map);
-
-					finalText.append(this.out(mapList, blockName));
+					finalText.append(this.outObject(object, blockName));
 				}
 			}
 
 		}
 
 		return finalText.toString();
+	}
+
+	/** The text of a nested block, written with the same block name. */
+	private String outObject(Object object, String blockName) {
+		ArrayList<HashMap<String, Object>> mapList = new ArrayList<HashMap<String, Object>>();
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		map.put("1", object);
+
+		mapList.add(map);
+
+		return this.out(mapList, blockName);
 	}
 
 	/** Splits the items of a block into text and place holders. */
@@ -134,41 +138,46 @@ public class TextTemplate {
 					break;
 				}
 
-				// Replaces every placeholder of the line by its assigned value
-				Matcher matcher2 = placeHoldersPattern.matcher(line);
-				StringBuilder replaced = new StringBuilder();
-				while (matcher2.find()) {
-					Object value = this.assignments.get(matcher2.group(1));
-					matcher2.appendReplacement(replaced, Matcher.quoteReplacement(value == null ? "" : value.toString()));
-				}
-				matcher2.appendTail(replaced);
-				tempItens.add(replaced.toString());
+				tempItens.add(this.replacePlaceHolders(placeHoldersPattern, line));
 			} else {
-
-				HashMap<String, Object> hashMap = (HashMap<String, Object>) itens.get(index);
-
-				String itemName = (String) hashMap.keySet().toArray()[0];
-
-				List<Object> list = ((List<Object>) hashMap.get(itemName));
-
-				boolean parsed = list.get(0).equals(TextTemplate.BEGIN_PARSED);
-				if (parsed) {
-
-					// Removes the PARSED flags from parsed blocks
-					while (!list.remove(0).equals(TextTemplate.END_PARSED))
-						;
-
-					tempItens.add(list);
-				} else {
-					tempItens.add("");
-				}
-
+				tempItens.add(parsedBlock(itens.get(index)));
 			}
 		}
 		itens.add(0, TextTemplate.BEGIN_PARSED);
 		itens.add(TextTemplate.END_PARSED);
 		itens.addAll(tempItens);
 		return itens;
+	}
+
+	/** The line with every place holder replaced by its assigned value, or by an empty text when it has none. */
+	private String replacePlaceHolders(Pattern placeHoldersPattern, String line) {
+		Matcher matcher2 = placeHoldersPattern.matcher(line);
+		StringBuilder replaced = new StringBuilder();
+		while (matcher2.find()) {
+			Object value = this.assignments.get(matcher2.group(1));
+			matcher2.appendReplacement(replaced, Matcher.quoteReplacement(value == null ? "" : value.toString()));
+		}
+		matcher2.appendTail(replaced);
+		return replaced.toString();
+	}
+
+	/** A nested block: its items when it was parsed, otherwise an empty text. */
+	@SuppressWarnings("unchecked")
+	private static Object parsedBlock(Object item) {
+		HashMap<String, Object> hashMap = (HashMap<String, Object>) item;
+
+		String itemName = (String) hashMap.keySet().toArray()[0];
+
+		List<Object> list = ((List<Object>) hashMap.get(itemName));
+
+		boolean parsed = list.get(0).equals(TextTemplate.BEGIN_PARSED);
+		if (!parsed) {
+			return "";
+		}
+		// Removes the PARSED flags from parsed blocks
+		while (!list.remove(0).equals(TextTemplate.END_PARSED))
+			;
+		return list;
 	}
 
 	/**
@@ -231,10 +240,7 @@ public class TextTemplate {
 
 				// Checks the block name matches
 				if (map.get(blockNameToFind) != null) {
-					if (currentBlock != null) {
-						indexes.add(currentBlock);
-					}
-					indexes.add(index);
+					addLevel(indexes, currentBlock, index);
 					indexes.add(blockNameToFind);
 					return indexes;
 				}
@@ -245,17 +251,20 @@ public class TextTemplate {
 
 				// If something has been found stores it!
 				if (res.size() > 0) {
-					if (currentBlock != null) {
-						indexes.add(currentBlock);
-					}
-					indexes.add(index);
+					addLevel(indexes, currentBlock, index);
 					indexes.addAll(res);
 				}
-			} else {
-				// Non hashmap elements are ignored
-				continue;
 			}
+			// Non hashmap elements are ignored
 		}
 		return indexes;
+	}
+
+	/** Stores the enclosing block, when there is one, and the index of the element in it. */
+	private static void addLevel(List<Object> indexes, String currentBlock, int index) {
+		if (currentBlock != null) {
+			indexes.add(currentBlock);
+		}
+		indexes.add(index);
 	}
 }
