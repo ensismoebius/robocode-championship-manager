@@ -44,10 +44,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -55,7 +53,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Cylinder;
-import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
@@ -79,6 +76,7 @@ import widgets.Song;
 import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
+import widgets.scenes.ArenaHud.HudPlayer;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -101,7 +99,7 @@ public class BattleArena3D extends StackPane {
 
 	/** Robocode's default speed, turns per second */
 	private static final double TPS = 30;
-	private static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
+	static final double[] SPEEDS = Configuration.BATTLE_SPEEDS;
 
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	/** The camera flies over the arena before the first round and ends where the battle starts */
@@ -138,7 +136,7 @@ public class BattleArena3D extends StackPane {
 	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
 	private static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
-	private enum ViewMode {
+	enum ViewMode {
 		CINEMATIC("CINEMATOGRÁFICA", -30, 45), FREE("LIVRE", -38, 38), ISOMETRIC("ISOMÉTRICA", -35.26, 12), TOP_DOWN("VISTA DE CIMA", -89.5, 12);
 
 		final String label;
@@ -204,6 +202,7 @@ public class BattleArena3D extends StackPane {
 	private final IceArena ice = new IceArena(this);
 	final ArenaFire fire = new ArenaFire(this);
 	final ArenaEffects fx = new ArenaEffects(this);
+	final ArenaHud hud = new ArenaHud(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	private final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
@@ -222,7 +221,7 @@ public class BattleArena3D extends StackPane {
 	private final AmbientLight fireGlow = new AmbientLight(Color.WHITE);
 
 	// Camera: what it sees now and what it wants to see, eased every frame
-	private ViewMode viewMode = ViewMode.CINEMATIC;
+	ViewMode viewMode = ViewMode.CINEMATIC;
 	final double[] eye = { 0, -700, -900 };
 	private final double[] look = { 0, -10, 0 };
 	private final double[] eyeTarget = { 0, -700, -900 };
@@ -258,21 +257,21 @@ public class BattleArena3D extends StackPane {
 
 	// 2D on top: balloons, HUD, banners and the replay frame
 	private final Pane balloons = new Pane();
-	private final Label banner = new Label();
-	private final Label subBanner = new Label();
-	private final Label loading = new Label("PREPARANDO A BATALHA");
-	private final Label roundLabel = new Label();
+	final Label banner = new Label();
+	final Label subBanner = new Label();
+	final Label loading = new Label("PREPARANDO A BATALHA");
+	final Label roundLabel = new Label();
 	/** The stage of the championship, over the loading and the versus */
-	private final Label stageLabel = new Label();
-	private String stageName = "";
-	private Bracket.Importance stageImportance = Bracket.Importance.REGULAR;
-	private final Label speedLabel = new Label();
-	private final Label viewLabel = new Label();
-	private final HBox hudTop = new HBox();
-	private final List<HudPlayer> hudPlayers = new ArrayList<HudPlayer>();
-	private final Rectangle letterboxTop = new Rectangle();
-	private final Rectangle letterboxBottom = new Rectangle();
-	private final HBox replayTag = new HBox(14);
+	final Label stageLabel = new Label();
+	String stageName = "";
+	Bracket.Importance stageImportance = Bracket.Importance.REGULAR;
+	final Label speedLabel = new Label();
+	final Label viewLabel = new Label();
+	final HBox hudTop = new HBox();
+	final List<HudPlayer> hudPlayers = new ArrayList<HudPlayer>();
+	final Rectangle letterboxTop = new Rectangle();
+	final Rectangle letterboxBottom = new Rectangle();
+	final HBox replayTag = new HBox(14);
 	/** The card of the robot being presented */
 	private final StackPane showcaseLayer = new StackPane();
 	private final Region whiteFlash = new Region();
@@ -286,14 +285,14 @@ public class BattleArena3D extends StackPane {
 	private final Set<Integer> bulletsSeen = new HashSet<Integer>();
 	private final Set<Integer> bulletsExploded = new HashSet<Integer>();
 	private final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
-	private final Map<Integer, Integer> roundWins = new HashMap<Integer, Integer>();
+	final Map<Integer, Integer> roundWins = new HashMap<Integer, Integer>();
 	Phase phase = Phase.LOADING;
 	private double phaseTime = 0;
-	private int round = 0;
+	int round = 0;
 	private double turnPosition = 0;
 	private int lastTurnProcessed = -1;
 	/** Index in SPEEDS, starts with the configured one */
-	private int speed;
+	int speed;
 	/** Shown when the round starts, configurable */
 	private final String fightText = Configuration.getFightText();
 	private boolean fightShown = false;
@@ -314,7 +313,7 @@ public class BattleArena3D extends StackPane {
 	private int countdown;
 	private String roundTitle = "";
 	private String roundSubtitle;
-	private boolean paused = false;
+	boolean paused = false;
 	private double hitTension = 0;
 	/** Animations of effects run slower in the replay */
 	double effectRate = 1;
@@ -420,10 +419,10 @@ public class BattleArena3D extends StackPane {
 		this.showcaseLayer.setMouseTransparent(true);
 		this.showcaseLayer.setPickOnBounds(false);
 
-		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.buildHud(), this.whiteFlash, scanlines);
+		this.getChildren().setAll(this.subScene, this.balloons, this.hud.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.hud.buildHud(), this.whiteFlash, scanlines);
 
 		this.installControls();
-		this.showBanner("", null);
+		this.hud.showBanner("", null);
 		this.loading.getStyleClass().add("arena-banner");
 		this.loading.setStyle("-fx-font-size: 30px;");
 		Theme.blink(this.loading);
@@ -461,7 +460,7 @@ public class BattleArena3D extends StackPane {
 			this.balloons.getChildren().add(view.balloon);
 			this.roundWins.put(robot.getIndex(), 0);
 		}
-		this.buildHudPlayers();
+		this.hud.buildHudPlayers();
 		this.loading.setVisible(false);
 
 		Map<Integer, String> names = new HashMap<Integer, String>();
@@ -474,7 +473,7 @@ public class BattleArena3D extends StackPane {
 		this.startShowcase();
 	}
 
-	private Opponent opponentOf(BattleRecording.Robot robot) {
+	Opponent opponentOf(BattleRecording.Robot robot) {
 		String name = BattleControl.robotClassName(robot.getName());
 		return this.fighters.stream().filter(o -> o.getFullName().equals(name)).findFirst().orElse(null);
 	}
@@ -1369,261 +1368,8 @@ public class BattleArena3D extends StackPane {
 
 	// ------------------------------------------------------------------- HUD
 
-	/** A health bar: the energy, the light trail of the damage just taken, the number and the won rounds */
-	private record HudPlayer(int index, Region energy, Region lag, Label energyText, HBox pips) {
-	}
-
-	/** Width of the health bars */
-	private static final double HUD_BAR_WIDTH = 420;
-	/** The damage trails draining, one per player */
-	private final Map<Integer, Timeline> lagDrains = new HashMap<>();
-
-	private Node buildHud() {
-		this.banner.getStyleClass().add("arena-banner");
-		this.subBanner.getStyleClass().add("arena-sub-banner");
-		this.stageLabel.setVisible(false);
-		this.stageLabel.setManaged(false);
-		VBox center = new VBox(10, this.stageLabel, this.loading, this.banner, this.subBanner);
-		center.setAlignment(Pos.CENTER);
-		center.setMouseTransparent(true);
-
-		this.roundLabel.getStyleClass().add("arena-round");
-		this.hudTop.getChildren().add(this.roundLabel);
-		this.hudTop.setAlignment(Pos.TOP_CENTER);
-		this.hudTop.setPadding(new Insets(18, 24, 0, 24));
-
-		this.speedLabel.getStyleClass().add("arena-info");
-		this.viewLabel.getStyleClass().add("arena-info");
-		Label help = new Label("V: CÂMERA • ESPAÇO: PAUSA • ← →: VELOCIDADE • ENTER: PULAR • ARRASTE: GIRAR • RODA: ZOOM");
-		help.getStyleClass().add("arena-help");
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		HBox bottom = new HBox(18, help, spacer, this.viewLabel, this.speedLabel);
-		bottom.setAlignment(Pos.CENTER_LEFT);
-		bottom.setPadding(new Insets(0, 24, 16, 24));
-
-		BorderPane hud = new BorderPane(center, this.hudTop, null, bottom, null);
-		hud.setPickOnBounds(false);
-		this.updateInfo();
-		return hud;
-	}
-
-	/**
-	 * Black bars of the replay, like a movie, with its tag
-	 */
-	private Node buildLetterbox() {
-		for (Rectangle bar : List.of(this.letterboxTop, this.letterboxBottom)) {
-			bar.setFill(Color.BLACK);
-			bar.widthProperty().bind(this.widthProperty());
-			bar.setHeight(0);
-			bar.setManaged(false);
-		}
-		this.letterboxBottom.layoutYProperty().bind(this.heightProperty().subtract(this.letterboxBottom.heightProperty()));
-
-		Label dot = new Label("●");
-		dot.getStyleClass().add("arena-replay-dot");
-		Theme.blink(dot);
-		Label replay = new Label("REPLAY");
-		replay.getStyleClass().add("arena-replay");
-		Label slow = new Label("CÂMERA LENTA");
-		slow.getStyleClass().add("arena-replay-slow");
-		this.replayTag.getChildren().addAll(dot, replay, slow);
-		this.replayTag.setAlignment(Pos.CENTER_LEFT);
-		// Managed, so the pane gives it its size (unmanaged, the texts were cut)
-		this.replayTag.relocate(36, 26);
-		this.replayTag.setVisible(false);
-
-		Pane frame = new Pane(this.letterboxTop, this.letterboxBottom, this.replayTag);
-		frame.setMouseTransparent(true);
-		return frame;
-	}
-
-	private void showLetterbox(boolean show) {
-		this.showLetterbox(show, show);
-	}
-
-	/**
-	 * @param tag
-	 *            shows the replay tag
-	 */
-	private void showLetterbox(boolean show, boolean tag) {
-		double height = show ? this.getHeight() * 0.12 : 0;
-		Timeline bars = new Timeline(new KeyFrame(Duration.millis(450), new KeyValue(this.letterboxTop.heightProperty(), height, Interpolator.EASE_BOTH),
-				new KeyValue(this.letterboxBottom.heightProperty(), height, Interpolator.EASE_BOTH)));
-		bars.play();
-		this.replayTag.setVisible(tag);
-		this.hudTop.setVisible(!show);
-	}
-
-	/**
-	 * Fighting game health bars, P1 on the left and P2 on the right
-	 */
-	private void buildHudPlayers() {
-		this.hudTop.getChildren().clear();
-
-		List<BattleRecording.Robot> list = this.recording.getRobots();
-		for (int i = 0; i < list.size() && i < 2; i++) {
-			BattleRecording.Robot robot = list.get(i);
-			Opponent opponent = this.opponentOf(robot);
-			Color color = PLAYER_COLORS[i];
-
-			Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
-			name.getStyleClass().add("arena-player-name");
-			name.setTextFill(color);
-			Label team = new Label(opponent == null ? "" : opponent.getTeam());
-			team.getStyleClass().add("arena-player-team");
-
-			// A flat futuristic bar: slanted at its outer end, solid colors, a thin outline, cells
-			// every 5 %, and a light trail that shows the damage just taken before it drains away
-			double height = 14;
-			double slant = 8;
-			String css = toCss(color);
-			Region back = new Region();
-			back.setStyle("-fx-background-color: derive(" + css + ", -80%);");
-			Region lag = new Region();
-			lag.getStyleClass().add("arena-energy-lag");
-			Region energy = new Region();
-			energy.getStyleClass().add("arena-energy");
-			energy.setStyle("-fx-background-color: " + css + ";");
-			Region cells = new Region();
-			cells.getStyleClass().add("arena-energy-cells");
-			StackPane bar = new StackPane(back, lag, energy, cells);
-			bar.setMinSize(HUD_BAR_WIDTH, height);
-			bar.setPrefSize(HUD_BAR_WIDTH, height);
-			bar.setMaxSize(HUD_BAR_WIDTH, height);
-			Pos anchor = i == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
-			StackPane.setAlignment(lag, anchor);
-			StackPane.setAlignment(energy, anchor);
-			double[] corners = i == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
-					: new double[] { 0, 0, HUD_BAR_WIDTH - slant, 0, HUD_BAR_WIDTH, height, 0, height };
-			bar.setClip(new Polygon(corners));
-			Polygon outline = new Polygon(corners);
-			outline.setFill(Color.TRANSPARENT);
-			outline.setStroke(color);
-			outline.setStrokeWidth(1.5);
-			outline.setMouseTransparent(true);
-			StackPane frame = new StackPane(bar, outline);
-			Label energyText = new Label("100");
-			energyText.getStyleClass().add("arena-energy-text");
-			energyText.setStyle("-fx-text-fill: " + css + "; -fx-border-color: " + css + ";");
-			HBox pips = new HBox(6);
-
-			HBox nameRow = i == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
-			nameRow.setAlignment(i == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
-			HBox barRow = i == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
-			barRow.setAlignment(Pos.CENTER);
-			VBox panel = new VBox(6, nameRow, barRow, pips);
-			panel.setAlignment(i == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
-
-			this.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, lag, energyText, pips));
-			if (i == 1) {
-				this.hudTop.getChildren().addAll(spacer(), this.roundLabel, spacer());
-			}
-			this.hudTop.getChildren().add(panel);
-		}
-		if (list.size() < 2) {
-			this.hudTop.getChildren().add(this.roundLabel);
-		}
-		this.updatePips();
-	}
-
-	private static Region spacer() {
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		return spacer;
-	}
-
-	/**
-	 * How many rounds the robots play for: all of the recording in a battle by
-	 * points, the rounds to win in a knockout (best of 5, 3), which may end earlier
-	 */
-	private int roundsToWin() {
-		int rounds = this.recording == null ? 0 : this.recording.getRounds().size();
-		if (!Configuration.getWinnerCriterion().isKnockout()) {
-			return rounds;
-		}
-		return Math.max(1, BattleControl.roundsToWin(Configuration.getRobocodeRounds()));
-	}
-
-	private void updatePips() {
-		int rounds = this.roundsToWin();
-		for (HudPlayer player : this.hudPlayers) {
-			player.pips().getChildren().clear();
-			int wins = this.roundWins.getOrDefault(player.index(), 0);
-			for (int i = 0; i < rounds; i++) {
-				Label pip = new Label("◆");
-				pip.getStyleClass().add(i < wins ? "arena-pip-won" : "arena-pip");
-				player.pips().getChildren().add(pip);
-			}
-		}
-	}
-
-	private void updateHud(Map<Integer, Double> energies) {
-		for (HudPlayer player : this.hudPlayers) {
-			double energy = Math.max(0, energies.getOrDefault(player.index(), 0.0));
-			double width = HUD_BAR_WIDTH * Math.min(1, energy / 100);
-			double before = player.energy().getMaxWidth();
-			player.energy().setMaxWidth(width);
-			if (width >= player.lag().getMaxWidth()) {
-				// Healed, or a replay went back: the trail follows at once
-				Timeline drain = this.lagDrains.remove(player.index());
-				if (drain != null) {
-					drain.stop();
-				}
-				player.lag().setMaxWidth(width);
-			} else if (width < before) {
-				// The damage stays lit for a moment, then drains down to the new energy
-				Timeline old = this.lagDrains.get(player.index());
-				if (old != null) {
-					old.stop();
-				}
-				Timeline drain = new Timeline(new KeyFrame(Duration.seconds(0.45), new KeyValue(player.lag().maxWidthProperty(), player.lag().getMaxWidth())),
-						new KeyFrame(Duration.seconds(1.0), new KeyValue(player.lag().maxWidthProperty(), width, Interpolator.EASE_IN)));
-				this.lagDrains.put(player.index(), drain);
-				drain.play();
-			}
-			// Low energy: the bar pulses
-			player.energy().setOpacity(energy < 25 ? 0.6 + 0.4 * Math.abs(Math.sin(System.nanoTime() / 1e9 * 5)) : 1);
-			player.energyText().setText(String.valueOf((int) Math.ceil(energy)));
-		}
-	}
-
-	private void updateInfo() {
-		this.speedLabel.setText(this.paused ? "❚❚ PAUSA" : "▶ " + formatSpeed(SPEEDS[this.speed]) + "x");
-		this.viewLabel.setText("◉ " + this.viewMode.label);
-		if (this.recording != null) {
-			boolean knockout = Configuration.getWinnerCriterion().isKnockout();
-			String stage = this.stageImportance == Bracket.Importance.REGULAR ? "" : this.stageName + " · ";
-			this.roundLabel.setText(stage + "ROUND " + (this.round + 1) + (knockout ? " · MELHOR DE " + Configuration.getRobocodeRounds() : "/" + this.recording.getRounds().size()));
-		}
-	}
-
-	private static String formatSpeed(double speed) {
-		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
-	}
-
 	static String toCss(Color color) {
 		return String.format("#%02x%02x%02x", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
-	}
-
-	private void showBanner(String text, String sub) {
-		this.banner.setStyle("");
-		this.banner.setText(text);
-		this.subBanner.setText(sub == null ? "" : sub);
-		this.banner.setVisible(!text.isEmpty());
-		this.subBanner.setVisible(sub != null);
-		ScaleTransition pop = new ScaleTransition(Duration.millis(350), this.banner);
-		pop.setFromX(2.5);
-		pop.setFromY(2.5);
-		pop.setToX(1);
-		pop.setToY(1);
-		pop.setInterpolator(Theme.OVERSHOOT);
-		pop.play();
-	}
-
-	private void hideBanner() {
-		this.banner.setVisible(false);
-		this.subBanner.setVisible(false);
 	}
 
 	// ---------------------------------------------------------------- controls
@@ -1648,7 +1394,7 @@ public class BattleArena3D extends StackPane {
 			default -> {
 			}
 			}
-			this.updateInfo();
+			this.hud.updateInfo();
 			// Nothing else happens during the battle (like declaring a winner by
 			// accident)
 			event.consume();
@@ -1701,7 +1447,7 @@ public class BattleArena3D extends StackPane {
 		if (mode == ViewMode.CINEMATIC) {
 			this.pickShot(true);
 		}
-		this.updateInfo();
+		this.hud.updateInfo();
 	}
 
 	/**
@@ -1801,17 +1547,17 @@ public class BattleArena3D extends StackPane {
 		int remaining = (int) Math.ceil(COUNTDOWN_SECONDS - this.phaseTime);
 		if (remaining >= 1 && remaining != this.countdown) {
 			this.countdown = remaining;
-			this.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
+			this.hud.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
 			this.audio.countdown(remaining == 1);
 		}
 		if (this.phaseTime > COUNTDOWN_SECONDS && !this.fightShown) {
 			this.fightShown = true;
-			this.showBanner(this.fightText, null);
+			this.hud.showBanner(this.fightText, null);
 			this.audio.fight();
 			this.audio.setMusicOn(true);
 		}
 		if (this.phaseTime > INTRO_SECONDS) {
-			this.hideBanner();
+			this.hud.hideBanner();
 			this.phase = Phase.PLAYING;
 		}
 	}
@@ -1856,7 +1602,7 @@ public class BattleArena3D extends StackPane {
 				// A special battle gets its headline
 				this.headlineShown = true;
 				this.phaseTime = 0;
-				this.showBanner(this.headline.title(), this.headline.subtitle());
+				this.hud.showBanner(this.headline.title(), this.headline.subtitle());
 				this.announcer.announce(this.headline.subtitle(), 6);
 				this.banner.setStyle("-fx-font-size: 46px;");
 				Sfx.fanfare();
@@ -2044,11 +1790,11 @@ public class BattleArena3D extends StackPane {
 		this.roundTitle = "ROUND " + (this.round + 1);
 		boolean decisive = this.round + 1 == this.recording.getRounds().size() && this.round > 0;
 		this.roundSubtitle = decisive ? "ROUND DECISIVO" : null;
-		this.showBanner(this.roundTitle, this.roundSubtitle);
+		this.hud.showBanner(this.roundTitle, this.roundSubtitle);
 		this.audio.roundCall();
 		this.audio.setMusicOn(true);
 		this.announcer.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (this.round + 1) + "! Preparem os motores!", 5);
-		this.updateInfo();
+		this.hud.updateInfo();
 	}
 
 	/**
@@ -2060,8 +1806,8 @@ public class BattleArena3D extends StackPane {
 		this.flyMirrorZ = this.random.nextBoolean() ? 1 : -1;
 		this.phase = Phase.FLYBY;
 		this.phaseTime = 0;
-		this.hideBanner();
-		this.showLetterbox(true, false);
+		this.hud.hideBanner();
+		this.hud.showLetterbox(true, false);
 		this.audio.setMusicOn(true);
 		// The fly by ends framing both robots, where the battle starts
 		RobotView subject = this.robots.get(this.shotSubject);
@@ -2079,7 +1825,7 @@ public class BattleArena3D extends StackPane {
 		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
 		System.arraycopy(this.lookTarget, 0, this.look, 0, 3);
 		this.fov = this.fovTarget;
-		this.updateInfo();
+		this.hud.updateInfo();
 	}
 
 	/** How long the fly by stays on the critter before the trip: nothing if there is no critter */
@@ -2088,7 +1834,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private void endFlyBy() {
-		this.showLetterbox(false);
+		this.hud.showLetterbox(false);
 		this.beginIntro();
 	}
 
@@ -2151,7 +1897,7 @@ public class BattleArena3D extends StackPane {
 			int winner = alive.get(0).index();
 			this.roundWins.merge(winner, 1, Integer::sum);
 			RobotView view = this.robots.get(winner);
-			this.showBanner("K.O.!", (view == null ? "" : view.displayName) + " vence o round");
+			this.hud.showBanner("K.O.!", (view == null ? "" : view.displayName) + " vence o round");
 			this.announcer.announce("K.O.! " + (view == null ? "" : view.displayName) + " vence o round!", 5);
 			this.audio.knockOut();
 			// The winner, from close
@@ -2162,10 +1908,10 @@ public class BattleArena3D extends StackPane {
 			this.shotSide = this.random.nextBoolean() ? 1 : -1;
 			this.closeDistance = 110;
 		} else {
-			this.showBanner("FIM DO ROUND", null);
+			this.hud.showBanner("FIM DO ROUND", null);
 		}
 		this.audio.setMusicOn(false);
-		this.updatePips();
+		this.hud.updatePips();
 	}
 
 	/**
@@ -2221,7 +1967,7 @@ public class BattleArena3D extends StackPane {
 			view.setEnergy(state.isDead() ? 0 : energy);
 			energies.put(state.index(), state.isDead() ? 0 : energy);
 		}
-		this.updateHud(energies);
+		this.hud.updateHud(energies);
 
 		this.showBullets(turns, index, fraction);
 	}
@@ -2808,7 +2554,7 @@ public class BattleArena3D extends StackPane {
 	private void startShowcase() {
 		this.phase = Phase.SHOWCASE;
 		this.hudTop.setVisible(false);
-		this.showLetterbox(true, false);
+		this.hud.showLetterbox(true, false);
 		this.audio.setMusicOn(false);
 		this.showcaseRobot(0);
 	}
@@ -2879,7 +2625,7 @@ public class BattleArena3D extends StackPane {
 		this.showTurn(this.turns());
 
 		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
-		this.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
+		this.hud.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
 		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
 		this.announcer.announce(switch (this.stageImportance) {
 		case SEMIFINAL -> "Atenção, é uma SEMIFINAL! " + versusLine + " Quem vence vai para a final!";
@@ -2901,10 +2647,10 @@ public class BattleArena3D extends StackPane {
 		for (RobotView view : this.robots.values()) {
 			view.root.setVisible(true);
 		}
-		this.hideBanner();
+		this.hud.hideBanner();
 		this.stageLabel.setVisible(false);
 		this.stageLabel.setManaged(false);
-		this.showLetterbox(false);
+		this.hud.showLetterbox(false);
 		this.startRound(0);
 	}
 
@@ -3066,7 +2812,7 @@ public class BattleArena3D extends StackPane {
 		this.effectRate = 0.3;
 		this.audio.whoosh();
 		this.audio.setSlowMotion(true);
-		this.showLetterbox(true);
+		this.hud.showLetterbox(true);
 
 		// Back to before the death
 		this.turnPosition = this.replayFrom;
@@ -3108,7 +2854,7 @@ public class BattleArena3D extends StackPane {
 			view.running.forEach(animation -> animation.setRate(1));
 		}
 		this.audio.setSlowMotion(false);
-		this.showLetterbox(false);
+		this.hud.showLetterbox(false);
 
 		// Goes on from the end of the replay, with everything in its final state
 		this.turnPosition = Math.max(this.turnPosition, this.replayTo);
