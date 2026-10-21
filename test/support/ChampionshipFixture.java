@@ -13,6 +13,7 @@ import model.Opponent;
 import tournament.Bracket;
 import tournament.Bracket.Match;
 import tournament.Bracket.Status;
+import utils.database.Database;
 
 /** Robots, brackets and battle moments for the screens, built the way the championship builds them. */
 public final class ChampionshipFixture {
@@ -83,6 +84,24 @@ public final class ChampionshipFixture {
 		moment.setPower(2);
 		moment.setImage(logo());
 		return moment;
+	}
+
+	/** Saves robots in the current database, with their pictures, music and source, as the registration does. */
+	public static void registerRobots(int count) throws IOException {
+		byte[] music = ChampionshipFixture.class.getResourceAsStream("/fixtures/tone.mp3").readAllBytes();
+		Database.inTransaction(entityManager -> {
+			for (int index = 1; index <= count; index++) {
+				Opponent opponent = new Opponent();
+				opponent.setTeam("time" + index);
+				opponent.setName("Robo" + index);
+				opponent.setBattleCry("Grito " + index);
+				opponent.setImage(logo());
+				opponent.setMusic(music);
+				opponent.setSourceCode("public class Robo" + index + " {}");
+				entityManager.persist(opponent);
+			}
+			return null;
+		});
 	}
 
 	/** The picture of the program, used as the logo of the robots. */

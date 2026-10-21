@@ -3,7 +3,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static support.ChampionshipFixture.registerRobots;
 import static support.DialogFields.button;
+import static support.FxSupport.press;
+import static support.FxSupport.pressAndAnswer;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,15 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
-import model.Opponent;
-import support.ChampionshipFixture;
 import support.DialogFields;
 import support.FxSupport;
 import support.TestConfiguration;
 import utils.configuration.Configuration;
-import utils.database.Database;
 import widgets.GameWindow;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
@@ -82,35 +81,6 @@ class MainTest {
 			FxSupport.sleep(100);
 		}
 		return false;
-	}
-
-	/** Presses a key of the program: the key goes to the screen, the window hands it to the program. */
-	private static void press(KeyCode code, boolean control) {
-		FxSupport.runVoid(() -> GameWindow.getScreen().fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, control, false, false)));
-	}
-
-	/** Presses the key of a dialog that is going to show: the dialog gets the answer of the button. */
-	private static void pressAndAnswer(KeyCode code, boolean control, String answer) {
-		FxSupport.onNextDialog(dialog -> button(dialog, answer).fire());
-		press(code, control);
-	}
-
-	/** Registers the robots of the test in the database, with their pictures, music and source, as the registration does. */
-	private static void registerRobots(int count) throws IOException {
-		byte[] music = MainTest.class.getResourceAsStream("/fixtures/tone.mp3").readAllBytes();
-		Database.inTransaction(entityManager -> {
-			for (int index = 1; index <= count; index++) {
-				Opponent opponent = new Opponent();
-				opponent.setTeam("time" + index);
-				opponent.setName("Robo" + index);
-				opponent.setBattleCry("Grito " + index);
-				opponent.setImage(ChampionshipFixture.logo());
-				opponent.setMusic(music);
-				opponent.setSourceCode("public class Robo" + index + " {}");
-				entityManager.persist(opponent);
-			}
-			return null;
-		});
 	}
 
 	@Test

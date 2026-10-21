@@ -11,6 +11,8 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Region;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import widgets.GameWindow;
@@ -199,6 +201,17 @@ public final class FxSupport {
 	/** Tells whether a dialog of the game window is open. */
 	public static boolean dialogShowing() {
 		return run(() -> GameWindow.getWindow() != null && dialogBackdrop(GameWindow.getWindow().getScene().getRoot()) != null);
+	}
+
+	/** Presses a key of the program: the key goes to the screen, the window hands it to the program. */
+	public static void press(KeyCode code, boolean control) {
+		runVoid(() -> GameWindow.getScreen().fireEvent(new KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, control, false, false)));
+	}
+
+	/** Presses the key of a dialog that is going to show: the dialog gets the answer of the button. */
+	public static void pressAndAnswer(KeyCode code, boolean control, String answer) {
+		onNextDialog(dialog -> DialogFields.button(dialog, answer).fire());
+		press(code, control);
 	}
 
 	/** Runs the code on the JavaFX thread, without a result. */
