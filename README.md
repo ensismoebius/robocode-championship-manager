@@ -22,7 +22,11 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 
 - [O que ele faz](#-o-que-ele-faz)
 - [As arenas](#-as-arenas)
-- [Começo rápido](#-começo-rápido)
+- [Instalação](#-instalação)
+  1. [Instale o Robocode](#1-instale-o-robocode)
+  2. [Baixe o programa](#2-baixe-o-programa)
+  3. [Instale o programa](#3-instale-o-programa)
+  4. [Primeira abertura](#4-primeira-abertura)
 - [Tutorial: organizando um campeonato](#-tutorial-organizando-um-campeonato)
   1. [Configure](#1-configure)
   2. [Abra as inscrições](#2-abra-as-inscrições)
@@ -32,7 +36,6 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 - [Tutorial: inscrevendo o robô da sua equipe](#-tutorial-inscrevendo-o-robô-da-sua-equipe)
 - [Todos os controles](#-todos-os-controles)
 - [Regras do campeonato](#-regras-do-campeonato)
-- [Instaladores](#-instaladores)
 - [Para desenvolvedores](#-para-desenvolvedores)
 - [Licença](#-licença)
 
@@ -76,36 +79,109 @@ Eles nunca entram na área de batalha, mas se assustam com os tiros e as explos�
 
 ---
 
-## 🚀 Começo rápido
+## 📥 Instalação
 
-**Você precisa de:**
+Esta parte é para quem vai **usar** o programa. Não é preciso saber programar.
 
-- **Java 21** ou mais novo (o JDK, para compilar) e **Maven**. JavaFX, Jetty, Hibernate, SQLite e o
-  decodificador de MP3 são baixados pelo Maven; não é preciso nenhum codec no sistema.
-- Uma instalação do **Robocode** para rodar as batalhas (testado com o Robocode 1.11.1).
+São três passos: instalar o **Robocode** (é ele que faz as batalhas), instalar o **Campeonato** e, na primeira vez, dizer ao programa onde está o Robocode.
 
-**Para rodar:**
+### 1. Instale o Robocode
 
-```bash
-./run.sh            # compila quando precisa e abre o programa
-./run.sh --build    # força a compilação
-./run.sh --test     # roda os testes
-```
+O programa não traz o Robocode, então instale-o primeiro.
 
-ou, sem o script:
+1. **Java.** O Robocode precisa de Java. Se o seu computador ainda não tem, baixe o Java 21 no site [adoptium.net](https://adoptium.net) (escolha a opção **Temurin**) e instale.
+2. **Robocode.** Baixe-o no site oficial [robocode.sourceforge.io](https://robocode.sourceforge.io/). O arquivo se chama parecido com `robocode-…-setup.jar`.
+3. Dê **dois cliques** no arquivo baixado e siga o instalador.
+4. **Anote a pasta** onde o Robocode foi instalado. Dentro dela existe uma pasta chamada `robots`. Você vai precisar dela no passo 4.
 
-```bash
-mvn package                                  # compila e roda os testes
-java -jar target/RobocodeChampManager-5-all.jar
-# ou
-mvn javafx:run
-```
+### 2. Baixe o programa
 
-> [!IMPORTANT]
-> Rode o programa a partir desta pasta: as batalhas são iniciadas por
-> `RobocodeStarter/start.sh` (ou `start.bat` no Windows).
+Abra a [página de downloads](https://github.com/ensismoebius/robocode-championship-manager/releases/latest) e baixe o arquivo do seu sistema:
 
-Prefere um instalador? Veja [Instaladores](#-instaladores).
+| Seu computador | Arquivo para baixar |
+|---|---|
+| Windows | `RobocodeChampManager-5.0.exe` |
+| Mac com chip Apple (M1, M2, M3, M4…) | `RobocodeChampManager-5.dmg` |
+| Ubuntu 24.04 | `robocodechampmanager_5_ubuntu24.04_amd64.deb` |
+| Debian 13 | `robocodechampmanager_5_debian13_amd64.deb` |
+| Fedora | `robocodechampmanager-5-1.x86_64.rpm` |
+| Arch Linux | `robocodechampmanager-5-1-x86_64.pkg.tar.zst` |
+
+> [!NOTE]
+> Não sabe o seu Mac? Clique na maçã no canto da tela → **Sobre este Mac**. Se aparecer **Chip Apple** seguido de M1, M2, M3 ou M4, use o `.dmg`. Macs com processador **Intel** não são suportados por este instalador.
+
+### 3. Instale o programa
+
+**Windows**
+
+1. Dê **dois cliques** no arquivo `.exe`.
+2. Vai aparecer a janela **"O Windows protegeu o seu PC"**, porque o programa ainda não é assinado digitalmente. Clique em **Mais informações** e depois em **Executar assim mesmo**.
+3. Siga o instalador (**Avançar**, **Avançar**, **Instalar**, **Concluir**). O programa fica no **Menu Iniciar**.
+
+**macOS**
+
+1. Dê **dois cliques** no arquivo `.dmg` e arraste o ícone do programa para a pasta **Aplicativos**.
+2. Abra a pasta **Aplicativos**, clique com o **botão direito** no programa e escolha **Abrir**. Confirme em **Abrir** na janela que aparecer.
+3. Se o Mac só mostrar "não pode ser aberto", vá em **Ajustes do Sistema → Privacidade e Segurança**, role até o aviso sobre o programa e clique em **Abrir Mesmo Assim**. (Em versões antigas do macOS, o caminho é **Configurações do Sistema**.)
+
+**Ubuntu e Debian**
+
+- **Jeito fácil:** dê **dois cliques** no arquivo `.deb`. Vai abrir a Central de Programas: clique em **Instalar** e digite a senha do computador.
+- **Pelo terminal:** abra o terminal, vá até a pasta onde o arquivo foi baixado e instale:
+  ```bash
+  cd ~/Downloads
+  sudo apt install ./robocodechampmanager_5_ubuntu24.04_amd64.deb
+  ```
+  (no Debian, use o arquivo `…debian13…`)
+
+**Fedora**
+
+- Dê **dois cliques** no arquivo `.rpm` e clique em **Instalar**, ou, no terminal:
+  ```bash
+  cd ~/Downloads
+  sudo dnf install ./robocodechampmanager-5-1.x86_64.rpm
+  ```
+
+**Arch Linux**
+
+- No terminal:
+  ```bash
+  cd ~/Downloads
+  sudo pacman -U ./robocodechampmanager-5-1-x86_64.pkg.tar.zst
+  ```
+
+No Linux, o programa é instalado em `/opt/robocodechampmanager`. Se ele não aparecer no menu de aplicativos, abra-o pelo terminal com `/opt/robocodechampmanager/bin/RobocodeChampManager`.
+
+### 4. Primeira abertura
+
+1. Abra o programa. Ele ocupa a tela inteira e não tem botão de fechar: para sair, use **Ctrl + Q**.
+2. Na primeira vez aparece a janela **Configurações**. Vá na aba **Sistema** e preencha:
+   - **Diretório do robocode**: clique em **Escolher...** e selecione a pasta do Robocode do passo 1 (a que contém `robots`). **Este campo é obrigatório.**
+3. Na aba **Tela inicial** você pode mudar o título e o subtítulo. As outras abas podem ficar como estão.
+4. Clique em **Salvar**.
+
+![As abas da configuração](docs/images/config.jpg)
+
+Depois, para mudar qualquer coisa, aperte **C** a qualquer momento. A tela inicial mostra os atalhos quando você segura **Alt**.
+
+### 5. Pronto!
+
+A tela inicial aparece com o título do campeonato. A partir daqui:
+
+- Para organizar um campeonato, siga o [Tutorial: organizando um campeonato](#-tutorial-organizando-um-campeonato).
+- Para inscrever um robô, a equipe segue o [Tutorial: inscrevendo o robô da sua equipe](#-tutorial-inscrevendo-o-robô-da-sua-equipe).
+
+### Problemas comuns
+
+| O que acontece | O que fazer |
+|---|---|
+| O Windows diz que o programa não é seguro | Clique em **Mais informações** → **Executar assim mesmo** (passo 3). |
+| O Mac diz que o programa não pode ser aberto | Use **Abrir Mesmo Assim** em **Privacidade e Segurança** (passo 3). |
+| A batalha não começa, ou aparece erro sobre o Robocode | Aperte **C**, aba **Sistema**, e confira o **Diretório do robocode**: ele deve ser a pasta que contém `robots`. |
+| As equipes não conseguem abrir o endereço de inscrição | O computador do campeonato e os das equipes precisam estar na mesma rede (Wi-Fi ou cabo). Se o Windows perguntar sobre o firewall, permita o acesso em **redes privadas**. A porta é a 8080, que pode ser mudada na aba **Tela inicial**. |
+| Quero atualizar o programa | Baixe a versão nova e instale-a. Os seus dados e configurações ficam numa pasta do usuário, não na pasta do programa. |
+
+Os dados ficam em `~/RobocodeChampManager` (a pasta **Usuário** da sua conta). **Apagar essa pasta apaga os campeonatos**, então faça uma cópia antes.
 
 ---
 
@@ -299,10 +375,31 @@ Os robôs são copiados para `<robocode>/robots` como `equipe.Robo.jar` antes de
 
 ---
 
-## 📦 Instaladores
+## 🛠️ Para desenvolvedores
+### Compilar e rodar a partir do código
 
-Os instaladores trazem o próprio Java, mas **não** trazem o Robocode: na primeira vez, o
-programa pergunta a pasta onde ele está instalado.
+É preciso o **JDK 21** e o **Maven**. JavaFX, Jetty, Hibernate, SQLite e o decodificador de MP3 são baixados pelo Maven.
+
+```bash
+./run.sh            # compila quando precisa e abre o programa
+./run.sh --build    # força a compilação
+./run.sh --test     # roda os testes
+```
+
+ou, sem o script:
+
+```bash
+mvn package                                  # compila e roda os testes
+java -jar target/RobocodeChampManager-5-all.jar
+# ou
+mvn javafx:run
+```
+
+Rode a partir desta pasta: as batalhas são iniciadas por `RobocodeStarter/start.sh` (ou `start.bat` no Windows).
+
+### Gerando os instaladores
+
+O Linux gera um pacote por distribuição (precisa de Docker); cada sistema gera o seu próprio instalador, porque o `jpackage` não faz compilação cruzada.
 
 | Sistema | Comando | Resultado |
 |---|---|---|
@@ -311,17 +408,10 @@ programa pergunta a pasta onde ele está instalado.
 | macOS | `packaging/build-installer.sh` | `dist/*.dmg` |
 | Windows (precisa do WiX Toolset 3) | `packaging\build-installer.ps1` | `dist\*.exe` |
 
-Cada sistema gera o seu próprio instalador, o `jpackage` não faz compilação cruzada. O
-workflow `.github/workflows/installers.yml` gera os três quando uma tag `v*` é enviada (ou na
-mão) e os guarda como artefatos.
+O workflow `.github/workflows/installers.yml` gera os instaladores de Linux, Windows e macOS quando uma tag `v*` é enviada (ou manualmente), e os guarda como artefatos.
 
 > [!NOTE]
-> O instalador do macOS não é assinado: na primeira vez, abra o programa pelo item **Abrir**
-> do menu do botão direito.
-
----
-
-## 🛠️ Para desenvolvedores
+> Os instaladores não são assinados. O macOS exige a liberação em **Privacidade e Segurança**, e o Windows mostra o aviso do SmartScreen.
 
 ### Organização do código
 
