@@ -22,28 +22,28 @@ final class JungleTexture {
 		double n = LavaTexture.fbm(u, v, 5, 4);
 		double patch = LavaTexture.fbm(u + 5.5, v + 1.3, 3, 9);
 		double speck = LavaTexture.fbm(u * 2, v * 2, 3, 12);
-		int color = mix(0x1b2813, 0x2f5a1f, n * 1.6 - 0.2);
-		color = mix(color, 0x62a23a, Math.max(0, n - 0.55) * 2.2);
+		int color = TextureMath.mix(0x1b2813, 0x2f5a1f, n * 1.6 - 0.2);
+		color = TextureMath.mix(color, 0x62a23a, Math.max(0, n - 0.55) * 2.2);
 		// Patches of soil and leaf litter
-		color = mix(color, 0x3b2a17, Math.max(0, patch - 0.6) * 3);
+		color = TextureMath.mix(color, 0x3b2a17, Math.max(0, patch - 0.6) * 3);
 		// Small bright points: clover and dew
-		return mix(color, 0x9fd36a, Math.max(0, speck - 0.72) * 3.5);
+		return TextureMath.mix(color, 0x9fd36a, Math.max(0, speck - 0.72) * 3.5);
 	});
 
 	static final Image BARK = make((u, v) -> {
 		double n = LavaTexture.fbm(u, v, 5, 21);
 		double ridge = 1 - Math.abs(2 * LavaTexture.fbm(u + 3, v + 8, 4, 22) - 1);
-		int color = mix(0x24160d, 0x5b3c22, n * 1.4 - 0.1);
+		int color = TextureMath.mix(0x24160d, 0x5b3c22, n * 1.4 - 0.1);
 		// Dark cracks between the plates of the bark
-		return mix(color, 0x120a05, Math.pow(ridge, 6) * 0.9);
+		return TextureMath.mix(color, 0x120a05, Math.pow(ridge, 6) * 0.9);
 	});
 
 	static final Image LEAVES = make((u, v) -> {
 		double n = LavaTexture.fbm(u, v, 5, 31);
 		double speck = LavaTexture.fbm(u * 3, v * 3, 3, 33);
-		int color = mix(0x0f3a14, 0x3f8a2a, n * 1.5 - 0.15);
+		int color = TextureMath.mix(0x0f3a14, 0x3f8a2a, n * 1.5 - 0.15);
 		// Lights through the leaves
-		return mix(color, 0xa6e060, Math.max(0, speck - 0.66) * 3);
+		return TextureMath.mix(color, 0xa6e060, Math.max(0, speck - 0.66) * 3);
 	});
 
 	// The sky seen between the canopy: deep green above, a bright green haze at
@@ -55,11 +55,11 @@ final class JungleTexture {
 		int color;
 		if (t < 0.5) {
 			double up = t / 0.5;
-			color = mix(0x0c4a2a, 0x58b878, Math.pow(up, 1.6));
+			color = TextureMath.mix(0x0c4a2a, 0x58b878, Math.pow(up, 1.6));
 		} else {
-			color = mix(0x58b878, 0x0d3a24, Math.min(1, (t - 0.5) / 0.12));
+			color = TextureMath.mix(0x58b878, 0x0d3a24, Math.min(1, (t - 0.5) / 0.12));
 		}
-		return mix(color, stain > 0.5 ? 0x2f8a4c : 0x06301c, Math.abs(stain - 0.5) * 0.9);
+		return TextureMath.mix(color, stain > 0.5 ? 0x2f8a4c : 0x06301c, Math.abs(stain - 0.5) * 0.9);
 	});
 
 	// A shaft of light: soft across, fading at both ends, with streaks along it.
@@ -91,7 +91,7 @@ final class JungleTexture {
 		double n = LavaTexture.fbm(u + 1.6 * warpU, v + 1.6 * warpV, 3, 43);
 		return Math.pow(1 - Math.abs(2 * n - 1), 3);
 	});
-	static final Image WATER = color(WATER_FIELD, h -> mix(mix(0x0b3f4c, 0x1c8a8c, 0.2 + 0.7 * Math.sqrt(h)), 0xbff3e8, h * h * 0.55));
+	static final Image WATER = color(WATER_FIELD, h -> TextureMath.mix(TextureMath.mix(0x0b3f4c, 0x1c8a8c, 0.2 + 0.7 * Math.sqrt(h)), 0xbff3e8, h * h * 0.55));
 	static final Image WATER_RELIEF = relief(WATER_FIELD, 2.2);
 
 	// A waterfall: streaks of foam falling, long and thin
@@ -103,7 +103,7 @@ final class JungleTexture {
 	});
 	static final Image WATERFALL = color(FALL_FIELD, n -> {
 		double foam = Math.max(0, Math.min(1, (n - 0.4) / 0.4));
-		return mix(mix(0x0e5a66, 0x2a98a0, n), 0xf2fffb, foam * foam);
+		return TextureMath.mix(TextureMath.mix(0x0e5a66, 0x2a98a0, n), 0xf2fffb, foam * foam);
 	});
 	static final Image WATERFALL_RELIEF = relief(FALL_FIELD, 2.8);
 
@@ -171,21 +171,15 @@ final class JungleTexture {
 		double fy = v - y;
 		fx = fx * fx * (3 - 2 * fx);
 		fy = fy * fy * (3 - 2 * fy);
-		double a = lattice(x, y, periodU, periodV, seed);
-		double b = lattice(x + 1, y, periodU, periodV, seed);
-		double c = lattice(x, y + 1, periodU, periodV, seed);
-		double d = lattice(x + 1, y + 1, periodU, periodV, seed);
+		double a = TextureMath.lattice(x, y, periodU, periodV, seed);
+		double b = TextureMath.lattice(x + 1, y, periodU, periodV, seed);
+		double c = TextureMath.lattice(x, y + 1, periodU, periodV, seed);
+		double d = TextureMath.lattice(x + 1, y + 1, periodU, periodV, seed);
 		double top = a + (b - a) * fx;
 		return top + (c + (d - c) * fx - top) * fy;
 	}
 
-	private static double lattice(int x, int y, int periodU, int periodV, int seed) {
-		int h = Math.floorMod(x, periodU) * 374761393 + Math.floorMod(y, periodV) * 668265263 + seed * 1442695041;
-		h = (h ^ (h >>> 13)) * 1274126177;
-		return ((h ^ (h >>> 16)) & 0xffff) / 65535.0;
-	}
-
-	private static Image make(DoubleBinaryOperator color) {
+		private static Image make(DoubleBinaryOperator color) {
 		int[] pixels = new int[SIZE * SIZE];
 		for (int py = 0; py < SIZE; py++) {
 			for (int px = 0; px < SIZE; px++) {
@@ -197,11 +191,4 @@ final class JungleTexture {
 		return image;
 	}
 
-	static int mix(int a, int b, double t) {
-		t = Math.max(0, Math.min(1, t));
-		int r = (int) Math.round(((a >> 16) & 0xff) * (1 - t) + ((b >> 16) & 0xff) * t);
-		int g = (int) Math.round(((a >> 8) & 0xff) * (1 - t) + ((b >> 8) & 0xff) * t);
-		int bl = (int) Math.round((a & 0xff) * (1 - t) + (b & 0xff) * t);
-		return r << 16 | g << 8 | bl;
 	}
-}

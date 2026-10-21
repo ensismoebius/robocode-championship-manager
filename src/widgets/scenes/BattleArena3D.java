@@ -5159,17 +5159,18 @@ public class BattleArena3D extends StackPane {
 	}
 
 	private static Color fireflyColor(int level) {
-		Color color = FIREFLY_COLORS[level];
-		if (color == null) {
-			color = FIREFLY_COLORS[level] = Color.color(0.78, 1, 0.35, opacity(level));
-		}
-		return color;
+		return cachedColor(FIREFLY_COLORS, level, 0.78, 1, 0.35);
 	}
 
 	private static Color snowColor(int level) {
-		Color color = SNOW_COLORS[level];
+		return cachedColor(SNOW_COLORS, level, 0.94, 0.97, 1);
+	}
+
+	/** The color of a level of opacity, made the first time it is needed */
+	private static Color cachedColor(Color[] cache, int level, double red, double green, double blue) {
+		Color color = cache[level];
 		if (color == null) {
-			color = SNOW_COLORS[level] = Color.color(0.94, 0.97, 1, opacity(level));
+			color = cache[level] = Color.color(red, green, blue, opacity(level));
 		}
 		return color;
 	}

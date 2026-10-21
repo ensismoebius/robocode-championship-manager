@@ -52,7 +52,7 @@ final class NeonTexture {
 		Random random = new Random(11);
 		for (int i = 0; i < pixels.length; i++) {
 			int grain = random.nextInt(7);
-			pixels[i] = 0xff000000 | mix(0x0b0e1c, 0x131830, grain / 6.0);
+			pixels[i] = 0xff000000 | TextureMath.mix(0x0b0e1c, 0x131830, grain / 6.0);
 		}
 		// Seams: dark groove with a thin light edge inside
 		for (int i = 0; i < size; i++) {
@@ -105,7 +105,7 @@ final class NeonTexture {
 		int cellHeight = size / rows;
 		for (int py = 0; py < size; py++) {
 			for (int px = 0; px < size; px++) {
-				int wall = 0xff000000 | mix(0x0a0d1a, 0x141a30, (double) py / size);
+				int wall = 0xff000000 | TextureMath.mix(0x0a0d1a, 0x141a30, (double) py / size);
 				pixels[py * size + px] = glowOnly ? 0xff000000 : wall;
 			}
 		}
@@ -117,7 +117,7 @@ final class NeonTexture {
 				for (int py = row * cellHeight + 5; py < (row + 1) * cellHeight - 6; py++) {
 					for (int px = column * cellWidth + 6; px < (column + 1) * cellWidth - 6; px++) {
 						if (lit) {
-							pixels[py * size + px] = 0xff000000 | mix(0x000000, color, strength);
+							pixels[py * size + px] = 0xff000000 | TextureMath.mix(0x000000, color, strength);
 						} else if (!glowOnly) {
 							pixels[py * size + px] = 0xff05070f;
 						}
@@ -142,10 +142,10 @@ final class NeonTexture {
 			int color;
 			if (t < 0.5) {
 				double up = t / 0.5;
-				color = mix(0x04050e, 0x1a0b3d, Math.pow(up, 1.4));
-				color = mix(color, 0xff2a9d, Math.pow(up, 9) * 0.85);
+				color = TextureMath.mix(0x04050e, 0x1a0b3d, Math.pow(up, 1.4));
+				color = TextureMath.mix(color, 0xff2a9d, Math.pow(up, 9) * 0.85);
 			} else {
-				color = mix(0x4a0f46, 0x06070d, Math.min(1, (t - 0.5) / 0.05));
+				color = TextureMath.mix(0x4a0f46, 0x06070d, Math.min(1, (t - 0.5) / 0.05));
 			}
 			for (int px = 0; px < width; px++) {
 				pixels[py * width + px] = 0xff000000 | color;
@@ -156,7 +156,7 @@ final class NeonTexture {
 			int py = (int) (Math.pow(random.nextDouble(), 0.8) * height * 0.42);
 			// Stretched at the top of the sphere: wider stars there
 			double brightness = 0.4 + random.nextDouble() * 0.6;
-			pixels[py * width + px] = 0xff000000 | mix(0x1a0b3d, 0xe8f4ff, brightness);
+			pixels[py * width + px] = 0xff000000 | TextureMath.mix(0x1a0b3d, 0xe8f4ff, brightness);
 		}
 		return image(width, height, pixels);
 	}
@@ -177,7 +177,7 @@ final class NeonTexture {
 				int color = 0xff2a9d;
 				if (radius < 0.62) {
 					double v = (y + 0.62) / 1.24;
-					color = mix(0xffe14d, 0xff2a9d, v * 1.1);
+					color = TextureMath.mix(0xffe14d, 0xff2a9d, v * 1.1);
 					alpha = Math.min(1, (0.62 - radius) * 90);
 					// Bands in the lower half
 					if (v > 0.45) {
@@ -197,11 +197,4 @@ final class NeonTexture {
 		return image(size, size, pixels);
 	}
 
-	private static int mix(int a, int b, double t) {
-		t = Math.max(0, Math.min(1, t));
-		int r = (int) Math.round(((a >> 16) & 0xff) * (1 - t) + ((b >> 16) & 0xff) * t);
-		int g = (int) Math.round(((a >> 8) & 0xff) * (1 - t) + ((b >> 8) & 0xff) * t);
-		int bl = (int) Math.round((a & 0xff) * (1 - t) + (b & 0xff) * t);
-		return r << 16 | g << 8 | bl;
 	}
-}

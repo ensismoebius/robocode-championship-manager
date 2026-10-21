@@ -13,6 +13,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
@@ -487,26 +488,15 @@ final class Critters {
 		return material;
 	}
 
-	private static Node part(Sphere sphere, PhongMaterial material, double x, double y, double z, double sx, double sy, double sz) {
-		sphere.setMaterial(material);
-		sphere.setTranslateX(x);
-		sphere.setTranslateY(y);
-		sphere.setTranslateZ(z);
-		sphere.setScaleX(sx);
-		sphere.setScaleY(sy);
-		sphere.setScaleZ(sz);
-		return sphere;
-	}
-
-	private static Node part(Box box, PhongMaterial material, double x, double y, double z, double sx, double sy, double sz) {
-		box.setMaterial(material);
-		box.setTranslateX(x);
-		box.setTranslateY(y);
-		box.setTranslateZ(z);
-		box.setScaleX(sx);
-		box.setScaleY(sy);
-		box.setScaleZ(sz);
-		return box;
+	private static <T extends Shape3D> T part(T shape, PhongMaterial material, double x, double y, double z, double sx, double sy, double sz) {
+		shape.setMaterial(material);
+		shape.setTranslateX(x);
+		shape.setTranslateY(y);
+		shape.setTranslateZ(z);
+		shape.setScaleX(sx);
+		shape.setScaleY(sy);
+		shape.setScaleZ(sz);
+		return shape;
 	}
 
 	private static Box box(double sx, double sy, double sz, PhongMaterial material, double x, double y, double z) {
@@ -564,22 +554,21 @@ final class Critters {
 	}
 
 	private static Node tail(PhongMaterial material, double x, double y, double z) {
-		Cylinder tail = new Cylinder(1.6, 16, 6);
-		tail.setMaterial(material);
-		tail.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
-		tail.setTranslateX(x);
-		tail.setTranslateY(y);
-		tail.setTranslateZ(z);
-		return tail;
+		return pointing(1.6, 16, material, x, y, z);
 	}
 
 	private static Node beak(PhongMaterial material, double x, double y, double z) {
-		Cylinder beak = new Cylinder(1.2, 4, 6);
-		beak.setMaterial(material);
-		beak.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
-		beak.setTranslateX(x);
-		beak.setTranslateY(y);
-		beak.setTranslateZ(z);
-		return beak;
+		return pointing(1.2, 4, material, x, y, z);
+	}
+
+	/** A cylinder lying along z, its center at x, y, z */
+	private static Node pointing(double radius, double length, PhongMaterial material, double x, double y, double z) {
+		Cylinder cylinder = new Cylinder(radius, length, 6);
+		cylinder.setMaterial(material);
+		cylinder.getTransforms().add(new Rotate(90, Rotate.X_AXIS));
+		cylinder.setTranslateX(x);
+		cylinder.setTranslateY(y);
+		cylinder.setTranslateZ(z);
+		return cylinder;
 	}
 }

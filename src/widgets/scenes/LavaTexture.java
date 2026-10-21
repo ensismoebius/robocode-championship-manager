@@ -90,20 +90,13 @@ final class LavaTexture {
 		for (int i = 1; i < STOPS.length; i++) {
 			if (heat <= STOPS[i]) {
 				double t = (heat - STOPS[i - 1]) / (STOPS[i] - STOPS[i - 1]);
-				return mix(COLORS[i - 1], COLORS[i], t);
+				return TextureMath.mix(COLORS[i - 1], COLORS[i], t);
 			}
 		}
 		return COLORS[COLORS.length - 1];
 	}
 
-	private static int mix(int a, int b, double t) {
-		int r = (int) Math.round(((a >> 16) & 0xff) * (1 - t) + ((b >> 16) & 0xff) * t);
-		int g = (int) Math.round(((a >> 8) & 0xff) * (1 - t) + ((b >> 8) & 0xff) * t);
-		int bl = (int) Math.round((a & 0xff) * (1 - t) + (b & 0xff) * t);
-		return r << 16 | g << 8 | bl;
-	}
-
-	/**
+		/**
 	 * Fractal noise from 0 to 1, repeating every PERIOD
 	 */
 	static double fbm(double u, double v, int octaves, int seed) {
@@ -130,16 +123,11 @@ final class LavaTexture {
 		double fy = v - y;
 		fx = fx * fx * (3 - 2 * fx);
 		fy = fy * fy * (3 - 2 * fy);
-		double a = lattice(x, y, period, seed);
-		double b = lattice(x + 1, y, period, seed);
-		double c = lattice(x, y + 1, period, seed);
-		double d = lattice(x + 1, y + 1, period, seed);
+		double a = TextureMath.lattice(x, y, period, period, seed);
+		double b = TextureMath.lattice(x + 1, y, period, period, seed);
+		double c = TextureMath.lattice(x, y + 1, period, period, seed);
+		double d = TextureMath.lattice(x + 1, y + 1, period, period, seed);
 		return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy;
 	}
 
-	private static double lattice(int x, int y, int period, int seed) {
-		int h = Math.floorMod(x, period) * 374761393 + Math.floorMod(y, period) * 668265263 + seed * 1442695041;
-		h = (h ^ (h >>> 13)) * 1274126177;
-		return ((h ^ (h >>> 16)) & 0xffff) / 65535.0;
 	}
-}

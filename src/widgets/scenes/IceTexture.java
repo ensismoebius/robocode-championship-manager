@@ -31,9 +31,9 @@ final class IceTexture {
 				double vein = 1 - Math.abs(2 * LavaTexture.fbm(u + 3, v + 8, 3, seed + 1) - 1);
 				double frost = Math.max(0, LavaTexture.fbm(u * 3, v * 3, 3, seed + 2) - 0.66) * 3;
 				double crack = Math.pow(vein, 18);
-				int color = JungleTexture.mix(0x1d3a55, base, body * 1.4 - 0.2);
-				color = JungleTexture.mix(color, 0xeaf8ff, Math.min(1, frost));
-				color = JungleTexture.mix(color, 0x0f2438, crack * 0.9);
+				int color = TextureMath.mix(0x1d3a55, base, body * 1.4 - 0.2);
+				color = TextureMath.mix(color, 0xeaf8ff, Math.min(1, frost));
+				color = TextureMath.mix(color, 0x0f2438, crack * 0.9);
 				pixels[py * SIZE + px] = 0xff000000 | color;
 			}
 		}

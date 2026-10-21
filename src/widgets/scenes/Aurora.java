@@ -92,10 +92,10 @@ final class Aurora {
 						continue;
 					}
 					// Green at the foot, then teal, and violet at the top of the curtain
-					int light = JungleTexture.mix(0x4dffa8, 0x1fb5d6, Math.min(1, rise * 1.4));
-					light = JungleTexture.mix(light, 0x8a4dff, rise * rise * 0.85);
+					int light = TextureMath.mix(0x4dffa8, 0x1fb5d6, Math.min(1, rise * 1.4));
+					light = TextureMath.mix(light, 0x8a4dff, rise * rise * 0.85);
 					if (d > 0) {
-						light = JungleTexture.mix(light, 0xff5a9a, 0.4);
+						light = TextureMath.mix(light, 0xff5a9a, 0.4);
 					}
 					red += ((light >> 16) & 0xff) * strength * 0.95;
 					green += ((light >> 8) & 0xff) * strength * 0.95;

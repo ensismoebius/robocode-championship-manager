@@ -735,12 +735,7 @@ public class Podium extends StackPane {
 		scale.setToX(1);
 		scale.setToY(1);
 		scale.setInterpolator(Theme.OVERSHOOT);
-		FadeTransition fade = new FadeTransition(Duration.millis(millis * 0.4), node);
-		fade.setFromValue(0);
-		fade.setToValue(1);
-		ParallelTransition both = new ParallelTransition(scale, fade);
-		both.setDelay(Duration.millis(delay));
-		return both;
+		return delayed(delay, fadeIn(node, millis * 0.4), scale);
 	}
 
 	/**
@@ -751,12 +746,7 @@ public class Podium extends StackPane {
 		TranslateTransition fall = new TranslateTransition(Duration.millis(millis), node);
 		fall.setToY(0);
 		fall.setInterpolator(BOUNCE);
-		FadeTransition fade = new FadeTransition(Duration.millis(120), node);
-		fade.setFromValue(0);
-		fade.setToValue(1);
-		ParallelTransition both = new ParallelTransition(fall, fade);
-		both.setDelay(Duration.millis(delay));
-		return both;
+		return delayed(delay, fadeIn(node, 120), fall);
 	}
 
 	/**
@@ -773,14 +763,25 @@ public class Podium extends StackPane {
 		RotateTransition turn = new RotateTransition(Duration.millis(millis), node);
 		turn.setToAngle(0);
 		turn.setInterpolator(Interpolator.EASE_OUT);
-		FadeTransition fade = new FadeTransition(Duration.millis(150), node);
-		fade.setFromValue(0);
-		fade.setToValue(1);
-		ParallelTransition all = new ParallelTransition(scale, turn, fade);
-		all.setDelay(Duration.millis(delay));
-		return all;
+		return delayed(delay, fadeIn(node, 150), scale, turn);
 	}
 
+	/** Shows the node in the given millis */
+	private static FadeTransition fadeIn(Node node, double millis) {
+		FadeTransition fade = new FadeTransition(Duration.millis(millis), node);
+		fade.setFromValue(0);
+		fade.setToValue(1);
+		return fade;
+	}
+
+	/** The animations at the same time, after the delay */
+	private static Animation delayed(double delay, Animation fade, Animation... moves) {
+		List<Animation> all = new ArrayList<Animation>(List.of(moves));
+		all.add(fade);
+		ParallelTransition both = new ParallelTransition(all.toArray(new Animation[0]));
+		both.setDelay(Duration.millis(delay));
+		return both;
+	}
 	/**
 	 * Fades in going up a little
 	 */
