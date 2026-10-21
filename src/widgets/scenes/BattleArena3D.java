@@ -1,8 +1,5 @@
 package widgets.scenes;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,7 +9,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.imageio.ImageIO;
 
 import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
@@ -29,7 +25,6 @@ import javafx.scene.SubScene;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Bloom;
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelFormat;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -92,9 +87,6 @@ public class BattleArena3D extends StackPane {
 	private static final double VERSUS_SECONDS = 2.6;
 	/** The action stops for a moment when a robot dies, then the replay */
 	static final double FREEZE_SECONDS = 1.3;
-	/** The photos of the key moments are kept small, as JPEG */
-	private static final int PHOTO_WIDTH = 640;
-	private static final int PHOTO_HEIGHT = 360;
 	/** A hit this strong (power) makes a photo: the first one of each round */
 	static final double PHOTO_HIT_POWER = 2.5;
 	/** Seconds from a hit to its photo, so the flash of the impact has grown */
@@ -170,9 +162,10 @@ public class BattleArena3D extends StackPane {
 	final ArenaRounds rounds = new ArenaRounds(this);
 	final ArenaControls controls = new ArenaControls(this);
 	final LavaFlows lavaFlows = new LavaFlows(this);
+	final ArenaPhotos photographer = new ArenaPhotos(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
-	private final SubScene subScene;
+	final SubScene subScene;
 	final PerspectiveCamera camera = new PerspectiveCamera(true);
 	final Translate cameraLook = new Translate();
 	final Rotate cameraYaw = new Rotate(0, Rotate.Y_AXIS);
@@ -275,7 +268,7 @@ public class BattleArena3D extends StackPane {
 	int impactTurn = -1;
 	boolean replayed = false;
 	// The photos of the key moments of the battle, see takePhoto
-	private final List<BattlePhoto> photos = new ArrayList<BattlePhoto>();
+	final List<BattlePhoto> photos = new ArrayList<BattlePhoto>();
 	final List<PendingPhoto> pendingPhotos = new ArrayList<PendingPhoto>();
 	boolean hitPhotoTaken = false;
 
@@ -725,7 +718,7 @@ public class BattleArena3D extends StackPane {
 		this.critters.update(dt);
 	}
 	this.director.placeBalloons();
-	this.flushPhotos(dt);
+	this.photographer.flushPhotos(dt);
 	}
 
 	/**
@@ -733,80 +726,6 @@ public class BattleArena3D extends StackPane {
 	 */
 	public List<BattlePhoto> photos() {
 		return List.copyOf(this.photos);
-	}
-
-	/**
-	 * Takes the photos that are due, at the end of the frame: the robots and the
-	 * camera are then where they are drawn
-	 */
-	private void flushPhotos(double dt) {
-		if (this.pendingPhotos.isEmpty()) {
-			return;
-		}
-		List<PendingPhoto> waiting = new ArrayList<PendingPhoto>();
-		for (PendingPhoto pending : this.pendingPhotos) {
-			double remaining = pending.remaining() - dt;
-			if (remaining > 0) {
-				waiting.add(new PendingPhoto(remaining, pending.round(), pending.destruction(), pending.subject(), pending.power()));
-			} else if (this.phase != Phase.FINISHED && this.phase != Phase.LOADING) {
-				this.takePhoto(pending);
-			}
-		}
-		this.pendingPhotos.clear();
-		this.pendingPhotos.addAll(waiting);
-	}
-
-	private void takePhoto(PendingPhoto pending) {
-		if (pending.subject() == null) {
-			return;
-		}
-		try {
-			this.photos.add(new BattlePhoto(pending.round(), pending.destruction(), pending.subject(), pending.power(), encodePhoto(this.subScene.snapshot(null, null))));
-		} catch (IOException | RuntimeException e) {
-			// A photo is a bonus: the battle goes on without it
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * The picture as a small JPEG: each of its pixels is the average of the ones it
-	 * covers
-	 */
-	private static byte[] encodePhoto(WritableImage view) throws IOException {
-		int width = (int) view.getWidth();
-		int height = (int) view.getHeight();
-		int[] pixels = new int[width * height];
-		view.getPixelReader().getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), pixels, 0, width);
-		int[] small = new int[PHOTO_WIDTH * PHOTO_HEIGHT];
-		for (int y = 0; y < PHOTO_HEIGHT; y++) {
-			int top = y * height / PHOTO_HEIGHT;
-			int bottom = Math.max(top + 1, (y + 1) * height / PHOTO_HEIGHT);
-			for (int x = 0; x < PHOTO_WIDTH; x++) {
-				int left = x * width / PHOTO_WIDTH;
-				int right = Math.max(left + 1, (x + 1) * width / PHOTO_WIDTH);
-				int red = 0;
-				int green = 0;
-				int blue = 0;
-				int count = 0;
-				for (int sy = top; sy < bottom; sy++) {
-					for (int sx = left; sx < right; sx++) {
-						int argb = pixels[sy * width + sx];
-						red += argb >> 16 & 0xff;
-						green += argb >> 8 & 0xff;
-						blue += argb & 0xff;
-						count++;
-					}
-				}
-				small[y * PHOTO_WIDTH + x] = (red / count) << 16 | (green / count) << 8 | blue / count;
-			}
-		}
-		BufferedImage photo = new BufferedImage(PHOTO_WIDTH, PHOTO_HEIGHT, BufferedImage.TYPE_INT_RGB);
-		photo.setRGB(0, 0, PHOTO_WIDTH, PHOTO_HEIGHT, small, 0, PHOTO_WIDTH);
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		if (!ImageIO.write(photo, "jpg", out)) {
-			throw new IOException("No JPEG writer");
-		}
-		return out.toByteArray();
 	}
 
 	List<Turn> turns() {
