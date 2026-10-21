@@ -4551,7 +4551,9 @@ public class BattleArena3D extends StackPane {
 		 * two belts the opposite way. Dead robots stop.
 		 */
 		void roll(double dt) {
-			double gun = this.gunRotate.getAngle();
+			// The turret against the hull: a robot turning in place with its tracks carries the
+			// turret along, but that is not the turret turning
+			double gun = this.gunRotate.getAngle() - this.bodyRotate.getAngle();
 			this.treadSpeed = 0;
 			this.turretSpeed = 0;
 			double x = this.root.getTranslateX();
@@ -4572,7 +4574,7 @@ public class BattleArena3D extends StackPane {
 					this.treadSpeed = fastest / dt;
 				}
 			}
-			// The turret: how far it turned since the last frame, round the short way
+			// The turret: how far it turned on the hull since the last frame, round the short way
 			if (!Double.isNaN(this.lastGun) && !this.dead && dt > 0) {
 				double turn = Math.IEEEremainder(gun - this.lastGun, 360);
 				if (Math.abs(turn) < 90) {
