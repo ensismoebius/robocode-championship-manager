@@ -41,7 +41,7 @@ public class ChampionshipService {
 	 * @throws IllegalStateException
 	 *             if there are less than two robots
 	 */
-	public static Championship create(boolean repechage, boolean finalReset, Random random) {
+	public static Championship create(boolean repechage, Random random) {
 		return Database.inTransaction(em -> {
 			List<Opponent> opponents = new ArrayList<Opponent>(em.createQuery("select o from Opponent o order by o.id", Opponent.class).getResultList());
 			if (opponents.size() < 2) {
@@ -55,7 +55,6 @@ public class ChampionshipService {
 			championship.setCreatedAt(LocalDateTime.now());
 			championship.setName("Campeonato de " + championship.getCreatedAt().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
 			championship.setRepechage(repechage);
-			championship.setFinalReset(finalReset);
 			championship.getSeeds().addAll(opponents);
 			em.persist(championship);
 			return championship;
@@ -66,8 +65,12 @@ public class ChampionshipService {
 	 * Rebuilds the bracket of the championship from its results
 	 */
 	public static Bracket bracketOf(Championship championship) {
-		Bracket bracket = new Bracket(championship.getSeeds().stream().map(Opponent::getId).toList(), championship.isRepechage(), championship.isFinalReset());
+		Bracket bracket = new Bracket(championship.getSeeds().stream().map(Opponent::getId).toList(), championship.isRepechage());
 		for (MatchResult result : championship.getResults()) {
+			// Championships drawn before the rematch was removed may have its result
+			if (bracket.getMatch(result.getMatchCode()) == null) {
+				continue;
+			}
 			bracket.record(result.getMatchCode(), result.getWinner().getId(), result.getWinnerScore(), result.getLoserScore());
 		}
 		return bracket;

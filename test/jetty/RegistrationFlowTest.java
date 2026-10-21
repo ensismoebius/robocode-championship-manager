@@ -284,7 +284,7 @@ class RegistrationFlowTest {
 		assertTrue(newRobotForm("team4", "team4.Bot_1.0.jar").post(newClient(), "new").contains("Robô salvo com sucesso"));
 
 		assertNull(ChampionshipService.current());
-		Championship championship = ChampionshipService.create(true, true, new Random(7));
+		Championship championship = ChampionshipService.create(true, new Random(7));
 		assertEquals(3, championship.getSeeds().size());
 
 		// Plays until the end, recording every result in the database
@@ -308,7 +308,7 @@ class RegistrationFlowTest {
 		assertThrows(IllegalStateException.class, () -> ChampionshipService.recordResult(current, "V1-1", current.getSeeds().get(0).getId(), null, null));
 
 		// A new draw becomes the current championship
-		Championship newer = ChampionshipService.create(false, false, new Random(8));
+		Championship newer = ChampionshipService.create(false, new Random(8));
 		assertEquals(newer.getId(), ChampionshipService.current().getId());
 		assertTrue(ChampionshipService.current().getResults().isEmpty());
 	}

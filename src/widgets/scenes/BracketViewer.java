@@ -195,7 +195,7 @@ public class BracketViewer extends StackPane {
 		titleLabel.getStyleClass().add("title");
 		header.getChildren().add(titleLabel);
 
-		String format = this.bracket.hasRepechage() ? "Dupla eliminação com repescagem" + (this.bracket.hasFinalReset() ? " e final com revanche" : "") : "Eliminação simples";
+		String format = this.bracket.hasRepechage() ? "Dupla eliminação com repescagem" : "Eliminação simples";
 		Label subtitle = new Label(this.bracket.getParticipants().size() + " robôs • " + format);
 		subtitle.getStyleClass().add("subtitle");
 		header.getChildren().add(subtitle);
@@ -370,7 +370,6 @@ public class BracketViewer extends StackPane {
 		switch (match.getStatus()) {
 		case READY -> card.getStyleClass().add("ready");
 		case BYE -> card.getStyleClass().add(match.getWinner() == null ? "empty" : "bye");
-		case SKIPPED -> card.getStyleClass().add("skipped");
 		default -> {
 		}
 		}
@@ -417,7 +416,6 @@ public class BracketViewer extends StackPane {
 		case READY -> match.getCode().equals(this.selected) ? "▶ SELECIONADA" : isNext ? "próxima" : "pronta";
 		case FINISHED -> "encerrada";
 		case BYE -> "folga";
-		case SKIPPED -> "não foi necessária";
 		};
 	}
 
@@ -829,9 +827,6 @@ public class BracketViewer extends StackPane {
 	private List<Arrival> arrivalsFrom(Match finished) {
 		List<Arrival> arrivals = new ArrayList<Arrival>();
 		for (Match match : this.bracket.getMatches()) {
-			if (match.getStatus() == Status.SKIPPED) {
-				continue;
-			}
 			Slot[] slots = { match.getA(), match.getB() };
 			for (int i = 0; i < 2; i++) {
 				if (slots[i].getSource() == finished && slots[i].getParticipant() != null) {

@@ -2,7 +2,6 @@ package tournament;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -26,7 +25,7 @@ class BracketTest {
 
 	@Test
 	void importanceFlagsSemifinalsAndFinals() {
-		Bracket bracket = new Bracket(ids(8), false, false);
+		Bracket bracket = new Bracket(ids(8), false);
 		for (Match m : bracket.getMatches()) {
 			Bracket.Importance expected = switch (bracket.roundName(m)) {
 			case "Semifinal" -> Bracket.Importance.SEMIFINAL;
@@ -41,7 +40,7 @@ class BracketTest {
 
 	@Test
 	void importanceCountsRepechageFinalsAndGrandFinal() {
-		Bracket bracket = new Bracket(ids(8), true, true);
+		Bracket bracket = new Bracket(ids(8), true);
 		for (Match m : bracket.getMatches()) {
 			boolean big = bracket.roundName(m).startsWith("Final") || bracket.roundName(m).startsWith("Grande");
 			assertEquals(big, bracket.importance(m) == Bracket.Importance.FINAL, bracket.roundName(m));
@@ -95,7 +94,7 @@ class BracketTest {
 	void singleEliminationForAnyNumberOfParticipants() {
 		Random random = new Random(1);
 		for (int n = 2; n <= 40; n++) {
-			Bracket bracket = new Bracket(ids(n), false, false);
+			Bracket bracket = new Bracket(ids(n), false);
 			Map<Long, Integer> losses = playAll(bracket, random);
 
 			assertTrue(bracket.isFinished(), "n=" + n);
@@ -121,23 +120,29 @@ class BracketTest {
 		Random random = new Random(2);
 		for (int n = 2; n <= 40; n++) {
 			for (int repeat = 0; repeat < 5; repeat++) {
-				Bracket bracket = new Bracket(ids(n), true, true);
+				Bracket bracket = new Bracket(ids(n), true);
 				Map<Long, Integer> losses = playAll(bracket, random);
 
 				assertTrue(bracket.isFinished(), "n=" + n);
 				Long champion = bracket.getChampion();
 
-				// Everybody but the champion is out after exactly two losses
+				// Everybody but the finalists is out after exactly two losses. The grand
+				// final has no rematch: the champion lost at most once, and the runner up
+				// once (if it came from the main bracket) or twice
+				Long runnerUp = bracket.getPlacements().entrySet().stream().filter(e -> e.getValue() == 2).map(Map.Entry::getKey).findFirst().orElseThrow();
 				for (long p = 1; p <= n; p++) {
 					if (p == champion) {
-						assertTrue(losses.getOrDefault(p, 0) <= 1);
+						assertTrue(losses.getOrDefault(p, 0) <= 1, "n=" + n);
+					} else if (p == runnerUp) {
+						assertTrue(losses.get(p) == 1 || losses.get(p) == 2, "n=" + n);
 					} else {
 						assertEquals(2, losses.get(p), "n=" + n + " p=" + p);
 					}
 				}
 
+				// Every match takes one of the 2 losses of each robot but the finalists
 				long played = bracket.getMatches().stream().filter(m -> m.getStatus() == Status.FINISHED).count();
-				assertTrue(played == 2L * n - 2 || played == 2L * n - 1, "n=" + n + " played=" + played);
+				assertEquals(2L * n - 2, played, "n=" + n);
 
 				Map<Long, Integer> placements = bracket.getPlacements();
 				assertEquals(n, placements.size(), "n=" + n);
@@ -151,10 +156,10 @@ class BracketTest {
 	}
 
 	@Test
-	void repechageWithoutFinalReset() {
+	void grandFinalDecidesTheChampionWithoutRematch() {
 		Random random = new Random(3);
 		for (int n = 2; n <= 20; n++) {
-			Bracket bracket = new Bracket(ids(n), true, false);
+			Bracket bracket = new Bracket(ids(n), true);
 			playAll(bracket, random);
 			assertTrue(bracket.isFinished());
 			assertEquals(1, bracket.getFinals().size());
@@ -165,7 +170,7 @@ class BracketTest {
 	@Test
 	void byesGoToTheFirstSeedsAndAreDecidedAutomatically() {
 		// 5 participants: bracket of 8, seeds 1, 2 and 3 get byes
-		Bracket bracket = new Bracket(ids(5), true, true);
+		Bracket bracket = new Bracket(ids(5), true);
 
 		List<Match> firstRound = bracket.getWinnersRounds().get(0);
 		assertEquals(4, firstRound.size());
@@ -181,31 +186,21 @@ class BracketTest {
 	}
 
 	@Test
-	void finalResetOnlyWhenTheRepechageChampionWins() {
+	void repechageChampionWinningTheGrandFinalIsTheChampion() {
 		// Two participants: 1 beats 2, 2 comes back through the repechage
-		Bracket bracket = new Bracket(ids(2), true, true);
+		Bracket bracket = new Bracket(ids(2), true);
 		bracket.record("V1-1", 1, null, null);
 		assertEquals(Status.READY, bracket.getMatch("F1").getStatus());
-
-		// Main bracket champion wins the final: no reset
-		bracket.record("F1", 1, null, null);
-		assertEquals(Status.SKIPPED, bracket.getMatch("F2").getStatus());
-		assertEquals(1L, bracket.getChampion());
-		assertEquals(Map.of(1L, 1, 2L, 2), bracket.getPlacements());
-
-		// Now the repechage champion wins the final: it is played again
-		bracket = new Bracket(ids(2), true, true);
-		bracket.record("V1-1", 1, null, null);
 		bracket.record("F1", 2, null, null);
-		assertFalse(bracket.isFinished());
-		assertEquals(Status.READY, bracket.getMatch("F2").getStatus());
-		bracket.record("F2", 2, null, null);
+		assertTrue(bracket.isFinished());
+		assertNull(bracket.getMatch("F2"));
 		assertEquals(2L, bracket.getChampion());
+		assertEquals(Map.of(2L, 1, 1L, 2), bracket.getPlacements());
 	}
 
 	@Test
 	void placementsWhilePlaying() {
-		Bracket bracket = new Bracket(ids(4), false, false);
+		Bracket bracket = new Bracket(ids(4), false);
 		bracket.record("V1-1", 1, null, null);
 		bracket.record("V1-2", 2, null, null);
 
@@ -215,18 +210,18 @@ class BracketTest {
 
 	@Test
 	void rejectsInvalidResults() {
-		Bracket bracket = new Bracket(ids(4), true, true);
+		Bracket bracket = new Bracket(ids(4), true);
 		assertThrows(IllegalArgumentException.class, () -> bracket.record("X9", 1, null, null));
 		assertThrows(IllegalStateException.class, () -> bracket.record("V2-1", 1, null, null));
 		assertThrows(IllegalArgumentException.class, () -> bracket.record("V1-1", 2, null, null));
-		assertThrows(IllegalArgumentException.class, () -> new Bracket(ids(1), true, true));
-		assertThrows(IllegalArgumentException.class, () -> new Bracket(new ArrayList<Long>(List.of(1L, 1L)), true, true));
+		assertThrows(IllegalArgumentException.class, () -> new Bracket(ids(1), true));
+		assertThrows(IllegalArgumentException.class, () -> new Bracket(new ArrayList<Long>(List.of(1L, 1L)), true));
 	}
 
 	@Test
 	void podiumHasTheChampionThenTheSecondAndThirdPlaces() {
 		for (int n = 3; n <= 12; n++) {
-			Bracket bracket = new Bracket(ids(n), true, true);
+			Bracket bracket = new Bracket(ids(n), true);
 			assertTrue(bracket.getPodium().isEmpty());
 			playAll(bracket, new Random(n));
 

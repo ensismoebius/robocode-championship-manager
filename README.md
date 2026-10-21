@@ -47,7 +47,7 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 | | |
 |---|---|
 | 🌐 **Inscrições pela web** | As equipes cadastram robô, código fonte, logotipo, lema e música tema num site servido pelo próprio programa. |
-| 🏆 **Chaveamento automático** | Eliminatória simples ou dupla (com repescagem), com qualquer número de robôs, e final com revanche opcional. |
+| 🏆 **Chaveamento automático** | Eliminatória simples ou dupla (com repescagem), com qualquer número de robôs, e uma única grande final. |
 | 🎮 **Batalhas em 3D** | O Robocode roda escondido; a batalha é gravada e reproduzida em 3D com HUD de jogo de luta, câmera cinematográfica e replay em câmera lenta do golpe final. |
 | 🌋 **Quatro arenas** | Cidade neon, forja vulcânica, tundra glacial e floresta tropical, cada uma com seus bichos, que fogem quando a batalha esquenta. |
 | 🎵 **Música e som** | Cada equipe entra com sua música; tiros, explosões, esteiras e torres têm som próprio. |
@@ -399,9 +399,7 @@ nos seus tutoriais.
   sorteados avançam direto na primeira rodada.
 - **Com repescagem** (eliminação dupla, o padrão): quem perde na chave principal vai para a
   repescagem e só sai depois da segunda derrota. O campeão da chave principal e o da repescagem
-  fazem a grande final.
-- **Final com revanche**: se o campeão da repescagem vencer a grande final, ela é jogada de novo,
-  para que o campeão nunca tenha duas derrotas.
+  fazem a grande final, que decide o campeão (não há revanche).
 - **Sem repescagem**: eliminação simples.
 - **O tipo de batalha** é configurável (tecla `C`, aba **Batalha**):
   - **Por pontos, com N partidas:** todas as partidas são jogadas e vence quem somar mais

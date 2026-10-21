@@ -49,8 +49,8 @@ public class Championship {
 	private boolean repechage;
 
 	/**
-	 * If the repechage champion wins the grand final a second final is played,
-	 * so both finalists have lost twice
+	 * Not used anymore (the rematch of the final was removed). The column stays,
+	 * always false, because databases created before have it as not null.
 	 */
 	@Column(nullable = false)
 	private boolean finalReset;
@@ -94,14 +94,6 @@ public class Championship {
 
 	public void setRepechage(boolean repechage) {
 		this.repechage = repechage;
-	}
-
-	public boolean isFinalReset() {
-		return finalReset;
-	}
-
-	public void setFinalReset(boolean finalReset) {
-		this.finalReset = finalReset;
 	}
 
 	public List<Opponent> getSeeds() {

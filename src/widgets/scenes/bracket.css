@@ -87,7 +87,7 @@
 	-fx-opacity: 0.45;
 }
 
-.match-card.empty, .match-card.skipped {
+.match-card.empty {
 	-fx-opacity: 0.2;
 }
 

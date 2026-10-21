@@ -390,24 +390,20 @@ public class Main extends Application {
 		CheckBox repechage = new CheckBox("Repescagem (dupla eliminação): quem perde uma vez ainda pode ser campeão");
 		repechage.setWrapText(true);
 		repechage.setSelected(true);
-		CheckBox finalReset = new CheckBox("Final com revanche se o campeão da repescagem vencer a grande final");
-		finalReset.setSelected(true);
-		finalReset.setWrapText(true);
-		finalReset.disableProperty().bind(repechage.selectedProperty().not());
 
 		String warning = this.championship != null && !this.championship.getResults().isEmpty() ? "\n\nATENÇÃO: o campeonato atual já tem resultados e será substituído." : "";
 		Label message = new Label("Sortear um novo campeonato com os " + robots + " robôs cadastrados?" + warning);
 		message.setWrapText(true);
 		message.getStyleClass().add("game-dialog-message");
 
-		if (!GameDialog.confirm("Novo campeonato", new VBox(14, message, repechage, finalReset))) {
+		if (!GameDialog.confirm("Novo campeonato", new VBox(14, message, repechage))) {
 			return;
 		}
 
 		try {
 			this.selectedMatch = null;
 			this.justPlayed = null;
-			this.setChampionship(ChampionshipService.create(repechage.isSelected(), finalReset.isSelected(), new SecureRandom()));
+			this.setChampionship(ChampionshipService.create(repechage.isSelected(), new SecureRandom()));
 			this.showBracket();
 		} catch (RuntimeException e) {
 			e.printStackTrace();

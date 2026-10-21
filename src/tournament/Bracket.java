@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -19,9 +18,8 @@ import java.util.Optional;
  * <li>Single elimination: one loss and the participant is out.</li>
  * <li>With repechage (double elimination): the losers of the main bracket go
  * to the repechage bracket and are only out after a second loss. The main
- * bracket champion and the repechage champion play the grand final. If the
- * repechage champion wins it and finalReset is set, the final is played again
- * because now both have lost once.</li>
+ * bracket champion and the repechage champion play the grand final, which
+ * decides the champion: there is no rematch.</li>
  * </ul>
  *
  * When the number of participants is not a power of two the bracket is
@@ -40,7 +38,7 @@ public class Bracket {
 		WINNERS,
 		/** The repechage bracket */
 		LOSERS,
-		/** Grand final and its reset */
+		/** The grand final */
 		FINAL
 	}
 
@@ -57,12 +55,10 @@ public class Bracket {
 		/** Played */
 		FINISHED,
 		/** Decided without playing: one or both participants are missing */
-		BYE,
-		/** Not needed: final reset when the main bracket champion won the final */
-		SKIPPED;
+		BYE;
 
 		public boolean isDone() {
-			return this == FINISHED || this == BYE || this == SKIPPED;
+			return this == FINISHED || this == BYE;
 		}
 	}
 
@@ -139,12 +135,6 @@ public class Bracket {
 		private final Slot a;
 		private final Slot b;
 		private final int depth;
-
-		/**
-		 * Final reset: only played if the participant of slot B of this match (the
-		 * repechage champion) won it
-		 */
-		private Match playedOnlyIfSlotBWins;
 
 		private Status status = Status.WAITING;
 		private Long winner;
@@ -241,11 +231,6 @@ public class Bracket {
 				return;
 			}
 
-			if (this.playedOnlyIfSlotBWins != null && !Objects.equals(this.playedOnlyIfSlotBWins.winner, this.playedOnlyIfSlotBWins.b.participant)) {
-				this.status = Status.SKIPPED;
-				return;
-			}
-
 			if (this.a.participant != null && this.b.participant != null) {
 				this.status = Status.READY;
 			} else {
@@ -264,7 +249,6 @@ public class Bracket {
 
 	private final List<Long> participants;
 	private final boolean repechage;
-	private final boolean finalReset;
 
 	private final List<Match> matches = new ArrayList<Match>();
 	private final Map<String, Match> byCode = new HashMap<String, Match>();
@@ -282,11 +266,8 @@ public class Bracket {
 	 *            the participants in seed order, at least two
 	 * @param repechage
 	 *            double elimination if true, single elimination otherwise
-	 * @param finalReset
-	 *            plays the final again if the repechage champion wins it (only
-	 *            with repechage)
 	 */
-	public Bracket(List<Long> seeds, boolean repechage, boolean finalReset) {
+	public Bracket(List<Long> seeds, boolean repechage) {
 		if (seeds.size() < 2) {
 			throw new IllegalArgumentException("São necessários ao menos dois participantes");
 		}
@@ -296,7 +277,6 @@ public class Bracket {
 
 		this.participants = List.copyOf(seeds);
 		this.repechage = repechage;
-		this.finalReset = repechage && finalReset;
 
 		this.build();
 		this.update();
@@ -378,13 +358,6 @@ public class Bracket {
 		Match grandFinal = this.add("F1", Side.FINAL, 1, 1, new Slot(winnersFinal, true), repechageChampion);
 		this.finals.add(grandFinal);
 		this.decider = grandFinal;
-
-		if (this.finalReset) {
-			Match reset = this.add("F2", Side.FINAL, 2, 1, new Slot(grandFinal, true), new Slot(grandFinal, false));
-			reset.playedOnlyIfSlotBWins = grandFinal;
-			this.finals.add(reset);
-			this.decider = reset;
-		}
 	}
 
 	private Long seed(int seedNumber) {
@@ -455,10 +428,6 @@ public class Bracket {
 		return repechage;
 	}
 
-	public boolean hasFinalReset() {
-		return finalReset;
-	}
-
 	/**
 	 * All matches, the ones a match depends on always come before it
 	 */
@@ -489,7 +458,7 @@ public class Bracket {
 		return switch (match.getSide()) {
 		case WINNERS -> this.winnersRoundName(match.getRound());
 		case LOSERS -> this.losersRoundName(match.getRound());
-		case FINAL -> match.getRound() == 1 ? "Grande final" : "Final — revanche";
+		case FINAL -> "Grande final";
 		};
 	}
 
@@ -548,9 +517,6 @@ public class Bracket {
 	 * @return the champion or null if the championship is not over
 	 */
 	public Long getChampion() {
-		if (this.decider.status == Status.SKIPPED) {
-			return this.decider.playedOnlyIfSlotBWins.winner;
-		}
 		return this.decider.status.isDone() ? this.decider.winner : null;
 	}
 
@@ -613,7 +579,7 @@ public class Bracket {
 	private boolean isEliminatedBy(Match match) {
 		for (Match other : this.matches) {
 			for (Slot slot : List.of(other.a, other.b)) {
-				if (slot.source == match && !slot.sourceWinner && other.status != Status.SKIPPED) {
+				if (slot.source == match && !slot.sourceWinner) {
 					return false;
 				}
 			}

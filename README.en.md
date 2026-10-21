@@ -45,7 +45,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 | | |
 |---|---|
 | 🌐 **Web registration** | Teams register their robot, source code, logo, motto and theme song on a website served by the program itself. |
-| 🏆 **Automatic brackets** | Single or double elimination (with repechage), with any number of robots, and an optional rematch in the grand final. |
+| 🏆 **Automatic brackets** | Single or double elimination (with repechage), with any number of robots, and a single grand final. |
 | 🎮 **3D battles** | Robocode runs hidden; the battle is recorded and replayed in 3D with a fighting-game HUD, a cinematic camera and a slow-motion replay of the killing shot. |
 | 🌋 **Four arenas** | Neon city, volcanic forge, glacial tundra and tropical forest, each with its own critters, who run away when the battle heats up. |
 | 🎵 **Music and sound** | Each team comes in with its own music; shots, explosions, tracks and turrets have their own sounds. |
@@ -398,9 +398,7 @@ tutorials above.
   straight to the second round.
 - **With repechage** (double elimination, the default): whoever loses in the main bracket goes to the
   repechage and is only out after a second loss. The main bracket champion and the repechage champion
-  play the grand final.
-- **Rematch final**: if the repechage champion wins the grand final, it is played again, so the
-  champion never has two losses.
+  play the grand final, which decides the champion (there is no rematch).
 - **Without repechage**: single elimination.
 - **The kind of battle** is configurable (key `C`, **Battle** tab):
   - **By points, with N rounds:** every round is fought and whoever adds up more points wins. If
