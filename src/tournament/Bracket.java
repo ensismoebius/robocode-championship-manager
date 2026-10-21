@@ -317,6 +317,28 @@ public class Bracket {
 		}
 		int rounds = Integer.numberOfTrailingZeros(size);
 
+		this.buildWinners(size, rounds);
+
+		Match winnersFinal = this.winnersRounds.get(rounds - 1).get(0);
+		this.decider = winnersFinal;
+
+		if (!this.repechage) {
+			return;
+		}
+
+		this.buildRepechage(size, rounds);
+
+		// With two participants there is no repechage bracket: the loser of the
+		// only match goes straight to the final
+		Slot repechageChampion = this.losersRounds.isEmpty() ? new Slot(winnersFinal, false) : new Slot(this.losersRounds.get(this.losersRounds.size() - 1).get(0), true);
+
+		Match grandFinal = this.add("F1", Side.FINAL, 1, 1, new Slot(winnersFinal, true), repechageChampion);
+		this.finals.add(grandFinal);
+		this.decider = grandFinal;
+	}
+
+	/** The rounds of the main bracket: the first one takes the seeds, the others take the winners before them. */
+	private void buildWinners(int size, int rounds) {
 		// Main bracket
 		int[] order = Bracket.seedingOrder(size);
 		for (int row = 1; row <= rounds; row++) {
@@ -335,14 +357,10 @@ public class Bracket {
 			}
 			this.winnersRounds.add(round);
 		}
+	}
 
-		Match winnersFinal = this.winnersRounds.get(rounds - 1).get(0);
-		this.decider = winnersFinal;
-
-		if (!this.repechage) {
-			return;
-		}
-
+	/** The rounds of the repechage: the losers of the main bracket play here until one of them is left. */
+	private void buildRepechage(int size, int rounds) {
 		// Repechage bracket. Odd rounds: the repechage survivors play each other.
 		// Even rounds: they play the losers of the next main bracket round
 		for (int innerIndex = 1; innerIndex <= 2 * (rounds - 1); innerIndex++) {
@@ -371,14 +389,6 @@ public class Bracket {
 			}
 			this.losersRounds.add(round);
 		}
-
-		// With two participants there is no repechage bracket: the loser of the
-		// only match goes straight to the final
-		Slot repechageChampion = this.losersRounds.isEmpty() ? new Slot(winnersFinal, false) : new Slot(this.losersRounds.get(this.losersRounds.size() - 1).get(0), true);
-
-		Match grandFinal = this.add("F1", Side.FINAL, 1, 1, new Slot(winnersFinal, true), repechageChampion);
-		this.finals.add(grandFinal);
-		this.decider = grandFinal;
 	}
 
 	/** The participant of a seed number, or null when there are fewer participants. */

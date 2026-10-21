@@ -120,6 +120,20 @@ public class BattleControl {
 		command.add(robocodePath);
 		command.addAll(battleArguments(rounds, criterion, record));
 
+		installRobots(robotsDir, opponents, command);
+
+		List<String> output = runBattleProcess(command);
+
+		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
+		if (results.size() != opponents.size()) {
+			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(length -> !length.startsWith("#")).toList()));
+		}
+		results.sort(criterion.comparator());
+		return new BattleOutcome(results, BattleRecording.parse(output));
+	}
+
+	/** Writes the jar of each opponent in the robots folder of Robocode, and adds its class name to the command. */
+	private static void installRobots(Path robotsDir, List<Opponent> opponents, List<String> command) throws IOException {
 		for (Opponent opponent : opponents) {
 			if (opponent.getCompiledRobot() == null || opponent.getCompiledRobot().length == 0) {
 				throw new IOException("O robô " + opponent.getFullName() + " não tem arquivo .jar");
@@ -129,7 +143,10 @@ public class BattleControl {
 			Files.write(jar, opponent.getCompiledRobot());
 			command.add(opponent.getFullName());
 		}
+	}
 
+	/** Runs the battle command and returns the lines it printed; the turns, which start with #, are not echoed. */
+	private static List<String> runBattleProcess(List<String> command) throws IOException, InterruptedException {
 		ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
 		// The script runs java: the one this program runs on, even without java in the PATH
 		builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
@@ -147,13 +164,7 @@ public class BattleControl {
 			}
 		}
 		process.waitFor();
-
-		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
-		if (results.size() != opponents.size()) {
-			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(length -> !length.startsWith("#")).toList()));
-		}
-		results.sort(criterion.comparator());
-		return new BattleOutcome(results, BattleRecording.parse(output));
+		return output;
 	}
 
 	/**
