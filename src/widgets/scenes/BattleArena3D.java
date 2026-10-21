@@ -1809,73 +1809,15 @@ public class BattleArena3D extends StackPane {
 				this.endFlyBy();
 			}
 		}
-		case INTRO -> {
-			int remaining = (int) Math.ceil(COUNTDOWN_SECONDS - this.phaseTime);
-			if (remaining >= 1 && remaining != this.countdown) {
-				this.countdown = remaining;
-				this.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
-				this.audio.countdown(remaining == 1);
-			}
-			if (this.phaseTime > COUNTDOWN_SECONDS && !this.fightShown) {
-				this.fightShown = true;
-				this.showBanner(this.fightText, null);
-				this.audio.fight();
-				this.audio.setMusicOn(true);
-			}
-			if (this.phaseTime > INTRO_SECONDS) {
-				this.hideBanner();
-				this.phase = Phase.PLAYING;
-			}
-		}
-		case PLAYING -> {
-			if (!this.paused) {
-				this.turnPosition += dt * TPS * SPEEDS[this.speed];
-			}
-			List<Turn> turns = this.turns();
-			if (this.turnPosition >= turns.size() - 1) {
-				this.turnPosition = turns.size() - 1;
-				this.showTurn(turns);
-				if (this.phase == Phase.PLAYING) {
-					this.endRound(turns);
-				}
-			} else {
-				this.showTurn(turns);
-			}
-		}
+		case INTRO -> this.updateIntro();
+		case PLAYING -> this.updatePlaying(dt);
 		case FREEZE -> {
 			if (this.phaseTime > FREEZE_SECONDS) {
 				this.startReplay();
 			}
 		}
-		case REPLAY -> {
-			int turn = (int) this.turnPosition;
-			double rate = turn >= this.deathTurn ? REPLAY_AFTER_SPEED : this.impactTurn >= 0 && this.impactTurn - turn <= 3 ? REPLAY_IMPACT_SPEED : REPLAY_SPEED;
-			this.turnPosition += dt * TPS * rate;
-			if (this.turnPosition >= this.replayTo) {
-				this.turnPosition = this.replayTo;
-				this.showTurn(this.turns());
-				this.endReplay();
-			} else {
-				this.showTurn(this.turns());
-			}
-		}
-		case ROUND_END -> {
-			if (this.phaseTime > (this.headlineShown ? HEADLINE_SECONDS : ROUND_END_SECONDS)) {
-				if (this.round + 1 < this.recording.getRounds().size()) {
-					this.startRound(this.round + 1);
-				} else if (this.headline != null && !this.headlineShown) {
-					// A special battle gets its headline
-					this.headlineShown = true;
-					this.phaseTime = 0;
-					this.showBanner(this.headline.title(), this.headline.subtitle());
-					this.announce(this.headline.subtitle(), 6);
-					this.banner.setStyle("-fx-font-size: 46px;");
-					Sfx.fanfare();
-				} else {
-					this.finish();
-				}
-			}
-		}
+		case REPLAY -> this.updateReplay(dt);
+		case ROUND_END -> this.updateRoundEnd();
 		case FINISHED -> {
 		}
 		}
@@ -1884,29 +1826,114 @@ public class BattleArena3D extends StackPane {
 		this.tickComments(dt);
 		this.updateCamera(dt);
 		this.clock += dt * this.effectRate;
-		if (this.lava != null) {
-			this.lava.setDiffuseColor(LAVA_DIM.interpolate(LAVA_FULL, 0.5 + 0.5 * Math.sin(this.clock * 2.1) * Math.sin(this.clock * 0.7 + 1)));
+		this.updateSurfaces();
+		this.updateAudio(dt);
+		this.updateEffects(dt);
+	}
+
+	/** The countdown before the round: the banner shows the numbers, then the fight starts */
+	private void updateIntro() {
+		int remaining = (int) Math.ceil(COUNTDOWN_SECONDS - this.phaseTime);
+		if (remaining >= 1 && remaining != this.countdown) {
+			this.countdown = remaining;
+			this.showBanner(String.valueOf(remaining), this.roundTitle + (this.roundSubtitle == null ? "" : " - " + this.roundSubtitle));
+			this.audio.countdown(remaining == 1);
 		}
-		if (!this.flows.isEmpty()) {
-			this.updateFlows();
+		if (this.phaseTime > COUNTDOWN_SECONDS && !this.fightShown) {
+			this.fightShown = true;
+			this.showBanner(this.fightText, null);
+			this.audio.fight();
+			this.audio.setMusicOn(true);
 		}
-		// The ears are the camera: the sounds come from the side of the screen they are on
-		this.audio.setListener(this.eye[0], this.eye[2], this.look[0] - this.eye[0], this.look[2] - this.eye[2]);
-		for (Map.Entry<Integer, RobotView> entry : this.robots.entrySet()) {
-			RobotView robotView = entry.getValue();
-			robotView.roll(dt);
-			double[] at = robotView.position();
-			this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, at[0], at[2]);
+		if (this.phaseTime > INTRO_SECONDS) {
+			this.hideBanner();
+			this.phase = Phase.PLAYING;
 		}
-		this.updateFire(dt * this.effectRate);
-		this.updateSunbeams(dt);
-		this.neon.update(dt);
-		this.ice.update(dt);
-		if (this.critters != null) {
-			this.critters.update(dt);
+	}
+
+	/** The round is played: the turns shown as the battle goes on */
+	private void updatePlaying(double dt) {
+		if (!this.paused) {
+			this.turnPosition += dt * TPS * SPEEDS[this.speed];
 		}
-		this.placeBalloons();
-		this.flushPhotos(dt);
+		List<Turn> turns = this.turns();
+		if (this.turnPosition >= turns.size() - 1) {
+			this.turnPosition = turns.size() - 1;
+			this.showTurn(turns);
+			if (this.phase == Phase.PLAYING) {
+				this.endRound(turns);
+			}
+		} else {
+			this.showTurn(turns);
+		}
+	}
+
+	/** The replay of the moments before a robot is destroyed, slowed down */
+	private void updateReplay(double dt) {
+		int turn = (int) this.turnPosition;
+		double rate = turn >= this.deathTurn ? REPLAY_AFTER_SPEED : this.impactTurn >= 0 && this.impactTurn - turn <= 3 ? REPLAY_IMPACT_SPEED : REPLAY_SPEED;
+		this.turnPosition += dt * TPS * rate;
+		if (this.turnPosition >= this.replayTo) {
+			this.turnPosition = this.replayTo;
+			this.showTurn(this.turns());
+			this.endReplay();
+		} else {
+			this.showTurn(this.turns());
+		}
+	}
+
+	/** The round is over: the next round, the headline of a special battle, or the end */
+	private void updateRoundEnd() {
+		if (this.phaseTime > (this.headlineShown ? HEADLINE_SECONDS : ROUND_END_SECONDS)) {
+			if (this.round + 1 < this.recording.getRounds().size()) {
+				this.startRound(this.round + 1);
+			} else if (this.headline != null && !this.headlineShown) {
+				// A special battle gets its headline
+				this.headlineShown = true;
+				this.phaseTime = 0;
+				this.showBanner(this.headline.title(), this.headline.subtitle());
+				this.announce(this.headline.subtitle(), 6);
+				this.banner.setStyle("-fx-font-size: 46px;");
+				Sfx.fanfare();
+			} else {
+				this.finish();
+			}
+		}
+	}
+
+	/** The lava breathes and its flows slide */
+	private void updateSurfaces() {
+	if (this.lava != null) {
+		this.lava.setDiffuseColor(LAVA_DIM.interpolate(LAVA_FULL, 0.5 + 0.5 * Math.sin(this.clock * 2.1) * Math.sin(this.clock * 0.7 + 1)));
+	}
+	if (!this.flows.isEmpty()) {
+		this.updateFlows();
+	}
+	}
+
+	/** The ears of the sound are the camera; each robot makes its machine sound */
+	private void updateAudio(double dt) {
+	// The ears are the camera: the sounds come from the side of the screen they are on
+	this.audio.setListener(this.eye[0], this.eye[2], this.look[0] - this.eye[0], this.look[2] - this.eye[2]);
+	for (Map.Entry<Integer, RobotView> entry : this.robots.entrySet()) {
+		RobotView robotView = entry.getValue();
+		robotView.roll(dt);
+		double[] at = robotView.position();
+		this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, at[0], at[2]);
+	}
+	}
+
+	/** The fire, the sunbeams, the neon and the ice, the critters, the balloons and the photos */
+	private void updateEffects(double dt) {
+	this.updateFire(dt * this.effectRate);
+	this.updateSunbeams(dt);
+	this.neon.update(dt);
+	this.ice.update(dt);
+	if (this.critters != null) {
+		this.critters.update(dt);
+	}
+	this.placeBalloons();
+	this.flushPhotos(dt);
 	}
 
 	/**
