@@ -7,26 +7,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
-import javafx.animation.ScaleTransition;
-import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
@@ -39,7 +31,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Scale;
@@ -80,7 +71,7 @@ public class BracketViewer extends StackPane {
 	private static final double SECTION_TITLE_H = 50;
 	private static final double SECTION_GAP = 50;
 
-	private final Bracket bracket;
+	final Bracket bracket;
 	private final Map<Long, Opponent> opponents;
 	private final Consumer<String> onSelect;
 
@@ -89,26 +80,26 @@ public class BracketViewer extends StackPane {
 	/**
 	 * Zoom when the camera goes to a match
 	 */
-	private static final double MATCH_ZOOM = 1.35;
+	static final double MATCH_ZOOM = 1.35;
 	/**
 	 * Inside sequential animations actions at time zero may not run, so they run
 	 * at this time
 	 */
-	private static final Duration ACTION_TIME = Duration.millis(1);
+	static final Duration ACTION_TIME = Duration.millis(1);
 
-	private final Pane canvas = new Pane();
+	final Pane canvas = new Pane();
 	private final VBox content = new VBox(24);
 	private final Pane viewport = new Pane();
 
 	private final Map<Match, double[]> positions = new HashMap<Match, double[]>();
-	private final Map<String, VBox> cards = new HashMap<String, VBox>();
-	private final Map<String, HBox[]> rows = new HashMap<String, HBox[]>();
-	private final Map<HBox, Long> rowParticipants = new HashMap<HBox, Long>();
-	private final Map<HBox, Label> scores = new HashMap<HBox, Label>();
-	private final Map<String, Polyline> lines = new HashMap<String, Polyline>();
+	final Map<String, VBox> cards = new HashMap<String, VBox>();
+	final Map<String, HBox[]> rows = new HashMap<String, HBox[]>();
+	final Map<HBox, Long> rowParticipants = new HashMap<HBox, Long>();
+	final Map<HBox, Label> scores = new HashMap<HBox, Label>();
+	final Map<String, Polyline> lines = new HashMap<String, Polyline>();
 	private final Map<Long, Image> logos = new HashMap<Long, Image>();
 
-	private String selected;
+	String selected;
 	private Label nextTag;
 
 	// The camera: the point of the content in the center of the screen and the
@@ -122,6 +113,7 @@ public class BracketViewer extends StackPane {
 	private Timeline cameraMove;
 	private final Translate translate = new Translate();
 	private final Scale scale = new Scale(1, 1, 0, 0);
+	private final BracketReplay replay = new BracketReplay(this);
 
 	private boolean cameraReady = false;
 	private double dragX;
@@ -129,8 +121,6 @@ public class BracketViewer extends StackPane {
 
 	// The result being shown, see playResult
 	private String pendingResult;
-	private SequentialTransition resultAnimation;
-	private final List<Runnable> finalStates = new ArrayList<Runnable>();
 
 	/**
 	 * @param selected
@@ -512,7 +502,7 @@ public class BracketViewer extends StackPane {
 	/**
 	 * A blinking "next battle" tag over the selected match
 	 */
-	private void showNextTag() {
+	void showNextTag() {
 		this.removeNextTag();
 		VBox card = this.cards.get(this.selected);
 		if (card == null) {
@@ -535,7 +525,7 @@ public class BracketViewer extends StackPane {
 		}
 	}
 
-	private void styleSelected(VBox card, boolean selected) {
+	void styleSelected(VBox card, boolean selected) {
 		card.getStyleClass().remove("selected");
 		if (selected) {
 			card.getStyleClass().add("selected");
@@ -557,7 +547,7 @@ public class BracketViewer extends StackPane {
 	private void installControls() {
 		// Ctrl + wheel zooms towards the mouse, the wheel alone moves
 		this.viewport.addEventFilter(ScrollEvent.SCROLL, event -> {
-			if (this.skipAnimation()) {
+			if (this.replay.skip()) {
 				event.consume();
 				return;
 			}
@@ -573,7 +563,7 @@ public class BracketViewer extends StackPane {
 
 		// Dragging moves the camera
 		this.viewport.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
-			if (this.skipAnimation()) {
+			if (this.replay.skip()) {
 				event.consume();
 				return;
 			}
@@ -589,7 +579,7 @@ public class BracketViewer extends StackPane {
 
 		this.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
 			// Any key ends the result animation, and still does its job
-			this.skipAnimation();
+			this.replay.skip();
 			double step = 160 / this.targetZoom;
 			switch (event.getCode()) {
 			case PLUS, EQUALS, ADD -> this.zoomAt(this.viewport.getWidth() / 2, this.viewport.getHeight() / 2, 1.3);
@@ -653,7 +643,7 @@ public class BracketViewer extends StackPane {
 	 * Camera position where the whole width of the bracket fits the screen,
 	 * looking at its top
 	 */
-	private double[] overview() {
+	double[] overview() {
 		double width = this.content.getLayoutBounds().getWidth();
 		double zoom = Math.max(MIN_ZOOM, Math.min(1, (this.viewport.getWidth() - 20) / width));
 		return new double[] { width / 2, 0, zoom };
@@ -662,7 +652,7 @@ public class BracketViewer extends StackPane {
 	/**
 	 * Center of a match card in content coordinates
 	 */
-	private Point2D centerOf(String code) {
+	Point2D centerOf(String code) {
 		VBox card = code == null ? null : this.cards.get(code);
 		if (card == null) {
 			return null;
@@ -688,7 +678,7 @@ public class BracketViewer extends StackPane {
 	/**
 	 * Moves the camera at once (duration null) or smoothly
 	 */
-	private void moveTo(double x, double y, double zoom, Duration duration) {
+	void moveTo(double x, double y, double zoom, Duration duration) {
 		if (duration == null) {
 			if (this.cameraMove != null) {
 				this.cameraMove.stop();
@@ -717,7 +707,7 @@ public class BracketViewer extends StackPane {
 	 * An animation that takes the camera there, starting from wherever it is
 	 * when it plays
 	 */
-	private Timeline cameraAnimation(double[] position, Duration duration) {
+	Timeline cameraAnimation(double[] position, Duration duration) {
 		double[] target = this.clamp(position[0], position[1], position[2]);
 		Timeline move = new Timeline();
 		move.getKeyFrames().add(new KeyFrame(ACTION_TIME, event -> {
@@ -776,269 +766,11 @@ public class BracketViewer extends StackPane {
 		}
 	}
 
-	private record Arrival(Match match, HBox row, boolean winner) {
-	}
-
 	private void startResultAnimation(String code) {
 		this.pendingResult = null;
-		Match finished = this.bracket.getMatch(code);
-		Point2D finishedCenter = this.centerOf(code);
-		double[] overview = this.overview();
-
-		// The camera starts showing the whole bracket
-		this.moveTo(overview[0], finishedCenter == null ? overview[1] : finishedCenter.getY(), overview[2], null);
-
-		SequentialTransition sequence = new SequentialTransition();
-		sequence.getChildren().add(new PauseTransition(Duration.millis(350)));
-
-		if (finished != null && finished.getStatus() == Status.FINISHED && finishedCenter != null) {
-			sequence.getChildren().add(this.cameraAnimation(new double[] { finishedCenter.getX(), finishedCenter.getY(), MATCH_ZOOM }, Duration.millis(800)));
-			sequence.getChildren().add(this.revealResult(finished));
-			sequence.getChildren().add(new PauseTransition(Duration.millis(300)));
-
-			for (Arrival arrival : this.arrivalsFrom(finished)) {
-				sequence.getChildren().add(this.moveToNextMatch(finished, arrival));
-			}
-			sequence.getChildren().add(new PauseTransition(Duration.millis(250)));
-		}
-		sequence.getChildren().add(this.finale());
-
-		// The next battle is only highlighted at the end
-		VBox selectedCard = this.cards.get(this.selected);
-		if (selectedCard != null) {
-			this.styleSelected(selectedCard, false);
-			((Label) ((HBox) selectedCard.getChildren().get(0)).getChildren().get(2)).setText("pronta");
-		}
-		this.finalStates.add(() -> {
-			if (selectedCard != null && !selectedCard.getStyleClass().contains("selected")) {
-				this.select(this.selected);
-			}
-		});
-
-		sequence.setOnFinished(event -> this.endAnimation());
-		this.resultAnimation = sequence;
-		sequence.play();
+		this.replay.start(code);
 	}
 
-	/**
-	 * Where the robots of the match go: the winner to its next match, the loser
-	 * to the repechage. The winner first.
-	 */
-	private List<Arrival> arrivalsFrom(Match finished) {
-		List<Arrival> arrivals = new ArrayList<Arrival>();
-		for (Match match : this.bracket.getMatches()) {
-			Slot[] slots = { match.getA(), match.getB() };
-			for (int i = 0; i < 2; i++) {
-				if (slots[i].getSource() == finished && slots[i].getParticipant() != null) {
-					arrivals.add(new Arrival(match, this.rows.get(match.getCode())[i], slots[i].isSourceWinner()));
-				}
-			}
-		}
-		arrivals.sort((a, b) -> Boolean.compare(b.winner(), a.winner()));
-		return arrivals;
-	}
-
-	/**
-	 * The winner flashes, the score counts up and the loser is knocked out
-	 */
-	private Animation revealResult(Match finished) {
-		ParallelTransition reveal = new ParallelTransition();
-
-		for (HBox row : this.rows.get(finished.getCode())) {
-			Long participant = this.rowParticipants.get(row);
-			if (participant == null) {
-				continue;
-			}
-			boolean winner = participant.equals(finished.getWinner());
-			String styleClass = winner ? "winner" : "loser";
-			Label score = this.scores.get(row);
-			String finalScore = score == null ? null : score.getText();
-
-			// Hidden until the reveal
-			row.getStyleClass().remove(styleClass);
-			if (score != null) {
-				score.setOpacity(0);
-			}
-			Runnable done = () -> {
-				if (!row.getStyleClass().contains(styleClass)) {
-					row.getStyleClass().add(styleClass);
-				}
-				if (score != null) {
-					score.textProperty().unbind();
-					score.setText(finalScore);
-					score.setOpacity(1);
-				}
-				row.setTranslateX(0);
-				row.setEffect(null);
-			};
-			this.finalStates.add(done);
-
-			Timeline show = new Timeline(new KeyFrame(ACTION_TIME, event -> {
-				row.getStyleClass().add(styleClass);
-				if (score != null) {
-					score.setOpacity(1);
-				}
-			}));
-			reveal.getChildren().add(show);
-
-			if (score != null && finalScore.matches("\\d+")) {
-				// Arcade score counter
-				IntegerProperty counter = new SimpleIntegerProperty(0);
-				score.textProperty().bind(counter.asString());
-				Timeline count = new Timeline(new KeyFrame(Duration.millis(700), new KeyValue(counter, Integer.parseInt(finalScore), Interpolator.EASE_OUT)));
-				count.setOnFinished(event -> score.textProperty().unbind());
-				reveal.getChildren().add(count);
-			}
-
-			if (winner) {
-				DropShadow flash = new DropShadow(0, Color.web("#5af08f"));
-				flash.setSpread(0.45);
-				row.setEffect(flash);
-				Timeline glow = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(flash.radiusProperty(), 0)), new KeyFrame(Duration.millis(220), new KeyValue(flash.radiusProperty(), 40)),
-						new KeyFrame(Duration.millis(900), new KeyValue(flash.radiusProperty(), 0)));
-				glow.setOnFinished(event -> row.setEffect(null));
-				reveal.getChildren().add(glow);
-			} else {
-				Timeline shake = new Timeline();
-				double[] offsets = { 10, -9, 7, -5, 3, -1, 0 };
-				for (int i = 0; i < offsets.length; i++) {
-					shake.getKeyFrames().add(new KeyFrame(Duration.millis(45 * (i + 1)), new KeyValue(row.translateXProperty(), offsets[i])));
-				}
-				reveal.getChildren().add(shake);
-			}
-		}
-
-		reveal.getChildren().add(new Timeline(new KeyFrame(ACTION_TIME, event -> Sfx.slam())));
-		return reveal;
-	}
-
-	/**
-	 * The camera follows the robot to its next match, the winner along its
-	 * line, and the robot pops in its new place
-	 */
-	private Animation moveToNextMatch(Match finished, Arrival arrival) {
-		HBox row = arrival.row();
-		row.setOpacity(0);
-		this.finalStates.add(() -> {
-			row.setOpacity(1);
-			row.setScaleX(1);
-			row.setScaleY(1);
-		});
-
-		ParallelTransition travel = new ParallelTransition();
-		Point2D destination = this.centerOf(arrival.match().getCode());
-		travel.getChildren().add(this.cameraAnimation(new double[] { destination.getX(), destination.getY(), MATCH_ZOOM * 0.85 }, Duration.millis(800)));
-
-		Polyline line = arrival.winner() ? this.lines.get(finished.getCode() + ">" + arrival.match().getCode()) : null;
-		if (line != null) {
-			travel.getChildren().add(this.drawLine(line, Duration.millis(800)));
-		}
-
-		ScaleTransition pop = new ScaleTransition(Duration.millis(320), row);
-		pop.setFromX(0.4);
-		pop.setFromY(0.4);
-		pop.setToX(1);
-		pop.setToY(1);
-		pop.setInterpolator(Theme.OVERSHOOT);
-		FadeTransition appear = new FadeTransition(Duration.millis(200), row);
-		appear.setFromValue(0);
-		appear.setToValue(1);
-		ParallelTransition arrive = new ParallelTransition(pop, appear);
-		arrive.setOnFinished(event -> {
-			// Blink of the card that received the robot
-			DropShadow flash = new DropShadow(30, arrival.winner() ? Color.web("#5af08f") : Color.web("#ff9f1c"));
-			flash.setSpread(0.4);
-			row.setEffect(flash);
-			Timeline fade = new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(flash.radiusProperty(), 0)));
-			fade.setOnFinished(e -> row.setEffect(null));
-			fade.play();
-		});
-
-		SequentialTransition step = new SequentialTransition(travel, new Timeline(new KeyFrame(ACTION_TIME, event -> Sfx.blip())), arrive, new PauseTransition(Duration.millis(250)));
-		return step;
-	}
-
-	/**
-	 * A neon line drawn from the finished match to the next one
-	 */
-	private Animation drawLine(Polyline line, Duration duration) {
-		line.getStyleClass().remove("done");
-		Polyline drawing = new Polyline();
-		drawing.getPoints().setAll(line.getPoints());
-		drawing.getStyleClass().addAll("connector", "done", "drawing");
-
-		double length = 0;
-		for (int i = 2; i < line.getPoints().size(); i += 2) {
-			length += Math.hypot(line.getPoints().get(i) - line.getPoints().get(i - 2), line.getPoints().get(i + 1) - line.getPoints().get(i - 1));
-		}
-		drawing.getStrokeDashArray().setAll(length, length);
-		drawing.setStrokeDashOffset(length);
-
-		Runnable done = () -> {
-			this.canvas.getChildren().remove(drawing);
-			if (!line.getStyleClass().contains("done")) {
-				line.getStyleClass().add("done");
-			}
-		};
-		this.finalStates.add(done);
-
-		Timeline draw = new Timeline(new KeyFrame(ACTION_TIME, event -> {
-			if (!this.canvas.getChildren().contains(drawing)) {
-				// Over its line, under the cards
-				this.canvas.getChildren().add(this.canvas.getChildren().indexOf(line) + 1, drawing);
-			}
-		}), new KeyFrame(duration, new KeyValue(drawing.strokeDashOffsetProperty(), 0, Interpolator.EASE_BOTH)));
-		draw.setOnFinished(event -> done.run());
-		return draw;
-	}
-
-	/**
-	 * Zooms in the next battle, or shows the champion
-	 */
-	private Animation finale() {
-		Point2D next = this.bracket.getChampion() == null ? this.centerOf(this.selected) : null;
-		if (next == null) {
-			// Champion (or nothing to play): back to the whole bracket, the banner is on top
-			return this.cameraAnimation(this.overview(), Duration.millis(900));
-		}
-		Timeline highlight = new Timeline(new KeyFrame(ACTION_TIME, event -> {
-			this.select(this.selected);
-			this.showNextTag();
-			Sfx.confirm();
-		}));
-		return new SequentialTransition(this.cameraAnimation(new double[] { next.getX(), next.getY(), MATCH_ZOOM }, Duration.millis(1000)), highlight);
-	}
-
-	/**
-	 * Jumps to the end of the result animation
-	 *
-	 * @return true if there was an animation running
-	 */
-	private boolean skipAnimation() {
-		if (this.resultAnimation == null) {
-			return false;
-		}
-		this.resultAnimation.stop();
-		this.endAnimation();
-
-		Point2D next = this.bracket.getChampion() == null ? this.centerOf(this.selected) : null;
-		if (next == null) {
-			double[] overview = this.overview();
-			this.moveTo(overview[0], overview[1], overview[2], null);
-		} else {
-			this.moveTo(next.getX(), next.getY(), MATCH_ZOOM, null);
-			this.showNextTag();
-		}
-		return true;
-	}
-
-	private void endAnimation() {
-		this.resultAnimation = null;
-		for (Runnable finalState : this.finalStates) {
-			finalState.run();
-		}
-		this.finalStates.clear();
-	}
 
 	// -------------------------------------------------------------- standings
 
