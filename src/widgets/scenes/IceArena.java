@@ -72,6 +72,22 @@ final class IceArena {
 		// The sky keeps its color and has an aurora that waves over it
 		this.aurora = new Aurora(host.style.sky);
 		host.arena.getChildren().add(BattleArena3D.skyDome(this.aurora.image()));
+		this.floor(w, h);
+		this.plates(w, h, crystals);
+		// The glacial sea west of the field, beyond the snow of its edges
+		double seaRadius = 600;
+		double seaX = -(w / 2 + 60 + 1.25 * seaRadius);
+		double seaZ = h * 0.1;
+		this.buildSea(seaX, seaZ, seaRadius, crystals);
+		this.seaX = seaX;
+		this.seaZ = seaZ;
+		this.seaRadius = seaRadius;
+		this.shards(w, h, crystals);
+		this.farCrystals(crystals);
+	}
+
+	/** The ground around the field and the light seams under the plates */
+	private void floor(double w, double h) {
 		Box ground = new Box(w * 6, 2, h * 6);
 		ground.setMaterial(BattleArena3D.material(Color.web("#8ea4b8")));
 		ground.setTranslateY(6);
@@ -81,7 +97,10 @@ final class IceArena {
 		seams.setMaterial(BattleArena3D.material(Color.web("#e4f3ff")));
 		seams.setTranslateY(2.6);
 		host.arena.getChildren().addAll(ground, seams);
+	}
 
+	/** Each plate is a block of ice with its own veins, frost and cracks */
+	private void plates(double w, double h, Random crystals) {
 		// Each plate is a block of ice with its own veins, frost and cracks
 		PhongMaterial[] ice = new PhongMaterial[3];
 		int[] tones = { 0x7fa9cc, 0x8cb8dc, 0x6f98c0 };
@@ -96,16 +115,10 @@ final class IceArena {
 				host.arena.getChildren().add(plate);
 			}
 		}
+	}
 
-		// The glacial sea west of the field, beyond the snow of its edges
-		double seaRadius = 600;
-		double seaX = -(w / 2 + 60 + 1.25 * seaRadius);
-		double seaZ = h * 0.1;
-		this.buildSea(seaX, seaZ, seaRadius, crystals);
-		this.seaX = seaX;
-		this.seaZ = seaZ;
-		this.seaRadius = seaRadius;
-
+	/** Snow piled outside the plates, with shards of ice standing in it */
+	private void shards(double w, double h, Random crystals) {
 		// Snow piled outside the plates, with shards of ice standing in it
 		PhongMaterial snow = BattleArena3D.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
@@ -121,7 +134,7 @@ final class IceArena {
 			double along = crystals.nextDouble() - 0.5;
 			double x = side < 2 ? (side == 0 ? -1 : 1) * (w / 2 + off) : along * (w + 80);
 			double z = side < 2 ? along * (h + 80) : (side == 2 ? -1 : 1) * (h / 2 + off);
-			if (Math.hypot(x - seaX, z - seaZ) < seaRadius * 1.3) {
+			if (Math.hypot(x - this.seaX, z - this.seaZ) < this.seaRadius * 1.3) {
 				continue;
 			}
 			if (i % 3 == 0) {
@@ -139,7 +152,10 @@ final class IceArena {
 			}
 		}
 		this.addIce(shards, shardMaterial);
+	}
 
+	/** Clusters of crystals far away, out of the sea */
+	private void farCrystals(Random crystals) {
 		// Clusters of crystals far away, out of the sea
 		TriangleMesh far = new TriangleMesh();
 		far.getTexCoords().addAll(0, 0);
@@ -148,7 +164,7 @@ final class IceArena {
 			double distance = 900 + crystals.nextDouble() * 800;
 			double cx = Math.cos(angle) * distance;
 			double cz = Math.sin(angle) * distance;
-			if (Math.hypot(cx - seaX, cz - seaZ) < seaRadius * 1.4) {
+			if (Math.hypot(cx - this.seaX, cz - this.seaZ) < this.seaRadius * 1.4) {
 				continue;
 			}
 			int count = 3 + crystals.nextInt(3);

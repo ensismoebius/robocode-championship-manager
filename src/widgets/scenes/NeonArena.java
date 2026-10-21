@@ -56,7 +56,19 @@ final class NeonArena {
 		this.pulsePhases.clear();
 
 		host.arena.getChildren().add(BattleArena3D.skyDome(NeonTexture.SKY));
+		this.sun(w, h, random);
+		this.floor(w, h, random);
+		this.grid(w, h, random);
+		this.edges(w, h, random);
+		this.pads(w, h, random);
+		this.scanner(w, h, random);
+		this.pylons(w, h, random);
+		this.far(w, h, random);
+		this.city(w, h, random);
+	}
 
+	/** The sun, far away, over a violet horizon */
+	private void sun(double w, double h, Random random) {
 		// The sun, far away, facing the middle
 		double sunX = -0.78 * 7200;
 		double sunZ = -0.62 * 7200;
@@ -73,7 +85,9 @@ final class NeonArena {
 		sunMesh.getTexCoords().addAll(0, 0, 1, 0, 1, 1, 0, 1);
 		sunMesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
 		host.arena.getChildren().add(host.meshView(sunMesh, sun));
-
+	}
+	/** The floor: a dark slab with a panel texture, and the ground around it */
+	private void floor(double w, double h, Random random) {
 		Box ground = new Box(9000, 2, 9000);
 		ground.setMaterial(BattleArena3D.material(Color.web("#07080f")));
 		ground.setTranslateY(6);
@@ -88,7 +102,9 @@ final class NeonArena {
 		panels.setSpecularPower(34);
 		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -w / 2 - 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, -h / 2 - 20 }, { w / 2 + 20, 0, h / 2 + 20 },
 				{ -w / 2 - 20, 0, h / 2 + 20 } }, panels, NeonTexture.FLOOR_TILE));
-
+	}
+	/** The grid of the floor: thin lines every 50, brighter every 200 */
+	private void grid(double w, double h, Random random) {
 		// The grid: thin lines every 50, brighter every 200
 		TriangleMesh minor = new TriangleMesh();
 		TriangleMesh major = new TriangleMesh();
@@ -100,7 +116,9 @@ final class NeonArena {
 		}
 		host.glowing.getChildren().add(host.meshView(minor, this.neonGlow(Color.web("#157fae"), false, random)));
 		host.glowing.getChildren().add(host.meshView(major, this.neonGlow(Color.web("#2ec4ff"), true, random)));
-
+	}
+	/** The edge of the field and the curbs around it, lit */
+	private void edges(double w, double h, Random random) {
 		// The edge of the field and a strip of light just outside it
 		TriangleMesh edge = new TriangleMesh();
 		NeonCity.box(edge, 0, -0.4, -h / 2, w + 6, 0.6, 5);
@@ -114,7 +132,9 @@ final class NeonArena {
 		NeonCity.box(curb, -w / 2 - 14, -1.5, 0, 4, 3, h + 40);
 		NeonCity.box(curb, w / 2 + 14, -1.5, 0, 4, 3, h + 40);
 		host.glowing.getChildren().add(host.meshView(curb, this.neonGlow(Color.web("#ff3fa4"), true, random)));
-
+	}
+	/** Pads in the corners: a square and a corner mark inside */
+	private void pads(double w, double h, Random random) {
 		// Pads in the corners: a square and a corner mark inside
 		TriangleMesh pads = new TriangleMesh();
 		for (int sx = -1; sx <= 1; sx += 2) {
@@ -130,11 +150,9 @@ final class NeonArena {
 			}
 		}
 		host.glowing.getChildren().add(host.meshView(pads, this.neonGlow(Color.web("#2ec4ff"), true, random)));
-
-		// A scanner: a line of light that sweeps the field
-		this.scanner = BattleArena3D.box(5, 0.6, h, -w / 2, -0.6, 0, this.neonGlow(Color.web("#ff3fa4"), false, random));
-		host.glowing.getChildren().add(this.scanner);
-
+	}
+	/** Pylons in the corners, with a light on top and a vertical strip */
+	private void pylons(double w, double h, Random random) {
 		// Pylons in the corners, with a light on top and a vertical strip
 		PhongMaterial metal = BattleArena3D.material(Color.web("#171c32"));
 		TriangleMesh pylonLights = new TriangleMesh();
@@ -148,7 +166,9 @@ final class NeonArena {
 			}
 		}
 		host.glowing.getChildren().add(host.meshView(pylonLights, this.neonGlow(Color.web("#ff3fa4"), true, random)));
-
+	}
+	/** A grid out to the horizon, dimmer than the field, so the battle is what stands out */
+	private void far(double w, double h, Random random) {
 		// A grid out to the horizon, dimmer than the field, so the battle is what stands out
 		TriangleMesh far = new TriangleMesh();
 		double reach = 3600;
@@ -169,7 +189,9 @@ final class NeonArena {
 			NeonCity.box(far, w / 2 + continuationX / 2, 4.6, z, continuationX, 0.8, 3);
 		}
 		host.glowing.getChildren().add(host.meshView(far, this.neonGlow(Color.web("#07283a"), false, random)));
-
+	}
+	/** The skyline: towers with lit windows and neon crowns, and the streets between them */
+	private void city(double w, double h, Random random) {
 		// The skyline: towers with lit windows and neon crowns
 		// The streets of the city, between the towers
 		double[] roadsX = NeonCity.roads(w / 2);
@@ -183,6 +205,13 @@ final class NeonArena {
 		host.arena.getChildren().add(host.meshView(city.facades, facade));
 		host.glowing.getChildren().add(host.meshView(city.cyan, this.neonGlow(Color.web("#2ec4ff"), false, random)));
 		host.glowing.getChildren().add(host.meshView(city.magenta, this.neonGlow(Color.web("#ff3fa4"), false, random)));
+	}
+
+	/** A scanner: a line of light that sweeps the field */
+	private void scanner(double w, double h, Random random) {
+		// A scanner: a line of light that sweeps the field
+		this.scanner = BattleArena3D.box(5, 0.6, h, -w / 2, -0.6, 0, this.neonGlow(Color.web("#ff3fa4"), false, random));
+		host.glowing.getChildren().add(this.scanner);
 	}
 
 	/** A car on a street of the neon city: a light that goes along it, and comes back at the end */
