@@ -26,6 +26,7 @@ final class BattleRunner {
 
 	private final Main host;
 
+	/** Creates the runner of the battles, for the host window. */
 	BattleRunner(Main host) {
 		this.host = host;
 	}
