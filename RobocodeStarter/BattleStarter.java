@@ -66,8 +66,39 @@ import robocode.control.snapshot.ITurnSnapshot;
  */
 public class BattleStarter {
 
+	/** The options of the command line: the Robocode folder, the rounds, the streaming, the knockout and the robots. */
+	private record Options(String robocodePath, int rounds, boolean stream, boolean knockout, List<String> robots) {
+	}
+
 	/** Runs a battle from the command line: the robots, the number of rounds and the output for the manager. */
 	public static void main(String[] args) {
+		Options options = parseOptions(args);
+
+		// Robocode writes its logs to System.out, the turns go straight to the
+		// output, buffered: there are thousands of them
+		PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 1 << 16), false, StandardCharsets.UTF_8);
+
+		RobocodeEngine.setLogMessagesEnabled(false);
+		RobocodeEngine engine = new RobocodeEngine(new File(options.robocodePath()));
+		Observer observer = new Observer(out, options.stream());
+		engine.addBattleListener(observer);
+		engine.setVisible(!options.stream());
+
+		RobotSpecification[] selected = engine.getLocalRepository(String.join(",", options.robots()));
+		if (options.knockout()) {
+			runKnockout(engine, observer, selected, options.rounds(), out);
+		} else {
+			BattleSpecification battle = new BattleSpecification(options.rounds(), new BattlefieldSpecification(800, 600), selected);
+			engine.runBattle(battle, true);
+		}
+		engine.close();
+
+		out.flush();
+		System.exit(0);
+	}
+
+	/** Reads the options of the command line: -p the Robocode folder, -r the rounds, -s streams, -k is a knockout, the rest are robots. */
+	private static Options parseOptions(String[] args) {
 		String robocodePath = "";
 		int rounds = 1;
 		boolean stream = false;
@@ -95,28 +126,7 @@ public class BattleStarter {
 				robots.add(args[index]);
 			}
 		}
-
-		// Robocode writes its logs to System.out, the turns go straight to the
-		// output, buffered: there are thousands of them
-		PrintStream out = new PrintStream(new BufferedOutputStream(new FileOutputStream(FileDescriptor.out), 1 << 16), false, StandardCharsets.UTF_8);
-
-		RobocodeEngine.setLogMessagesEnabled(false);
-		RobocodeEngine engine = new RobocodeEngine(new File(robocodePath));
-		Observer observer = new Observer(out, stream);
-		engine.addBattleListener(observer);
-		engine.setVisible(!stream);
-
-		RobotSpecification[] selected = engine.getLocalRepository(String.join(",", robots));
-		if (knockout) {
-			runKnockout(engine, observer, selected, rounds, out);
-		} else {
-			BattleSpecification battle = new BattleSpecification(rounds, new BattlefieldSpecification(800, 600), selected);
-			engine.runBattle(battle, true);
-		}
-		engine.close();
-
-		out.flush();
-		System.exit(0);
+		return new Options(robocodePath, rounds, stream, knockout, robots);
 	}
 
 	/**

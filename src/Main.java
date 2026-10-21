@@ -122,12 +122,7 @@ public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		this.primaryStage = primaryStage;
-
-		// The only window, always in full screen. Dialogs are panels inside it.
-		GameWindow.init(primaryStage, "Robochamp - Gerenciador de campeonatos de robocode");
-		Region scanlines = new Region();
-		scanlines.getStyleClass().add("scanlines");
-		GameWindow.setScreen(new StackPane(new ArcadeBackground(), scanlines));
+		this.openWindow();
 
 		Configuration.setNewConfigurationHandle(new NewConfigurationHandleWindow());
 		if (!Configuration.askForProperties()) {
@@ -135,16 +130,7 @@ public class Main extends Application {
 			GameWindow.quit();
 			return;
 		}
-
-		// Initializes database
-		try {
-			this.databaseFile = Main.configuredDatabaseFile();
-			Database.getEntityManager().close();
-			this.loadChampionship();
-		} catch (RuntimeException runtimeException) {
-			runtimeException.printStackTrace();
-			this.showError("Falha ao abrir o banco de dados " + Configuration.getDatabaseFile() + ":\n" + rootCauseMessage(runtimeException));
-			GameWindow.quit();
+		if (!this.openDatabase()) {
 			return;
 		}
 
@@ -159,6 +145,35 @@ public class Main extends Application {
 
 		// From now on the program follows every change of the configuration
 		Configuration.addListener(this::applyConfiguration);
+	}
+
+	/** Opens the only window, always in full screen, with the background of the start screen. */
+	private void openWindow() {
+		// The only window, always in full screen. Dialogs are panels inside it.
+		GameWindow.init(this.primaryStage, "Robochamp - Gerenciador de campeonatos de robocode");
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		GameWindow.setScreen(new StackPane(new ArcadeBackground(), scanlines));
+	}
+
+	/**
+	 * Opens the database and loads the championship.
+	 *
+	 * @return false when the database could not be opened, after showing the error and quitting
+	 */
+	private boolean openDatabase() {
+		// Initializes database
+		try {
+			this.databaseFile = Main.configuredDatabaseFile();
+			Database.getEntityManager().close();
+			this.loadChampionship();
+			return true;
+		} catch (RuntimeException runtimeException) {
+			runtimeException.printStackTrace();
+			this.showError("Falha ao abrir o banco de dados " + Configuration.getDatabaseFile() + ":\n" + rootCauseMessage(runtimeException));
+			GameWindow.quit();
+			return false;
+		}
 	}
 
 	/** Stops the web server and clears the scenes when the application closes. */
@@ -523,12 +538,7 @@ public class Main extends Application {
 
 		// In 3D robocode runs without its window and the battle is replayed here
 		boolean in3D = Configuration.isBattleView3D() && Platform.isSupported(ConditionalFeature.SCENE3D);
-		BattleArena3D arena = in3D ? new BattleArena3D(fighters) : null;
-		if (arena != null) {
-			arena.setStage(this.bracket.roundName(match), this.bracket.importance(match));
-			this.resetAllScenes();
-			this.show(arena);
-		}
+		BattleArena3D arena = this.openArena(match, fighters, in3D);
 
 		// Robocode runs in another process, waiting for it in the JavaFX thread
 		// would freeze the screen
@@ -546,6 +556,22 @@ public class Main extends Application {
 		Thread thread = new Thread(battle, "robocode-battle");
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	/**
+	 * Shows the 3D arena of a match, when the battle is viewed in 3D.
+	 *
+	 * @return the arena, or null when the battle is not viewed in 3D
+	 */
+	private BattleArena3D openArena(Match match, List<Opponent> fighters, boolean in3D) {
+		if (!in3D) {
+			return null;
+		}
+		BattleArena3D arena = new BattleArena3D(fighters);
+		arena.setStage(this.bracket.roundName(match), this.bracket.importance(match));
+		this.resetAllScenes();
+		this.show(arena);
+		return arena;
 	}
 
 	/**

@@ -35,7 +35,12 @@ final class KeyBindings {
 		if (this.handlePodiumKey(event)) {
 			return;
 		}
+		this.handleScreenKey(event);
+		this.handleOperatorKey(event);
+	}
 
+	/** The keys that change the screen: the initial screen, the bracket, the next match, the battle and the next opponent */
+	private void handleScreenKey(KeyEvent event) {
 		switch (event.getCode()) {
 		// Initial screen
 		case I -> {
@@ -58,16 +63,24 @@ final class KeyBindings {
 			host.resetAllScenes();
 			host.showBattle();
 		}
-		// Starts the battle on robocode!
-		case S -> host.startsBattle();
-		// The operator says who won
-		case DIGIT1, NUMPAD1 -> host.declareWinner(true);
-		case DIGIT2, NUMPAD2 -> host.declareWinner(false);
 		// Circle through the opponents of the match every time the M key is pressed
 		case M -> {
 			host.resetAllScenes();
 			host.showNextSelectedOpponent();
 		}
+		default -> {
+		}
+		}
+	}
+
+	/** The keys of the operator: the battle, who won, the export and the configuration */
+	private void handleOperatorKey(KeyEvent event) {
+		switch (event.getCode()) {
+		// Starts the battle on robocode!
+		case S -> host.startsBattle();
+		// The operator says who won
+		case DIGIT1, NUMPAD1 -> host.declareWinner(true);
+		case DIGIT2, NUMPAD2 -> host.declareWinner(false);
 		// Exports all robots to files
 		case X -> host.exportToFiles();
 		// Reviews or changes the configuration
