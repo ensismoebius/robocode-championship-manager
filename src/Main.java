@@ -171,47 +171,17 @@ public class Main extends Application {
 	}
 
 	private void handleKey(KeyEvent event) {
-
 		if (this.championTransition) {
 			return;
 		}
-
 		// All events with control key
 		if (event.isControlDown()) {
-			switch (event.getCode()) {
-			// Blocks or liberate the robots registration
-			case S -> this.toggleRegistration();
-			// Draws a new championship
-			case G -> this.newChampionship();
-			// Undo the last result
-			case Z -> this.undoLastResult();
-			// Ends the program, the window has no close button in full screen
-			case Q -> {
-				if (GameDialog.confirm("Sair", "Fechar o gerenciador de campeonatos?")) {
-					GameWindow.quit();
-				}
-			}
-			default -> {
-				// If control is down block the access for another keys
-			}
-			}
+			this.handleControlKey(event);
 			return;
 		}
-
 		// The trophies ceremony: the operator controls it
-		if (this.podiumScene != null && GameWindow.getScreen() == this.podiumScene) {
-			switch (event.getCode()) {
-			case SPACE, ENTER, RIGHT -> {
-				this.podiumScene.next();
-				return;
-			}
-			case LEFT -> {
-				this.podiumScene.previous();
-				return;
-			}
-			default -> {
-			}
-			}
+		if (this.handlePodiumKey(event)) {
+			return;
 		}
 
 		switch (event.getCode()) {
@@ -251,6 +221,54 @@ public class Main extends Application {
 		// Reviews or changes the configuration
 		case C -> this.openConfiguration();
 		default -> {
+		}
+		}
+	}
+
+	/**
+	 * The keys with control: blocks the registration, draws a championship, undoes
+	 * a result or quits
+	 */
+	private void handleControlKey(KeyEvent event) {
+		switch (event.getCode()) {
+		// Blocks or liberate the robots registration
+		case S -> this.toggleRegistration();
+		// Draws a new championship
+		case G -> this.newChampionship();
+		// Undo the last result
+		case Z -> this.undoLastResult();
+		// Ends the program, the window has no close button in full screen
+		case Q -> {
+			if (GameDialog.confirm("Sair", "Fechar o gerenciador de campeonatos?")) {
+				GameWindow.quit();
+			}
+		}
+		// If control is down block the access for another keys
+		default -> {
+		}
+		}
+	}
+
+	/**
+	 * On the trophies ceremony the keys go to the podium
+	 *
+	 * @return true if the key was used by the ceremony
+	 */
+	private boolean handlePodiumKey(KeyEvent event) {
+		if (this.podiumScene == null || GameWindow.getScreen() != this.podiumScene) {
+			return false;
+		}
+		switch (event.getCode()) {
+		case SPACE, ENTER, RIGHT -> {
+			this.podiumScene.next();
+			return true;
+		}
+		case LEFT -> {
+			this.podiumScene.previous();
+			return true;
+		}
+		default -> {
+			return false;
 		}
 		}
 	}
@@ -630,18 +648,8 @@ public class Main extends Application {
 	}
 
 	protected void startsBattle() {
-
-		if (this.battleRunning) {
+		if (this.battleRunning || !this.chooseRobocodeDir()) {
 			return;
-		}
-
-		// Chooses the robocode dir. Comes first because the configuration may
-		// change the database and so the match.
-		if (!Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
-			Configuration.askForProperties();
-			if (!Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
-				return;
-			}
 		}
 
 		Optional<Match> playable = this.playableSelectedMatch();
@@ -673,42 +681,65 @@ public class Main extends Application {
 				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
 			}
 		};
-
-		battle.setOnSucceeded(event -> {
-			List<BattleResult> ranking = battle.getValue().ranking();
-			BattleRecording recording = battle.getValue().recording();
-			long winner = ranking.get(0).opponent().getId();
-
-			// Saved at once, then shown when the replay ends
-			if (!this.saveResult(match, winner, ranking.get(0).score(), ranking.get(1).score())) {
-				this.battleRunning = false;
-				return;
-			}
-			if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
-				arena.play(recording, () -> {
-					this.battleRunning = false;
-					this.keepPhotos(arena, match, fighters);
-					this.showResult(winner);
-				});
-			} else {
-				this.battleRunning = false;
-				this.showResult(winner);
-			}
-		});
-
-		battle.setOnFailed(event -> {
-			this.battleRunning = false;
-			battle.getException().printStackTrace();
-			this.showError("Falha ao executar a batalha:\n" + battle.getException().getMessage() + "\n\nVocê pode informar o vencedor com as teclas 1 ou 2.");
-			if (arena != null && GameWindow.getScreen() == arena) {
-				this.showBattle();
-			}
-		});
+		battle.setOnSucceeded(event -> this.onBattleSucceeded(battle.getValue(), match, fighters, arena));
+		battle.setOnFailed(event -> this.onBattleFailed(battle.getException(), arena));
 
 		this.battleRunning = true;
 		Thread thread = new Thread(battle, "robocode-battle");
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	/**
+	 * Robocode is needed to fight. Asks for its folder if it is not where the
+	 * configuration says.
+	 *
+	 * @return false if there is no robocode folder, the battle can not start
+	 */
+	private boolean chooseRobocodeDir() {
+		// Comes first because the configuration may change the database and so the match.
+		if (Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
+			return true;
+		}
+		Configuration.askForProperties();
+		return Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"));
+	}
+
+	/**
+	 * Saves the result, then shows it when the replay of the 3D battle ends
+	 */
+	private void onBattleSucceeded(BattleOutcome outcome, Match match, List<Opponent> fighters, BattleArena3D arena) {
+		List<BattleResult> ranking = outcome.ranking();
+		BattleRecording recording = outcome.recording();
+		long winner = ranking.get(0).opponent().getId();
+
+		// Saved at once, then shown when the replay ends
+		if (!this.saveResult(match, winner, ranking.get(0).score(), ranking.get(1).score())) {
+			this.battleRunning = false;
+			return;
+		}
+		if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
+			arena.play(recording, () -> {
+				this.battleRunning = false;
+				this.keepPhotos(arena, match, fighters);
+				this.showResult(winner);
+			});
+		} else {
+			this.battleRunning = false;
+			this.showResult(winner);
+		}
+	}
+
+	/**
+	 * Tells the operator what went wrong and that the winner can be declared by hand
+	 */
+	private void onBattleFailed(Throwable failure, BattleArena3D arena) {
+		this.battleRunning = false;
+		failure.printStackTrace();
+		this.showError("Falha ao executar a batalha:\n" + failure.getMessage() + "\n\nVocê pode informar o vencedor com as teclas 1 ou 2.");
+		if (arena != null && GameWindow.getScreen() == arena) {
+			this.showBattle();
+		}
 	}
 
 	/**

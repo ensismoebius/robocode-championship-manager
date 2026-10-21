@@ -259,7 +259,54 @@ public class RobotEditor extends HttpServlet {
 		Upload teamMusic = this.readUpload(req, "teamMusic");
 		Upload teamLogo = this.readUpload(req, "teamLogo");
 
-		// Validating the files, all of them are needed for new robots
+		requireFiles(errors, isNew, robotJar, robotJava, teamMusic, teamLogo);
+		// The team and robot names come from the .jar file name, when it is sent
+		Names names = checkJar(errors, robotJar, robot);
+		checkJava(errors, robotJava);
+		checkMusic(errors, teamMusic);
+		checkLogo(errors, teamLogo);
+
+		boolean keepPassword = password == null || password.isBlank();
+		checkAccess(errors, login, keepPassword, robot);
+		checkWarcry(errors, teamWarcry);
+		String[][] authorsForm = authorsForm(errors, arrName, arrEmail);
+
+		// Kept so the form shows it again if something is wrong
+		robot.setBattleCry(teamWarcry);
+
+		if (!errors.isEmpty()) {
+			return errors;
+		}
+
+		// Nothing is wrong, fill the robot!!
+		String passwordHash = keepPassword ? robot.getAuthors().get(0).getPassword() : PasswordHasher.hash(password);
+		fillAuthors(robot, authorsForm[0], authorsForm[1], login, passwordHash);
+
+		robot.setTeam(names == null ? robot.getTeam() : names.team());
+		robot.setName(names == null ? robot.getName() : names.robot());
+
+		if (robotJar != null) {
+			robot.setCompiledRobot(robotJar.content());
+		}
+		if (robotJava != null) {
+			robot.setSourceCode(new String(robotJava.content(), StandardCharsets.UTF_8));
+		}
+		if (teamMusic != null) {
+			robot.setMusic(teamMusic.content());
+		}
+		if (teamLogo != null) {
+			robot.setImage(teamLogo.content());
+		}
+
+		return errors;
+	}
+
+	/** The team and robot names read from the .jar file name */
+	private record Names(String team, String robot) {
+	}
+
+	/** All of them are needed for new robots */
+	private static void requireFiles(List<String> errors, boolean isNew, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) {
 		if (robotJar == null && isNew) {
 			errors.add("Envie o arquivo .jar do robô!");
 		}
@@ -272,43 +319,50 @@ public class RobotEditor extends HttpServlet {
 		if (teamLogo == null && isNew) {
 			errors.add("Envie o logotipo do time!");
 		}
+	}
 
-		String teamName = robot.getTeam();
-		String robotName = robot.getName();
-
-		if (robotJar != null) {
-			if (robotJar.content().length == 0) {
-				errors.add("Arquivo .jar inválido!");
-			}
-
-			// The team and robot names come from the .jar file name
-			Matcher matcher = JAR_FILE_NAME.matcher(robotJar.fileName());
-			if (!matcher.matches()) {
-				errors.add("O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
-			} else {
-				teamName = matcher.group(1);
-				robotName = matcher.group(2);
-
-				// The team and robot names must have only numbers and/or alphabetical chars
-				if (!TEAM_NAME.matcher(teamName).matches()) {
-					errors.add("O nome do time pode ter APENAS caracteres alfabéticos e numéricos!");
-				}
-				if (!ROBOT_NAME.matcher(robotName).matches() || robotName.length() > MAX_NAME_LENGTH) {
-					errors.add("O nome do robô pode ter APENAS caracteres alfabéticos e numéricos!");
-				}
-				if (errors.isEmpty() && this.robotNameTaken(teamName, robotName, robot.getId())) {
-					errors.add("Já existe um robô chamado " + teamName + "." + robotName + ", escolha outro nome.");
-				}
-			}
+	/**
+	 * @return the names in the .jar file name, or null if there is no valid .jar
+	 *         (the robot keeps its names then)
+	 */
+	private Names checkJar(List<String> errors, Upload robotJar, Opponent robot) {
+		if (robotJar == null) {
+			return null;
+		}
+		if (robotJar.content().length == 0) {
+			errors.add("Arquivo .jar inválido!");
 		}
 
+		Matcher matcher = JAR_FILE_NAME.matcher(robotJar.fileName());
+		if (!matcher.matches()) {
+			errors.add("O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
+			return null;
+		}
+		Names names = new Names(matcher.group(1), matcher.group(2));
+
+		// The team and robot names must have only numbers and/or alphabetical chars
+		if (!TEAM_NAME.matcher(names.team()).matches()) {
+			errors.add("O nome do time pode ter APENAS caracteres alfabéticos e numéricos!");
+		}
+		if (!ROBOT_NAME.matcher(names.robot()).matches() || names.robot().length() > MAX_NAME_LENGTH) {
+			errors.add("O nome do robô pode ter APENAS caracteres alfabéticos e numéricos!");
+		}
+		if (errors.isEmpty() && this.robotNameTaken(names.team(), names.robot(), robot.getId())) {
+			errors.add("Já existe um robô chamado " + names.team() + "." + names.robot() + ", escolha outro nome.");
+		}
+		return names;
+	}
+
+	private static void checkJava(List<String> errors, Upload robotJava) {
 		if (robotJava != null && robotJava.content().length == 0) {
 			errors.add("Arquivo .java inválido!");
 		}
 		if (robotJava != null && robotJava.content().length > MAX_FILE_SIZE) {
 			errors.add("Arquivo .java muito grande!");
 		}
+	}
 
+	private static void checkMusic(List<String> errors, Upload teamMusic) {
 		if (teamMusic != null && teamMusic.content().length == 0) {
 			errors.add("Arquivo música inválido!");
 		}
@@ -317,25 +371,31 @@ public class RobotEditor extends HttpServlet {
 		} else if (teamMusic != null && teamMusic.content().length > 0 && !Sound.isPlayable(teamMusic.content())) {
 			errors.add("Não foi possível tocar a música, envie um arquivo .mp3 válido!");
 		}
+	}
 
-		if (teamLogo != null) {
-			if (teamLogo.content().length > MAX_FILE_SIZE) {
-				errors.add("Arquivo de logotipo muito grande!");
-			}
-
-			BufferedImage logo = ImageIO.read(new ByteArrayInputStream(teamLogo.content()));
-			if (logo == null) {
-				errors.add("Arquivo de logotipo inválido! Use .gif, .jpg ou .png");
-			} else {
-				if (logo.getWidth() > MAX_LOGO_WIDTH) {
-					errors.add("A largura do logotipo é maior que " + MAX_LOGO_WIDTH + " pixels!");
-				}
-				if (logo.getHeight() > MAX_LOGO_HEIGHT) {
-					errors.add("A altura do logotipo é maior que " + MAX_LOGO_HEIGHT + " pixels!");
-				}
-			}
+	private static void checkLogo(List<String> errors, Upload teamLogo) throws IOException {
+		if (teamLogo == null) {
+			return;
+		}
+		if (teamLogo.content().length > MAX_FILE_SIZE) {
+			errors.add("Arquivo de logotipo muito grande!");
 		}
 
+		BufferedImage logo = ImageIO.read(new ByteArrayInputStream(teamLogo.content()));
+		if (logo == null) {
+			errors.add("Arquivo de logotipo inválido! Use .gif, .jpg ou .png");
+		} else {
+			if (logo.getWidth() > MAX_LOGO_WIDTH) {
+				errors.add("A largura do logotipo é maior que " + MAX_LOGO_WIDTH + " pixels!");
+			}
+			if (logo.getHeight() > MAX_LOGO_HEIGHT) {
+				errors.add("A altura do logotipo é maior que " + MAX_LOGO_HEIGHT + " pixels!");
+			}
+		}
+	}
+
+	/** Login, and the password (kept when editing and not sent) */
+	private void checkAccess(List<String> errors, String login, boolean keepPassword, Opponent robot) {
 		if (login.isEmpty()) {
 			errors.add("Preencha o usuário");
 		} else if (this.loginTaken(login, robot.getId())) {
@@ -343,22 +403,30 @@ public class RobotEditor extends HttpServlet {
 			errors.add("Este login já existe, escolha outro. Geralmente um e-mail é uma boa escolha.");
 		}
 
-		boolean keepPassword = password == null || password.isBlank();
-		if (keepPassword && (isNew || robot.getAuthors().isEmpty())) {
+		if (keepPassword && (robot.getId() == 0 || robot.getAuthors().isEmpty())) {
 			errors.add("Preencha a senha");
 		}
+	}
 
+	private static void checkWarcry(List<String> errors, String teamWarcry) {
 		if (teamWarcry.isEmpty()) {
 			errors.add("Informe seu lema");
 		} else if (teamWarcry.length() > Opponent.MAX_BATTLE_CRY_LENGTH) {
 			errors.add("O lema pode ter no máximo " + Opponent.MAX_BATTLE_CRY_LENGTH + " caracteres");
 		}
+	}
 
+	/**
+	 * Checks the developers of the form
+	 *
+	 * @return the names and e-mails to save, both empty if the form has none
+	 */
+	private static String[][] authorsForm(List<String> errors, String[] arrName, String[] arrEmail) {
 		if (arrName == null || arrEmail == null || arrName.length == 0) {
 			errors.add("Informe ao menos uma pessoa desenvolvedora");
-			arrName = new String[0];
-			arrEmail = new String[0];
-		} else if (arrEmail.length != arrName.length) {
+			return new String[][] { new String[0], new String[0] };
+		}
+		if (arrEmail.length != arrName.length) {
 			errors.add("Cada membro do time deve ter um e-mail");
 		}
 
@@ -375,20 +443,14 @@ public class RobotEditor extends HttpServlet {
 				break;
 			}
 		}
+		return new String[][] { arrName, arrEmail };
+	}
 
-		// Kept so the form shows it again if something is wrong
-		robot.setBattleCry(teamWarcry);
-
-		if (!errors.isEmpty()) {
-			return errors;
-		}
-
-		// Nothing is wrong, fill the robot!!
-
-		String passwordHash = keepPassword ? robot.getAuthors().get(0).getPassword() : PasswordHasher.hash(password);
-
-		// Updates existing authors (matched by e-mail), adds the new ones and drops
-		// the ones that were removed from the form
+	/**
+	 * Updates existing authors (matched by e-mail), adds the new ones and drops the
+	 * ones that were removed from the form
+	 */
+	private static void fillAuthors(Opponent robot, String[] arrName, String[] arrEmail, String login, String passwordHash) {
 		List<Author> authors = new ArrayList<Author>();
 		for (int i = 0; i < arrName.length; i++) {
 			String mail = arrEmail[i].trim();
@@ -404,24 +466,6 @@ public class RobotEditor extends HttpServlet {
 		}
 		robot.getAuthors().clear();
 		robot.getAuthors().addAll(authors);
-
-		robot.setTeam(teamName);
-		robot.setName(robotName);
-
-		if (robotJar != null) {
-			robot.setCompiledRobot(robotJar.content());
-		}
-		if (robotJava != null) {
-			robot.setSourceCode(new String(robotJava.content(), StandardCharsets.UTF_8));
-		}
-		if (teamMusic != null) {
-			robot.setMusic(teamMusic.content());
-		}
-		if (teamLogo != null) {
-			robot.setImage(teamLogo.content());
-		}
-
-		return errors;
 	}
 
 	private static String trim(String value) {

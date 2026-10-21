@@ -65,6 +65,30 @@ public class ShowOponent extends StackPane {
 		this.champion = champion;
 		this.mp = Sound.fromBytes(oponent.getMusic(), oponent.getFullName());
 
+		VBox info = info(oponent, title);
+		this.oponentImage = image(oponent);
+		HBox content = new HBox(60, this.oponentImage, info);
+		content.setAlignment(Pos.CENTER);
+		content.setPadding(new Insets(40, 60, 40, 60));
+		info.maxWidthProperty().bind(this.widthProperty().multiply(0.45));
+
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+
+		this.getChildren().setAll(new ArcadeBackground(champion ? Color.web("#ffd400") : Color.web("#5af08f")), sourceBackground(oponent), content, scanlines);
+
+		// After a result the bracket shows where the robots go
+		if (title != null) {
+			this.getChildren().add(bracketPrompt());
+		}
+		if (champion) {
+			this.getChildren().add(new Confetti());
+		}
+	}
+
+	/** The title, the name, the team, the battle cry and the team of the robot */
+	private VBox info(Opponent oponent, String title) {
 		Label name = new Label(oponent.getName().toUpperCase());
 		name.setWrapText(true);
 		name.getStyleClass().add("showcase-name");
@@ -97,23 +121,25 @@ public class ShowOponent extends StackPane {
 				info.getChildren().add(lblAuthor);
 			}
 		}
+		return info;
+	}
 
-		this.oponentImage = new ImageView();
-		this.oponentImage.setSmooth(true);
-		this.oponentImage.setPreserveRatio(true);
-		this.oponentImage.fitHeightProperty().bind(this.heightProperty().multiply(0.6));
-		this.oponentImage.fitWidthProperty().bind(this.widthProperty().multiply(0.42));
-		this.oponentImage.setEffect(new Reflection(0, 0.35, 0.4, 0));
+	/** The robot picture, with its reflection, the size of the screen */
+	private ImageView image(Opponent oponent) {
+		ImageView image = new ImageView();
+		image.setSmooth(true);
+		image.setPreserveRatio(true);
+		image.fitHeightProperty().bind(this.heightProperty().multiply(0.6));
+		image.fitWidthProperty().bind(this.widthProperty().multiply(0.42));
+		image.setEffect(new Reflection(0, 0.35, 0.4, 0));
 		if (oponent.getImage() != null) {
-			this.oponentImage.setImage(new Image(new ByteArrayInputStream(oponent.getImage())));
+			image.setImage(new Image(new ByteArrayInputStream(oponent.getImage())));
 		}
+		return image;
+	}
 
-		HBox content = new HBox(60, this.oponentImage, info);
-		content.setAlignment(Pos.CENTER);
-		content.setPadding(new Insets(40, 60, 40, 60));
-		info.maxWidthProperty().bind(this.widthProperty().multiply(0.45));
-
-		// The source code scrolling in the background, like a hacker screen
+	/** The source code of the robot scrolling in the background, like a hacker screen */
+	private Pane sourceBackground(Opponent oponent) {
 		Label source = new Label(oponent.getSourceCode() == null ? "" : oponent.getSourceCode());
 		source.getStyleClass().add("showcase-source");
 		Pane sourcePane = new Pane(source);
@@ -128,33 +154,25 @@ public class ShowOponent extends StackPane {
 		scroll.setToY(-2000);
 		scroll.setCycleCount(Animation.INDEFINITE);
 		scroll.play();
+		return sourcePane;
+	}
 
-		Region scanlines = new Region();
-		scanlines.getStyleClass().add("scanlines");
-		scanlines.setMouseTransparent(true);
-
-		this.getChildren().setAll(new ArcadeBackground(champion ? Color.web("#ffd400") : Color.web("#5af08f")), sourcePane, content, scanlines);
-
-		// After a result the bracket shows where the robots go
-		if (title != null) {
-			Label key = new Label("R");
-			key.getStyleClass().add("keycap");
-			Label before = new Label("PRESSIONE");
-			before.getStyleClass().add("press-start");
-			Label after = new Label("PARA O CHAVEAMENTO");
-			after.getStyleClass().add("press-start");
-			HBox prompt = new HBox(16, before, key, after);
-			prompt.setAlignment(Pos.CENTER);
-			prompt.setMaxHeight(Region.USE_PREF_SIZE);
-			prompt.setMouseTransparent(true);
-			StackPane.setAlignment(prompt, Pos.BOTTOM_CENTER);
-			StackPane.setMargin(prompt, new Insets(0, 0, 36, 0));
-			Theme.blink(prompt);
-			this.getChildren().add(prompt);
-		}
-		if (champion) {
-			this.getChildren().add(new Confetti());
-		}
+	/** Blinking "PRESSIONE R PARA O CHAVEAMENTO" at the bottom */
+	private HBox bracketPrompt() {
+		Label key = new Label("R");
+		key.getStyleClass().add("keycap");
+		Label before = new Label("PRESSIONE");
+		before.getStyleClass().add("press-start");
+		Label after = new Label("PARA O CHAVEAMENTO");
+		after.getStyleClass().add("press-start");
+		HBox prompt = new HBox(16, before, key, after);
+		prompt.setAlignment(Pos.CENTER);
+		prompt.setMaxHeight(Region.USE_PREF_SIZE);
+		prompt.setMouseTransparent(true);
+		StackPane.setAlignment(prompt, Pos.BOTTOM_CENTER);
+		StackPane.setMargin(prompt, new Insets(0, 0, 36, 0));
+		Theme.blink(prompt);
+		return prompt;
 	}
 
 	public void play() {
