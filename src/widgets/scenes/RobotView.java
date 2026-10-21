@@ -165,6 +165,9 @@ final class RobotView {
 	double turretSpeed;
 	double lastGun = Double.NaN;
 
+	private record Materials(PhongMaterial dark, PhongMaterial plate, PhongMaterial steel, PhongMaterial cyan, PhongMaterial identity, PhongMaterial lamp, PhongMaterial warning) {
+	}
+
 	RobotView(BattleArena3D host, BattleRecording.Robot robot, Opponent opponent, int order) {
 		this.host = host;
 		this.opponent = opponent;
@@ -174,15 +177,25 @@ final class RobotView {
 		this.bodyMaterial = paint(this.bodyColor);
 		this.gunMaterial = paint(this.gunColor);
 		PhongMaterial radarMaterial = paint(argb(robot.getRadarColor(), Color.web("#ffd400")));
-		PhongMaterial dark = material(Color.web("#171b26"));
-		PhongMaterial plateMaterial = material(Color.web("#2d3345"));
 		PhongMaterial steel = material(Color.web("#6c7488"));
 		steel.setSpecularPower(50);
-		PhongMaterial cyan = this.glow(Color.web("#38e6ff"));
-		PhongMaterial identity = this.glow(this.playerColor);
-		PhongMaterial lamp = this.glow(Color.web("#fff6c8"));
-		PhongMaterial warning = this.glow(Color.web("#ff3b3b"));
+		Materials materials = new Materials(material(Color.web("#171b26")), material(Color.web("#2d3345")), steel, this.glow(Color.web("#38e6ff")), this.glow(this.playerColor), this.glow(Color.web("#fff6c8")), this.glow(Color.web("#ff3b3b")));
+		this.buildBody(materials);
+		this.buildTurret(materials);
+		this.buildRadar(materials, radarMaterial);
+		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 
+		// The pieces thrown by the blast stay here, beside the wreck
+		this.debris = new Group();
+		this.root.getChildren().addAll(this.tank, this.debris);
+
+		this.displayName = opponent == null ? robot.getName() : opponent.getName();
+		this.nameLabel = new Label(this.displayName);
+		this.buildBalloon(robot, opponent);
+	}
+
+	/** The hull, the tracks with their links, the armor and the lights: a modern tank of angular armor */
+	private void buildBody(Materials m) {
 		// A modern tank of angular armor, pointing to +Z (north when the heading
 		// is 0): a low wedge hull, tracks hidden by skirts of hexagonal plates, a
 		// long flat turret and a very long gun. Flat facets, a few meshes.
@@ -198,7 +211,7 @@ final class RobotView {
 		// The hull: a wedge, sloped in front and behind, with a deck over it
 		hull.prismZY(new double[][] { { -21, -7 }, { -22.5, -9.5 }, { -20, -13 }, { 14, -13.5 }, { 22, -10 }, { 23, -7.5 } }, -13.5, 13.5);
 		hull.frustum(new double[][] { { -11.5, -17 }, { 11.5, -17 }, { 11.5, 9 }, { -11.5, 9 } }, -13.4, -15.2, 0.9);
-		tracks.box(0, -14.5, -17.5, 14, 2.2, 6); // engine deck, dark
+		tracks.box(0, -14.5, -17.5, 14, 2.2, 6); // engine deck, m.dark()
 		for (int side = -1; side <= 1; side += 2) {
 			// Track with chamfered ends, hidden above by the skirt
 			tracks.prismZY(BELT, Math.min(side * BELT_INNER, side * BELT_OUTER), Math.max(side * BELT_INNER, side * BELT_OUTER));
@@ -207,7 +220,7 @@ final class RobotView {
 			for (int link = 0; link < TREAD_LINKS; link++) {
 				LowPoly piece = new LowPoly();
 				piece.box(0, 0, 0, BELT_WIDTH, 1.2, 2.4);
-				MeshView linkView = piece.view(dark);
+				MeshView linkView = piece.view(m.dark());
 				Rotate turn = new Rotate(0, Rotate.X_AXIS);
 				linkView.getTransforms().add(turn);
 				this.body.getChildren().add(linkView);
@@ -237,9 +250,12 @@ final class RobotView {
 		for (double x = -4; x <= 4; x += 4) {
 			glowCyan.box(x, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
 		}
-		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(dark), armor.view(steel), plates.view(plateMaterial), glowCyan.view(cyan), glowIdentity.view(identity),
-				glowWarning.view(warning), glowLamp.view(lamp));
+		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(m.dark()), armor.view(m.steel()), plates.view(m.plate()), glowCyan.view(m.cyan()), glowIdentity.view(m.identity()),
+				glowWarning.view(m.warning()), glowLamp.view(m.lamp()));
+	}
 
+	/** The turret and the gun, which turn on their own: a long wedge, a flat wing over the gun, a remote weapon station and antennas */
+	private void buildTurret(Materials m) {
 		// Turret and the gun turn on their own: a long wedge, a flat wing over the
 		// gun, a remote weapon station and antennas
 		this.turret.getTransforms().add(this.gunRotate);
@@ -277,8 +293,11 @@ final class RobotView {
 		turretCyan.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
 		shell.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
 		turretCyan.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(dark), turretPlates.view(plateMaterial), turretCyan.view(cyan), turretWarning.view(warning));
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(m.dark()), turretPlates.view(m.plate()), turretCyan.view(m.cyan()), turretWarning.view(m.warning()));
+	}
 
+	/** The radar: a flat panel on a mast, turning over the roof */
+	private void buildRadar(Materials m, PhongMaterial radarMaterial) {
 		// The radar: a flat panel on a mast, turning over the roof
 		this.radar.getTransforms().add(this.radarRotate);
 		LowPoly panel = new LowPoly();
@@ -288,17 +307,12 @@ final class RobotView {
 		panel.box(0, -26, 0, 8, 3.6, 1.2);
 		panelCyan.box(0, -26, 0.7, 6, 0.6, 0.3);
 		mast.cylinderY(3, 0, 0.25, -31, -27.8, 5);
-		this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(dark), panelCyan.view(cyan));
+		this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(m.dark()), panelCyan.view(m.cyan()));
+	}
 
-		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
-
-		// The pieces thrown by the blast stay here, beside the wreck
-		this.debris = new Group();
-		this.root.getChildren().addAll(this.tank, this.debris);
-
+	/** Balloon over the robot: its name and its energy */
+	private void buildBalloon(BattleRecording.Robot robot, Opponent opponent) {
 		// Balloon over the robot
-		this.displayName = opponent == null ? robot.getName() : opponent.getName();
-		this.nameLabel = new Label(this.displayName);
 		this.nameLabel.getStyleClass().add("arena-balloon-name");
 		this.nameLabel.setTextFill(this.playerColor);
 		this.energyFill.getStyleClass().add("arena-balloon-energy");
@@ -484,10 +498,25 @@ final class RobotView {
 		blast.setTranslateX(x);
 		blast.setTranslateZ(z);
 		ParallelTransition all = new ParallelTransition();
-
-		// An overload: a flash, a bolt from the sky, then discharges of lightning
-		// crackling out of the wreck and showers of sparks
 		Color tint = this.playerColor;
+		this.burst(blast, all, tint);
+		this.smoke(x, z);
+		this.throwDebris(all);
+		this.throwTurretAndRadar(all);
+		this.throwHull(all);
+
+		host.effects.getChildren().add(blast);
+		host.fx.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
+		this.running.add(all);
+		all.play();
+		host.fx.lightFlash(x, z, tint, 1.4);
+
+		this.nameLabel.setText("☠ " + this.displayName);
+		this.balloon.setOpacity(0.6);
+	}
+
+	/** The flash of the blast, a bolt from the sky, the shock waves, the discharges of lightning and the sparks */
+	private void burst(Group blast, ParallelTransition all, Color tint) {
 		Color hot = tint.interpolate(Color.WHITE, 0.85);
 		MeshView core = shape(CRYSTAL, energy(Color.WHITE, 0.85));
 		core.setTranslateY(-20);
@@ -511,7 +540,10 @@ final class RobotView {
 		host.fx.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
 		host.fx.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
 		host.fx.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
+	}
 
+	/** The smoke rising from the wreck: particles, like the fire of the burning robots, thick and dark since it is destroyed */
+	private void smoke(double x, double z) {
 		// The smoke rising from the wreck: particles, like the fire of the burning robots,
 		// thick and dark since it is destroyed
 		Timeline smoke = new Timeline();
@@ -524,8 +556,10 @@ final class RobotView {
 		}
 		this.running.add(smoke);
 		smoke.play();
+	}
 
-		// Debris in the colors of the robot
+	/** Debris in the colors of the robot, thrown across the arena */
+	private void throwDebris(ParallelTransition all) {
 		PhongMaterial[] colors = { this.bodyMaterial, this.gunMaterial, new PhongMaterial(Color.web("#22252e")), new PhongMaterial(Color.web("#ffb000")) };
 		for (int i = 0; i < 26; i++) {
 			double angle = Math.PI * 2 * i / 26 + host.random.nextDouble() * 0.3;
@@ -537,7 +571,10 @@ final class RobotView {
 			double reach = 120 + host.random.nextDouble() * 180;
 			all.getChildren().add(host.fx.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 70 + host.random.nextDouble() * 120, 1500));
 		}
+	}
 
+	/** The turret and the radar are thrown in the air */
+	private void throwTurretAndRadar(ParallelTransition all) {
 		// The turret and the radar are thrown in the air
 		double throwAngle = host.random.nextDouble() * Math.PI * 2;
 		this.turret.setRotationAxis(new Point3D(1, 0, 0.4));
@@ -554,7 +591,10 @@ final class RobotView {
 						new KeyValue(this.radar.translateZProperty(), -Math.sin(throwAngle) * 200, Interpolator.EASE_OUT), //
 						new KeyValue(this.radar.rotateProperty(), -900, Interpolator.LINEAR)));
 		all.getChildren().add(thrown);
+	}
 
+	/** The hull is thrown too: it flies over the arena, turns over and lands tilted */
+	private void throwHull(ParallelTransition all) {
 		// The hull is thrown too: it flies over the arena, turns over and lands tilted
 		double hullAngle = host.random.nextDouble() * Math.PI * 2;
 		double hullReach = 130 + host.random.nextDouble() * 80;
@@ -566,15 +606,6 @@ final class RobotView {
 						new KeyValue(this.body.translateZProperty(), hullZ * 0.5, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 60, Interpolator.LINEAR)), //
 				new KeyFrame(Duration.millis(1300), new KeyValue(this.body.translateYProperty(), 0, Interpolator.EASE_IN), new KeyValue(this.body.translateXProperty(), hullX, Interpolator.EASE_OUT),
 						new KeyValue(this.body.translateZProperty(), hullZ, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 35, Interpolator.EASE_OUT))));
-
-		host.effects.getChildren().add(blast);
-		host.fx.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
-		this.running.add(all);
-		all.play();
-		host.fx.lightFlash(x, z, tint, 1.4);
-
-		this.nameLabel.setText("☠ " + this.displayName);
-		this.balloon.setOpacity(0.6);
 	}
 
 	/**
