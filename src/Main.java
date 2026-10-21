@@ -27,10 +27,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import jetty.server.HttpServer;
-import model.BattleMoment;
 import model.Championship;
 import model.Opponent;
-import tournament.BattleMomentService;
 import tournament.Bracket;
 import tournament.Bracket.Match;
 import tournament.Bracket.Status;
@@ -50,7 +48,6 @@ import widgets.scenes.StartScreen;
 import widgets.ArcadeBackground;
 import widgets.GameDialog;
 import widgets.GameWindow;
-import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
 import widgets.windows.NewConfigurationHandleWindow;
@@ -70,7 +67,7 @@ public class Main extends Application {
 	/**
 	 * Code of the match chosen in the bracket screen
 	 */
-	private String selectedMatch;
+	String selectedMatch;
 
 	/**
 	 * Match whose result was just recorded, the bracket shows it moving through
@@ -82,7 +79,7 @@ public class Main extends Application {
 	private Stage primaryStage;
 
 	// The Scenes of application
-	private BracketViewer bracketScene;
+	BracketViewer bracketScene;
 	private StartScreen startScene;
 	/** The default music of the program: the start screen and the bracket play it */
 	private Sound menuMusic;
@@ -90,9 +87,9 @@ public class Main extends Application {
 	private static final double BRACKET_MUSIC_VOLUME = 0.10;
 	private BattleViewer battleScene;
 	private ShowOponent opponentScene;
-	private Podium podiumScene;
+	Podium podiumScene;
 	/** The screen is fading to the champion: the keys wait */
-	private boolean championTransition;
+	boolean championTransition;
 
 	/**
 	 * Which robot of the selected match the M key shows
@@ -114,6 +111,7 @@ public class Main extends Application {
 	 * True while robocode is running a battle
 	 */
 	private boolean battleRunning = false;
+	private final KeyBindings keys = new KeyBindings(this);
 
 	public static void main(String[] args) {
 		launch(args);
@@ -149,7 +147,7 @@ public class Main extends Application {
 		}
 
 		// Binds the keys to actions
-		primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, this::handleKey);
+		primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, this.keys::handle);
 
 		// Start the web server for remote robots uploads
 		this.startWebServer();
@@ -168,109 +166,6 @@ public class Main extends Application {
 			this.httpServer.stop();
 		}
 		Database.close();
-	}
-
-	private void handleKey(KeyEvent event) {
-		if (this.championTransition) {
-			return;
-		}
-		// All events with control key
-		if (event.isControlDown()) {
-			this.handleControlKey(event);
-			return;
-		}
-		// The trophies ceremony: the operator controls it
-		if (this.handlePodiumKey(event)) {
-			return;
-		}
-
-		switch (event.getCode()) {
-		// Initial screen
-		case I -> {
-			this.resetAllScenes();
-			this.showStartScreen();
-		}
-		// The bracket
-		case R -> this.showBracket();
-		// Selects the next match to be played
-		case N -> {
-			Sfx.blip();
-			this.selectedMatch = null;
-			this.showBracket();
-			if (this.bracketScene != null) {
-				this.bracketScene.focusSelected();
-			}
-		}
-		// Show the battle screen
-		case B -> {
-			this.resetAllScenes();
-			this.showBattle();
-		}
-		// Starts the battle on robocode!
-		case S -> this.startsBattle();
-		// The operator says who won
-		case DIGIT1, NUMPAD1 -> this.declareWinner(true);
-		case DIGIT2, NUMPAD2 -> this.declareWinner(false);
-		// Circle through the opponents of the match every time the M key is pressed
-		case M -> {
-			this.resetAllScenes();
-			this.showNextSelectedOpponent();
-		}
-		// Exports all robots to files
-		case X -> this.exportToFiles();
-		// Reviews or changes the configuration
-		case C -> this.openConfiguration();
-		default -> {
-		}
-		}
-	}
-
-	/**
-	 * The keys with control: blocks the registration, draws a championship, undoes
-	 * a result or quits
-	 */
-	private void handleControlKey(KeyEvent event) {
-		switch (event.getCode()) {
-		// Blocks or liberate the robots registration
-		case S -> this.toggleRegistration();
-		// Draws a new championship
-		case G -> this.newChampionship();
-		// Undo the last result
-		case Z -> this.undoLastResult();
-		// Ends the program, the window has no close button in full screen
-		case Q -> {
-			if (GameDialog.confirm("Sair", "Fechar o gerenciador de campeonatos?")) {
-				GameWindow.quit();
-			}
-		}
-		// If control is down block the access for another keys
-		default -> {
-		}
-		}
-	}
-
-	/**
-	 * On the trophies ceremony the keys go to the podium
-	 *
-	 * @return true if the key was used by the ceremony
-	 */
-	private boolean handlePodiumKey(KeyEvent event) {
-		if (this.podiumScene == null || GameWindow.getScreen() != this.podiumScene) {
-			return false;
-		}
-		switch (event.getCode()) {
-		case SPACE, ENTER, RIGHT -> {
-			this.podiumScene.next();
-			return true;
-		}
-		case LEFT -> {
-			this.podiumScene.previous();
-			return true;
-		}
-		default -> {
-			return false;
-		}
-		}
 	}
 
 	/**
@@ -300,7 +195,7 @@ public class Main extends Application {
 
 	// ---------------------------------------------------------- configuration
 
-	private void openConfiguration() {
+	void openConfiguration() {
 		if (this.battleRunning) {
 			this.showError("Aguarde a batalha terminar para mudar as configurações.");
 			return;
@@ -352,7 +247,7 @@ public class Main extends Application {
 		}
 	}
 
-	private void toggleRegistration() {
+	void toggleRegistration() {
 		boolean enabled = !Configuration.isEnabledRegistration();
 		Configuration.setEnabledRegistration(enabled);
 		GameDialog.toast(enabled ? "● INSCRIÇÕES ABERTAS: CADASTRO DE ROBÔS LIBERADO" : "■ INSCRIÇÕES ENCERRADAS: CADASTRO DE ROBOTS BLOQUEADO", enabled);
@@ -391,7 +286,7 @@ public class Main extends Application {
 		}
 	}
 
-	private void newChampionship() {
+	void newChampionship() {
 		long robots;
 		try {
 			robots = ChampionshipService.countOpponents();
@@ -429,7 +324,7 @@ public class Main extends Application {
 		}
 	}
 
-	private void showBracket() {
+	void showBracket() {
 		try {
 			this.loadChampionship();
 		} catch (RuntimeException e) {
@@ -515,7 +410,7 @@ public class Main extends Application {
 		}
 	}
 
-	private void declareWinner(boolean slotA) {
+	void declareWinner(boolean slotA) {
 		Optional<Match> playable = this.playableSelectedMatch();
 		if (playable.isEmpty()) {
 			return;
@@ -528,7 +423,7 @@ public class Main extends Application {
 		}
 	}
 
-	private void undoLastResult() {
+	void undoLastResult() {
 		if (this.championship == null || this.championship.getResults().isEmpty()) {
 			this.showError("Não há resultados para desfazer.");
 			return;
@@ -693,7 +588,7 @@ public class Main extends Application {
 	/**
 	 * Shows the versus screen
 	 */
-	private void showBattle() {
+	void showBattle() {
 		Optional<Match> playable = this.playableSelectedMatch();
 		if (playable.isEmpty()) {
 			return;
@@ -712,7 +607,7 @@ public class Main extends Application {
 	/**
 	 * Shows the robots of the selected match, one at a time
 	 */
-	private void showNextSelectedOpponent() {
+	void showNextSelectedOpponent() {
 		Optional<Match> playable = this.playableSelectedMatch();
 		if (playable.isEmpty()) {
 			return;
@@ -813,7 +708,7 @@ public class Main extends Application {
 	/**
 	 * Saves the source code of every robot as temp/robochamp-export/team/RobotName.java
 	 */
-	private void exportToFiles() {
+	void exportToFiles() {
 		Path exportDir = SourceExporter.defaultDir();
 		try {
 			int exported = SourceExporter.export(exportDir);
@@ -827,7 +722,7 @@ public class Main extends Application {
 	/**
 	 * Keep things clean an silent
 	 */
-	private void resetAllScenes() {
+	void resetAllScenes() {
 		this.resetAllScenes(false);
 	}
 
