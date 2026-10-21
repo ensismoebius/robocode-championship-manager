@@ -60,16 +60,16 @@ import widgets.Theme;
  */
 public class BracketViewer extends StackPane {
 
-	private static final double CARD_W = 300;
+	static final double CARD_W = 300;
 	private static final double ROW_H = 50;
 	private static final double HEADER_H = 24;
-	private static final double CARD_H = HEADER_H + 2 * ROW_H + 4;
-	private static final double SLOT_H = CARD_H + 26;
-	private static final double COL_GAP = 70;
-	private static final double COL_W = CARD_W + COL_GAP;
-	private static final double ROUND_TITLE_H = 34;
-	private static final double SECTION_TITLE_H = 50;
-	private static final double SECTION_GAP = 50;
+	static final double CARD_H = HEADER_H + 2 * ROW_H + 4;
+	static final double SLOT_H = CARD_H + 26;
+	static final double COL_GAP = 70;
+	static final double COL_W = CARD_W + COL_GAP;
+	static final double ROUND_TITLE_H = 34;
+	static final double SECTION_TITLE_H = 50;
+	static final double SECTION_GAP = 50;
 
 	final Bracket bracket;
 	private final Map<Long, Opponent> opponents;
@@ -91,7 +91,7 @@ public class BracketViewer extends StackPane {
 	private final VBox content = new VBox(24);
 	private final Pane viewport = new Pane();
 
-	private final Map<Match, double[]> positions = new HashMap<Match, double[]>();
+	final Map<Match, double[]> positions = new HashMap<Match, double[]>();
 	final Map<String, VBox> cards = new HashMap<String, VBox>();
 	final Map<String, HBox[]> rows = new HashMap<String, HBox[]>();
 	final Map<HBox, Long> rowParticipants = new HashMap<HBox, Long>();
@@ -144,7 +144,7 @@ public class BracketViewer extends StackPane {
 		this.content.getChildren().add(this.buildHeader(title, robotsOutside));
 		this.content.getTransforms().setAll(this.translate, this.scale);
 
-		this.layoutBracket();
+		new BracketLayout(this).build();
 		this.content.getChildren().add(this.canvas);
 
 		// The camera looks at the content through the viewport
@@ -231,126 +231,9 @@ public class BracketViewer extends StackPane {
 		return header;
 	}
 
-	// ----------------------------------------------------------------- layout
-
-	private void layoutBracket() {
-		double top = 0;
-		List<List<Match>> winners = this.bracket.getWinnersRounds();
-		List<List<Match>> losers = this.bracket.getLosersRounds();
-
-		this.addSectionTitle(this.bracket.hasRepechage() ? "Chave principal" : "Chave", top);
-		top += SECTION_TITLE_H;
-		double winnersHeight = this.layoutRounds(winners, top, this.bracket::winnersRoundName);
-		top += ROUND_TITLE_H + winnersHeight;
-
-		double finalsY = this.positions.get(winners.get(winners.size() - 1).get(0))[1];
-
-		if (!losers.isEmpty()) {
-			top += SECTION_GAP;
-			this.addSectionTitle("Repescagem", top);
-			top += SECTION_TITLE_H;
-			double losersHeight = this.layoutRounds(losers, top, this.bracket::losersRoundName);
-
-			double losersFinalY = this.positions.get(losers.get(losers.size() - 1).get(0))[1];
-			finalsY = (finalsY + losersFinalY) / 2;
-			top += ROUND_TITLE_H + losersHeight;
-		}
-
-		// Finals to the right of everything
-		int columns = Math.max(winners.size(), losers.size());
-		List<Match> finals = this.bracket.getFinals();
-		for (int i = 0; i < finals.size(); i++) {
-			double x = (columns + i) * COL_W;
-			this.addRoundTitle(this.bracket.roundName(finals.get(i)), x, finalsY - CARD_H / 2 - ROUND_TITLE_H);
-			this.positions.put(finals.get(i), new double[] { x, finalsY });
-		}
-
-		// Standings in the free space under the finals
-		Node standings = this.buildStandings();
-		if (standings != null) {
-			standings.relocate(columns * COL_W, finalsY + CARD_H / 2 + 50);
-			this.canvas.getChildren().add(standings);
-		}
-
-		// Lines first so the cards are drawn over them
-		for (Match match : this.bracket.getMatches()) {
-			this.addConnectors(match);
-		}
-		for (Match match : this.bracket.getMatches()) {
-			double[] position = this.positions.get(match);
-			VBox card = this.buildCard(match);
-			card.relocate(position[0], position[1] - CARD_H / 2);
-			this.canvas.getChildren().add(card);
-		}
-
-		this.canvas.setMinHeight(top);
-	}
-
-	/**
-	 * Places the rounds side by side, each match centered between the two matches
-	 * that feed it
-	 *
-	 * @return the height used
-	 */
-	private double layoutRounds(List<List<Match>> rounds, double top, java.util.function.IntFunction<String> roundName) {
-		double height = rounds.get(0).size() * SLOT_H;
-		for (int r = 0; r < rounds.size(); r++) {
-			List<Match> round = rounds.get(r);
-			double x = r * COL_W;
-			this.addRoundTitle(roundName.apply(r + 1), x, top);
-			double spacing = height / round.size();
-			for (int i = 0; i < round.size(); i++) {
-				this.positions.put(round.get(i), new double[] { x, top + ROUND_TITLE_H + spacing * (i + 0.5) });
-			}
-		}
-		return height;
-	}
-
-	private void addSectionTitle(String text, double y) {
-		Label label = new Label(text);
-		label.getStyleClass().add("section-title");
-		label.relocate(0, y);
-		this.canvas.getChildren().add(label);
-	}
-
-	private void addRoundTitle(String text, double x, double y) {
-		Label label = new Label(text);
-		label.getStyleClass().add("round-title");
-		label.relocate(x + 4, y);
-		this.canvas.getChildren().add(label);
-	}
-
-	/**
-	 * Elbow lines from the matches whose winners come to this one. Losers coming
-	 * from the main bracket are not drawn, their slot tells where they come from
-	 */
-	private void addConnectors(Match match) {
-		double[] to = this.positions.get(match);
-		for (Slot slot : List.of(match.getA(), match.getB())) {
-			Match source = slot.getSource();
-			if (source == null || !slot.isSourceWinner()) {
-				continue;
-			}
-			double[] from = this.positions.get(source);
-			double x1 = from[0] + CARD_W;
-			double y1 = from[1];
-			double x2 = to[0];
-			double y2 = to[1];
-			double middle = x2 - COL_GAP / 2;
-
-			Polyline line = new Polyline(x1, y1, middle, y1, middle, y2, x2, y2);
-			line.getStyleClass().add("connector");
-			this.lines.put(source.getCode() + ">" + match.getCode(), line);
-			if (source.getStatus() == Status.FINISHED || (source.getStatus() == Status.BYE && source.getWinner() != null)) {
-				line.getStyleClass().add("done");
-			}
-			this.canvas.getChildren().add(line);
-		}
-	}
-
 	// ------------------------------------------------------------------ cards
 
-	private VBox buildCard(Match match) {
+	VBox buildCard(Match match) {
 		VBox card = new VBox();
 		card.setPrefSize(CARD_W, CARD_H);
 		card.setMinSize(CARD_W, CARD_H);
@@ -774,7 +657,7 @@ public class BracketViewer extends StackPane {
 
 	// -------------------------------------------------------------- standings
 
-	private Node buildStandings() {
+	Node buildStandings() {
 		Map<Long, Integer> placements = this.bracket.getPlacements();
 		if (placements.isEmpty()) {
 			return null;
