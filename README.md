@@ -65,7 +65,7 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 <table>
 <tr>
 <td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem.</td>
 </tr>
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins.</td>
@@ -283,10 +283,13 @@ aproxima a próxima batalha. Qualquer tecla ou clique pula a animação.
 
 ![Robô apresentado na arena](docs/images/apresentacao-3d.jpg)
 
-...depois os dois se encaram, a câmera sobrevoa a arena e cada round começa com uma contagem de
-3 segundos.
+...depois os dois se encaram, a câmera sobrevoa a arena (parando 2 segundos em cada bicho que encontra pelo caminho) e cada round começa com uma contagem de 3 segundos.
 
 ![Os dois robôs frente a frente](docs/images/versus-3d.jpg)
+
+Em **semifinais** e **finais** o programa avisa: o nome da fase aparece em dourado na abertura (★ SEMIFINAL ★, ★ FINAL ★), o placar mostra a fase durante toda a batalha e o apresentador anuncia a partida.
+
+![Aviso de final na arena](docs/images/fase-final.jpg)
 
 Durante a luta, a barra de energia de cada robô fica no alto da tela. Os tanques usam as cores
 que o robô escolheu no seu código, e os tiros saem na cor de quem atirou. Quando um robô é

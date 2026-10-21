@@ -38,18 +38,25 @@ final class LavaTexture {
 	}
 
 	/**
-	 * Lava that glows less: as the other, with all the colors darker
+	 * A floor of dark gray rock cracked by dimmer veins of magma: the lava with
+	 * the glow lowered and the blacks lifted to the gray
 	 *
 	 * @param brightness
-	 *            from 0 (black) to 1 (the same)
+	 *            of the veins, from 0 (none) to 1 (as the lava)
+	 * @param gray
+	 *            the color of the rock, 0xRRGGBB
 	 */
-	static Image create(double crust, double brightness) {
+	static Image floor(double crust, double brightness, int gray) {
 		int[] pixels = pixels(crust);
 		for (int i = 0; i < pixels.length; i++) {
-			int red = (int) (((pixels[i] >> 16) & 0xff) * brightness);
-			int green = (int) (((pixels[i] >> 8) & 0xff) * brightness);
-			int blue = (int) ((pixels[i] & 0xff) * brightness);
-			pixels[i] = 0xff000000 | red << 16 | green << 8 | blue;
+			int color = 0;
+			for (int shift = 16; shift >= 0; shift -= 8) {
+				int base = (gray >> shift) & 0xff;
+				int glow = (int) (((pixels[i] >> shift) & 0xff) * brightness);
+				// What the base leaves free, the glow fills
+				color |= Math.min(255, base + glow * (255 - base) / 255) << shift;
+			}
+			pixels[i] = 0xff000000 | color;
 		}
 		WritableImage image = new WritableImage(SIZE, SIZE);
 		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);

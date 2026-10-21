@@ -865,8 +865,8 @@ public class BattleArena3D extends StackPane {
 	private static final Image LAVA_TEXTURE = LavaTexture.create(0);
 	/** Far away the lava has cooled, only its veins glow */
 	private static final Image CRUST_TEXTURE = LavaTexture.create(0.45);
-	/** Under the field of the battle the lava glows little: the robots are what should stand out */
-	private static final Image FIELD_TEXTURE = LavaTexture.create(0.6, 0.5);
+	/** Under the field of the battle the lava glows little, it shows in the cracks of the gray plates: the robots are what should stand out */
+	private static final Image FIELD_TEXTURE = LavaTexture.floor(0.6, 0.5, 0x120403);
 	/** Units of the world one tile of the lava texture covers */
 	private static final double LAVA_TILE = 150;
 
@@ -1027,8 +1027,8 @@ public class BattleArena3D extends StackPane {
 		this.lava.setSelfIlluminationMap(LAVA_TEXTURE);
 		this.lava.setSpecularColor(Color.BLACK);
 
-		PhongMaterial basalt = new PhongMaterial(Color.web("#2a1c18"));
-		basalt.setSpecularColor(Color.web("#4a3028"));
+		PhongMaterial basalt = new PhongMaterial(Color.web("#4a4a52"));
+		basalt.setSpecularColor(Color.web("#6a6a72"));
 		basalt.setSpecularPower(10);
 		Box floor = new Box(w + 40, 4, h + 40);
 		floor.setMaterial(basalt);
@@ -1059,7 +1059,7 @@ public class BattleArena3D extends StackPane {
 		List<double[][]> cells = Voronoi.cells(seeds.toArray(new double[0][]), gaps, -w / 2, -h / 2, w / 2, h / 2);
 
 		// One mesh for each tone of basalt
-		String[] tones = { "#2a1c18", "#221613", "#33231e" };
+		String[] tones = { "#4a4a52", "#41414a", "#55555d" };
 		TriangleMesh[] plates = new TriangleMesh[tones.length];
 		for (int i = 0; i < plates.length; i++) {
 			plates[i] = new TriangleMesh();
@@ -1081,7 +1081,7 @@ public class BattleArena3D extends StackPane {
 		}
 		for (int i = 0; i < plates.length; i++) {
 			PhongMaterial basaltTone = new PhongMaterial(Color.web(tones[i]));
-			basaltTone.setSpecularColor(Color.web("#4a3028"));
+			basaltTone.setSpecularColor(Color.web("#6a6a72"));
 			basaltTone.setSpecularPower(10);
 			MeshView view = new MeshView(plates[i]);
 			view.setMaterial(basaltTone);

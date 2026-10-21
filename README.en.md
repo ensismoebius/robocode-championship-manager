@@ -65,7 +65,7 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 <table>
 <tr>
 <td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out.</td>
 </tr>
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins.</td>
@@ -283,9 +283,13 @@ battle. Any key or click skips the animation.
 
 ![Robot presented in the arena](docs/images/apresentacao-3d.jpg)
 
-...then the two face each other, the camera flies over the arena, and each round starts with a 3-second countdown.
+...then the two face each other, the camera flies over the arena (stopping for 2 seconds on each critter it meets on the way), and each round starts with a 3-second countdown.
 
 ![The two robots face to face](docs/images/versus-3d.jpg)
+
+In **semifinals** and **finals** the program gives a warning: the name of the stage appears in gold in the intro (★ SEMIFINAL ★, ★ FINAL ★), the scoreboard shows the stage throughout the battle and the presenter announces the match.
+
+![Final warning in the arena](docs/images/fase-final.jpg)
 
 During the fight, each robot's energy bar sits at the top of the screen. The tanks use the colors the
 robot chose in its code, and shots come out in the color of whoever fired them. When a robot is
