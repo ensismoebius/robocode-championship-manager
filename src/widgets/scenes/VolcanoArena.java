@@ -87,7 +87,7 @@ final class VolcanoArena {
 		fieldLava.setDiffuseMap(FIELD_TEXTURE);
 		fieldLava.setSelfIlluminationMap(FIELD_TEXTURE);
 		fieldLava.setSpecularColor(Color.BLACK);
-		host.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025, fieldLava, LAVA_TILE);
+		host.lavaFlows.flow(new double[][] { { -w / 2, -0.3, -h / 2 }, { w / 2, -0.3, -h / 2 }, { w / 2, -0.3, h / 2 }, { -w / 2, -0.3, h / 2 } }, 0.015, 0.025, fieldLava, LAVA_TILE);
 	}
 
 	/** Basalt plates (Voronoi cells) with glowing lava in the cracks, and the border of the field */
@@ -156,10 +156,10 @@ final class VolcanoArena {
 		double outerZ = h / 2 + edge + moat;
 		double middleX = w / 2 + edge + moat / 2;
 		double middleZ = h / 2 + edge + moat / 2;
-		host.flowStrip(-outerX, -middleZ, outerX, -middleZ, moat, 3, 0.18);
-		host.flowStrip(middleX, -outerZ, middleX, outerZ, moat, 3, 0.18);
-		host.flowStrip(outerX, middleZ, -outerX, middleZ, moat, 3, 0.18);
-		host.flowStrip(-middleX, outerZ, -middleX, -outerZ, moat, 3, 0.18);
+		host.lavaFlows.flowStrip(-outerX, -middleZ, outerX, -middleZ, moat, 3, 0.18);
+		host.lavaFlows.flowStrip(middleX, -outerZ, middleX, outerZ, moat, 3, 0.18);
+		host.lavaFlows.flowStrip(outerX, middleZ, -outerX, middleZ, moat, 3, 0.18);
+		host.lavaFlows.flowStrip(-middleX, outerZ, -middleX, -outerZ, moat, 3, 0.18);
 	}
 
 	/** Rivers of lava from the moat to the sea, with a bend */
@@ -181,9 +181,9 @@ final class VolcanoArena {
 				double[] a = points[k];
 				double[] b = points[k + 1];
 				if (alongX) {
-					host.flowStrip(side * a[1], a[0], side * b[1], b[0], 34, 4.6, 0.35);
+					host.lavaFlows.flowStrip(side * a[1], a[0], side * b[1], b[0], 34, 4.6, 0.35);
 				} else {
-					host.flowStrip(a[0], side * a[1], b[0], side * b[1], 34, 4.6, 0.35);
+					host.lavaFlows.flowStrip(a[0], side * a[1], b[0], side * b[1], 34, 4.6, 0.35);
 				}
 			}
 		}
@@ -198,7 +198,7 @@ final class VolcanoArena {
 		crust.setSelfIlluminationMap(CRUST_TEXTURE);
 		crust.setSpecularColor(Color.BLACK);
 		double sea = 5000;
-		host.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
+		host.lavaFlows.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
 	}
 
 	/** Volcanoes on the horizon: stacked tiers make a cone, glowing on the top */
@@ -231,7 +231,7 @@ final class VolcanoArena {
 				double bottom = radius * 1.12;
 				double topWidth = radius * 0.15;
 				double bottomWidth = radius * 0.42;
-				host.flow(new double[][] { //
+				host.lavaFlows.flow(new double[][] { //
 						{ x + dx * top - dz * topWidth, 5 - height, z + dz * top + dx * topWidth }, //
 						{ x + dx * top + dz * topWidth, 5 - height, z + dz * top - dx * topWidth }, //
 						{ x + dx * bottom + dz * bottomWidth, 5, z + dz * bottom - dx * bottomWidth }, //

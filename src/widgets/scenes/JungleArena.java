@@ -180,8 +180,8 @@ final class JungleArena {
 	void jungleRivers(double w, double h, JungleMaterials m, double riverZ, double riverWidth) {
 		// Rivers along the long sides, flowing in opposite directions
 		PhongMaterial water = m.water();
-		host.river(-3000, 3000, -1, riverZ, 0, riverWidth, 0.16, water, 120);
-		host.river(3000, -3000, 1, riverZ, 2.3, riverWidth, 0.16, water, 120);
+		host.lavaFlows.river(-3000, 3000, -1, riverZ, 0, riverWidth, 0.16, water, 120);
+		host.lavaFlows.river(3000, -3000, 1, riverZ, 2.3, riverWidth, 0.16, water, 120);
 	}
 
 	/** Waterfalls far at both ends, falling from a cliff to a pool */
@@ -197,11 +197,11 @@ final class JungleArena {
 			// The water in front of the face, not on it (two surfaces in the same
 			// place flicker)
 			double front = x - side * 2.5;
-			host.flow(new double[][] { { front, 6 - 450, z - 70 }, { front, 6 - 450, z + 70 }, { front, 5, z + 70 }, { front, 5, z - 70 } }, 0, -0.9, waterfall, 60);
+			host.lavaFlows.flow(new double[][] { { front, 6 - 450, z - 70 }, { front, 6 - 450, z + 70 }, { front, 5, z + 70 }, { front, 5, z - 70 } }, 0, -0.9, waterfall, 60);
 			// The pool at its foot, toward the field
 			double poolEnd = x - side * 240;
 			double[][] pool = { { x - side * 2.5, 3, z - 150 }, { poolEnd, 3, z - 150 }, { poolEnd, 3, z + 150 }, { x - side * 2.5, 3, z + 150 } };
-			host.flow(pool, 0.025, 0.018, water, 120);
+			host.lavaFlows.flow(pool, 0.025, 0.018, water, 120);
 		}
 	}
 
