@@ -48,77 +48,95 @@ final class PodiumStage extends Pane {
 	private final Group[] trophies = new Group[4];
 	/** How big each trophy is drawn, for the height of the screen: the gold one the biggest */
 	private final double[] trophyScales = { 0, 0.00068, 0.00056, 0.00048 };
+	private static final Color[] PLACE_COLORS = { null, Podium.GOLD, Podium.SILVER, Podium.BRONZE };
 
 	PodiumStage(Podium host) {
 		this.host = host;
 		this.setMouseTransparent(true);
-		Color[] colors = { null, Podium.GOLD, Podium.SILVER, Podium.BRONZE };
 		for (int place = 1; place <= 3; place++) {
-			Color color = colors[place];
-			Polygon spot = new Polygon();
-			spot.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.35)),
-					new Stop(1, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.03))));
-			spot.setBlendMode(BlendMode.ADD);
-			spot.setOpacity(0);
-			this.spots[place] = spot;
-
-			Rectangle step = new Rectangle();
-			step.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, color.interpolate(Color.WHITE, 0.25)), new Stop(1, color.interpolate(Color.BLACK, 0.55))));
-			step.setStroke(color.interpolate(Color.WHITE, 0.5));
-			step.setStrokeWidth(3);
-			step.setEffect(new DropShadow(26, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.55)));
-			this.steps[place] = step;
-
-			Label number = new Label(String.valueOf(place));
-			number.getStyleClass().add("podium-number");
-			number.setTextFill(color.interpolate(Color.BLACK, 0.55));
-			number.styleProperty().bind(host.heightProperty().multiply(place == 1 ? 0.14 : place == 2 ? 0.1 : 0.075).asString("-fx-font-size: %.0fpx;"));
-			this.numbers[place] = number;
-
-			Opponent opponent = host.places[place];
-			if (opponent != null) {
-				ImageView image = host.image(opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, Podium.COLUMN_WIDTH, false);
-				image.setEffect(new DropShadow(30, color));
-				this.images[place] = image;
-				Label name = new Label(opponent.getName().toUpperCase());
-				name.getStyleClass().add("podium-name");
-				name.setWrapText(true);
-				name.setAlignment(Pos.CENTER);
-				name.setTextFill(Color.WHITE);
-				// The letters shrink to fit the column: a long name never reaches the next one
-				double heightFactor = place == 1 ? 0.038 : 0.032;
-				name.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(host.getHeight() * heightFactor, host.getWidth() * Podium.COLUMN_WIDTH / Math.max(1, opponent.getName().length() * 0.9)))), host.heightProperty(), host.widthProperty()));
-				String teamText = "TIME " + opponent.getTeam().toUpperCase();
-				Label team = new Label(teamText);
-				team.getStyleClass().add("podium-team");
-				team.setAlignment(Pos.CENTER);
-				team.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(host.getHeight() * 0.026, host.getWidth() * Podium.COLUMN_WIDTH / Math.max(1, teamText.length() * 0.9)))), host.heightProperty(), host.widthProperty()));
-				VBox figure = new VBox(4, name, team, image);
-				// The whole figure, names and picture, fits its column
-				figure.prefWidthProperty().bind(host.widthProperty().multiply(Podium.COLUMN_WIDTH));
-				figure.minWidthProperty().bind(figure.prefWidthProperty());
-				figure.maxWidthProperty().bind(figure.prefWidthProperty());
-				figure.setAlignment(Pos.BOTTOM_CENTER);
-				figure.setVisible(false);
-				this.figures[place] = figure;
-			}
+			buildPlace(place);
 		}
-		// A trophy for everyone on the podium: gold, silver and bronze
+		buildTrophies();
+
+		this.banner.getStyleClass().add("podium-banner");
+		this.banner.setVisible(false);
+		this.banner.styleProperty().bind(host.heightProperty().multiply(0.07).asString("-fx-font-size: %.0fpx;"));
+		arrange();
+	}
+
+	/** The spot of light, the step and the number of one place, and the robot standing on it */
+	private void buildPlace(int place) {
+		Color color = PLACE_COLORS[place];
+		Polygon spot = new Polygon();
+		spot.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.35)),
+				new Stop(1, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.03))));
+		spot.setBlendMode(BlendMode.ADD);
+		spot.setOpacity(0);
+		this.spots[place] = spot;
+
+		Rectangle step = new Rectangle();
+		step.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, color.interpolate(Color.WHITE, 0.25)), new Stop(1, color.interpolate(Color.BLACK, 0.55))));
+		step.setStroke(color.interpolate(Color.WHITE, 0.5));
+		step.setStrokeWidth(3);
+		step.setEffect(new DropShadow(26, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0.55)));
+		this.steps[place] = step;
+
+		Label number = new Label(String.valueOf(place));
+		number.getStyleClass().add("podium-number");
+		number.setTextFill(color.interpolate(Color.BLACK, 0.55));
+		number.styleProperty().bind(host.heightProperty().multiply(place == 1 ? 0.14 : place == 2 ? 0.1 : 0.075).asString("-fx-font-size: %.0fpx;"));
+		this.numbers[place] = number;
+
+		Opponent opponent = host.places[place];
+		if (opponent != null) {
+			this.figures[place] = buildFigure(place, color, opponent);
+		}
+	}
+
+	/** The picture and the names of the robot, in its column of the podium */
+	private VBox buildFigure(int place, Color color, Opponent opponent) {
+		ImageView image = host.image(opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, Podium.COLUMN_WIDTH, false);
+		image.setEffect(new DropShadow(30, color));
+		this.images[place] = image;
+		Label name = new Label(opponent.getName().toUpperCase());
+		name.getStyleClass().add("podium-name");
+		name.setWrapText(true);
+		name.setAlignment(Pos.CENTER);
+		name.setTextFill(Color.WHITE);
+		// The letters shrink to fit the column: a long name never reaches the next one
+		double heightFactor = place == 1 ? 0.038 : 0.032;
+		name.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(host.getHeight() * heightFactor, host.getWidth() * Podium.COLUMN_WIDTH / Math.max(1, opponent.getName().length() * 0.9)))), host.heightProperty(), host.widthProperty()));
+		String teamText = "TIME " + opponent.getTeam().toUpperCase();
+		Label team = new Label(teamText);
+		team.getStyleClass().add("podium-team");
+		team.setAlignment(Pos.CENTER);
+		team.styleProperty().bind(Bindings.createStringBinding(() -> String.format("-fx-font-size: %.0fpx;", Math.max(8, Math.min(host.getHeight() * 0.026, host.getWidth() * Podium.COLUMN_WIDTH / Math.max(1, teamText.length() * 0.9)))), host.heightProperty(), host.widthProperty()));
+		VBox figure = new VBox(4, name, team, image);
+		// The whole figure, names and picture, fits its column
+		figure.prefWidthProperty().bind(host.widthProperty().multiply(Podium.COLUMN_WIDTH));
+		figure.minWidthProperty().bind(figure.prefWidthProperty());
+		figure.maxWidthProperty().bind(figure.prefWidthProperty());
+		figure.setAlignment(Pos.BOTTOM_CENTER);
+		figure.setVisible(false);
+		return figure;
+	}
+
+	/** A trophy for everyone on the podium: gold, silver and bronze */
+	private void buildTrophies() {
 		for (int place = 1; place <= 3; place++) {
 			if (this.figures[place] == null) {
 				continue;
 			}
-			Group trophy = Podium.trophy(colors[place]);
+			Group trophy = Podium.trophy(PLACE_COLORS[place]);
 			trophy.scaleXProperty().bind(host.heightProperty().multiply(this.trophyScales[place]));
 			trophy.scaleYProperty().bind(host.heightProperty().multiply(this.trophyScales[place]));
 			trophy.setVisible(false);
 			this.trophies[place] = trophy;
 		}
+	}
 
-		this.banner.getStyleClass().add("podium-banner");
-		this.banner.setVisible(false);
-		this.banner.styleProperty().bind(host.heightProperty().multiply(0.07).asString("-fx-font-size: %.0fpx;"));
-
+	/** Adds the parts to the stage: the spots behind, the steps, then the trophies, the robots and the banner */
+	private void arrange() {
 		for (int place = 1; place <= 3; place++) {
 			this.getChildren().add(this.spots[place]);
 		}
@@ -138,6 +156,7 @@ final class PodiumStage extends Pane {
 		}
 		this.getChildren().add(this.banner);
 	}
+
 
 	/** Where the center of the column of the place is, from 0 to 1 */
 	double columnCenter(int place) {
