@@ -21,7 +21,6 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.AmbientLight;
@@ -99,7 +98,7 @@ public class BattleArena3D extends StackPane {
 
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	/** The camera flies over the arena before the first round and ends where the battle starts */
-	private static final double FLYBY_SECONDS = 6.5;
+	static final double FLYBY_SECONDS = 6.5;
 	/** The fly by starts looking at a critter for this long before it goes on */
 	private static final double FLYBY_FOCUS_SECONDS = 2;
 	private static final int COUNTDOWN_SECONDS = 3;
@@ -147,7 +146,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/** The shots of the cinematic camera */
-	private enum Shot {
+	enum Shot {
 		WIDE, CHASE, LOW_TRACK, CLOSE, CRANE, IMPACT, FATAL
 	}
 
@@ -193,15 +192,16 @@ public class BattleArena3D extends StackPane {
 	final VolcanoArena volcano = new VolcanoArena(this);
 	final JungleArena jungle = new JungleArena(this);
 	final ArenaBullets shots = new ArenaBullets(this);
+	final ArenaCamera director = new ArenaCamera(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
 	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	private final SubScene subScene;
 	final PerspectiveCamera camera = new PerspectiveCamera(true);
-	private final Translate cameraLook = new Translate();
+	final Translate cameraLook = new Translate();
 	final Rotate cameraYaw = new Rotate(0, Rotate.Y_AXIS);
 	final Rotate cameraPitch = new Rotate(-38, Rotate.X_AXIS);
-	private final Rotate cameraRoll = new Rotate(0, Rotate.Z_AXIS);
-	private final Translate cameraDistance = new Translate();
+	final Rotate cameraRoll = new Rotate(0, Rotate.Z_AXIS);
+	final Translate cameraDistance = new Translate();
 	/** Lights up the explosions */
 	final PointLight flashLight = new PointLight(Color.BLACK);
 	/**
@@ -213,40 +213,40 @@ public class BattleArena3D extends StackPane {
 	// Camera: what it sees now and what it wants to see, eased every frame
 	ViewMode viewMode = ViewMode.CINEMATIC;
 	final double[] eye = { 0, -700, -900 };
-	private final double[] look = { 0, -10, 0 };
-	private final double[] eyeTarget = { 0, -700, -900 };
-	private final double[] lookTarget = { 0, -10, 0 };
-	private double fov = 45;
-	private double fovTarget = 45;
-	private double roll = 0;
-	private double rollTarget = 0;
-	private double follow = 4;
+	final double[] look = { 0, -10, 0 };
+	final double[] eyeTarget = { 0, -700, -900 };
+	final double[] lookTarget = { 0, -10, 0 };
+	double fov = 45;
+	double fovTarget = 45;
+	double roll = 0;
+	double rollTarget = 0;
+	double follow = 4;
 	double shake = 0;
-	private double cinematicOrbitAngle = 0;
+	double cinematicOrbitAngle = 0;
 
 	// Free, isometric and top views
-	private double yaw = 0;
-	private double targetYaw = 0;
-	private double freePitch = -38;
-	private double pitch = -38;
-	private double zoom = 1;
-	private double targetZoom = 1;
-	private double yawSpeed = 0;
+	double yaw = 0;
+	double targetYaw = 0;
+	double freePitch = -38;
+	double pitch = -38;
+	double zoom = 1;
+	double targetZoom = 1;
+	double yawSpeed = 0;
 	private double lastDragX;
 	private double lastDragY;
 
 	// Cinematic director
-	private Shot shot = Shot.WIDE;
-	private double shotTime = 0;
-	private double shotDuration = 1000;
-	private int shotSubject = 0;
-	private double shotSide = 1;
-	private double shotSeed = 0;
+	Shot shot = Shot.WIDE;
+	double shotTime = 0;
+	double shotDuration = 1000;
+	int shotSubject = 0;
+	double shotSide = 1;
+	double shotSeed = 0;
 	/** How far the close shots are, the death is filmed from farther */
-	private double closeDistance = 100;
+	double closeDistance = 100;
 
 	// 2D on top: balloons, HUD, banners and the replay frame
-	private final Pane balloons = new Pane();
+	final Pane balloons = new Pane();
 	final Label banner = new Label();
 	final Label subBanner = new Label();
 	final Label loading = new Label("PREPARANDO A BATALHA");
@@ -277,7 +277,7 @@ public class BattleArena3D extends StackPane {
 	final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
 	final Map<Integer, Integer> roundWins = new HashMap<Integer, Integer>();
 	Phase phase = Phase.LOADING;
-	private double phaseTime = 0;
+	double phaseTime = 0;
 	int round = 0;
 	double turnPosition = 0;
 	private int lastTurnProcessed = -1;
@@ -289,9 +289,9 @@ public class BattleArena3D extends StackPane {
 	/** Where the fly by ends: the camera at the start of the battle */
 	private final double[] flyEyeEnd = new double[3];
 	/** The critter the fly by starts looking at, where it is when the fly by begins, or null */
-	private double[] flyFocus;
+	double[] flyFocus;
 	/** Where the critter the fly by starts on is now, while the camera stays on it */
-	private Supplier<double[]> flyFocusSource;
+	Supplier<double[]> flyFocusSource;
 	/** The animals that live around the field */
 	Critters critters;
 	/** The glacial sea of the ice arena: its middle and its radius, 0 when there is none */
@@ -313,8 +313,8 @@ public class BattleArena3D extends StackPane {
 	private int deadRobot = -1;
 	private int replayFrom;
 	private int replayTo;
-	private int fatalBullet = -1;
-	private int impactTurn = -1;
+	int fatalBullet = -1;
+	int impactTurn = -1;
 	boolean replayed = false;
 	// The photos of the key moments of the battle, see takePhoto
 	private final List<BattlePhoto> photos = new ArrayList<BattlePhoto>();
@@ -330,7 +330,7 @@ public class BattleArena3D extends StackPane {
 
 	// The presentation of the robots
 	private int showcaseOrder = 0;
-	private boolean versus = false;
+	boolean versus = false;
 	private Sound showcaseMusic;
 
 	private final AnimationTimer timer = new AnimationTimer() {
@@ -878,7 +878,7 @@ public class BattleArena3D extends StackPane {
 		};
 		this.yawSpeed = 0;
 		if (mode == ViewMode.CINEMATIC) {
-			this.pickShot(true);
+			this.director.pickShot(true);
 		}
 		this.hud.updateInfo();
 	}
@@ -968,7 +968,7 @@ public class BattleArena3D extends StackPane {
 
 		this.updateTension(dt);
 		this.announcer.tick(dt);
-		this.updateCamera(dt);
+		this.director.updateCamera(dt);
 		this.clock += dt * this.effectRate;
 		this.updateSurfaces();
 		this.updateAudio(dt);
@@ -1076,7 +1076,7 @@ public class BattleArena3D extends StackPane {
 	if (this.critters != null) {
 		this.critters.update(dt);
 	}
-	this.placeBalloons();
+	this.director.placeBalloons();
 	this.flushPhotos(dt);
 	}
 
@@ -1203,7 +1203,7 @@ public class BattleArena3D extends StackPane {
 		this.shotTime = 0;
 		this.shotDuration = INTRO_SECONDS + 2.5;
 		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
-		this.cut();
+		this.director.cut();
 		if (round == 0) {
 			// Before the first battle the camera flies over the arena first
 			this.beginFlyBy();
@@ -1246,7 +1246,7 @@ public class BattleArena3D extends StackPane {
 		RobotView subject = this.robots.get(this.shotSubject);
 		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
 		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
-		this.frameFighters(0, a, other == null ? a : other.position());
+		this.director.frameFighters(0, a, other == null ? a : other.position());
 		System.arraycopy(this.eyeTarget, 0, this.flyEyeEnd, 0, 3);
 		System.arraycopy(this.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = this.fovTarget;
@@ -1262,7 +1262,7 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/** How long the fly by stays on the critter before the trip: nothing if there is no critter */
-	private double flyByHold() {
+	double flyByHold() {
 		return this.flyFocusSource == null ? 0 : FLYBY_FOCUS_SECONDS;
 	}
 
@@ -1275,7 +1275,7 @@ public class BattleArena3D extends StackPane {
 	 * Puts the camera where the fly by is at the moment: through points around
 	 * the arena, low, that end framing both robots, where the battle starts
 	 */
-	private void flyByPose(double progress) {
+	void flyByPose(double progress) {
 		double w = this.fieldWidth;
 		double h = this.fieldHeight;
 		double mx = this.flyMirrorX;
@@ -1604,7 +1604,7 @@ public class BattleArena3D extends StackPane {
 		if (this.showcaseMusic != null) {
 			this.showcaseMusic.play();
 		}
-		this.cut();
+		this.director.cut();
 	}
 
 	/**
@@ -1634,7 +1634,7 @@ public class BattleArena3D extends StackPane {
 		Sfx.slam();
 		this.shot = Shot.WIDE;
 		this.shotTime = 0;
-		this.cut();
+		this.director.cut();
 	}
 
 	private void endShowcase() {
@@ -1677,7 +1677,7 @@ public class BattleArena3D extends StackPane {
 	 * Comes down from above to a low hero angle, circling and getting closer. The
 	 * robot stays on the side opposite to its card.
 	 */
-	private void showcaseShot(double[] robot) {
+	void showcaseShot(double[] robot) {
 		double t = this.phaseTime;
 		double crane = Math.max(0, 1 - t / 2.5);
 		crane = crane * crane;
@@ -1694,7 +1694,7 @@ public class BattleArena3D extends StackPane {
 		double rightX = fz / length;
 		double rightZ = -fx / length;
 		double offset = (this.showcaseOrder % 2 == 0 ? -1 : 1) * 34;
-		this.setShot(ex, ey, ez, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
+		this.director.setShot(ex, ey, ez, robot[0] + rightX * offset, -20, robot[2] + rightZ * offset, 40, 6);
 		this.rollTarget = (this.showcaseOrder % 2 == 0 ? 1 : -1) * 2.5 * crane;
 	}
 
@@ -1839,7 +1839,7 @@ public class BattleArena3D extends StackPane {
 		this.shotDuration = 1000;
 		this.shotSide = this.random.nextBoolean() ? 1 : -1;
 		this.showTurn(this.turns());
-		this.cut();
+		this.director.cut();
 	}
 
 	private void endReplay() {
@@ -1864,363 +1864,7 @@ public class BattleArena3D extends StackPane {
 		}
 		this.phase = Phase.PLAYING;
 		this.phaseTime = 0;
-		this.pickShot(true);
-	}
-
-	// ----------------------------------------------------------------- camera
-
-	/**
-	 * The camera jumps to the shot, like a cut in a movie
-	 */
-	private void cut() {
-		this.directShot(0);
-		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
-		System.arraycopy(this.lookTarget, 0, this.look, 0, 3);
-		this.fov = this.fovTarget;
-		this.roll = this.rollTarget;
-	}
-
-	/**
-	 * Chooses the next shot: faster cuts and closer shots when the fight is
-	 * tense
-	 */
-	private void pickShot(boolean cut) {
-		List<Integer> alive = this.robots.entrySet().stream().filter(e -> !e.getValue().dead).map(Map.Entry::getKey).toList();
-		double tension = Math.min(1, 0.55 * this.hitTension * 4 + this.lowestEnergyTension());
-
-		Shot[] options = { Shot.WIDE, Shot.CHASE, Shot.CHASE, Shot.LOW_TRACK, Shot.LOW_TRACK, Shot.CLOSE, Shot.CRANE };
-		Shot next;
-		do {
-			next = options[this.random.nextInt(options.length)];
-			if (tension > 0.5 && next == Shot.WIDE) {
-				next = Shot.CLOSE;
-			}
-		} while (next == this.shot && this.random.nextDouble() < 0.8);
-
-		this.shot = next;
-		this.shotTime = 0;
-		this.shotDuration = 5.5 - 3 * tension + this.random.nextDouble() * 1.5;
-		this.shotSubject = alive.isEmpty() ? 0 : alive.get(this.random.nextInt(alive.size()));
-		this.shotSide = this.random.nextBoolean() ? 1 : -1;
-		this.shotSeed = this.random.nextDouble() * Math.PI * 2;
-		this.closeDistance = 100;
-		if (cut) {
-			this.cut();
-		}
-	}
-
-	private double lowestEnergyTension() {
-		double lowest = 100;
-		for (RobotView view : this.robots.values()) {
-			if (!view.dead) {
-				lowest = Math.min(lowest, view.energy);
-			}
-		}
-		return 1 - Math.max(0, Math.min(100, lowest)) / 100;
-	}
-
-	/**
-	 * A strong hit may cut to the victim
-	 */
-	void impactCut(int victim, double power) {
-		if (this.viewMode != ViewMode.CINEMATIC || this.phase != Phase.PLAYING || this.shotTime < 1.2 || this.random.nextDouble() > 0.25 + power * 0.15) {
-			return;
-		}
-		this.shot = Shot.IMPACT;
-		this.shotSubject = victim;
-		this.shotTime = 0;
-		this.shotDuration = 1.6;
-		this.closeDistance = 90;
-	}
-
-	private void updateCamera(double dt) {
-		this.shotTime += dt;
-		if (this.viewMode == ViewMode.CINEMATIC || this.phase == Phase.REPLAY || this.phase == Phase.FREEZE || this.phase == Phase.SHOWCASE || this.phase == Phase.FLYBY) {
-			if (this.shotTime > this.shotDuration && this.phase == Phase.PLAYING) {
-				this.pickShot(false);
-			}
-			this.directShot(dt);
-		} else {
-			this.freeCamera(dt);
-		}
-
-		double ease = 1 - Math.exp(-this.follow * dt);
-		for (int i = 0; i < 3; i++) {
-			this.eye[i] += (this.eyeTarget[i] - this.eye[i]) * ease;
-			this.look[i] += (this.lookTarget[i] - this.look[i]) * ease;
-		}
-		this.fov += (this.fovTarget - this.fov) * ease;
-		this.roll += (this.rollTarget - this.roll) * ease;
-
-		// Shake of the explosions
-		this.shake = Math.min(40, this.shake) * Math.exp(-5 * dt);
-		double sx = (this.random.nextDouble() - 0.5) * this.shake;
-		double sy = (this.random.nextDouble() - 0.5) * this.shake;
-		double sz = (this.random.nextDouble() - 0.5) * this.shake;
-
-		double fx = this.look[0] - this.eye[0];
-		double fy = this.look[1] - this.eye[1];
-		double fz = this.look[2] - this.eye[2];
-		double distance = Math.max(1, Math.sqrt(fx * fx + fy * fy + fz * fz));
-
-		this.camera.setFieldOfView(this.fov);
-		this.cameraLook.setX(this.look[0] + sx);
-		this.cameraLook.setY(this.look[1] + sy);
-		this.cameraLook.setZ(this.look[2] + sz);
-		this.cameraYaw.setAngle(Math.toDegrees(Math.atan2(fx, fz)));
-		this.cameraPitch.setAngle(Math.toDegrees(Math.asin(-fy / distance)));
-		this.cameraRoll.setAngle(this.roll + (this.random.nextDouble() - 0.5) * this.shake * 0.1);
-		this.cameraDistance.setZ(-distance);
-	}
-
-	/**
-	 * Free (orbit), isometric and top views
-	 */
-	private void freeCamera(double dt) {
-		if (this.viewMode == ViewMode.FREE && Math.abs(this.yawSpeed) > 0.1) {
-			// Momentum after a drag
-			this.targetYaw += this.yawSpeed * dt;
-			this.yawSpeed *= Math.exp(-4 * dt);
-		}
-		double ease = 1 - Math.exp(-5 * dt);
-		this.yaw += (this.targetYaw - this.yaw) * ease;
-		double wantedPitch = this.viewMode == ViewMode.FREE ? this.freePitch : this.viewMode.pitch;
-		this.pitch += (wantedPitch - this.pitch) * ease;
-		this.zoom += (this.targetZoom - this.zoom) * ease;
-
-		double aspect = Math.max(0.5, this.getWidth() / Math.max(1, this.getHeight()));
-		double tangent = Math.tan(Math.toRadians(this.viewMode.fov / 2));
-		double distance;
-		if (this.viewMode == ViewMode.TOP_DOWN) {
-			distance = Math.max(this.fieldHeight / 2 * 1.3, this.fieldWidth / 2 * 1.08 / aspect) / tangent;
-		} else {
-			distance = 0.5 * Math.hypot(this.fieldWidth, this.fieldHeight) * 0.78 / tangent / Math.min(1, aspect);
-		}
-		distance *= this.zoom;
-
-		double yawRad = Math.toRadians(this.yaw);
-		double pitchRad = Math.toRadians(this.pitch);
-		// Forward of the camera for this yaw and pitch
-		double fx = Math.cos(pitchRad) * Math.sin(yawRad);
-		double fy = -Math.sin(pitchRad);
-		double fz = Math.cos(pitchRad) * Math.cos(yawRad);
-		this.lookTarget[0] = 0;
-		this.lookTarget[1] = -10;
-		this.lookTarget[2] = 0;
-		this.eyeTarget[0] = -fx * distance;
-		this.eyeTarget[1] = -10 - fy * distance;
-		this.eyeTarget[2] = -fz * distance;
-		this.fovTarget = this.viewMode.fov;
-		this.rollTarget = 0;
-		this.follow = 6;
-	}
-
-	/**
-	 * Where the cinematic camera is and looks, for the current shot
-	 */
-	private void directShot(double dt) {
-		RobotView subject = this.robots.get(this.shotSubject);
-		RobotView other = this.robots.values().stream().filter(v -> v != subject).findFirst().orElse(subject);
-		double[] a = subject == null ? new double[] { 0, 0, 0 } : subject.position();
-		double[] b = other == null ? a : other.position();
-		this.rollTarget = 0;
-
-		if (this.phase == Phase.FLYBY) {
-			// The camera stays on the critter, following it, and then the trip begins
-			double hold = this.flyByHold();
-			if (this.phaseTime < hold) {
-				this.flyFocus = this.flyFocusSource.get();
-			}
-			this.flyByPose(Math.max(0, Math.min(1, (this.phaseTime - hold) / FLYBY_SECONDS)));
-			return;
-		}
-		if (this.phase == Phase.SHOWCASE && !this.versus) {
-			this.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
-			return;
-		}
-
-		if (this.shot == Shot.FATAL) {
-			this.fatalShot(a);
-			this.keepClear();
-			this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
-			return;
-		}
-
-		// When a bot wins, focus the camera directly on the victor!
-		List<RobotView> livingRobots = this.robots.values().stream().filter(v -> !v.dead).toList();
-		boolean roundOver = this.phase == Phase.ROUND_END || this.phase == Phase.FINISHED;
-		RobotView winner = null;
-		// Not while a death is held on screen: the wreck is framed then, see freezeForReplay
-		if (this.robots.size() >= 2 && livingRobots.size() == 1 && this.phase != Phase.FREEZE) {
-			winner = livingRobots.get(0);
-		} else if (roundOver && this.robots.containsKey(this.shotSubject)) {
-			winner = this.robots.get(this.shotSubject);
-		}
-
-		if (winner != null) {
-			this.cinematicOrbitAngle += dt * 0.35;
-			double[] winPos = winner.position();
-			double winDist = 175.0; // Heroic victory framing
-			double winHeight = -42.0; // Elevated view looking proud at the victor
-			double winAngle = this.cinematicOrbitAngle;
-
-			this.setShot(winPos[0] + Math.cos(winAngle) * winDist, winHeight, winPos[2] + Math.sin(winAngle) * winDist,
-					winPos[0], -18, winPos[2], 44.0, 3.5);
-			this.rollTarget = 0;
-			this.keepClear();
-			this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
-			return;
-		}
-
-		this.frameFighters(dt, a, b);
-	}
-
-	/**
-	 * Frames both fighters: the camera circles them on a flank, looking at the
-	 * middle between them, far enough away to keep both in view
-	 */
-	private void frameFighters(double dt, double[] a, double[] b) {
-		double[] mid = { (a[0] + b[0]) / 2, -16, (a[2] + b[2]) / 2 };
-		double dx = b[0] - a[0];
-		double dz = b[2] - a[2];
-		double separation = Math.max(10, Math.hypot(dx, dz));
-		double ux = dx / separation;
-		double uz = dz / separation;
-		// Perpendicular to the line between them
-		double px = -uz * this.shotSide;
-		double pz = ux * this.shotSide;
-		this.cinematicOrbitAngle += dt * 0.25;
-
-		// Calculate distance required to guarantee both robots are comfortably inside the field of view
-		// Fit the bounding circle encompassing both combatants to the horizontal field of view
-		double aspect = Math.max(0.5, this.getWidth() / Math.max(1.0, this.getHeight()));
-		double fovVal = 48.0;
-		double vFovRad = Math.toRadians(fovVal);
-		double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspect);
-
-		// Boxing referee camera: continuously seeks the best angle of the fight,
-		// circling the combatants on the flank to keep both clearly in sight.
-		double curDx = this.eye[0] - mid[0];
-		double curDz = this.eye[2] - mid[2];
-		double curAngle = Math.atan2(curDz, curDx);
-
-		// The two flanks perpendicular to the combat line
-		double flankAngle1 = Math.atan2(pz, px);
-		double flankAngle2 = Math.atan2(-pz, -px);
-
-		// Maintain continuity with the referee's current position around the fighters
-		double diff1 = Math.abs(Math.atan2(Math.sin(flankAngle1 - curAngle), Math.cos(flankAngle1 - curAngle)));
-		double diff2 = Math.abs(Math.atan2(Math.sin(flankAngle2 - curAngle), Math.cos(flankAngle2 - curAngle)));
-		double baseFlank = diff1 <= diff2 ? flankAngle1 : flankAngle2;
-
-		// Dynamic 3/4 angle & referee footwork: gently pacing to keep an unobstructed view
-		double pacing = Math.sin(this.cinematicOrbitAngle) * 0.16;
-		double bestAngle = baseFlank + pacing;
-
-		// Frame both combatants with generous margins so neither leaves the view nor feels cramped
-		double sphereRadius = separation * 0.5 + 80.0;
-		double fitDist = sphereRadius / Math.tan(hFovRad * 0.35);
-
-		// Well-balanced ringside distance: neither too zoomed out nor right in the robot treads
-		double targetDist = Math.max(420.0, fitDist);
-		if (this.shot == Shot.IMPACT || this.hitTension > 0.15) {
-			targetDist *= 0.95;
-		}
-
-		// Elevation: ringside referee perspective looking slightly down into the arena
-		double eyeY = -Math.max(65.0, targetDist * 0.23);
-
-		// Roll target: subtle dynamic tilt on impacts, otherwise level
-		this.rollTarget = (this.shot == Shot.IMPACT ? 2.0 : 0.5) * Math.sin(this.cinematicOrbitAngle);
-
-		// Aim directly at the midpoint between the fighters
-		this.setShot(mid[0] + Math.cos(bestAngle) * targetDist, eyeY, mid[2] + Math.sin(bestAngle) * targetDist,
-				mid[0], -16, mid[2], fovVal, 3.5);
-		this.keepClear();
-		// Never under the floor
-		this.eyeTarget[1] = Math.min(this.eyeTarget[1], -10);
-	}
-
-	/**
-	 * The camera never goes inside a robot: if one is too close, the camera
-	 * moves away from it and up
-	 */
-	private void keepClear() {
-		for (RobotView view : this.robots.values()) {
-			double[] position = view.position();
-			double dx = this.eyeTarget[0] - position[0];
-			double dz = this.eyeTarget[2] - position[2];
-			double distance = Math.hypot(dx, dz);
-			double minimum = 65;
-			if (distance < minimum && this.eyeTarget[1] > -80) {
-				if (distance < 1) {
-					dx = 1;
-					dz = 0;
-					distance = 1;
-				}
-				this.eyeTarget[0] = position[0] + dx / distance * minimum;
-				this.eyeTarget[2] = position[2] + dz / distance * minimum;
-				this.eyeTarget[1] = Math.min(this.eyeTarget[1], -45);
-			}
-		}
-	}
-
-	/**
-	 * The replay: the camera rides behind the fatal bullet and then watches the
-	 * robot explode from the side
-	 */
-	private void fatalShot(double[] victim) {
-		Group bullet = this.bullets.get(this.fatalBullet);
-		double turn = this.turnPosition;
-		if (bullet != null && this.impactTurn >= 0 && turn < this.impactTurn) {
-			double bx = bullet.getTranslateX();
-			double bz = bullet.getTranslateZ();
-			double dx = victim[0] - bx;
-			double dz = victim[2] - bz;
-			double length = Math.max(1, Math.hypot(dx, dz));
-			double ux = dx / length;
-			double uz = dz / length;
-			this.setShot(bx - ux * 120 - uz * 22 * this.shotSide, -30, bz - uz * 120 + ux * 22 * this.shotSide, bx + ux * 140, -20, bz + uz * 140, 38, 9);
-			this.rollTarget = -5 * this.shotSide;
-		} else {
-			// Side view of the victim, slowly getting closer
-			double angle = this.shotSeed + this.phaseTime * 0.15;
-			double radius = 175 - Math.min(35, this.phaseTime * 5);
-			this.setShot(victim[0] + Math.cos(angle) * radius, -26, victim[2] + Math.sin(angle) * radius, victim[0], -18, victim[2], 36, 4);
-			this.rollTarget = 4 * this.shotSide;
-		}
-	}
-
-	private void setShot(double ex, double ey, double ez, double lx, double ly, double lz, double fov, double follow) {
-		this.eyeTarget[0] = ex;
-		this.eyeTarget[1] = ey;
-		this.eyeTarget[2] = ez;
-		this.lookTarget[0] = lx;
-		this.lookTarget[1] = ly;
-		this.lookTarget[2] = lz;
-		this.fovTarget = fov;
-		this.follow = follow;
-	}
-
-	/**
-	 * The name and energy balloons follow their robots on the screen
-	 */
-	private void placeBalloons() {
-		boolean show = this.phase != Phase.LOADING && this.phase != Phase.REPLAY && this.phase != Phase.SHOWCASE && this.phase != Phase.FLYBY;
-		for (RobotView view : this.robots.values()) {
-			Point3D scene = view.root.localToScene(new Point3D(0, -62, 0), true);
-			if (scene == null || !show) {
-				view.balloon.setVisible(false);
-				continue;
-			}
-			Point2D local = this.balloons.sceneToLocal(scene.getX(), scene.getY());
-			boolean inside = local != null && local.getX() > -100 && local.getY() > -100 && local.getX() < this.getWidth() + 100 && local.getY() < this.getHeight() + 100;
-			view.balloon.setVisible(inside);
-			if (inside) {
-				view.balloon.autosize();
-				view.balloon.relocate(local.getX() - view.balloon.getWidth() / 2, local.getY() - view.balloon.getHeight());
-			}
-		}
+		this.director.pickShot(true);
 	}
 
 	private static double lerp(double a, double b, double t) {

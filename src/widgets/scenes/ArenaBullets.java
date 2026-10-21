@@ -267,7 +267,7 @@ final class ArenaBullets {
 			host.audio.hitAt(bullet.power(), host.worldX(x), host.worldZ(y));
 			host.hitTension = Math.min(0.25, host.hitTension + 0.08 + bullet.power() * 0.03);
 			host.shake += 3 + bullet.power() * 3;
-			host.impactCut(bullet.victim(), bullet.power());
+			host.director.impactCut(bullet.victim(), bullet.power());
 			// The first hit that hurts of the round is kept as a photo
 			RobotView shooter = host.robots.get(bullet.owner());
 			if (host.phase == Phase.PLAYING && !host.hitPhotoTaken && bullet.power() >= PHOTO_HIT_POWER && shooter != null) {
