@@ -141,11 +141,22 @@ public final class FxSupport {
 	 * dialogs wait for it.
 	 */
 	public static void onNextDialog(Consumer<Region> action) {
+		onNextDialogs(action);
+	}
+
+	/**
+	 * Runs the actions on the dialogs that show up one after another: each action
+	 * runs on the next dialog, once the dialog before it was closed.
+	 */
+	@SafeVarargs
+	public static void onNextDialogs(Consumer<Region>... actions) {
 		Thread answering = new Thread(() -> {
-			for (int attempt = 0; attempt < 200; attempt++) {
-				sleep(50);
-				if (runOnDialog(action)) {
-					return;
+			for (Consumer<Region> action : actions) {
+				for (int attempt = 0; attempt < 200; attempt++) {
+					sleep(50);
+					if (runOnDialog(action)) {
+						break;
+					}
 				}
 			}
 		}, "answer-dialog");

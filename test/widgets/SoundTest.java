@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
 
@@ -34,5 +35,21 @@ class SoundTest {
 		assertFalse(Sound.isPlayable(new byte[0]));
 		assertFalse(Sound.isPlayable(null));
 		assertNull(Sound.fromBytes(null, "x"));
+	}
+
+	@Test
+	void aMissingResourceHasNoSound() {
+		assertNull(Sound.fromResource(Sound.class, "nao-existe.mp3"));
+	}
+
+	@Test
+	void aSoundThatCanNotBePlayedStopsQuietly() throws InterruptedException {
+		Sound noise = Sound.fromBytes("isso não é áudio".getBytes(StandardCharsets.UTF_8), "ruido");
+
+		noise.play();
+		Thread.sleep(300);
+		noise.stop();
+
+		assertFalse(Sound.isPlayable("isso não é áudio".getBytes(StandardCharsets.UTF_8)));
 	}
 }

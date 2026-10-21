@@ -235,4 +235,13 @@ class BracketTest {
 			assertEquals(3, placements.get(podium.get(2)));
 		}
 	}
+
+	@Test
+	void aSlotWithoutSourceIsAByeAndTheRoundsHaveNames() {
+		Bracket five = new Bracket(ids(5), false);
+		assertTrue(five.getMatches().stream().anyMatch(m -> m.getA().describeSource().equals("Folga") || m.getB().describeSource().equals("Folga")));
+
+		Bracket thirtyTwo = new Bracket(ids(32), false);
+		assertEquals("1ª rodada", thirtyTwo.winnersRoundName(1));
+	}
 }

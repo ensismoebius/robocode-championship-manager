@@ -47,6 +47,7 @@ public final class GameWindow {
 	 */
 	private static final Deque<Node> modals = new ArrayDeque<>();
 
+	private static Runnable exitAction = Platform::exit;
 	private static boolean closing = false;
 	private static boolean fullScreenRequested = false;
 
@@ -182,7 +183,17 @@ public final class GameWindow {
 		while (!GameWindow.modals.isEmpty()) {
 			Platform.exitNestedEventLoop(GameWindow.modals.pop(), null);
 		}
-		Platform.exit();
+		GameWindow.exitAction.run();
+	}
+
+	/**
+	 * Replaces what stops the program when it quits: the tests change it, since the
+	 * toolkit can be stopped only once. The window is open again for the next
+	 * program, so the dialogs answer as usual.
+	 */
+	public static void setExitAction(Runnable action) {
+		GameWindow.exitAction = action;
+		GameWindow.closing = false;
 	}
 
 	/**

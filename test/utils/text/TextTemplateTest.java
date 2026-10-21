@@ -1,11 +1,14 @@
 package utils.text;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,5 +49,25 @@ class TextTemplateTest {
 		String out = t.out("main");
 		assertTrue(out.contains("function f() {") && out.contains("return {};"), out);
 		assertFalse(out.contains("null"));
+	}
+
+	@Test
+	void theAssignmentsCanBeReadAndReplaced() throws IOException {
+		TextTemplate template = new TextTemplate(new ByteArrayInputStream("<!-- begin:bloco --> oi <!-- end:bloco -->".getBytes(StandardCharsets.UTF_8)));
+		template.assign("nome", "Ana");
+		assertEquals("Ana", template.getAllAssignments().get("nome"));
+
+		HashMap<String, Object> replaced = new HashMap<String, Object>();
+		replaced.put("nome", "Bia");
+		template.setAllAssignments(replaced);
+		assertEquals("Bia", template.getAllAssignments().get("nome"));
+		assertEquals(1, template.getAllAssignments().size());
+	}
+
+	@Test
+	void aBlockThatIsNotInTheTemplateCanNotBeParsed() throws IOException {
+		TextTemplate template = new TextTemplate(new ByteArrayInputStream("<!-- begin:bloco --> oi <!-- end:bloco -->".getBytes(StandardCharsets.UTF_8)));
+
+		assertThrows(IllegalArgumentException.class, () -> template.parse("ausente"));
 	}
 }

@@ -2,12 +2,12 @@ package utils.robocode;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-
 import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
@@ -75,5 +75,21 @@ class BattleRecordingTest {
 	void classicBattleHasNoTurns() {
 		BattleRecording recording = BattleRecording.parse(List.of("1\tsample.Walls\t216", "2\tsample.SpinBot\t0"));
 		assertTrue(recording.isEmpty());
+	}
+
+	@Test
+	void aRobotThatIsNotInTheRecordingIsNotFound() {
+		BattleRecording recording = BattleRecording.parse(List.of("#N 0 sample.Walls"));
+
+		assertNull(recording.getRobot(99));
+	}
+
+	@Test
+	void aTurnOfALaterRoundCreatesTheRoundsBeforeIt() {
+		BattleRecording recording = BattleRecording.parse(List.of("#T 2 0|0 1 2 3 4 5 6 7|"));
+
+		assertEquals(3, recording.getRounds().size());
+		assertTrue(recording.getRounds().get(0).isEmpty());
+		assertEquals(1, recording.getRounds().get(2).size());
 	}
 }

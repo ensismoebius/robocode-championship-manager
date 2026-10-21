@@ -6,11 +6,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import javafx.application.Platform;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import support.ChampionshipFixture;
@@ -112,6 +114,20 @@ class KeyBindingsTest {
 		press(KeyCode.Q, true);
 
 		assertNotNull(GameWindow.getWindow());
+	}
+
+	@Test
+	void theQuitKeyEndsTheProgramWhenTheOperatorConfirms() {
+		AtomicBoolean ended = new AtomicBoolean();
+		GameWindow.setExitAction(() -> ended.set(true));
+		try {
+			FxSupport.answerNextDialog(Boolean.TRUE);
+			press(KeyCode.Q, true);
+		} finally {
+			GameWindow.setExitAction(Platform::exit);
+		}
+
+		assertTrue(ended.get());
 	}
 
 	@Test

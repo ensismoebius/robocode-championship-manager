@@ -245,6 +245,11 @@ public class TextTemplate {
 					return indexes;
 				}
 
+				// An empty map has no block inside, nothing to look for there
+				if (map.isEmpty()) {
+					continue;
+				}
+
 				// Acces the next level of template
 				String blockName = (String) map.keySet().toArray()[0];
 				List<Object> res = this.getBlockIndexes((ArrayList<?>) map.get(blockName), blockNameToFind, blockName);

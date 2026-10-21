@@ -47,4 +47,9 @@ class BattleMomentServiceTest {
 
 		assertTrue(BattleMomentService.photosOf(2, List.of(1L)).isEmpty());
 	}
+
+	@Test
+	void noRobotsHaveNoPhotos() {
+		assertTrue(BattleMomentService.photosOf(1, List.of()).isEmpty());
+	}
 }

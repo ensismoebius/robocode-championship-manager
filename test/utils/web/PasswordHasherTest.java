@@ -33,4 +33,9 @@ class PasswordHasherTest {
 	void escapesHtml() {
 		assertTrue(Html.escape("<a href=\"x\">'&'</a>").equals("&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;"));
 	}
+
+	@Test
+	void aStoredHashWithBrokenParametersDoesNotMatch() {
+		assertFalse(PasswordHasher.verify("s3cret", "pbkdf2$muitas$c2FsdA==$aGFzaA=="));
+	}
 }
