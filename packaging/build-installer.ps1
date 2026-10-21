@@ -12,6 +12,8 @@ foreach ($tool in 'java', 'jpackage', 'jlink', 'jdeps', 'mvn') {
 [xml]$pom = Get-Content pom.xml
 $version = $pom.project.version
 $jar = "target\RobocodeChampManager-$version-all.jar"
+# Windows needs 2 to 4 numeric parts in the version: "5" becomes "5.0"
+$windowsVersion = if ($version -notmatch '\.') { "$version.0" } else { $version }
 
 Write-Host "Building $jar..."
 mvn -B -q -DskipTests package
@@ -34,7 +36,7 @@ if ($LASTEXITCODE -ne 0) { throw "jlink failed" }
 
 jpackage --type exe `
     --name RobocodeChampManager `
-    --app-version $version `
+    --app-version $windowsVersion `
     --vendor "André Furlan" `
     --description "Gerenciador de campeonatos de robocode" `
     --input $stage `
