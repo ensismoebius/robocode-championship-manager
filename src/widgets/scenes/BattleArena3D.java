@@ -25,7 +25,6 @@ import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
 import javafx.animation.ScaleTransition;
-import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
@@ -122,18 +121,6 @@ public class BattleArena3D extends StackPane {
 	private static final double ROUND_END_SECONDS = 2.8;
 	/** The headline of a special battle, after the last round */
 	private static final double HEADLINE_SECONDS = 3.4;
-	/** How long a comment stays, and how long it may wait to be shown */
-	private static final double COMMENT_SECONDS = 3.2;
-	/**
-	 * The commentary only shows up now and then, always with the presenter of the
-	 * event: the more important a comment, the sooner after the last one it may
-	 * come and the surer it is to come. The ones that do not pass are not told.
-	 */
-	private static final double[] COMMENT_COOLDOWN = { 15, 15, 12, 12, 8, 8, 8 };
-	private static final double[] COMMENT_CHANCE = { 0, 0.5, 0.7, 0.7, 1, 1, 1 };
-	private static final double COMMENT_MAX_WAIT = 4;
-	/** Callouts shown at the same time on each side */
-	private static final int MAX_CALLOUTS = 3;
 	/** The action stops for a moment when a robot dies, then the replay */
 	private static final double FREEZE_SECONDS = 1.3;
 	/** The photos of the key moments are kept small, as JPEG */
@@ -153,7 +140,7 @@ public class BattleArena3D extends StackPane {
 	private static final double REPLAY_IMPACT_SPEED = 0.07;
 	private static final double REPLAY_AFTER_SPEED = 0.22;
 
-	private static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
+	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
 	private static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
 	private enum ViewMode {
@@ -175,14 +162,14 @@ public class BattleArena3D extends StackPane {
 		WIDE, CHASE, LOW_TRACK, CLOSE, CRANE, IMPACT, FATAL
 	}
 
-	private enum Phase {
+	enum Phase {
 		LOADING, SHOWCASE, FLYBY, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
 	}
 
 	private final List<Opponent> fighters;
 	private Runnable onFinished;
 	private final BattleAudio audio = new BattleAudio();
-	private final Random random = new Random();
+	final Random random = new Random();
 
 	// 3D
 	private final Group world = new Group();
@@ -298,7 +285,7 @@ public class BattleArena3D extends StackPane {
 	private final Region whiteFlash = new Region();
 
 	// Playback
-	private BattleRecording recording;
+	BattleRecording recording;
 	double fieldWidth = 800;
 	private double fieldHeight = 600;
 	private final Map<Integer, RobotView> robots = new HashMap<Integer, RobotView>();
@@ -307,7 +294,7 @@ public class BattleArena3D extends StackPane {
 	private final Set<Integer> bulletsExploded = new HashSet<Integer>();
 	private final Set<Integer> lowEnergyWarned = new HashSet<Integer>();
 	private final Map<Integer, Integer> roundWins = new HashMap<Integer, Integer>();
-	private Phase phase = Phase.LOADING;
+	Phase phase = Phase.LOADING;
 	private double phaseTime = 0;
 	private int round = 0;
 	private double turnPosition = 0;
@@ -354,26 +341,10 @@ public class BattleArena3D extends StackPane {
 
 	// Callouts and comments
 	private BattleCommentary commentary;
-	/** The presenter of the event being commented */
-	private final Presenter presenter = new Presenter(190);
-	private final Label liveTag = new Label("●");
-	private final StackPane commentaryLayer = new StackPane();
-	private final VBox calloutsLeft = new VBox(8);
-	private final VBox calloutsRight = new VBox(8);
-	private final VBox calloutsCenter = new VBox(8);
-	private final HBox ticker = new HBox(14);
-	private final Label commentText = new Label();
-	private BattleCommentary.Message comment;
-	private double commentAge;
-	private double commentClock;
-	/** When a presenter showed up for the last time */
-	private double lastPresented = -1000;
-	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
+	private final ArenaCommentary announcer = new ArenaCommentary(this);
 	private BattleCommentary.Headline headline;
 	private boolean headlineShown = false;
 
-	private record QueuedComment(BattleCommentary.Message message, double since) {
-	}
 
 	// The presentation of the robots
 	private int showcaseOrder = 0;
@@ -456,7 +427,7 @@ public class BattleArena3D extends StackPane {
 		this.showcaseLayer.setMouseTransparent(true);
 		this.showcaseLayer.setPickOnBounds(false);
 
-		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.buildCommentary(), this.buildHud(), this.whiteFlash, scanlines);
+		this.getChildren().setAll(this.subScene, this.balloons, this.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.buildHud(), this.whiteFlash, scanlines);
 
 		this.installControls();
 		this.showBanner("", null);
@@ -1638,7 +1609,7 @@ public class BattleArena3D extends StackPane {
 		return speed == Math.rint(speed) ? String.valueOf((int) speed) : String.valueOf(speed);
 	}
 
-	private static String toCss(Color color) {
+	static String toCss(Color color) {
 		return String.format("#%02x%02x%02x", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
 	}
 
@@ -1824,7 +1795,7 @@ public class BattleArena3D extends StackPane {
 		}
 
 		this.updateTension(dt);
-		this.tickComments(dt);
+		this.announcer.tick(dt);
 		this.updateCamera(dt);
 		this.clock += dt * this.effectRate;
 		this.updateSurfaces();
@@ -1893,7 +1864,7 @@ public class BattleArena3D extends StackPane {
 				this.headlineShown = true;
 				this.phaseTime = 0;
 				this.showBanner(this.headline.title(), this.headline.subtitle());
-				this.announce(this.headline.subtitle(), 6);
+				this.announcer.announce(this.headline.subtitle(), 6);
 				this.banner.setStyle("-fx-font-size: 46px;");
 				Sfx.fanfare();
 			} else {
@@ -2041,7 +2012,7 @@ public class BattleArena3D extends StackPane {
 				this.commentary.lastRoundStarts();
 			}
 		}
-		this.commentQueue.clear();
+		this.announcer.clearQueue();
 		for (RobotView view : this.robots.values()) {
 			view.reset();
 		}
@@ -2083,7 +2054,7 @@ public class BattleArena3D extends StackPane {
 		this.showBanner(this.roundTitle, this.roundSubtitle);
 		this.audio.roundCall();
 		this.audio.setMusicOn(true);
-		this.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (this.round + 1) + "! Preparem os motores!", 5);
+		this.announcer.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (this.round + 1) + "! Preparem os motores!", 5);
 		this.updateInfo();
 	}
 
@@ -2179,7 +2150,7 @@ public class BattleArena3D extends StackPane {
 		this.phaseTime = 0;
 
 		List<RobotState> alive = turns.get(turns.size() - 1).robots().stream().filter(r -> !r.isDead()).toList();
-		this.say(this.commentary.roundEnd(alive.size() == 1 ? alive.get(0).index() : -1));
+		this.announcer.say(this.commentary.roundEnd(alive.size() == 1 ? alive.get(0).index() : -1));
 		if (this.round + 1 == this.recording.getRounds().size()) {
 			this.headline = this.commentary.battleEnd();
 		}
@@ -2188,7 +2159,7 @@ public class BattleArena3D extends StackPane {
 			this.roundWins.merge(winner, 1, Integer::sum);
 			RobotView view = this.robots.get(winner);
 			this.showBanner("K.O.!", (view == null ? "" : view.displayName) + " vence o round");
-			this.announce("K.O.! " + (view == null ? "" : view.displayName) + " vence o round!", 5);
+			this.announcer.announce("K.O.! " + (view == null ? "" : view.displayName) + " vence o round!", 5);
 			this.audio.knockOut();
 			// The winner, from close
 			this.shot = Shot.CLOSE;
@@ -2567,7 +2538,7 @@ public class BattleArena3D extends StackPane {
 	 * Shots, hits and deaths happen once, when their turn is reached
 	 */
 	private void turnEvents(Turn turn, Turn previous, int turnIndex) {
-		this.say(this.commentary.turn(turn, previous));
+		this.announcer.say(this.commentary.turn(turn, previous));
 		for (Bullet bullet : turn.bullets()) {
 			if (!bullet.isHit()) {
 				this.bulletFired(bullet, bullet.x(), bullet.y());
@@ -3072,211 +3043,6 @@ public class BattleArena3D extends StackPane {
 		this.effect(new Timeline(new KeyFrame(Duration.seconds(seconds), new KeyValue(this.flashLight.colorProperty(), Color.BLACK)))).play();
 	}
 
-	// ------------------------------------------------------------- commentary
-
-	/**
-	 * Callouts on the side of each player, under the energy bars, and the
-	 * commentator at the bottom
-	 */
-	private Node buildCommentary() {
-		this.calloutsLeft.setAlignment(Pos.TOP_LEFT);
-		this.calloutsRight.setAlignment(Pos.TOP_RIGHT);
-		this.calloutsCenter.setAlignment(Pos.TOP_CENTER);
-		for (VBox column : List.of(this.calloutsLeft, this.calloutsRight, this.calloutsCenter)) {
-			column.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-		}
-		StackPane.setAlignment(this.calloutsLeft, Pos.TOP_LEFT);
-		StackPane.setMargin(this.calloutsLeft, new Insets(130, 0, 0, 40));
-		StackPane.setAlignment(this.calloutsRight, Pos.TOP_RIGHT);
-		StackPane.setMargin(this.calloutsRight, new Insets(130, 40, 0, 0));
-		StackPane.setAlignment(this.calloutsCenter, Pos.TOP_CENTER);
-		StackPane.setMargin(this.calloutsCenter, new Insets(130, 0, 0, 0));
-
-		Label tag = this.liveTag;
-		tag.getStyleClass().add("arena-comment-tag");
-		this.commentText.getStyleClass().add("arena-comment-text");
-		this.commentText.setWrapText(true);
-		this.ticker.getChildren().addAll(tag, this.commentText);
-		this.ticker.setAlignment(Pos.CENTER_LEFT);
-		this.ticker.getStyleClass().add("arena-comment");
-		this.ticker.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-		this.ticker.setOpacity(0);
-		// The presenter stands at the left, the comment beside it
-		StackPane.setAlignment(this.presenter, Pos.BOTTOM_LEFT);
-		StackPane.setMargin(this.presenter, new Insets(0, 0, 40, 28));
-		StackPane.setAlignment(this.ticker, Pos.BOTTOM_LEFT);
-		StackPane.setMargin(this.ticker, new Insets(0, 0, 64, 250));
-		this.ticker.maxWidthProperty().bind(this.widthProperty().subtract(300).multiply(0.9));
-
-		this.commentaryLayer.getChildren().addAll(this.presenter, this.calloutsLeft, this.calloutsRight, this.calloutsCenter, this.ticker);
-		this.commentaryLayer.setMouseTransparent(true);
-		this.commentaryLayer.setPickOnBounds(false);
-		return this.commentaryLayer;
-	}
-
-	/**
-	 * Shows what the commentary said, nothing during the replay: it was said
-	 * already
-	 */
-	private void say(List<BattleCommentary.Message> messages) {
-		if (this.phase == Phase.REPLAY) {
-			return;
-		}
-		for (BattleCommentary.Message message : messages) {
-			if (message.callout()) {
-				this.callout(message);
-			} else {
-				this.queueComment(message);
-			}
-		}
-	}
-
-	/**
-	 * Position of the robot in the battle: 0 is on the left, 1 on the right
-	 */
-	private int orderOf(int robot) {
-		List<BattleRecording.Robot> list = this.recording.getRobots();
-		for (int i = 0; i < list.size(); i++) {
-			if (list.get(i).getIndex() == robot) {
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	private Color toneColor(BattleCommentary.Message message) {
-		return switch (message.tone()) {
-		case DANGER -> Color.web("#ff2a2a");
-		case GOLD -> Theme.ACCENT;
-		case NEUTRAL -> Color.web("#eef2fa");
-		case PLAYER -> {
-			int order = this.orderOf(message.robot());
-			yield order < 0 ? Theme.ACCENT : PLAYER_COLORS[order % PLAYER_COLORS.length];
-		}
-		};
-	}
-
-	/**
-	 * A big word that pops on the side of the robot and goes away
-	 */
-	private void callout(BattleCommentary.Message message) {
-		int order = this.orderOf(message.robot());
-		VBox column = order == 0 ? this.calloutsLeft : order == 1 ? this.calloutsRight : this.calloutsCenter;
-		Color color = this.toneColor(message);
-
-		Label label = new Label(message.text());
-		label.getStyleClass().add("arena-callout");
-		label.setTextFill(color);
-		label.setEffect(Theme.glow(color, 16));
-		label.setRotate(order == 0 ? -4 : order == 1 ? 4 : 0);
-		// The same callout again pops again, it is not repeated
-		column.getChildren().removeIf(node -> node instanceof Label other && other.getText().equals(message.text()));
-		if (column.getChildren().size() >= MAX_CALLOUTS) {
-			column.getChildren().remove(0);
-		}
-		column.getChildren().add(label);
-
-		ScaleTransition pop = new ScaleTransition(Duration.millis(280), label);
-		pop.setFromX(2.2);
-		pop.setFromY(2.2);
-		pop.setToX(1);
-		pop.setToY(1);
-		pop.setInterpolator(Theme.OVERSHOOT);
-		FadeTransition fade = new FadeTransition(Duration.millis(400), label);
-		fade.setToValue(0);
-		TranslateTransition rise = new TranslateTransition(Duration.millis(400), label);
-		rise.setByY(-18);
-		SequentialTransition life = new SequentialTransition(pop, new PauseTransition(Duration.millis(message.tone() == BattleCommentary.Tone.DANGER ? 2200 : 1500)),
-				new ParallelTransition(fade, rise));
-		life.setOnFinished(event -> column.getChildren().remove(label));
-		life.play();
-		if (message.tone() == BattleCommentary.Tone.DANGER) {
-			Timeline blink = new Timeline(new KeyFrame(Duration.millis(160), event -> label.setVisible(!label.isVisible())));
-			blink.setCycleCount(12);
-			blink.setOnFinished(event -> label.setVisible(true));
-			blink.play();
-		}
-	}
-
-	/**
-	 * A more important comment cuts the current one, the others wait their turn
-	 */
-	private void queueComment(BattleCommentary.Message message) {
-		if (this.comment == null || message.priority() > this.comment.priority() && this.commentAge > 0.6) {
-			// If it is not time for it, it is dropped
-			this.showComment(message);
-			return;
-		}
-		this.commentQueue.add(new QueuedComment(message, this.commentClock));
-		this.commentQueue.sort((a, b) -> Integer.compare(b.message().priority(), a.message().priority()));
-		while (this.commentQueue.size() > 3) {
-			this.commentQueue.remove(this.commentQueue.size() - 1);
-		}
-	}
-
-	/**
-	 * The presenter of a moment of the game (a round that begins, a knock out)
-	 * says a line
-	 */
-	private void announce(String text, int priority) {
-		this.queueComment(new BattleCommentary.Message(false, text, -1, BattleCommentary.Tone.NEUTRAL, priority, Topic.SHOW));
-	}
-
-	/**
-	 * Whether it is time for this comment, by its importance and the time since
-	 * the last one
-	 */
-	private boolean commentAllowed(BattleCommentary.Message message) {
-		int level = Math.max(0, Math.min(COMMENT_COOLDOWN.length - 1, message.priority()));
-		return this.commentClock - this.lastPresented >= COMMENT_COOLDOWN[level] && this.random.nextDouble() < COMMENT_CHANCE[level];
-	}
-
-	/**
-	 * Shows the comment with the presenter of its topic
-	 *
-	 * @return false if it was not time for it and it was dropped
-	 */
-	private boolean showComment(BattleCommentary.Message message) {
-		if (!this.commentAllowed(message)) {
-			return false;
-		}
-		this.lastPresented = this.commentClock;
-		this.presenter.present(message.topic(), COMMENT_SECONDS + 0.4);
-		this.liveTag.setText("● " + message.topic().presenter.toUpperCase());
-		this.comment = message;
-		this.commentAge = 0;
-		this.commentText.setText(message.text());
-		Color color = message.robot() < 0 ? Theme.ACCENT : this.toneColor(message);
-		this.ticker.setStyle("-fx-border-color: " + toCss(color) + ";");
-		this.ticker.setOpacity(1);
-		TranslateTransition slide = new TranslateTransition(Duration.millis(220), this.ticker);
-		slide.setFromX(-60);
-		slide.setToX(0);
-		slide.setInterpolator(Interpolator.EASE_OUT);
-		slide.play();
-		return true;
-	}
-
-	private void tickComments(double dt) {
-		this.commentClock += dt;
-		this.presenter.tick(dt);
-		if (this.comment != null) {
-			this.commentAge += dt;
-			if (this.commentAge > COMMENT_SECONDS) {
-				this.comment = null;
-				FadeTransition fade = new FadeTransition(Duration.millis(250), this.ticker);
-				fade.setToValue(0);
-				fade.play();
-			}
-		}
-		// Old news are not told
-		this.commentQueue.removeIf(queued -> this.commentClock - queued.since() > COMMENT_MAX_WAIT);
-		if (this.comment == null && !this.commentQueue.isEmpty() && this.phase != Phase.REPLAY) {
-			// Not time for it: dropped, the next one may have its turn
-			this.showComment(this.commentQueue.remove(0).message());
-		}
-	}
-
 	// --------------------------------------------------------------- showcase
 
 	/**
@@ -3359,7 +3125,7 @@ public class BattleArena3D extends StackPane {
 		String names = String.join("  ×  ", this.recording.getRobots().stream().map(r -> this.robots.get(r.getIndex()).displayName.toUpperCase()).toList());
 		this.showBanner("VS", names + "\n\nARENA: " + this.style.label.toUpperCase());
 		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
-		this.announce(switch (this.stageImportance) {
+		this.announcer.announce(switch (this.stageImportance) {
 		case SEMIFINAL -> "Atenção, é uma SEMIFINAL! " + versusLine + " Quem vence vai para a final!";
 		case FINAL -> "Atenção, é a FINAL! " + versusLine + " Quem vencer leva a glória!";
 		default -> versusLine;
