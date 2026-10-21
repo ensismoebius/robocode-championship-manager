@@ -464,7 +464,7 @@ final class RobotView {
 			return;
 		}
 		this.bodyMaterial.setDiffuseColor(Color.WHITE);
-		PauseTransition back = host.effect(new PauseTransition(Duration.millis(110)));
+		PauseTransition back = host.fx.effect(new PauseTransition(Duration.millis(110)));
 		back.setOnFinished(event -> this.bodyMaterial.setDiffuseColor(this.bodyColor));
 		back.play();
 	}
@@ -497,20 +497,20 @@ final class RobotView {
 		// The bolt from the sky strikes first
 		LowPoly strikeGlow = new LowPoly();
 		LowPoly strikeCore = new LowPoly();
-		host.bolt(strikeGlow, strikeCore, new double[] { 0, -420, 0 }, center, 0.6, 0);
+		host.fx.bolt(strikeGlow, strikeCore, new double[] { 0, -420, 0 }, center, 0.6, 0);
 		Group strike = new Group(shape(strikeGlow.mesh, energy(tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.45)), shape(strikeCore.mesh, energy(Color.WHITE, 1)));
 		blast.getChildren().add(strike);
 		all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(120), event -> strike.setVisible(false))));
 		// The shock wave: rings spreading on the floor from the wreck
 		Color air = tint.interpolate(Color.WHITE, 0.7);
-		host.shockwave(blast, all, -1, 300, 0, 900, air);
-		host.shockwave(blast, all, -1, 210, 160, 750, Color.web("#8fe9ff"));
-		host.shockwave(blast, all, -1, 130, 0, 500, Color.WHITE);
-		host.discharge(blast, all, center, -1, 9, 110, 0.4, tint, 60);
-		host.discharge(blast, all, center, -1, 7, 90, 0.35, tint, 400);
-		host.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
-		host.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
-		host.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
+		host.fx.shockwave(blast, all, -1, 300, 0, 900, air);
+		host.fx.shockwave(blast, all, -1, 210, 160, 750, Color.web("#8fe9ff"));
+		host.fx.shockwave(blast, all, -1, 130, 0, 500, Color.WHITE);
+		host.fx.discharge(blast, all, center, -1, 9, 110, 0.4, tint, 60);
+		host.fx.discharge(blast, all, center, -1, 7, 90, 0.35, tint, 400);
+		host.fx.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
+		host.fx.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
+		host.fx.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
 
 		// The smoke rising from the wreck: particles, like the fire of the burning robots,
 		// thick and dark since it is destroyed
@@ -535,7 +535,7 @@ final class RobotView {
 			piece.setTranslateY(-15);
 			this.debris.getChildren().add(piece);
 			double reach = 120 + host.random.nextDouble() * 180;
-			all.getChildren().add(host.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 70 + host.random.nextDouble() * 120, 1500));
+			all.getChildren().add(host.fx.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 70 + host.random.nextDouble() * 120, 1500));
 		}
 
 		// The turret and the radar are thrown in the air
@@ -568,10 +568,10 @@ final class RobotView {
 						new KeyValue(this.body.translateZProperty(), hullZ, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 35, Interpolator.EASE_OUT))));
 
 		host.effects.getChildren().add(blast);
-		host.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
+		host.fx.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
 		this.running.add(all);
 		all.play();
-		host.lightFlash(x, z, tint, 1.4);
+		host.fx.lightFlash(x, z, tint, 1.4);
 
 		this.nameLabel.setText("☠ " + this.displayName);
 		this.balloon.setOpacity(0.6);
