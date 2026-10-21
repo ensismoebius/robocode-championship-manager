@@ -4782,6 +4782,77 @@ public class BattleArena3D extends StackPane {
 		}
 	}
 
+	/** How a particle of each kind starts: its life, size, speed, texture; damage makes the flames bigger and the smoke darker */
+	private void setUp(Particle p, ParticleKind kind, double damage) {
+	switch (kind) {
+	case FLAME -> {
+		p.life = 0.35 + this.random.nextDouble() * 0.35;
+		// Some tongues burn blue all the way, the others only at the base
+		p.shade = this.random.nextDouble();
+		p.size = 9 + this.random.nextDouble() * 6 + damage * 8;
+		p.vx = (this.random.nextDouble() - 0.5) * 10;
+		p.vz = (this.random.nextDouble() - 0.5) * 10;
+		p.vy = -(32 + this.random.nextDouble() * 22 + damage * 25);
+		// Flames stay upright, only a little sway
+		p.spin.setAngle((this.random.nextDouble() - 0.5) * 16);
+		p.spinSpeed = (this.random.nextDouble() - 0.5) * 30;
+		p.material.setDiffuseMap(FLAME_TEXTURE);
+	}
+	case SMOKE -> {
+		p.life = 1.6 + this.random.nextDouble() * 1.4;
+		p.size = 9 + this.random.nextDouble() * 6;
+		p.vx = (this.random.nextDouble() - 0.5) * 8 + 6;
+		p.vz = (this.random.nextDouble() - 0.5) * 8 + 3;
+		p.vy = -(20 + this.random.nextDouble() * 14);
+		p.spinSpeed = (this.random.nextDouble() - 0.5) * 70;
+		// Thicker and blacker when almost destroyed
+		p.shade = 0.16 - 0.1 * damage + this.random.nextDouble() * 0.06;
+		p.material.setDiffuseMap(SMOKE_TEXTURE);
+	}
+	case EMBER -> {
+		p.life = 2.5 + this.random.nextDouble() * 2;
+		p.size = 1.3 + this.random.nextDouble() * 1.2;
+		p.vx = (this.random.nextDouble() - 0.5) * 12;
+		p.vz = (this.random.nextDouble() - 0.5) * 12;
+		p.vy = -(18 + this.random.nextDouble() * 24);
+		p.spinSpeed = 0;
+		p.shade = this.random.nextDouble();
+		p.material.setDiffuseMap(SOFT_TEXTURE);
+	}
+	case FIREFLY -> {
+		p.life = 5 + this.random.nextDouble() * 4;
+		p.size = 2.6 + this.random.nextDouble() * 1.6;
+		p.vx = (this.random.nextDouble() - 0.5) * 14;
+		p.vz = (this.random.nextDouble() - 0.5) * 14;
+		p.vy = (this.random.nextDouble() - 0.5) * 8;
+		p.spinSpeed = 0;
+		p.shade = this.random.nextDouble();
+		p.material.setDiffuseMap(SOFT_TEXTURE);
+	}
+	case SNOW -> {
+		p.life = 12;
+		p.size = 2.6 + this.random.nextDouble() * 2.2;
+		p.vx = 5 + this.random.nextDouble() * 5;
+		p.vz = (this.random.nextDouble() - 0.5) * 6;
+		p.vy = 36 + this.random.nextDouble() * 26;
+		p.spinSpeed = 0;
+		p.shade = this.random.nextDouble();
+		p.material.setDiffuseMap(SOFT_TEXTURE);
+	}
+	case SPARK -> {
+		p.life = 0.5 + this.random.nextDouble() * 0.5;
+		p.size = 1.6 + this.random.nextDouble() * 1.4;
+		double angle = this.random.nextDouble() * Math.PI * 2;
+		double speed = 30 + this.random.nextDouble() * 50;
+		p.vx = Math.cos(angle) * speed;
+		p.vz = Math.sin(angle) * speed;
+		p.vy = -(60 + this.random.nextDouble() * 70);
+		p.spinSpeed = 0;
+		p.material.setDiffuseMap(FLAME_TEXTURE);
+	}
+	}
+	}
+
 	private Particle spawn(ParticleKind kind, double x, double y, double z, double damage) {
 		Particle p = this.particlePool.isEmpty() ? new Particle() : this.particlePool.remove(this.particlePool.size() - 1);
 		p.kind = kind;
@@ -4791,73 +4862,7 @@ public class BattleArena3D extends StackPane {
 		p.z = z;
 		p.age = 0;
 		p.spin.setAngle(this.random.nextDouble() * 360);
-		switch (kind) {
-		case FLAME -> {
-			p.life = 0.35 + this.random.nextDouble() * 0.35;
-			// Some tongues burn blue all the way, the others only at the base
-			p.shade = this.random.nextDouble();
-			p.size = 9 + this.random.nextDouble() * 6 + damage * 8;
-			p.vx = (this.random.nextDouble() - 0.5) * 10;
-			p.vz = (this.random.nextDouble() - 0.5) * 10;
-			p.vy = -(32 + this.random.nextDouble() * 22 + damage * 25);
-			// Flames stay upright, only a little sway
-			p.spin.setAngle((this.random.nextDouble() - 0.5) * 16);
-			p.spinSpeed = (this.random.nextDouble() - 0.5) * 30;
-			p.material.setDiffuseMap(FLAME_TEXTURE);
-		}
-		case SMOKE -> {
-			p.life = 1.6 + this.random.nextDouble() * 1.4;
-			p.size = 9 + this.random.nextDouble() * 6;
-			p.vx = (this.random.nextDouble() - 0.5) * 8 + 6;
-			p.vz = (this.random.nextDouble() - 0.5) * 8 + 3;
-			p.vy = -(20 + this.random.nextDouble() * 14);
-			p.spinSpeed = (this.random.nextDouble() - 0.5) * 70;
-			// Thicker and blacker when almost destroyed
-			p.shade = 0.16 - 0.1 * damage + this.random.nextDouble() * 0.06;
-			p.material.setDiffuseMap(SMOKE_TEXTURE);
-		}
-		case EMBER -> {
-			p.life = 2.5 + this.random.nextDouble() * 2;
-			p.size = 1.3 + this.random.nextDouble() * 1.2;
-			p.vx = (this.random.nextDouble() - 0.5) * 12;
-			p.vz = (this.random.nextDouble() - 0.5) * 12;
-			p.vy = -(18 + this.random.nextDouble() * 24);
-			p.spinSpeed = 0;
-			p.shade = this.random.nextDouble();
-			p.material.setDiffuseMap(SOFT_TEXTURE);
-		}
-		case FIREFLY -> {
-			p.life = 5 + this.random.nextDouble() * 4;
-			p.size = 2.6 + this.random.nextDouble() * 1.6;
-			p.vx = (this.random.nextDouble() - 0.5) * 14;
-			p.vz = (this.random.nextDouble() - 0.5) * 14;
-			p.vy = (this.random.nextDouble() - 0.5) * 8;
-			p.spinSpeed = 0;
-			p.shade = this.random.nextDouble();
-			p.material.setDiffuseMap(SOFT_TEXTURE);
-		}
-		case SNOW -> {
-			p.life = 12;
-			p.size = 2.6 + this.random.nextDouble() * 2.2;
-			p.vx = 5 + this.random.nextDouble() * 5;
-			p.vz = (this.random.nextDouble() - 0.5) * 6;
-			p.vy = 36 + this.random.nextDouble() * 26;
-			p.spinSpeed = 0;
-			p.shade = this.random.nextDouble();
-			p.material.setDiffuseMap(SOFT_TEXTURE);
-		}
-		case SPARK -> {
-			p.life = 0.5 + this.random.nextDouble() * 0.5;
-			p.size = 1.6 + this.random.nextDouble() * 1.4;
-			double angle = this.random.nextDouble() * Math.PI * 2;
-			double speed = 30 + this.random.nextDouble() * 50;
-			p.vx = Math.cos(angle) * speed;
-			p.vz = Math.sin(angle) * speed;
-			p.vy = -(60 + this.random.nextDouble() * 70);
-			p.spinSpeed = 0;
-			p.material.setDiffuseMap(FLAME_TEXTURE);
-		}
-		}
+		this.setUp(p, kind, damage);
 		// Too many: it is made, but not shown
 		if (this.particles.size() < 900) {
 			this.particles.add(p);
