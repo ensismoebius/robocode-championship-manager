@@ -90,7 +90,7 @@ final class NeonCity {
 	void skyline(int count, Random random) {
 		for (int i = 0; i < count; i++) {
 			double angle = random.nextDouble() * Math.PI * 2;
-			double distance = 2300 + random.nextDouble() * 2000;
+			double distance = 1500 + random.nextDouble() * 1100;
 			double height = 250 + Math.pow(random.nextDouble(), 2.2) * 1700;
 			this.addTower(Math.cos(angle) * distance * 1.2, Math.sin(angle) * distance, 150 + random.nextDouble() * 260, 150 + random.nextDouble() * 260, height, random);
 		}

@@ -646,7 +646,7 @@ public class BattleArena3D extends StackPane {
 		}
 		this.glowing.getChildren().add(this.meshView(pylonLights, this.neonGlow(Color.web("#ff3fa4"), true, random)));
 
-		// A dim grid out to the horizon
+		// A grid out to the horizon, dimmer than the field, so the battle is what stands out
 		TriangleMesh far = new TriangleMesh();
 		double reach = 3600;
 		for (int j = 1; j <= 35; j++) {
@@ -665,7 +665,7 @@ public class BattleArena3D extends StackPane {
 			NeonCity.box(far, -(w / 2 + continuationX / 2), 4.6, z, continuationX, 0.8, 3);
 			NeonCity.box(far, w / 2 + continuationX / 2, 4.6, z, continuationX, 0.8, 3);
 		}
-		this.glowing.getChildren().add(this.meshView(far, this.neonGlow(Color.web("#0d4f73"), false, random)));
+		this.glowing.getChildren().add(this.meshView(far, this.neonGlow(Color.web("#07283a"), false, random)));
 
 		// The skyline: towers with lit windows and neon crowns
 		NeonCity city = new NeonCity();
@@ -761,17 +761,80 @@ public class BattleArena3D extends StackPane {
 		this.flow(new double[][] { { x1 - px, y, z1 - pz }, { x2 - px, y, z2 - pz }, { x2 + px, y, z2 + pz }, { x1 + px, y, z1 + pz } }, -speed, 0, material, tile);
 	}
 
+	/**
+	 * A flat ribbon along a winding line, with its own half width at each point: a
+	 * single mesh, so the texture runs on without a seam at the joints
+	 */
+	private void flowRibbon(double[] xs, double[] zs, double[] halfWidths, double y, double du, double dv, PhongMaterial material, double tile) {
+		int count = xs.length;
+		TriangleMesh mesh = new TriangleMesh();
+		float[] texture = new float[4 * count];
+		double along = 0;
+		for (int i = 0; i < count; i++) {
+			if (i > 0) {
+				along += Math.hypot(xs[i] - xs[i - 1], zs[i] - zs[i - 1]);
+			}
+			// The side of the ribbon: across the direction of the line
+			double dx = xs[Math.min(i + 1, count - 1)] - xs[Math.max(i - 1, 0)];
+			double dz = zs[Math.min(i + 1, count - 1)] - zs[Math.max(i - 1, 0)];
+			double length = Math.hypot(dx, dz);
+			double sx = -dz / length * halfWidths[i];
+			double sz = dx / length * halfWidths[i];
+			mesh.getPoints().addAll((float) (xs[i] + sx), (float) y, (float) (zs[i] + sz), (float) (xs[i] - sx), (float) y, (float) (zs[i] - sz));
+			// Along the line the texture grows with the length, across it with the width
+			float u = (float) (along / tile);
+			float v = (float) (2 * halfWidths[i] / tile);
+			texture[4 * i] = u;
+			texture[4 * i + 1] = 0;
+			texture[4 * i + 2] = u;
+			texture[4 * i + 3] = v;
+		}
+		mesh.getTexCoords().addAll(texture);
+		for (int i = 0; i < count - 1; i++) {
+			int left = 2 * i;
+			int right = left + 1;
+			int nextLeft = left + 2;
+			int nextRight = left + 3;
+			mesh.getFaces().addAll(left, left, nextLeft, nextLeft, nextRight, nextRight);
+			mesh.getFaces().addAll(left, left, nextRight, nextRight, right, right);
+		}
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		this.arena.getChildren().add(view);
+		this.flows.add(new Flow(mesh, texture, du, dv));
+	}
+
+	/**
+	 * A river from one side of the field to the other, meandering around a line at
+	 * distance centre from the middle, its banks wider and narrower in turn
+	 */
+	private void river(double fromX, double toX, double sign, double centre, double phase, double width, double speed, PhongMaterial material, double tile) {
+		int count = 150;
+		double[] xs = new double[count];
+		double[] zs = new double[count];
+		double[] halfWidths = new double[count];
+		for (int i = 0; i < count; i++) {
+			double x = fromX + (toX - fromX) * i / (count - 1);
+			double bend = 45 * Math.sin(x / 330 + phase) + 22 * Math.sin(x / 120 + 1.7 + 2 * phase) + 10 * Math.sin(x / 57 + 0.3 * phase);
+			xs[i] = x;
+			zs[i] = sign * (centre + bend);
+			halfWidths[i] = width / 2 * (0.8 + 0.3 * (0.5 + 0.5 * Math.sin(x / 190 + 0.9 + phase)));
+		}
+		this.flowRibbon(xs, zs, halfWidths, 3, -speed, 0, material, tile);
+	}
+
 	private static double distance2(double[] a, double[] b) {
 		return (a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]) + (a[2] - b[2]) * (a[2] - b[2]);
 	}
 
 	private void updateFlows() {
-		float[] coordinates = new float[8];
 		for (Flow flow : this.flows) {
+			float[] coordinates = new float[flow.base().length];
 			// Kept small: the texture repeats every 1
 			float u = (float) ((this.clock * flow.du()) % 1);
 			float v = (float) ((this.clock * flow.dv()) % 1);
-			for (int i = 0; i < 4; i++) {
+			for (int i = 0; i < coordinates.length / 2; i++) {
 				coordinates[2 * i] = flow.base()[2 * i] + u;
 				coordinates[2 * i + 1] = flow.base()[2 * i + 1] + v;
 			}
@@ -963,11 +1026,11 @@ public class BattleArena3D extends StackPane {
 		seams.setTranslateY(2.6);
 		this.arena.getChildren().addAll(ground, seams);
 
+		// Each plate is a block of ice with its own veins, frost and cracks
 		PhongMaterial[] ice = new PhongMaterial[3];
-		String[] tones = { "#5b83a6", "#6990b3", "#5276a0" };
+		int[] tones = { 0x7fa9cc, 0x8cb8dc, 0x6f98c0 };
 		for (int i = 0; i < ice.length; i++) {
-			ice[i] = new PhongMaterial(Color.web(tones[i]));
-			ice[i].setSpecularColor(Color.WHITE);
+			ice[i] = textured(IceTexture.block(tones[i], 5 + i), Color.WHITE);
 			ice[i].setSpecularPower(90);
 		}
 		for (double x = 0; x < w; x += 100) {
@@ -978,26 +1041,196 @@ public class BattleArena3D extends StackPane {
 			}
 		}
 
-		// Clusters of crystals far away
-		PhongMaterial crystal = new PhongMaterial(Color.web("#a9dcf5"));
-		crystal.setSpecularColor(Color.WHITE);
-		crystal.setSpecularPower(100);
+		// The glacial sea west of the field, beyond the snow of its edges
+		double seaRadius = 600;
+		double seaX = -(w / 2 + 60 + 1.25 * seaRadius);
+		double seaZ = h * 0.1;
+		this.buildSea(seaX, seaZ, seaRadius, crystals);
+
+		// Snow piled outside the plates, with shards of ice standing in it
+		PhongMaterial snow = material(Color.web("#eef6fc"));
+		snow.setSpecularPower(20);
+		PhongMaterial shardMaterial = material(Color.web("#d6f1ff"));
+		shardMaterial.setSpecularColor(Color.WHITE);
+		shardMaterial.setSpecularPower(100);
+		TriangleMesh shards = new TriangleMesh();
+		shards.getTexCoords().addAll(0, 0);
+		for (int i = 0; i < 90; i++) {
+			// A point just outside one of the four edges of the field
+			int side = crystals.nextInt(4);
+			double off = 8 + crystals.nextDouble() * 40;
+			double along = crystals.nextDouble() - 0.5;
+			double x = side < 2 ? (side == 0 ? -1 : 1) * (w / 2 + off) : along * (w + 80);
+			double z = side < 2 ? along * (h + 80) : (side == 2 ? -1 : 1) * (h / 2 + off);
+			if (Math.hypot(x - seaX, z - seaZ) < seaRadius * 1.3) {
+				continue;
+			}
+			if (i % 3 == 0) {
+				// A drift of snow, half sunk in the ground
+				double radius = 6 + crystals.nextDouble() * 14;
+				Sphere drift = new Sphere(radius, 10);
+				drift.setMaterial(snow);
+				drift.setScaleY(0.45);
+				drift.setTranslateX(x);
+				drift.setTranslateY(5 - radius * 0.2);
+				drift.setTranslateZ(z);
+				this.arena.getChildren().add(drift);
+			} else {
+				crystal(shards, x, 5, z, 2 + crystals.nextDouble() * 3, 8 + crystals.nextDouble() * 14, 5, crystals);
+			}
+		}
+		this.addIce(shards, shardMaterial);
+
+		// Clusters of crystals far away, out of the sea
+		TriangleMesh far = new TriangleMesh();
+		far.getTexCoords().addAll(0, 0);
 		for (int i = 0; i < 12; i++) {
 			double angle = i * Math.PI * 2 / 12 + crystals.nextDouble() * 0.3;
 			double distance = 900 + crystals.nextDouble() * 800;
 			double cx = Math.cos(angle) * distance;
 			double cz = Math.sin(angle) * distance;
+			if (Math.hypot(cx - seaX, cz - seaZ) < seaRadius * 1.4) {
+				continue;
+			}
 			int count = 3 + crystals.nextInt(3);
 			for (int k = 0; k < count; k++) {
 				double height = 90 + crystals.nextDouble() * 240;
-				Cylinder spike = new Cylinder(18 + crystals.nextDouble() * 28, height, 6);
-				spike.setMaterial(crystal);
-				spike.setTranslateX(cx + (crystals.nextDouble() - 0.5) * 120);
-				spike.setTranslateZ(cz + (crystals.nextDouble() - 0.5) * 120);
-				spike.setTranslateY(5 - height / 2 + 10);
-				spike.getTransforms().addAll(new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.Z_AXIS), new Rotate((crystals.nextDouble() - 0.5) * 50, Rotate.X_AXIS));
-				this.arena.getChildren().add(spike);
+				crystal(far, cx + (crystals.nextDouble() - 0.5) * 120, 8, cz + (crystals.nextDouble() - 0.5) * 120, 18 + crystals.nextDouble() * 28, height, 6 + crystals.nextInt(2), crystals);
 			}
+		}
+		PhongMaterial crystalMaterial = new PhongMaterial(Color.web("#a9dcf5"));
+		crystalMaterial.setSpecularColor(Color.WHITE);
+		crystalMaterial.setSpecularPower(100);
+		this.addIce(far, crystalMaterial);
+	}
+
+	/**
+	 * A glacial sea: open dark water with a wavy shore, floes of cracked ice drifting
+	 * over it, icebergs standing in it and snow along the shore
+	 */
+	private void buildSea(double centreX, double centreZ, double radius, Random random) {
+		double surface = 4.6;
+		int sides = 72;
+		TriangleMesh water = new TriangleMesh();
+		water.getTexCoords().addAll(0, 0);
+		water.getPoints().addAll((float) centreX, (float) surface, (float) centreZ);
+		for (int i = 0; i < sides; i++) {
+			double angle = i * Math.PI * 2 / sides;
+			double r = shore(angle, radius);
+			water.getPoints().addAll((float) (centreX + Math.cos(angle) * r), (float) surface, (float) (centreZ + Math.sin(angle) * r));
+		}
+		for (int i = 0; i < sides; i++) {
+			int a = 1 + i;
+			int b = 1 + (i + 1) % sides;
+			water.getFaces().addAll(0, 0, a, 0, b, 0);
+		}
+		PhongMaterial sea = material(Color.web("#14365e"));
+		sea.setSpecularColor(Color.WHITE);
+		sea.setSpecularPower(90);
+		this.addIce(water, sea);
+
+		// The floes: rough discs of cracked ice, in several sizes, kept off the shore
+		TriangleMesh floes = new TriangleMesh();
+		for (int i = 0; i < 150; i++) {
+			double angle = random.nextDouble() * Math.PI * 2;
+			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.85;
+			double fx = centreX + Math.cos(angle) * distance;
+			double fz = centreZ + Math.sin(angle) * distance;
+			double size = 14 + random.nextDouble() * 32;
+			int floeSides = 7 + random.nextInt(3);
+			int offset = floes.getPoints().size() / 3;
+			floes.getPoints().addAll((float) fx, (float) (surface - 0.2), (float) fz);
+			floes.getTexCoords().addAll(0.5f, 0.5f);
+			for (int k = 0; k < floeSides; k++) {
+				double a = k * Math.PI * 2 / floeSides + random.nextDouble() * 0.3;
+				double r = size * (0.7 + 0.35 * random.nextDouble());
+				double cos = Math.cos(a);
+				double sin = Math.sin(a);
+				floes.getPoints().addAll((float) (fx + cos * r), (float) (surface - 0.2 - random.nextDouble() * 0.3), (float) (fz + sin * r));
+				floes.getTexCoords().addAll((float) (0.5 + cos * 0.5), (float) (0.5 + sin * 0.5));
+			}
+			for (int k = 0; k < floeSides; k++) {
+				int a = offset + 1 + k;
+				int b = offset + 1 + (k + 1) % floeSides;
+				floes.getFaces().addAll(offset, offset, a, a, b, b);
+			}
+		}
+		PhongMaterial floeIce = textured(IceTexture.block(0xc4ecfa, 11), Color.WHITE);
+		floeIce.setSpecularPower(60);
+		this.addIce(floes, floeIce);
+
+		// Icebergs standing in the water
+		TriangleMesh bergs = new TriangleMesh();
+		bergs.getTexCoords().addAll(0, 0);
+		for (int i = 0; i < 7; i++) {
+			double angle = random.nextDouble() * Math.PI * 2;
+			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.6;
+			crystal(bergs, centreX + Math.cos(angle) * distance, surface + 0.4, centreZ + Math.sin(angle) * distance, 40 + random.nextDouble() * 40, 30 + random.nextDouble() * 50, 8, random);
+		}
+		PhongMaterial berg = material(Color.web("#e8f8ff"));
+		berg.setSpecularColor(Color.WHITE);
+		berg.setSpecularPower(100);
+		this.addIce(bergs, berg);
+
+		// Snow along the shore
+		PhongMaterial snow = material(Color.web("#eef6fc"));
+		snow.setSpecularPower(20);
+		for (int i = 0; i < sides; i += 3) {
+			double angle = i * Math.PI * 2 / sides;
+			double r = shore(angle, radius) * 1.03;
+			Sphere rim = new Sphere(9 + random.nextDouble() * 10, 8);
+			rim.setMaterial(snow);
+			rim.setScaleY(0.5);
+			rim.setTranslateX(centreX + Math.cos(angle) * r);
+			rim.setTranslateY(surface - 0.4);
+			rim.setTranslateZ(centreZ + Math.sin(angle) * r);
+			this.arena.getChildren().add(rim);
+		}
+	}
+
+	/** The distance from the middle of the sea to its shore, at an angle: wavy, never a circle */
+	private static double shore(double angle, double radius) {
+		return radius * (1 + 0.10 * Math.sin(3 * angle + 0.7) + 0.06 * Math.sin(7 * angle + 2.1) + 0.03 * Math.sin(13 * angle + 0.4));
+	}
+
+	/** Adds a mesh of ice, with its material, to the arena */
+	private void addIce(TriangleMesh mesh, PhongMaterial material) {
+		MeshView view = new MeshView(mesh);
+		view.setMaterial(material);
+		view.setCullFace(CullFace.NONE);
+		this.arena.getChildren().add(view);
+	}
+
+	/**
+	 * A crystal of ice: a faceted spike on its base, leaning, its tip off the middle.
+	 * It is added to the mesh, so many crystals make one mesh
+	 */
+	private static void crystal(TriangleMesh mesh, double x, double baseY, double z, double radius, double height, int sides, Random random) {
+		int offset = mesh.getPoints().size() / 3;
+		double tipX = x + (random.nextDouble() - 0.5) * radius;
+		double tipZ = z + (random.nextDouble() - 0.5) * radius;
+		double turn = random.nextDouble() * Math.PI * 2;
+		double middleX = x + (tipX - x) * 0.5;
+		double middleZ = z + (tipZ - z) * 0.5;
+		for (int i = 0; i < sides; i++) {
+			double angle = turn + i * Math.PI * 2 / sides;
+			double r = radius * (0.75 + 0.35 * random.nextDouble());
+			mesh.getPoints().addAll((float) (x + Math.cos(angle) * r), (float) baseY, (float) (z + Math.sin(angle) * r));
+		}
+		for (int i = 0; i < sides; i++) {
+			double angle = turn + (i + 0.5) * Math.PI * 2 / sides;
+			double r = radius * (0.5 + 0.3 * random.nextDouble());
+			mesh.getPoints().addAll((float) (middleX + Math.cos(angle) * r), (float) (baseY - height * 0.5), (float) (middleZ + Math.sin(angle) * r));
+		}
+		mesh.getPoints().addAll((float) tipX, (float) (baseY - height), (float) tipZ);
+		int tip = offset + 2 * sides;
+		for (int i = 0; i < sides; i++) {
+			int base = offset + i;
+			int nextBase = offset + (i + 1) % sides;
+			int middle = offset + sides + i;
+			int nextMiddle = offset + sides + (i + 1) % sides;
+			mesh.getFaces().addAll(base, 0, nextBase, 0, nextMiddle, 0, base, 0, nextMiddle, 0, middle, 0);
+			mesh.getFaces().addAll(middle, 0, nextMiddle, 0, tip, 0);
 		}
 	}
 
@@ -1149,10 +1382,10 @@ public class BattleArena3D extends StackPane {
 				box(3, 0.6, h, w / 2, -0.3, 0, sand));
 
 		// Rivers along the long sides, flowing in opposite directions
-		double riverZ = h / 2 + 120;
+		double riverZ = h / 2 + 160;
 		double riverWidth = 96;
-		this.flowStrip(-3000, -riverZ, 3000, -riverZ, riverWidth, 3, 0.16, water, 120);
-		this.flowStrip(3000, riverZ, -3000, riverZ, riverWidth, 3, 0.16, water, 120);
+		this.river(-3000, 3000, -1, riverZ, 0, riverWidth, 0.16, water, 120);
+		this.river(3000, -3000, 1, riverZ, 2.3, riverWidth, 0.16, water, 120);
 
 		// Waterfalls far at both ends, falling from a cliff to a pool
 		PhongMaterial rock = textured(JungleTexture.BARK, Color.gray(0.1));
@@ -1199,7 +1432,7 @@ public class BattleArena3D extends StackPane {
 				x = (wild.nextDouble() - 0.5) * (w + 1700);
 				z = (wild.nextDouble() - 0.5) * (h + 1300);
 				// Not in the field, not in the rivers
-			} while (Math.abs(x) < w / 2 + 25 && Math.abs(z) < h / 2 + 25 || Math.abs(Math.abs(z) - riverZ) < riverWidth / 2 + 14);
+			} while (Math.abs(x) < w / 2 + 25 && Math.abs(z) < h / 2 + 25 || Math.abs(Math.abs(z) - riverZ) < riverWidth / 2 + 14 + 80);
 			this.fern(ferns[wild.nextInt(ferns.length)], x, z, wild);
 		}
 		for (int i = 0; i < ferns.length; i++) {

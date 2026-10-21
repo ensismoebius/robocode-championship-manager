@@ -154,7 +154,7 @@ final class JungleTexture {
 		return image(pixels);
 	}
 
-	private static Image image(int[] pixels) {
+	static Image image(int[] pixels) {
 		WritableImage image = new WritableImage(SIZE, SIZE);
 		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);
 		return image;
@@ -197,7 +197,7 @@ final class JungleTexture {
 		return image;
 	}
 
-	private static int mix(int a, int b, double t) {
+	static int mix(int a, int b, double t) {
 		t = Math.max(0, Math.min(1, t));
 		int r = (int) Math.round(((a >> 16) & 0xff) * (1 - t) + ((b >> 16) & 0xff) * t);
 		int g = (int) Math.round(((a >> 8) & 0xff) * (1 - t) + ((b >> 8) & 0xff) * t);

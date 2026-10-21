@@ -1,9 +1,13 @@
 package widgets.scenes;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -49,9 +53,10 @@ final class ForestBackdrop {
 			double angle = Math.PI * 2 * i / SEGMENTS;
 			double x = RADIUS * Math.cos(angle);
 			double z = RADIUS * Math.sin(angle);
-			// Two vertices per segment: the top of the picture, then the ground
+			// Two vertices per segment: the top of the picture, then the ground, which is
+			// the line where the undergrowth starts, so the moss of the field continues it
 			mesh.getPoints().addAll((float) x, (float) TOP, (float) z, (float) x, (float) GROUND, (float) z);
-			mesh.getTexCoords().addAll((float) i / SEGMENTS, 0, (float) i / SEGMENTS, 1);
+			mesh.getTexCoords().addAll((float) i / SEGMENTS, 0, (float) i / SEGMENTS, (float) UNDERGROWTH);
 		}
 		for (int i = 0; i < SEGMENTS; i++) {
 			int top = 2 * i;
@@ -97,40 +102,28 @@ final class ForestBackdrop {
 			}
 		}
 
-		// Misty crowns far away, many of them, so the line is thick
-		for (int i = 0; i < 620; i++) {
-			double radius = 18 + random.nextDouble() * 18;
-			crown(pixels, random.nextDouble() * WIDTH, HEIGHT * (0.22 + 0.10 * random.nextDouble()), radius, radius * 0.7, 0x7fbfa4, 0x3a7560);
+		// The trees, from the farthest to the nearest, so that each one covers the ones behind it.
+		// Depth sets the size and the height, and the haze of the air between the tree and the eye
+		List<Tree> trees = new ArrayList<>();
+		for (int i = 0; i < 900; i++) {
+			trees.add(new Tree(random, ground));
 		}
-		// Trunks of the nearer trees, between the crowns
-		for (int i = 0; i < 70; i++) {
-			double x = random.nextDouble() * WIDTH;
-			double half = 2 + random.nextDouble() * 3;
-			int top = (int) (HEIGHT * (0.44 + 0.08 * random.nextDouble()));
-			for (int y = top; y < ground; y++) {
-				for (int dx = (int) Math.floor(-half); dx <= half; dx++) {
-					int wx = Math.floorMod((int) x + dx, WIDTH);
-					double grain = LavaTexture.fbm(wx / (double) WIDTH * LavaTexture.PERIOD * 24, y / (double) HEIGHT * LavaTexture.PERIOD * 4, 2, 81);
-					pixels[y * WIDTH + wx] = mix(0x140c07, 0x3c2716, grain);
-				}
-			}
-		}
-		// The near crowns: bigger, brighter at the top, shaded at the edges
-		for (int i = 0; i < 420; i++) {
-			double radius = 40 + random.nextDouble() * 40;
-			int palette = random.nextInt(3);
-			int lit = palette == 0 ? 0x5fbf4a : palette == 1 ? 0x4fa84a : 0x6fc05a;
-			crown(pixels, random.nextDouble() * WIDTH, HEIGHT * (0.30 + 0.14 * random.nextDouble()), radius, radius * 0.62, lit, 0x163f22);
+		trees.sort(Comparator.comparingDouble(tree -> tree.depth));
+		for (Tree tree : trees) {
+			tree.paint(pixels);
 		}
 
-		// Undergrowth: the ground, and ferns standing on it
+		// Undergrowth: the ground, with the same moss as the field, darker toward the
+		// bottom, and ferns standing on it
+		PixelReader moss = JungleTexture.MOSS.getPixelReader();
+		int mossSize = (int) JungleTexture.MOSS.getWidth();
 		for (int y = (int) ground; y < HEIGHT; y++) {
+			double shade = 0.85 - 0.3 * (y - ground) / (HEIGHT - ground);
 			for (int x = 0; x < WIDTH; x++) {
-				double grain = LavaTexture.fbm(x / (double) WIDTH * LavaTexture.PERIOD * 24, y / (double) HEIGHT * LavaTexture.PERIOD * 6, 2, 82);
-				pixels[y * WIDTH + x] = mix(0x123a1e, 0x061509, (y - ground) / (HEIGHT - ground) + (grain - 0.5) * 0.6);
+				pixels[y * WIDTH + x] = scale(moss.getArgb(x % mossSize, y % mossSize), shade);
 			}
 		}
-		for (int i = 0; i < WIDTH / 6; i++) {
+		for (int i = 0; i < WIDTH / 2; i++) {
 			int x = random.nextInt(WIDTH);
 			int height = 10 + random.nextInt(26);
 			for (int k = 0; k < height; k++) {
@@ -149,6 +142,73 @@ final class ForestBackdrop {
 	}
 
 	/**
+	 * A tree: a trunk and a cluster of crowns. Its depth, from 0 far away to 1 close,
+	 * sets its size, its height and the haze: far trees are small, high and pale, near
+	 * ones big, low and dark
+	 */
+	private static final class Tree {
+		private static final int[] PALETTE = { 0x5fbf4a, 0x4fa84a, 0x6fc05a, 0x3f9a5a };
+		private static final int HAZE = 0xb4e2c8;
+		private static final int HAZE_TRUNK = 0x5d8a78;
+
+		private final double depth;
+		private final double haze;
+		private final double x;
+		private final double top;
+		private final double foot;
+		private final double topHalf;
+		private final double footHalf;
+		private final double lean;
+		private final double waver;
+		private final int lit;
+		private final int shadow;
+		private final double[][] crowns;
+
+		Tree(Random random, double ground) {
+			depth = Math.pow(random.nextDouble(), 0.8);
+			haze = Math.pow(1 - depth, 1.5) * 0.8;
+			x = random.nextDouble() * WIDTH;
+			double size = 12 + 70 * depth;
+			top = HEIGHT * (0.20 + 0.20 * depth) + HEIGHT * 0.04 * random.nextDouble();
+			foot = ground;
+			topHalf = (0.8 + 2.2 * depth) * (0.8 + 0.4 * random.nextDouble());
+			footHalf = topHalf * (1.6 + 1.2 * random.nextDouble());
+			lean = (random.nextDouble() - 0.5) * 14 * (0.5 + depth);
+			waver = random.nextDouble() * Math.PI * 2;
+			lit = mix(PALETTE[random.nextInt(PALETTE.length)], HAZE, haze);
+			shadow = mix(0x163f22, 0x4f8a72, haze);
+			crowns = new double[3][];
+			for (int k = 0; k < crowns.length; k++) {
+				double rx = size * (0.6 + 0.5 * random.nextDouble());
+				crowns[k] = new double[] { x + (random.nextDouble() - 0.5) * size * 1.2, top + (random.nextDouble() - 0.5) * rx * 0.5, rx };
+			}
+		}
+
+		void paint(int[] pixels) {
+			// The trunk: thin at the top, wider at the root, leaning and waving
+			for (int y = (int) top; y < foot; y++) {
+				double t = (y - top) / (foot - top);
+				double centre = x + lean * t + 3 * Math.sin(t * 5 + waver);
+				double half = topHalf + (footHalf - topHalf) * t * t + 2.5 * Math.max(0, (t - 0.9) / 0.1);
+				for (int wx = (int) Math.floor(centre - half) - 1; wx <= Math.ceil(centre + half) + 1; wx++) {
+					double coverage = clamp(half + 0.5 - Math.abs(wx + 0.5 - centre));
+					if (coverage == 0) {
+						continue;
+					}
+					int px = Math.floorMod(wx, WIDTH);
+					double grain = LavaTexture.fbm(px / (double) WIDTH * LavaTexture.PERIOD * 24, y / (double) HEIGHT * LavaTexture.PERIOD * 4, 2, 81);
+					int bark = mix(mix(0x140c07, 0x3c2716, grain), HAZE_TRUNK, haze);
+					pixels[y * WIDTH + px] = mix(pixels[y * WIDTH + px], bark, coverage);
+				}
+			}
+			// The crowns
+			for (double[] crown : crowns) {
+				crown(pixels, crown[0], crown[1], crown[2], crown[2] * 0.66, lit, shadow);
+			}
+		}
+	}
+
+	/**
 	 * A crown, an ellipse of leaves: lit at the top, darker at the edges and
 	 * underneath, with leaf noise in it. It wraps around the picture.
 	 */
@@ -159,18 +219,24 @@ final class ForestBackdrop {
 		int right = (int) Math.ceil(cx + rx);
 		for (int y = top; y <= bottom; y++) {
 			for (int x = left; x <= right; x++) {
-				double nx = (x - cx) / rx;
-				double ny = (y - cy) / ry;
-				double distance = nx * nx + ny * ny;
-				if (distance > 1) {
+				double nx = (x + 0.5 - cx) / rx;
+				double ny = (y + 0.5 - cy) / ry;
+				double distance = Math.sqrt(nx * nx + ny * ny);
+				// About a pixel from the inside to the outside of the edge
+				double coverage = clamp((1 - distance) * Math.min(rx, ry) + 0.5);
+				if (coverage == 0) {
 					continue;
 				}
 				int wx = Math.floorMod(x, WIDTH);
 				double leaves = LavaTexture.fbm(wx / (double) WIDTH * LavaTexture.PERIOD * 24, y / (double) HEIGHT * LavaTexture.PERIOD * 6, 3, 90);
-				double shade = Math.min(1, Math.sqrt(distance) * 0.55 + Math.max(0, ny) * 0.35);
-				pixels[y * WIDTH + wx] = mix(lit, shadow, shade + (leaves - 0.5) * 0.7);
+				double shade = Math.min(1, distance * 0.55 + Math.max(0, ny) * 0.35);
+				pixels[y * WIDTH + wx] = mix(pixels[y * WIDTH + wx], mix(lit, shadow, shade + (leaves - 0.5) * 0.7), coverage);
 			}
 		}
+	}
+
+	private static double clamp(double value) {
+		return Math.max(0, Math.min(1, value));
 	}
 
 	/** Opaque colors, mixed by t from a (0) to b (1) */
@@ -179,6 +245,14 @@ final class ForestBackdrop {
 		int red = (int) Math.round(channel(a, 16) + (channel(b, 16) - channel(a, 16)) * k);
 		int green = (int) Math.round(channel(a, 8) + (channel(b, 8) - channel(a, 8)) * k);
 		int blue = (int) Math.round(channel(a, 0) + (channel(b, 0) - channel(a, 0)) * k);
+		return 0xff000000 | red << 16 | green << 8 | blue;
+	}
+
+	/** An opaque color, darker or lighter by factor */
+	private static int scale(int color, double factor) {
+		int red = (int) Math.round(channel(color, 16) * factor);
+		int green = (int) Math.round(channel(color, 8) * factor);
+		int blue = (int) Math.round(channel(color, 0) * factor);
 		return 0xff000000 | red << 16 | green << 8 | blue;
 	}
 
