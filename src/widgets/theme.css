@@ -546,26 +546,29 @@
 	-fx-text-fill: -rc-muted;
 }
 
-.arena-energy-bar {
-	-fx-background-color: rgba(11, 14, 20, 0.85), #3a1020;
-	-fx-background-insets: 0, 3;
-	-fx-border-color: -rc-text;
-	-fx-border-width: 2;
-	-fx-pref-height: 26;
-	-fx-padding: 3;
-}
-
 .arena-energy {
 	-fx-pref-width: 420;
-	-fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.35), 8, 0.2, 0, 0);
+}
+
+/* The damage just taken: a light trail behind the energy */
+.arena-energy-lag {
+	-fx-pref-width: 420;
+	-fx-background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Cells every 5 % over the whole bar */
+.arena-energy-cells {
+	-fx-background-color: linear-gradient(from 0px 0px to 21px 0px, repeat, transparent 0%, transparent 88%, rgba(0, 0, 0, 0.6) 88%, rgba(0, 0, 0, 0.6) 100%);
 }
 
 .arena-energy-text {
 	-fx-font-family: "Press Start 2P";
-	-fx-font-size: 14px;
-	-fx-text-fill: -rc-text;
-	-fx-min-width: 54;
+	-fx-font-size: 12px;
+	-fx-min-width: 58;
 	-fx-alignment: center;
+	-fx-padding: 3 6 3 6;
+	-fx-background-color: rgba(8, 10, 18, 0.85);
+	-fx-border-width: 0 0 2 0;
 }
 
 .arena-pip {

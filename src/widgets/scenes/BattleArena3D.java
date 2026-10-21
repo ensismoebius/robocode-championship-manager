@@ -59,6 +59,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Cylinder;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
@@ -311,6 +312,14 @@ public class BattleArena3D extends StackPane {
 	private boolean fightShown = false;
 	/** Where the fly by ends: the camera at the start of the battle */
 	private final double[] flyEyeEnd = new double[3];
+	/** The critter the fly by starts looking at, where it is when the fly by begins, or null */
+	private double[] flyFocus;
+	/** The animals that live around the field */
+	private Critters critters;
+	/** The glacial sea of the ice arena: its middle and its radius, 0 when there is none */
+	private double seaX;
+	private double seaZ;
+	private double seaRadius;
 	private final double[] flyLookEnd = new double[3];
 	private double flyFovEnd;
 	private double flyMirrorX = 1;
@@ -510,6 +519,14 @@ public class BattleArena3D extends StackPane {
 		}
 		this.arena.getChildren().add(this.glowing);
 		this.buildFence(w, h);
+		this.critters = new Critters(this.style, w, h, this.random);
+		this.arena.getChildren().add(this.critters.root());
+		if (this.style == ArenaStyle.ICE && this.seaRadius > 0) {
+			double centreX = this.seaX;
+			double centreZ = this.seaZ;
+			double radius = this.seaRadius;
+			this.critters.setWater((x, z) -> Math.hypot(x - centreX, z - centreZ) < shore(Math.atan2(z - centreZ, x - centreX), radius) * 0.97);
+		}
 	}
 
 	/**
@@ -1046,6 +1063,9 @@ public class BattleArena3D extends StackPane {
 		double seaX = -(w / 2 + 60 + 1.25 * seaRadius);
 		double seaZ = h * 0.1;
 		this.buildSea(seaX, seaZ, seaRadius, crystals);
+		this.seaX = seaX;
+		this.seaZ = seaZ;
+		this.seaRadius = seaRadius;
 
 		// Snow piled outside the plates, with shards of ice standing in it
 		PhongMaterial snow = material(Color.web("#eef6fc"));
@@ -1677,8 +1697,14 @@ public class BattleArena3D extends StackPane {
 
 	// ------------------------------------------------------------------- HUD
 
-	private record HudPlayer(int index, Region energy, Label energyText, HBox pips) {
+	/** A health bar: the energy, the light trail of the damage just taken, the number and the won rounds */
+	private record HudPlayer(int index, Region energy, Region lag, Label energyText, HBox pips) {
 	}
+
+	/** Width of the health bars */
+	private static final double HUD_BAR_WIDTH = 420;
+	/** The damage trails draining, one per player */
+	private final Map<Integer, Timeline> lagDrains = new HashMap<>();
 
 	private Node buildHud() {
 		this.banner.getStyleClass().add("arena-banner");
@@ -1773,25 +1799,49 @@ public class BattleArena3D extends StackPane {
 			Label team = new Label(opponent == null ? "" : opponent.getTeam());
 			team.getStyleClass().add("arena-player-team");
 
+			// A flat futuristic bar: slanted at its outer end, solid colors, a thin outline, cells
+			// every 5 %, and a light trail that shows the damage just taken before it drains away
+			double height = 14;
+			double slant = 8;
+			String css = toCss(color);
+			Region back = new Region();
+			back.setStyle("-fx-background-color: derive(" + css + ", -80%);");
+			Region lag = new Region();
+			lag.getStyleClass().add("arena-energy-lag");
 			Region energy = new Region();
 			energy.getStyleClass().add("arena-energy");
-			energy.setStyle("-fx-background-color: " + toCss(color) + ";");
-			StackPane bar = new StackPane(energy);
-			bar.getStyleClass().add("arena-energy-bar");
-			bar.setPrefWidth(420);
-			StackPane.setAlignment(energy, i == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+			energy.setStyle("-fx-background-color: " + css + ";");
+			Region cells = new Region();
+			cells.getStyleClass().add("arena-energy-cells");
+			StackPane bar = new StackPane(back, lag, energy, cells);
+			bar.setMinSize(HUD_BAR_WIDTH, height);
+			bar.setPrefSize(HUD_BAR_WIDTH, height);
+			bar.setMaxSize(HUD_BAR_WIDTH, height);
+			Pos anchor = i == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
+			StackPane.setAlignment(lag, anchor);
+			StackPane.setAlignment(energy, anchor);
+			double[] corners = i == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
+					: new double[] { 0, 0, HUD_BAR_WIDTH - slant, 0, HUD_BAR_WIDTH, height, 0, height };
+			bar.setClip(new Polygon(corners));
+			Polygon outline = new Polygon(corners);
+			outline.setFill(Color.TRANSPARENT);
+			outline.setStroke(color);
+			outline.setStrokeWidth(1.5);
+			outline.setMouseTransparent(true);
+			StackPane frame = new StackPane(bar, outline);
 			Label energyText = new Label("100");
 			energyText.getStyleClass().add("arena-energy-text");
+			energyText.setStyle("-fx-text-fill: " + css + "; -fx-border-color: " + css + ";");
 			HBox pips = new HBox(6);
 
 			HBox nameRow = i == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
 			nameRow.setAlignment(i == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
-			HBox barRow = i == 0 ? new HBox(10, energyText, bar) : new HBox(10, bar, energyText);
+			HBox barRow = i == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
 			barRow.setAlignment(Pos.CENTER);
 			VBox panel = new VBox(6, nameRow, barRow, pips);
 			panel.setAlignment(i == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
 
-			this.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, energyText, pips));
+			this.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, lag, energyText, pips));
 			if (i == 1) {
 				this.hudTop.getChildren().addAll(spacer(), this.roundLabel, spacer());
 			}
@@ -1825,7 +1875,29 @@ public class BattleArena3D extends StackPane {
 	private void updateHud(Map<Integer, Double> energies) {
 		for (HudPlayer player : this.hudPlayers) {
 			double energy = Math.max(0, energies.getOrDefault(player.index(), 0.0));
-			player.energy().setMaxWidth(420 * Math.min(1, energy / 100));
+			double width = HUD_BAR_WIDTH * Math.min(1, energy / 100);
+			double before = player.energy().getMaxWidth();
+			player.energy().setMaxWidth(width);
+			if (width >= player.lag().getMaxWidth()) {
+				// Healed, or a replay went back: the trail follows at once
+				Timeline drain = this.lagDrains.remove(player.index());
+				if (drain != null) {
+					drain.stop();
+				}
+				player.lag().setMaxWidth(width);
+			} else if (width < before) {
+				// The damage stays lit for a moment, then drains down to the new energy
+				Timeline old = this.lagDrains.get(player.index());
+				if (old != null) {
+					old.stop();
+				}
+				Timeline drain = new Timeline(new KeyFrame(Duration.seconds(0.45), new KeyValue(player.lag().maxWidthProperty(), player.lag().getMaxWidth())),
+						new KeyFrame(Duration.seconds(1.0), new KeyValue(player.lag().maxWidthProperty(), width, Interpolator.EASE_IN)));
+				this.lagDrains.put(player.index(), drain);
+				drain.play();
+			}
+			// Low energy: the bar pulses
+			player.energy().setOpacity(energy < 25 ? 0.6 + 0.4 * Math.abs(Math.sin(System.nanoTime() / 1e9 * 5)) : 1);
 			player.energyText().setText(String.valueOf((int) Math.ceil(energy)));
 		}
 	}
@@ -2106,6 +2178,9 @@ public class BattleArena3D extends StackPane {
 		this.updateFire(dt * this.effectRate);
 		this.updateSunbeams(dt);
 		this.updateNeon(dt);
+		if (this.critters != null) {
+			this.critters.update(dt);
+		}
 		this.placeBalloons();
 		this.flushPhotos(dt);
 	}
@@ -2280,6 +2355,8 @@ public class BattleArena3D extends StackPane {
 		System.arraycopy(this.eyeTarget, 0, this.flyEyeEnd, 0, 3);
 		System.arraycopy(this.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = this.fovTarget;
+		// The first look is at a critter, from outside the field: the fly by starts on it
+		this.flyFocus = this.critters == null ? null : this.critters.nearest(-0.8 * this.fieldWidth * this.flyMirrorX, -this.fieldHeight * this.flyMirrorZ);
 		// Starts at the first point of the path, no sliding to it
 		this.flyByPose(0);
 		System.arraycopy(this.eyeTarget, 0, this.eye, 0, 3);
@@ -2304,6 +2381,14 @@ public class BattleArena3D extends StackPane {
 		double mz = this.flyMirrorZ;
 		double[][] eyes = { { -0.8 * w * mx, -120, -1.0 * h * mz }, { -0.05 * w * mx, -50, -0.85 * h * mz }, { 0.85 * w * mx, -75, -0.1 * h * mz }, this.flyEyeEnd };
 		double[][] looks = { { 0.1 * w * mx, -40, 0.2 * h * mz }, { 0.25 * w * mx, -25, 0.1 * h * mz }, { -0.2 * w * mx, -20, 0 }, this.flyLookEnd };
+		if (this.flyFocus != null) {
+			// Starts looking at the critter, from its outer side, a little above it
+			double fx = this.flyFocus[0];
+			double fz = this.flyFocus[2];
+			double length = Math.max(1, Math.hypot(fx, fz));
+			eyes[0] = new double[] { fx + fx / length * 45, this.flyFocus[1] - 22, fz + fz / length * 45 };
+			looks[0] = this.flyFocus;
+		}
 		// Slow at the start and at the end, quick in the middle
 		double smooth = progress * progress * (3 - 2 * progress);
 		double u = 0.3 * progress + 0.7 * smooth;
@@ -2662,6 +2747,13 @@ public class BattleArena3D extends StackPane {
 		return new double[] { x + flight.side() * Math.cos(heading) + flight.ahead() * Math.sin(heading), y - flight.side() * Math.sin(heading) + flight.ahead() * Math.cos(heading) };
 	}
 
+	/** Something happens in the battle at this world point: the critters nearby react to it */
+	private void startle(double worldX, double worldZ, double radius, double strength) {
+		if (this.critters != null) {
+			this.critters.alarm(worldX, worldZ, radius, strength);
+		}
+	}
+
 	/**
 	 * The shot, once: the sound and the flash at the gun
 	 */
@@ -2669,6 +2761,7 @@ public class BattleArena3D extends StackPane {
 		if (this.bulletsSeen.add(bullet.id())) {
 			this.audio.shotAt(bullet.power(), this.worldX(x), this.worldZ(y));
 			this.muzzleFlash(this.worldX(x), this.worldZ(y), this.shooterColor(bullet));
+			this.startle(this.worldX(x), this.worldZ(y), 150, 0.4);
 		}
 	}
 
@@ -2681,6 +2774,7 @@ public class BattleArena3D extends StackPane {
 			return;
 		}
 		this.explosion(this.worldX(x), this.worldZ(y), 8 + bullet.power() * 6, this.shooterColor(bullet));
+		this.startle(this.worldX(x), this.worldZ(y), 220, 0.7);
 		RobotView victim = this.robots.get(bullet.victim());
 		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
 			victim.flash();
@@ -2732,6 +2826,7 @@ public class BattleArena3D extends StackPane {
 			}
 			if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
 				this.audio.thudAt(this.worldX(state.x()), this.worldZ(state.y()));
+				this.startle(this.worldX(state.x()), this.worldZ(state.y()), 120, 0.3);
 				this.shake += 1.5;
 				if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
 					this.flashFence(state.x(), state.y());
@@ -2743,6 +2838,7 @@ public class BattleArena3D extends StackPane {
 			if (state.isDead() && before != null && !before.isDead() && !view.dead) {
 				view.destroy();
 				this.audio.destroyedAt(view.position()[0], view.position()[2]);
+				this.startle(view.position()[0], view.position()[2], 340, 1);
 				this.shake += 22;
 				this.whiteFlash();
 				if (this.phase == Phase.PLAYING) {
