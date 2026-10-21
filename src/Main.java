@@ -60,9 +60,9 @@ import widgets.windows.NewConfigurationHandleWindow;
 public class Main extends Application {
 
 	// The current championship, its bracket and robots
-	private Championship championship;
-	private Bracket bracket;
-	private Map<Long, Opponent> opponents = Map.of();
+	Championship championship;
+	Bracket bracket;
+	Map<Long, Opponent> opponents = Map.of();
 
 	/**
 	 * Code of the match chosen in the bracket screen
@@ -110,8 +110,9 @@ public class Main extends Application {
 	/**
 	 * True while robocode is running a battle
 	 */
-	private boolean battleRunning = false;
+	boolean battleRunning = false;
 	private final KeyBindings keys = new KeyBindings(this);
+	final BattleRunner battles = new BattleRunner(this);
 
 	/** Starts the application. */
 	public static void main(String[] args) {
@@ -381,7 +382,7 @@ public class Main extends Application {
 	/**
 	 * @return the selected match if it can be played, otherwise shows an error
 	 */
-	private Optional<Match> playableSelectedMatch() {
+	Optional<Match> playableSelectedMatch() {
 		if (this.bracket == null) {
 			this.showError("Nenhum campeonato criado ainda. Pressione Ctrl + G para sortear um.");
 			return Optional.empty();
@@ -410,7 +411,7 @@ public class Main extends Application {
 	/**
 	 * @return false if it could not be saved (the error was shown)
 	 */
-	private boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
+	boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		try {
 			this.setChampionship(ChampionshipService.recordResult(this.championship, match.getCode(), winnerId, winnerScore, loserScore));
 			this.justPlayed = match.getCode();
@@ -425,7 +426,7 @@ public class Main extends Application {
 	/**
 	 * The winner of the match, or the champion
 	 */
-	private void showResult(long winnerId) {
+	void showResult(long winnerId) {
 		if (this.bracket.isFinished()) {
 			this.showChampion(true);
 		} else {
@@ -516,114 +517,6 @@ public class Main extends Application {
 
 		this.show(this.startScene);
 		this.playMenuMusic(START_MUSIC_VOLUME);
-	}
-
-	/** Asks for the Robocode folder and starts a battle of the selected match. */
-	protected void startsBattle() {
-		if (this.battleRunning || !this.chooseRobocodeDir()) {
-			return;
-		}
-
-		Optional<Match> playable = this.playableSelectedMatch();
-		if (playable.isEmpty()) {
-			return;
-		}
-		Match match = playable.get();
-
-		List<Opponent> fighters = List.of(this.opponents.get(match.getA().getParticipant()), this.opponents.get(match.getB().getParticipant()));
-		String robocodePath = Configuration.getRobocodePath();
-		int rounds = Configuration.getRobocodeRounds();
-		String startScript = Configuration.getStartBattleScript();
-		var criterion = Configuration.getWinnerCriterion();
-
-		// In 3D robocode runs without its window and the battle is replayed here
-		boolean in3D = Configuration.isBattleView3D() && Platform.isSupported(ConditionalFeature.SCENE3D);
-		BattleArena3D arena = this.openArena(match, fighters, in3D);
-
-		// Robocode runs in another process, waiting for it in the JavaFX thread
-		// would freeze the screen
-		Task<BattleOutcome> battle = new Task<BattleOutcome>() {
-			/** Runs the battle on Robocode in a background thread. */
-			@Override
-			protected BattleOutcome call() throws Exception {
-				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
-			}
-		};
-		battle.setOnSucceeded(event -> this.onBattleSucceeded(battle.getValue(), match, fighters, arena));
-		battle.setOnFailed(event -> this.onBattleFailed(battle.getException(), arena));
-
-		this.battleRunning = true;
-		Thread thread = new Thread(battle, "robocode-battle");
-		thread.setDaemon(true);
-		thread.start();
-	}
-
-	/**
-	 * Shows the 3D arena of a match, when the battle is viewed in 3D.
-	 *
-	 * @return the arena, or null when the battle is not viewed in 3D
-	 */
-	private BattleArena3D openArena(Match match, List<Opponent> fighters, boolean in3D) {
-		if (!in3D) {
-			return null;
-		}
-		BattleArena3D arena = new BattleArena3D(fighters);
-		arena.setStage(this.bracket.roundName(match), this.bracket.importance(match));
-		this.resetAllScenes();
-		this.show(arena);
-		return arena;
-	}
-
-	/**
-	 * Robocode is needed to fight. Asks for its folder if it is not where the
-	 * configuration says.
-	 *
-	 * @return false if there is no robocode folder, the battle can not start
-	 */
-	private boolean chooseRobocodeDir() {
-		// Comes first because the configuration may change the database and so the match.
-		if (Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"))) {
-			return true;
-		}
-		Configuration.askForProperties();
-		return Files.isDirectory(Path.of(Configuration.getRobocodePath(), "robots"));
-	}
-
-	/**
-	 * Saves the result, then shows it when the replay of the 3D battle ends
-	 */
-	private void onBattleSucceeded(BattleOutcome outcome, Match match, List<Opponent> fighters, BattleArena3D arena) {
-		List<BattleResult> ranking = outcome.ranking();
-		BattleRecording recording = outcome.recording();
-		long winner = ranking.get(0).opponent().getId();
-
-		// Saved at once, then shown when the replay ends
-		if (!this.saveResult(match, winner, ranking.get(0).score(), ranking.get(1).score())) {
-			this.battleRunning = false;
-			return;
-		}
-		if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
-			arena.play(recording, () -> {
-				this.battleRunning = false;
-				MatchPhotos.keep(this.championship.getId(), arena, match, fighters);
-				this.showResult(winner);
-			});
-		} else {
-			this.battleRunning = false;
-			this.showResult(winner);
-		}
-	}
-
-	/**
-	 * Tells the operator what went wrong and that the winner can be declared by hand
-	 */
-	private void onBattleFailed(Throwable failure, BattleArena3D arena) {
-		this.battleRunning = false;
-		failure.printStackTrace();
-		this.showError("Falha ao executar a batalha:\n" + failure.getMessage() + "\n\nVocê pode informar o vencedor com as teclas 1 ou 2.");
-		if (arena != null && GameWindow.getScreen() == arena) {
-			this.showBattle();
-		}
 	}
 
 	/**
@@ -805,13 +698,13 @@ public class Main extends Application {
 	 * changes, so the window never gets resized to the size a new scene prefers
 	 * (it happens with tiling window managers)
 	 */
-	private void show(Parent screen) {
+	void show(Parent screen) {
 		GameWindow.setScreen(screen);
 		Theme.enter(screen);
 	}
 
 	/** Shows an error message in a dialog. */
-	private void showError(String message) {
+	void showError(String message) {
 		GameDialog.error(message);
 	}
 

@@ -77,7 +77,7 @@ final class KeyBindings {
 	private void handleOperatorKey(KeyEvent event) {
 		switch (event.getCode()) {
 		// Starts the battle on robocode!
-		case S -> host.startsBattle();
+		case S -> host.battles.startsBattle();
 		// The operator says who won
 		case DIGIT1, NUMPAD1 -> host.declareWinner(true);
 		case DIGIT2, NUMPAD2 -> host.declareWinner(false);
