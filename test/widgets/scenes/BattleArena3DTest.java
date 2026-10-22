@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import javafx.scene.paint.Color;
@@ -20,6 +23,23 @@ class BattleArena3DTest {
 		boolean finished = ArenaSimulation.battle(arena, recording, 4000, 0.05);
 
 		assertTrue(finished, "the battle should call back when it ends");
+	}
+
+	@Test
+	void theRobotsTakeTheColorsTheyChangeToDuringTheBattle() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
+		// Walls starts black and turns red before its last turn of the first round
+		List<String> output = new ArrayList<String>(ArenaSimulation.OUTPUT);
+		int lastTurn = output.indexOf(output.stream().filter(line -> line.startsWith("#T 0 199")).findFirst().orElseThrow());
+		output.add(lastTurn, "#C 0 -65536 -16711936 -14336");
+		BattleRecording recording = ArenaSimulation.recording(output);
+
+		assertTrue(ArenaSimulation.battle(arena, recording, 4000, 0.05));
+
+		RobotView walls = FxSupport.run(() -> arena.robots.get(0));
+		assertEquals(Color.rgb(255, 0, 0), walls.bodyColor);
+		assertEquals(Color.rgb(0, 255, 0), walls.gunColor);
+		assertEquals(Color.rgb(255, 0, 0), FxSupport.run(() -> walls.bodyMaterial.getDiffuseColor()));
 	}
 
 	@Test

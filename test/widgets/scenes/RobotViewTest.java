@@ -153,6 +153,45 @@ class RobotViewTest {
 	}
 
 	@Test
+	void aRobotTakesTheColorsItChangesTo() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			robot.setColors(0xffff0000, 0xff00ff00, 0xff0000ff);
+
+			assertEquals(Color.rgb(255, 0, 0), robot.bodyMaterial.getDiffuseColor());
+			assertEquals(Color.rgb(0, 255, 0), robot.gunMaterial.getDiffuseColor());
+			assertEquals(Color.rgb(0, 0, 255), robot.radarMaterial.getDiffuseColor());
+			// The glint follows the new color
+			assertEquals(1, robot.bodyMaterial.getSpecularColor().getRed(), 1e-9);
+
+			// Blinking after a hit, it stays white and takes the new color when the blink ends
+			robot.flash();
+			robot.setColors(0xff00ffff, 0xff00ff00, 0xff0000ff);
+			assertEquals(Color.WHITE, robot.bodyMaterial.getDiffuseColor());
+			assertEquals(Color.rgb(0, 255, 255), robot.bodyColor);
+		});
+	}
+
+	@Test
+	void aDestroyedRobotKeepsItsColors() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			robot.setColors(0xffff0000, 0xffff0000, 0xffff0000);
+			robot.destroy();
+			robot.setColors(0xff00ff00, 0xff00ff00, 0xff00ff00);
+
+			assertEquals(Color.rgb(255, 0, 0), robot.gunMaterial.getDiffuseColor());
+			assertEquals(Color.rgb(255, 0, 0), robot.bodyColor);
+		});
+	}
+
+	@Test
 	void theEnergyBarOfTheRobotShowsTheEnergyLeft() {
 		BattleArena3D arena = playedArena();
 

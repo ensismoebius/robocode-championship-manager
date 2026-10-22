@@ -5,6 +5,7 @@ import static widgets.scenes.ArenaMaterials.argb;
 import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.ArenaMaterials.material;
 import static widgets.scenes.ArenaMaterials.paint;
+import static widgets.scenes.ArenaMaterials.repaint;
 import static widgets.scenes.ArenaHelpers.toCss;
 import static widgets.scenes.RobotTreads.TREAD_LINKS;
 import static widgets.scenes.RobotTreads.BELT;
@@ -64,17 +65,22 @@ final class RobotView {
 	final Rotate radarRotate = new Rotate(0, Rotate.Y_AXIS);
 	final PhongMaterial bodyMaterial;
 	final PhongMaterial gunMaterial;
+	final PhongMaterial radarMaterial;
 	final Opponent opponent;
-	final Color bodyColor;
-	final Color gunColor;
+	/** The colors the robot chose, which it can change during the battle */
+	Color bodyColor;
+	Color gunColor;
+	Color radarColor;
 	final Color playerColor;
+	/** Blinking white after a hit: the body takes its color back when it ends */
+	boolean flashing;
 	final Group debris;
 	final VBox balloon = new VBox(4);
 	final Region energyFill = new Region();
 	final Label nameLabel;
 	final String displayName;
 	final List<Animation> running = new ArrayList<Animation>();
-	/** The hexagonal plates, which come off as the robot loses energy */
+	/** The armor plates and the parts it can fight without, which come off as the robot loses energy */
 	final RobotArmor armor;
 	/** Parts that shine by themselves, and the pictures that make them shine */
 	final List<PhongMaterial> glows = new ArrayList<PhongMaterial>();
@@ -104,6 +110,9 @@ final class RobotView {
 	double turretSpeed;
 	double lastGun = Double.NaN;
 
+	/** The radar of a robot that did not choose its color */
+	static final Color RADAR_COLOR = Color.web("#ffd400");
+
 	/** The materials of the tank model: the dark parts, the plates, the steel, the cyan lights, the identity colour, the lamp and the warning. */
 	private record Materials(PhongMaterial dark, PhongMaterial plate, PhongMaterial steel, PhongMaterial cyan, PhongMaterial identity, PhongMaterial lamp, PhongMaterial warning) {
 	}
@@ -115,9 +124,10 @@ final class RobotView {
 		this.playerColor = PLAYER_COLORS[order % PLAYER_COLORS.length];
 		this.bodyColor = argb(robot.getBodyColor(), this.playerColor);
 		this.gunColor = argb(robot.getGunColor(), this.bodyColor);
+		this.radarColor = argb(robot.getRadarColor(), RADAR_COLOR);
 		this.bodyMaterial = paint(this.bodyColor);
 		this.gunMaterial = paint(this.gunColor);
-		PhongMaterial radarMaterial = paint(argb(robot.getRadarColor(), Color.web("#ffd400")));
+		this.radarMaterial = paint(this.radarColor);
 		PhongMaterial steel = material(Color.web("#6c7488"));
 		steel.setSpecularPower(50);
 		Materials materials = new Materials(material(Color.web("#171b26")), material(Color.web("#2d3345")), steel, this.glow(Color.web("#38e6ff")), this.glow(this.playerColor), this.glow(Color.web("#fff6c8")), this.glow(Color.web("#ff3b3b")));
@@ -125,7 +135,7 @@ final class RobotView {
 		this.armor = new RobotArmor(this, Objects.hash(robot.getName(), order));
 		this.buildBody(materials);
 		this.buildTurret(materials);
-		this.buildRadar(materials, radarMaterial);
+		this.buildRadar(materials, this.radarMaterial);
 		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 
 		// The pieces thrown by the blast stay here, beside the wreck
@@ -145,10 +155,6 @@ final class RobotView {
 		this.body.getTransforms().add(this.bodyRotate);
 		LowPoly hull = new LowPoly();
 		LowPoly tracks = new LowPoly();
-		LowPoly glowCyan = new LowPoly();
-		LowPoly glowIdentity = new LowPoly();
-		LowPoly glowWarning = new LowPoly();
-		LowPoly glowLamp = new LowPoly();
 		// The hull: a wedge, sloped in front and behind, with a deck over it
 		hull.prismZY(new double[][] { { -21, -7 }, { -22.5, -9.5 }, { -20, -13 }, { 14, -13.5 }, { 22, -10 }, { 23, -7.5 } }, -13.5, 13.5);
 		hull.frustum(new double[][] { { -11.5, -17 }, { 11.5, -17 }, { 11.5, 9 }, { -11.5, 9 } }, -13.4, -15.2, 0.9);
@@ -157,22 +163,35 @@ final class RobotView {
 			// Track with chamfered ends, hidden above by the skirt
 			tracks.prismZY(BELT, Math.min(side * BELT_INNER, side * BELT_OUTER), Math.max(side * BELT_INNER, side * BELT_OUTER));
 			this.addTreadLinks(side < 0 ? 0 : 1, materials);
-			// Hexagonal armor under the skirt, fixed to the hull
+			// Hexagonal armor hanging under the skirt, outside the track
+			List<Group> hanging = new ArrayList<Group>();
 			for (double posZ = -15; posZ <= 15; posZ += 6) {
-				this.armor.plate(this.body, materials.steel(), posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
+				hanging.add(this.armor.plate(this.body, materials.steel(), posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9))));
 			}
-			this.addSkirt(side, hull, materials.plate());
-			// A strip of light in the color of the player, lamps and rear lights
-			glowIdentity.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
-			glowLamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
-			glowWarning.box(side * 9, -10, -22.6, 3, 1.2, 1);
+			this.addSkirt(side, materials, hanging);
 		}
-		glowCyan.box(0, -9, 22.9, 14, 0.9, 0.6); // visor on the front
+		this.addFittings(materials);
+		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()));
+	}
+
+	/** The lamps, the rear lights, the visor on the front and the vents on the engine deck: all of them can come off */
+	private void addFittings(Materials materials) {
+		for (int side = -1; side <= 1; side += 2) {
+			LowPoly lamp = new LowPoly();
+			lamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
+			this.armor.piece(this.body, lamp.view(materials.lamp()));
+			LowPoly rearLight = new LowPoly();
+			rearLight.box(side * 9, -10, -22.6, 3, 1.2, 1);
+			this.armor.piece(this.body, rearLight.view(materials.warning()));
+		}
+		LowPoly visor = new LowPoly();
+		visor.box(0, -9, 22.9, 14, 0.9, 0.6);
+		this.armor.piece(this.body, visor.view(materials.cyan()));
 		for (double posX = -4; posX <= 4; posX += 4) {
-			glowCyan.box(posX, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
+			LowPoly vent = new LowPoly();
+			vent.box(posX, -14.9, -19.5, 2, 0.5, 2.4);
+			this.armor.piece(this.body, vent.view(materials.cyan()));
 		}
-		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()), glowCyan.view(materials.cyan()), glowIdentity.view(materials.identity()),
-				glowWarning.view(materials.warning()), glowLamp.view(materials.lamp()));
 	}
 
 	/** The links of one belt, each one a short box turned to the belt where it is */
@@ -189,16 +208,26 @@ final class RobotView {
 		}
 	}
 
-	/** The skirt over one track: it leans out at the top, with two rows of hexagonal plates on it */
-	private void addSkirt(int side, LowPoly hull, PhongMaterial plateMaterial) {
-		hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
+	/**
+	 * The skirt over one track: it leans out at the top, with two rows of
+	 * hexagonal plates on it and the hanging plates under it. It comes off too,
+	 * but only after the last of them, so no plate is ever left in the air.
+	 */
+	private void addSkirt(int side, Materials materials, List<Group> hanging) {
+		List<Group> plates = new ArrayList<Group>(hanging);
 		for (int row = 0; row < 2; row++) {
 			double posY = row == 0 ? -10 : -7.2;
 			double face = 17.5 + (-5 - posY) / 7.5 * 2;
 			for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
-				this.armor.plate(this.body, plateMaterial, posZ2, posY, 2.9, 2.5,Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
+				plates.add(this.armor.plate(this.body, materials.plate(), posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5))));
 			}
 		}
+		LowPoly skirt = new LowPoly();
+		skirt.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
+		// The strip of light in the color of the player runs along the top of the skirt, and goes with it
+		LowPoly strip = new LowPoly();
+		strip.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
+		this.armor.holder(this.body, plates, skirt.view(this.bodyMaterial), strip.view(materials.identity()));
 	}
 
 	/** The turret and the gun, which turn on their own: a long wedge, a flat wing over the gun, a remote weapon station and antennas */
@@ -209,7 +238,6 @@ final class RobotView {
 		LowPoly shell = new LowPoly();
 		LowPoly barrel = new LowPoly();
 		LowPoly turretCyan = new LowPoly();
-		LowPoly turretWarning = new LowPoly();
 		shell.frustum(new double[][] { { -9, -12 }, { 9, -12 }, { 12, -3 }, { 10, 6 }, { 4, 12 }, { -4, 12 }, { -10, 6 }, { -12, -3 } }, -14.8, -19.5, 0.72);
 		shell.prismZY(new double[][] { { -9, -19.5 }, { -9, -21 }, { 2, -21.4 }, { 11, -19.5 } }, -5, 5);
 		shell.frustum(new double[][] { { -3.6, 6 }, { 3.6, 6 }, { 0.9, 36 }, { -0.9, 36 } }, -20.2, -21.2, 1); // wing over the gun
@@ -222,24 +250,41 @@ final class RobotView {
 				double time = (posY + 14.8) / -4.7;
 				double edge = posZ < -3 ? 9 + (posZ + 12) / 3 : 12 - (posZ + 3) * 2 / 9;
 				double face = edge * (1 - 0.28 * time);
-				this.armor.plate(this.turret, materials.plate(), posZ, posY, 2.3, 1.9,Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
+				this.armor.plate(this.turret, materials.plate(), posZ, posY, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
 			}
-			turretCyan.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1); // sensors on the cheeks
-			turretWarning.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5); // lights on the antennas
-			barrel.cylinderY(side * 7, -9, 0.3, -19, -26, 5);
+			// The sensors on the cheeks and the antennas, with lights on top, can come off
+			LowPoly sensor = new LowPoly();
+			sensor.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1);
+			this.armor.piece(this.turret, sensor.view(materials.cyan()));
+			LowPoly antenna = new LowPoly();
+			antenna.cylinderY(side * 7, -9, 0.3, -19, -26, 5);
+			LowPoly antennaLight = new LowPoly();
+			antennaLight.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5);
+			this.armor.piece(this.turret, antenna.view(materials.dark()), antennaLight.view(materials.warning()));
 		}
 		// The gun: a very long barrel with a fume extractor and a muzzle ring
 		barrel.cylinderZ(0, -17.2, 1.35, 12, 43, 6);
 		barrel.cylinderZ(0, -17.2, 1.95, 21, 27, 6);
 		barrel.cylinderZ(0, -17.2, 1.8, 40, 43.6, 6);
 		turretCyan.cylinderZ(0, -17.2, 2, 43.6, 44.1, 6);
-		// Remote weapon station on the roof and a commander sight
-		shell.box(-4.6, -22.4, -4, 4.4, 2.2, 4.4);
-		barrel.cylinderZ(-4.6, -22.6, 0.5, -1.5, 3.5, 5);
-		turretCyan.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
-		shell.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
-		turretCyan.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretCyan.view(materials.cyan()), turretWarning.view(materials.warning()));
+		this.addRoofGear(materials);
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretCyan.view(materials.cyan()));
+	}
+
+	/** The remote weapon station on the roof of the turret and the commander sight, which can come off */
+	private void addRoofGear(Materials materials) {
+		LowPoly station = new LowPoly();
+		station.box(-4.6, -22.4, -4, 4.4, 2.2, 4.4);
+		LowPoly stationGun = new LowPoly();
+		stationGun.cylinderZ(-4.6, -22.6, 0.5, -1.5, 3.5, 5);
+		LowPoly stationLens = new LowPoly();
+		stationLens.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
+		this.armor.piece(this.turret, station.view(this.gunMaterial), stationGun.view(materials.dark()), stationLens.view(materials.cyan()));
+		LowPoly sight = new LowPoly();
+		sight.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
+		LowPoly sightLens = new LowPoly();
+		sightLens.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
+		this.armor.piece(this.turret, sight.view(this.gunMaterial), sightLens.view(materials.cyan()));
 	}
 
 	/** The radar: a flat panel on a mast, turning over the roof */
@@ -252,7 +297,10 @@ final class RobotView {
 		mast.cylinderY(0, 0, 0.8, -24, -21, 6);
 		panel.box(0, -26, 0, 8, 3.6, 1.2);
 		panelCyan.box(0, -26, 0.7, 6, 0.6, 0.3);
-		mast.cylinderY(3, 0, 0.25, -31, -27.8, 5);
+		// The thin antenna on the panel can come off
+		LowPoly whip = new LowPoly();
+		whip.cylinderY(3, 0, 0.25, -31, -27.8, 5);
+		this.armor.piece(this.radar, whip.view(materials.dark()));
 		this.radar.getChildren().addAll(panel.view(radarMaterial), mast.view(materials.dark()), panelCyan.view(materials.cyan()));
 	}
 
@@ -303,6 +351,36 @@ final class RobotView {
 	}
 
 	/**
+	 * Paints the robot in the colors it has in this turn (ARGB, 0 for the default
+	 * one): a robot can change them at any time. A destroyed robot keeps the
+	 * colors it had, and a blinking one takes the new color of the body when the
+	 * blink ends.
+	 */
+	void setColors(int body, int gun, int radar) {
+		if (this.dead) {
+			return;
+		}
+		Color newBody = argb(body, this.playerColor);
+		Color newGun = argb(gun, newBody);
+		Color newRadar = argb(radar, RADAR_COLOR);
+		if (!newBody.equals(this.bodyColor)) {
+			this.bodyColor = newBody;
+			repaint(this.bodyMaterial, newBody);
+			if (this.flashing) {
+				this.bodyMaterial.setDiffuseColor(Color.WHITE);
+			}
+		}
+		if (!newGun.equals(this.gunColor)) {
+			this.gunColor = newGun;
+			repaint(this.gunMaterial, newGun);
+		}
+		if (!newRadar.equals(this.radarColor)) {
+			this.radarColor = newRadar;
+			repaint(this.radarMaterial, newRadar);
+		}
+	}
+
+	/**
 	 * Below half of the energy the robot catches fire. The less energy, the more
 	 * burning spots, the stronger the flames and the thicker the smoke.
 	 *
@@ -310,6 +388,7 @@ final class RobotView {
 	 *            seconds, slower in the replay
 	 */
 	void burn(double deltaTime) {
+		this.armor.update(deltaTime);
 		RobotFire.burn(this, deltaTime);
 	}
 
@@ -386,8 +465,12 @@ final class RobotView {
 			return;
 		}
 		this.bodyMaterial.setDiffuseColor(Color.WHITE);
+		this.flashing = true;
 		PauseTransition back = host.fx.effect(new PauseTransition(Duration.millis(110)));
-		back.setOnFinished(event -> this.bodyMaterial.setDiffuseColor(this.bodyColor));
+		back.setOnFinished(event -> {
+			this.flashing = false;
+			this.bodyMaterial.setDiffuseColor(this.bodyColor);
+		});
 		back.play();
 	}
 
@@ -433,6 +516,7 @@ final class RobotView {
 		this.running.clear();
 		this.armor.restore();
 		this.dead = false;
+		this.flashing = false;
 		this.tank.setVisible(true);
 		this.debris.getChildren().clear();
 		this.bodyMaterial.setDiffuseColor(this.bodyColor);

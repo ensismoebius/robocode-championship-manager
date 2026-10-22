@@ -1,7 +1,9 @@
 package utils.robocode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -23,7 +25,8 @@ public final class BattleRecording {
 	public static final int BULLET_HIT_WALL = 4;
 
 	/**
-	 * A robot of the battle, its colors are ARGB
+	 * A robot of the battle, its colors are ARGB: the first ones it showed, the
+	 * colors of each turn are in its {@link RobotState}
 	 */
 	public static final class Robot {
 		private final int index;
@@ -31,6 +34,8 @@ public final class BattleRecording {
 		private int bodyColor = 0xff2ec4ff;
 		private int gunColor = 0xff2ec4ff;
 		private int radarColor = 0xffffd400;
+		/** Whether the battle already reported its colors */
+		private boolean colored;
 
 		/** A robot of the battle, with its index and name. */
 		Robot(int index, String name) {
@@ -66,8 +71,17 @@ public final class BattleRecording {
 		}
 	}
 
-	/** The state of a robot in a turn: its position, its heading and its energy. */
-	public record RobotState(int index, double x, double y, double bodyHeading, double gunHeading, double radarHeading, double energy, int state) {
+	/**
+	 * The state of a robot in a turn: its position, its heading, its energy and
+	 * its colors (ARGB), which a robot can change at any time
+	 */
+	public record RobotState(int index, double x, double y, double bodyHeading, double gunHeading, double radarHeading, double energy, int state, int bodyColor, int gunColor, int radarColor) {
+
+		/** A state without colors (0): the robot shows its default ones. */
+		public RobotState(int index, double x, double y, double bodyHeading, double gunHeading, double radarHeading, double energy, int state) {
+			this(index, x, y, bodyHeading, gunHeading, radarHeading, energy, state, 0, 0, 0);
+		}
+
 		/** Tells whether the robot is dead. */
 		public boolean isDead() {
 			return this.state == ROBOT_DEAD;
@@ -92,6 +106,8 @@ public final class BattleRecording {
 	private int height = 600;
 	private final List<Robot> robots = new ArrayList<Robot>();
 	private final List<List<Turn>> rounds = new ArrayList<List<Turn>>();
+	/** The colors each robot has now, while reading: body, gun and radar */
+	private final Map<Integer, int[]> colors = new HashMap<Integer, int[]>();
 
 	/** Returns the width. */
 	public int getWidth() {
@@ -165,15 +181,7 @@ public final class BattleRecording {
 			int space = body.indexOf(' ');
 			this.robots.add(new Robot(Integer.parseInt(body.substring(0, space)), body.substring(space + 1)));
 		}
-		case 'C' -> {
-			String[] fields = body.split(" ");
-			Robot robot = this.getRobot(Integer.parseInt(fields[0]));
-			if (robot != null) {
-				robot.bodyColor = Integer.parseInt(fields[1]);
-				robot.gunColor = Integer.parseInt(fields[2]);
-				robot.radarColor = Integer.parseInt(fields[3]);
-			}
-		}
+		case 'C' -> this.parseColors(body);
 		case 'R' -> {
 			int round = Integer.parseInt(body.trim());
 			while (this.rounds.size() <= round) {
@@ -184,6 +192,31 @@ public final class BattleRecording {
 		default -> {
 		}
 		}
+	}
+
+	/** Reads a change of the colors of a robot: they hold from the next turn on; the first ones are the colors of the robot. */
+	private void parseColors(String body) {
+		String[] fields = body.split(" ");
+		int index = Integer.parseInt(fields[0]);
+		int[] color = { Integer.parseInt(fields[1]), Integer.parseInt(fields[2]), Integer.parseInt(fields[3]) };
+		this.colors.put(index, color);
+		Robot robot = this.getRobot(index);
+		if (robot != null && !robot.colored) {
+			robot.colored = true;
+			robot.bodyColor = color[0];
+			robot.gunColor = color[1];
+			robot.radarColor = color[2];
+		}
+	}
+
+	/** The colors the robot has now: the last ones reported, or its own when there were none */
+	private int[] colorsOf(int index) {
+		int[] color = this.colors.get(index);
+		if (color != null) {
+			return color;
+		}
+		Robot robot = this.getRobot(index);
+		return robot == null ? new int[3] : new int[] { robot.bodyColor, robot.gunColor, robot.radarColor };
 	}
 
 	/** Reads the robots and the bullets of a turn of the recording. */
@@ -197,8 +230,10 @@ public final class BattleRecording {
 		if (parts.length > 1 && !parts[1].isEmpty()) {
 			for (String robot : parts[1].split(";")) {
 				String[] string = robot.split(" ");
-				robotStates.add(new RobotState(Integer.parseInt(string[0]), Double.parseDouble(string[1]), Double.parseDouble(string[2]), Double.parseDouble(string[3]), Double.parseDouble(string[4]),
-						Double.parseDouble(string[5]), Double.parseDouble(string[6]), Integer.parseInt(string[7])));
+				int index = Integer.parseInt(string[0]);
+				int[] color = this.colorsOf(index);
+				robotStates.add(new RobotState(index, Double.parseDouble(string[1]), Double.parseDouble(string[2]), Double.parseDouble(string[3]), Double.parseDouble(string[4]), Double.parseDouble(string[5]),
+						Double.parseDouble(string[6]), Integer.parseInt(string[7]), color[0], color[1], color[2]));
 			}
 		}
 

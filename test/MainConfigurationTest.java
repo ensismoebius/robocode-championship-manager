@@ -113,7 +113,7 @@ class MainConfigurationTest {
 	void aNewDatabaseReloadsTheProgramAndGoesBackToTheStartScreen() {
 		FxSupport.runVoid(() -> GameWindow.setScreen(new StackPane()));
 
-		reconfigure("target/test-db/main-config-two.db", 8080);
+		reconfigure("target/test-db/main-config-two.db", TestConfiguration.freePort());
 
 		assertInstanceOf(StartScreen.class, FxSupport.run(() -> GameWindow.getScreen()));
 		assertNull(program.bracket);
@@ -127,7 +127,7 @@ class MainConfigurationTest {
 		Files.writeString(blocker, "um arquivo, não uma pasta");
 		FxSupport.onNextDialog(dialog -> button(dialog, "OK").fire());
 
-		reconfigure(blocker.resolve("robochamp.db").toString(), 8080);
+		reconfigure(blocker.resolve("robochamp.db").toString(), TestConfiguration.freePort());
 
 		assertNull(program.championship);
 		assertNull(program.bracket);

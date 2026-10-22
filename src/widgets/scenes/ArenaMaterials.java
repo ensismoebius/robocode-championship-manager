@@ -171,9 +171,15 @@ final class ArenaMaterials {
 	 */
 	static PhongMaterial paint(Color color) {
 		PhongMaterial material = new PhongMaterial(color);
-		double floor = 0.38;
-		material.setSpecularColor(Color.color(Math.max(floor, Math.min(1, color.getRed() * 1.3)), Math.max(floor, Math.min(1, color.getGreen() * 1.3)), Math.max(floor, Math.min(1, color.getBlue() * 1.3))));
+		repaint(material, color);
 		material.setSpecularPower(36);
 		return material;
+	}
+
+	/** Paints the material again in another color, with the glint of that color: a robot can change its colors in the battle */
+	static void repaint(PhongMaterial material, Color color) {
+		double floor = 0.38;
+		material.setDiffuseColor(color);
+		material.setSpecularColor(Color.color(Math.max(floor, Math.min(1, color.getRed() * 1.3)), Math.max(floor, Math.min(1, color.getGreen() * 1.3)), Math.max(floor, Math.min(1, color.getBlue() * 1.3))));
 	}
 }

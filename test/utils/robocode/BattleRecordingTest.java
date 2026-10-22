@@ -72,6 +72,37 @@ class BattleRecordingTest {
 	}
 
 	@Test
+	void aRobotCanChangeItsColorsDuringTheBattle() {
+		BattleRecording recording = BattleRecording.parse(List.of( //
+				"#N 0 sample.Crazy", //
+				"#R 0", //
+				"#C 0 -16777216 -16776961 -14336", //
+				"#T 0 0|0 10 20 0 0 0 100 0|", //
+				"#T 0 1|0 11 20 0 0 0 100 0|", //
+				// Red body from the third turn on
+				"#C 0 -65536 -16776961 -14336", //
+				"#T 0 2|0 12 20 0 0 0 100 0|"));
+
+		List<Turn> turns = recording.getRounds().get(0);
+		assertEquals(0xff000000, turns.get(0).robots().get(0).bodyColor());
+		assertEquals(0xff000000, turns.get(1).robots().get(0).bodyColor());
+		assertEquals(0xffff0000, turns.get(2).robots().get(0).bodyColor());
+		assertEquals(0xff0000ff, turns.get(2).robots().get(0).gunColor());
+		assertEquals(0xffffc800, turns.get(2).robots().get(0).radarColor());
+		// The robot keeps the colors it started with, for the presentation before the battle
+		assertEquals(0xff000000, recording.getRobot(0).getBodyColor());
+	}
+
+	@Test
+	void aRobotThatNeverReportsItsColorsHasItsOwnInEveryTurn() {
+		BattleRecording recording = BattleRecording.parse(List.of("#N 0 sample.Walls", "#R 0", "#T 0 0|0 10 20 0 0 0 100 0|"));
+
+		RobotState state = recording.getRounds().get(0).get(0).robots().get(0);
+		assertEquals(recording.getRobot(0).getBodyColor(), state.bodyColor());
+		assertEquals(recording.getRobot(0).getRadarColor(), state.radarColor());
+	}
+
+	@Test
 	void classicBattleHasNoTurns() {
 		BattleRecording recording = BattleRecording.parse(List.of("1\tsample.Walls\t216", "2\tsample.SpinBot\t0"));
 		assertTrue(recording.isEmpty());

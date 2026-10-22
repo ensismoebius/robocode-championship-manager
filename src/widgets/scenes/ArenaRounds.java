@@ -377,6 +377,7 @@ final class ArenaRounds {
 			view.place(host.worldX(lerp(state.x(), after.x(), fraction)), host.worldZ(lerp(state.y(), after.y(), fraction)), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction),
 					lerpAngle(state.gunHeading(), after.gunHeading(), fraction), lerpAngle(state.radarHeading(), after.radarHeading(), fraction));
 			double energy = lerp(state.energy(), after.energy(), fraction);
+			view.setColors(state.bodyColor(), state.gunColor(), state.radarColor());
 			view.setEnergy(state.isDead() ? 0 : energy);
 			energies.put(state.index(), state.isDead() ? 0 : energy);
 		}

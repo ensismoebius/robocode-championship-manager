@@ -3,9 +3,13 @@
 Seed script to register demo/test robots into the championship SQLite database.
 Reads real packaged robots from ~/robocode/robots/*.jar and registers them
 with their compiled JAR binaries, Java source code, logo, sound, warcry, and author info.
+A jar that is missing is built from the sample robot of the same name that comes
+with Robocode, with its package renamed to the team.
 """
 
 import sqlite3
+import subprocess
+import tempfile
 import zipfile
 import os
 import hashlib
@@ -32,6 +36,33 @@ def read_source(jar_file_path, src_file):
     except Exception as error:
         print(f"Could not extract source code from {jar_file_path}: {error}")
         return None
+
+def build_jar(robot, robocode_dir):
+    """Builds team.Name.jar from Robocode's sample robot, in the package of the team; nothing when the jar exists"""
+    robots_dir = os.path.join(robocode_dir, 'robots')
+    jar_path = os.path.join(robots_dir, robot["jar"])
+    if os.path.exists(jar_path):
+        return
+    team, name = robot["team"], robot["name"]
+    with open(os.path.join(robots_dir, 'sample', name + '.java'), encoding='utf-8') as handle:
+        source = handle.read().replace('package sample;', f'package {team};', 1)
+
+    with tempfile.TemporaryDirectory() as work:
+        package_dir = os.path.join(work, team)
+        os.makedirs(package_dir)
+        with open(os.path.join(package_dir, name + '.java'), 'w', encoding='utf-8') as handle:
+            handle.write(source)
+        subprocess.run(['javac', '-encoding', 'UTF-8', '-cp', os.path.join(robocode_dir, 'libs', 'robocode.jar'),
+                        '-d', work, os.path.join(package_dir, name + '.java')], check=True)
+        properties = (f"robot.description={robot['warcry']}\nrobocode.version=1.11.1\nrobot.java.source.included=true\n"
+                      f"robot.author.name={robot['author_name']}\nrobot.classname={team}.{name}\nrobot.name={name}\nrobot.version=1.0\n")
+        with zipfile.ZipFile(jar_path, 'w', zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr('META-INF/MANIFEST.MF', 'Manifest-Version: 1.0\r\n\r\n')
+            # The class, its inner classes and the source
+            for entry in sorted(os.listdir(package_dir)):
+                archive.write(os.path.join(package_dir, entry), f'{team}/{entry}')
+            archive.writestr(f'{team}/{name}.properties', properties)
+    print(f"Built {jar_path} from the sample robot {name}")
 
 def register_robot(cur, robot, robots_dir, logo_data, music_data):
     """Inserts a robot and its author, unless a robot with the same team and name exists"""
@@ -125,6 +156,94 @@ DEMO_ROBOTS = [
         "author_mail": "john@foxtrot.org",
         "author_login": "foxtrot",
         "author_pw": "123456"
+    },
+    {
+        "team": "golf",
+        "name": "Fire",
+        "jar": "golf.Fire.jar",
+        "src_file": "golf/Fire.java",
+        "warcry": "Parado e mirando! Quem se aproxima vira cinza!",
+        "author_name": "Katherine Johnson",
+        "author_mail": "katherine@golf.org",
+        "author_login": "golf",
+        "author_pw": "123456"
+    },
+    {
+        "team": "hotel",
+        "name": "TrackFire",
+        "jar": "hotel.TrackFire.jar",
+        "src_file": "hotel/TrackFire.java",
+        "warcry": "Te achei, te segui, te derrubei!",
+        "author_name": "Dennis Ritchie",
+        "author_mail": "dennis@hotel.org",
+        "author_login": "hotel",
+        "author_pw": "123456"
+    },
+    {
+        "team": "india",
+        "name": "VelociRobot",
+        "jar": "india.VelociRobot.jar",
+        "src_file": "india/VelociRobot.java",
+        "warcry": "Velocidade é tudo! Ninguém acerta o que não alcança!",
+        "author_name": "Barbara Liskov",
+        "author_mail": "barbara@india.org",
+        "author_login": "india",
+        "author_pw": "123456"
+    },
+    {
+        "team": "juliett",
+        "name": "Target",
+        "jar": "juliett.Target.jar",
+        "src_file": "juliett/Target.java",
+        "warcry": "Pode mirar, o alvo aqui sabe se defender!",
+        "author_name": "Edsger Dijkstra",
+        "author_mail": "edsger@juliett.org",
+        "author_login": "juliett",
+        "author_pw": "123456"
+    },
+    {
+        "team": "kilo",
+        "name": "PaintingRobot",
+        "jar": "kilo.PaintingRobot.jar",
+        "src_file": "kilo/PaintingRobot.java",
+        "warcry": "Pintamos a arena com a cor da vitória!",
+        "author_name": "Frances Allen",
+        "author_mail": "frances@kilo.org",
+        "author_login": "kilo",
+        "author_pw": "123456"
+    },
+    {
+        "team": "lima",
+        "name": "MyFirstRobot",
+        "jar": "lima.MyFirstRobot.jar",
+        "src_file": "lima/MyFirstRobot.java",
+        "warcry": "Primeiro robô, primeira vitória!",
+        "author_name": "Donald Knuth",
+        "author_mail": "donald@lima.org",
+        "author_login": "lima",
+        "author_pw": "123456"
+    },
+    {
+        "team": "mike",
+        "name": "MyFirstJuniorRobot",
+        "jar": "mike.MyFirstJuniorRobot.jar",
+        "src_file": "mike/MyFirstJuniorRobot.java",
+        "warcry": "Pequeno no tamanho, gigante na arena!",
+        "author_name": "Radia Perlman",
+        "author_mail": "radia@mike.org",
+        "author_login": "mike",
+        "author_pw": "123456"
+    },
+    {
+        "team": "november",
+        "name": "SittingDuck",
+        "jar": "november.SittingDuck.jar",
+        "src_file": "november/SittingDuck.java",
+        "warcry": "Pato parado também é pato perigoso!",
+        "author_name": "Ken Thompson",
+        "author_mail": "ken@november.org",
+        "author_login": "november",
+        "author_pw": "123456"
     }
 ]
 
@@ -137,7 +256,8 @@ def main():
     """Registers the demo robots in the championship database, skipping the ones already there"""
     repo_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(repo_dir, 'database', 'robochamp.db')
-    robots_dir = os.path.expanduser('~/robocode/robots')
+    robocode_dir = os.path.expanduser('~/robocode')
+    robots_dir = os.path.join(robocode_dir, 'robots')
     logo_path = os.path.join(repo_dir, 'src', 'widgets', 'scenes', 'robocodeLogo.png')
     music_path = os.path.join(repo_dir, 'test', 'fixtures', 'tone.mp3')
 
@@ -153,6 +273,7 @@ def main():
     print(f"Current opponents in database: {initial_count}")
 
     for robot in robots():
+        build_jar(robot, robocode_dir)
         register_robot(cur, robot, robots_dir, logo_data, music_data)
 
     conn.commit()

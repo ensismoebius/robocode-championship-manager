@@ -2,6 +2,7 @@ package support;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.ServerSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
@@ -26,9 +27,22 @@ public final class TestConfiguration {
 		load(arena, robocodePath, DATABASE_FILE);
 	}
 
-	/** Loads the same configuration with the database file given. */
+	/**
+	 * Loads the same configuration with the database file given, and a free port
+	 * for the web server: a fixed one may be taken by the program itself, open on
+	 * the same machine, and the tests would wait on the dialog that reports it
+	 */
 	public static synchronized void load(String arena, String robocodePath, String databaseFile) {
-		load(arena, robocodePath, databaseFile, 8080);
+		load(arena, robocodePath, databaseFile, freePort());
+	}
+
+	/** A port nothing listens on now. */
+	public static int freePort() {
+		try (ServerSocket socket = new ServerSocket(0)) {
+			return socket.getLocalPort();
+		} catch (IOException ioException) {
+			throw new UncheckedIOException(ioException);
+		}
 	}
 
 	/** Loads the same configuration with the database file and the port of the web server given. */
