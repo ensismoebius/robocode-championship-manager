@@ -45,6 +45,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 | | |
 |---|---|
 | 🌐 **Web registration** | Teams register their robot, source code, logo, motto and theme song on a website served by the program itself. |
+| 🗂️ **Teams and robots** | An organizer screen (`Ctrl + E`) lists the robots, shows everything each team sent (with the tank turning in 3D) and lets you edit any information, replace files, and add and delete robots. |
 | 🏆 **Automatic brackets** | Single or double elimination (with repechage), with any number of robots, and a single grand final. |
 | 🎮 **3D battles** | Robocode runs hidden; the battle is recorded and replayed in 3D with a fighting-game HUD, a cinematic camera and a slow-motion replay of the killing shot. |
 | 🌋 **Four arenas** | Neon city, volcanic forge, glacial tundra and tropical forest, each with its own critters, who run away when the battle heats up. |
@@ -188,10 +189,10 @@ On Linux the program is installed in `/opt/robocodechampmanager`. If it does not
 ### 4. First run
 
 1. Open the program. It fills the whole screen and has no close button: to quit, press **Ctrl + Q**.
-2. The first time, the **Settings** window appears. Open the **System** tab and fill in:
+2. The first time, the **Settings** screen appears, right inside the program, with an explanation under each field. Open the **System** tab and fill in:
    - **Robocode folder**: click **Choose...** and select the Robocode folder from step 1 (the one that contains `robots`). **This field is required.**
 3. On the **Start screen** tab you can change the title and subtitle. The other tabs can stay as they are.
-4. Click **Save**.
+4. Click **Save** (or press **Enter**). **Esc** cancels. If something is wrong, the field turns red, the right tab opens and the message says what to fix.
 
 ![The settings tabs](docs/images/config.jpg)
 
@@ -223,8 +224,9 @@ Data is stored in `~/RobocodeChampManager` (your user folder). **Deleting that f
 ### 1. Configure
 
 The first time the program opens, it asks for the configuration. After that, press **`C`** at any time to
-change it. Changes apply right away, with no restart: the web server moves to the new port and the
-new database file is opened immediately.
+change it. The configuration is a screen of the program itself, and every field has a line
+explaining what it accepts. Changes apply right away, with no restart: the web server moves to the
+new port and the new database file is opened immediately.
 
 ![The four configuration tabs](docs/images/config.jpg)
 
@@ -249,6 +251,25 @@ You don't need to memorize the shortcuts: **hold `Alt`** on the start screen and
 
 The steps for teams are in
 [Tutorial: registering your team's robot](#-tutorial-registering-your-teams-robot).
+
+#### Teams and robots: view, edit, add and delete
+
+![Teams and robots screen](docs/images/robos-editor.jpg)
+
+**`Ctrl + E`** opens the teams and robots screen. The list of registered robots is on the left;
+when you click one, the form shows everything the team sent, and the robot's tank turns in 3D
+next to the files (drag with the mouse to turn it).
+
+- **Everything can be edited**: team, robot, login, password (blank keeps the current one), motto,
+  people (name, student ID and email), music start and source code.
+- **Files can be replaced**: **Trocar...** (change) under the logo, under the music (change
+  music, you can listen to it right away), under the compiled robot (if the name is the
+  packager's, the team and robot are filled in for you) and **Carregar...** (load) in the source code.
+- **+ Novo** (new) adds a robot: it needs everything, including the `.jar`, the logo and the music.
+- **Excluir** (delete) removes the robot. If it is in championships, the confirmation says how
+  many, because they are deleted along with it, results included.
+- **Salvar** (save) checks the same rules as the web registration and tells you what is wrong. With
+  unsaved changes, the program asks before switching robots or going back.
 
 ### 3. Draw the bracket
 
@@ -350,11 +371,16 @@ If it already does, sign in with your login and password to change your registra
   - the **motto**, the battle cry shown during presentations and on the podium;
   - the **theme song**, an `.mp3` of up to 1 MB that plays when the robot enters the arena;
   - the **logo**, a `.gif`, `.jpg` or `.png` of up to 640 x 480 pixels and 1 MB.
-- **Developers**: name and email of at least one person. Use **+ Add person** for the others.
+- **Developers**: name, **student ID** (RM, numbers only, up to 20 digits) and email of at least
+  one person. Use **+ Add person** for the others.
 - **Robot data**:
   - the **compiled robot**, the `.jar` produced by the Robocode packager
     (*Robot → Package robot for upload*);
   - the **source code**, the `.java` file.
+
+Each field shows, right under its name, the rules it follows (sizes, formats, what is required).
+Before sending, the browser checks everything and lists what needs fixing, with the fields in red,
+without losing what you already filled in.
 
 **3. Click Save.** Done! Until registrations close, you can sign in again and change your robot as
 many times as you like.
@@ -375,7 +401,7 @@ Hold **`Alt`** on the start screen to see this list.
 | `I` | Start screen |
 | `Ctrl + G` | Draws a new championship |
 | `Ctrl + S` | Opens or closes registrations |
-| `Ctrl + E` | Opens the teams and robots: sees the battle cry, the people, the music and the source, and edits the texts |
+| `Ctrl + E` | Teams and robots: views, edits, adds and deletes robots and teams |
 | `R` | Bracket (click a match to select it) |
 | `N` | Selects the next match (and flies to it) |
 | `B` | Versus screen of the selected match |

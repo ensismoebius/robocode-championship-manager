@@ -71,6 +71,11 @@
 	-fx-padding: 24;
 }
 
+.overlay-backdrop.full-page {
+	-fx-background-color: transparent;
+	-fx-padding: 0;
+}
+
 .game-dialog {
 	-fx-background-color: rgba(22, 27, 38, 0.97);
 	-fx-border-color: -rc-info;

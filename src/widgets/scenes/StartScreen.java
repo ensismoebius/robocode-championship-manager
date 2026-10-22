@@ -47,6 +47,7 @@ public class StartScreen extends StackPane {
 			{ "^G", "Sorteia um campeonato" }, //
 			{ "^Z", "Desfaz o último resultado" }, //
 			{ "^S", "Abre/fecha as inscrições" }, //
+			{ "^E", "Equipes e robôs" }, //
 			{ "X", "Exporta o código fonte" }, //
 			{ "C", "Configurações" }, //
 			{ "^Q", "Sair" }, //

@@ -156,10 +156,10 @@ class NewConfigurationHandleWindowTest {
 		List<String> rules = new ArrayList<String>();
 		FxSupport.onNextDialog(panel -> {
 			text(panel, "Quantas partidas", "1");
-			rules.add(((Label) nodes(panel).stream().filter(node -> node instanceof Label label && label.getStyleClass().contains("form-hint")).findFirst().orElseThrow()).getText());
+			rules.add(((Label) nodes(panel).stream().filter(node -> node instanceof Label label && label.getStyleClass().contains("battle-rule")).findFirst().orElseThrow()).getText());
 			choose(panel, "Tipo de batalha", 1);
 			text(panel, "Melhor de quantas partidas", "3");
-			rules.add(((Label) nodes(panel).stream().filter(node -> node instanceof Label label && label.getStyleClass().contains("form-hint")).findFirst().orElseThrow()).getText());
+			rules.add(((Label) nodes(panel).stream().filter(node -> node instanceof Label label && label.getStyleClass().contains("battle-rule")).findFirst().orElseThrow()).getText());
 			button(panel, "Cancelar").fire();
 		});
 		assertNull(FxSupport.run(() -> window.askForProperties(saved())));

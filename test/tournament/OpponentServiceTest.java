@@ -2,7 +2,7 @@ package tournament;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -125,16 +125,22 @@ class OpponentServiceTest {
 	}
 
 	@Test
-	void aRobotLeavesTheDrawOfAChampionshipWithoutResultsButNotOneThatHasResults() throws IOException {
+	void aRobotThatIsInNoChampionshipIsJustRemoved() throws IOException {
+		long id = OpponentService.save(0, robot("alpha", "Corners", "alpha-login")).getId();
+		assertEquals(0, OpponentService.championshipsOf(id));
+
+		OpponentService.delete(id);
+
+		assertEquals(0, OpponentService.all().size());
+	}
+
+	@Test
+	void removingARobotRemovesTheChampionshipsItIsDrawnInWithTheirResults() throws IOException {
 		long first = OpponentService.save(0, robot("alpha", "Corners", "alpha-login")).getId();
 		long second = OpponentService.save(0, robot("beta", "Walls", "beta-login")).getId();
 		long third = OpponentService.save(0, robot("gama", "Fire", "gama-login")).getId();
 		Championship championship = ChampionshipService.create(false, new Random(1));
-
-		OpponentService.delete(third);
-
-		assertEquals(2, OpponentService.all().size());
-		assertEquals(2, ChampionshipService.current().getSeeds().size());
+		assertEquals(1, OpponentService.championshipsOf(first));
 
 		Database.inTransaction(entityManager -> {
 			MatchResult result = new MatchResult();
@@ -149,8 +155,10 @@ class OpponentServiceTest {
 			return null;
 		});
 
-		assertThrows(IllegalStateException.class, () -> OpponentService.delete(first));
-		assertEquals(2, OpponentService.all().size());
-		assertNotEquals(0, ChampionshipService.current().getSeeds().size());
+		OpponentService.delete(first);
+
+		assertEquals(List.of(second, third), OpponentService.all().stream().map(Opponent::getId).toList());
+		assertNull(ChampionshipService.current());
+		assertEquals(0L, (long) Database.read(entityManager -> entityManager.createQuery("select count(r) from MatchResult r", Long.class).getSingleResult()));
 	}
 }

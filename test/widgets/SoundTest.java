@@ -21,8 +21,8 @@ class SoundTest {
 	@Test
 	void decodesTheBundledMusic() {
 		// The start and versus screens music
-		assertNotNull(Sound.fromResource(widgets.scenes.StartScreen.class, "versusMusic.mp3"));
-		try (var is = widgets.scenes.StartScreen.class.getResourceAsStream("versusMusic.mp3")) {
+		assertNotNull(Sound.fromResource(widgets.scenes.StartScreen.class, "/assets/versusMusic.mp3"));
+		try (var is = widgets.scenes.StartScreen.class.getResourceAsStream("/assets/versusMusic.mp3")) {
 			assertTrue(Sound.isPlayable(is.readAllBytes()));
 		} catch (IOException e) {
 			throw new AssertionError(e);

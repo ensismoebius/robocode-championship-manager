@@ -248,6 +248,8 @@ public final class GameWindow {
 		}
 
 		StackPane backdrop = new StackPane(page);
+		// Found like any panel of the game, but the page itself is the background: nothing dims, no margin
+		backdrop.getStyleClass().addAll("overlay-backdrop", "full-page");
 		backdrop.prefWidthProperty().bind(GameWindow.overlayLayer.widthProperty());
 		backdrop.prefHeightProperty().bind(GameWindow.overlayLayer.heightProperty());
 		page.prefWidthProperty().bind(backdrop.widthProperty());

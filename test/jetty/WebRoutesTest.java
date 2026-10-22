@@ -78,7 +78,7 @@ class WebRoutesTest {
 		HttpClient session = MultipartForm.session();
 		byte[] music = WebRoutesTest.class.getResourceAsStream("/fixtures/tone.mp3").readAllBytes();
 		String saved = new MultipartForm().field("login", "time9").field("password", "pass1").field("teamWarcry", "Vamos").field("name[]", "Ana")
-				.field("email[]", "ana@example.com").file("robotJarFile", "time9.Bot_1.0.jar", new byte[] { 1 })
+				.field("email[]", "ana@example.com").field("registration[]", "12345").file("robotJarFile", "time9.Bot_1.0.jar", new byte[] { 1 })
 				.file("robotJavaFile", "Bot.java", "class Bot {}".getBytes(StandardCharsets.UTF_8)).file("teamMusic", "song.mp3", music).file("teamLogo", "logo.png", png())
 				.post(session, base + "/robotEditor?action=new");
 		assertTrue(saved.contains("Robô salvo com sucesso"), saved);

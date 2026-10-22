@@ -47,6 +47,7 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 | | |
 |---|---|
 | 🌐 **Inscrições pela web** | As equipes cadastram robô, código fonte, logotipo, lema e música tema num site servido pelo próprio programa. |
+| 🗂️ **Equipes e robôs** | Uma tela do organizador (`Ctrl + E`) lista os robôs, mostra tudo o que cada equipe enviou (com o tanque em 3D girando) e deixa editar qualquer informação, trocar arquivos, adicionar e excluir robôs. |
 | 🏆 **Chaveamento automático** | Eliminatória simples ou dupla (com repescagem), com qualquer número de robôs, e uma única grande final. |
 | 🎮 **Batalhas em 3D** | O Robocode roda escondido; a batalha é gravada e reproduzida em 3D com HUD de jogo de luta, câmera cinematográfica e replay em câmera lenta do golpe final. |
 | 🌋 **Quatro arenas** | Cidade neon, forja vulcânica, tundra glacial e floresta tropical, cada uma com seus bichos, que fogem quando a batalha esquenta. |
@@ -188,10 +189,10 @@ No Linux, o programa é instalado em `/opt/robocodechampmanager`. Se ele não ap
 ### 4. Primeira abertura
 
 1. Abra o programa. Ele ocupa a tela inteira e não tem botão de fechar: para sair, use **Ctrl + Q**.
-2. Na primeira vez aparece a janela **Configurações**. Vá na aba **Sistema** e preencha:
+2. Na primeira vez aparece a tela **Configurações**, inteira dentro do programa, com uma explicação sob cada campo. Vá na aba **Sistema** e preencha:
    - **Diretório do robocode**: clique em **Escolher...** e selecione a pasta do Robocode do passo 1 (a que contém `robots`). **Este campo é obrigatório.**
 3. Na aba **Tela inicial** você pode mudar o título e o subtítulo. As outras abas podem ficar como estão.
-4. Clique em **Salvar**.
+4. Clique em **Salvar** (ou **Enter**). **Esc** cancela. Se algo estiver errado, o campo fica em vermelho, a aba certa abre e a mensagem diz o que corrigir.
 
 ![As abas da configuração](docs/images/config.jpg)
 
@@ -223,8 +224,9 @@ Os dados ficam em `~/RobocodeChampManager` (a pasta **Usuário** da sua conta). 
 ### 1. Configure
 
 Na primeira vez que o programa abre, ele pede a configuração. Depois, aperte **`C`** a qualquer
-momento para mudá-la. As mudanças valem na hora, sem reiniciar: o servidor web muda de porta e
-o novo banco de dados é aberto na mesma hora.
+momento para mudá-la. A configuração é uma tela do próprio programa, e cada campo tem uma linha
+explicando o que ele aceita. As mudanças valem na hora, sem reiniciar: o servidor web muda de
+porta e o novo banco de dados é aberto na mesma hora.
 
 ![As quatro abas da configuração](docs/images/config.jpg)
 
@@ -249,6 +251,25 @@ Não decore os atalhos: **segure `Alt`** na tela inicial e eles aparecem.
 
 O passo a passo das equipes está em
 [Tutorial: inscrevendo o robô da sua equipe](#-tutorial-inscrevendo-o-robô-da-sua-equipe).
+
+#### Equipes e robôs: ver, editar, adicionar e excluir
+
+![Tela de equipes e robôs](docs/images/robos-editor.jpg)
+
+**`Ctrl + E`** abre a tela das equipes e dos robôs. À esquerda fica a lista de robôs cadastrados;
+ao clicar em um, o formulário mostra tudo o que a equipe enviou, e o tanque do robô gira em 3D
+ao lado dos arquivos (arraste com o mouse para girá-lo).
+
+- **Tudo pode ser editado**: time, robô, login, senha (em branco, mantém a atual), lema, pessoas
+  (nome, RM e e-mail), início da música e código fonte.
+- **Os arquivos podem ser trocados**: **Trocar...** sob o logotipo, sob a música (dá para ouvir
+  na hora), sob o robô compilado (se o nome for o do empacotador, o time e o robô são preenchidos
+  sozinhos) e **Carregar...** no código fonte.
+- **+ Novo** adiciona um robô: ele precisa de tudo, inclusive o `.jar`, o logotipo e a música.
+- **Excluir** remove o robô. Se ele estiver em campeonatos, a confirmação avisa quantos, porque
+  eles são apagados junto, com os resultados.
+- **Salvar** confere as mesmas regras da inscrição pela web e diz o que está errado. Se houver
+  alterações não salvas, o programa pergunta antes de trocar de robô ou voltar.
 
 ### 3. Sorteie o chaveamento
 
@@ -350,12 +371,16 @@ e `M` abrem o pódio de novo.
   - o **lema**, o grito de guerra que aparece nas apresentações e no pódio;
   - a **música tema**, um `.mp3` de até 1 MB que toca quando o robô entra na arena;
   - o **logotipo**, um `.gif`, `.jpg` ou `.png` de até 640 x 480 pixels e 1 MB.
-- **Quem desenvolveu**: nome e e-mail de pelo menos uma pessoa. Use
-  **+ Adicionar pessoa** para as outras.
+- **Quem desenvolveu**: nome, **RM** (registro de matrícula, só números, até 20 dígitos) e
+  e-mail de pelo menos uma pessoa. Use **+ Adicionar pessoa** para as outras.
 - **Dados do robô**:
   - o **robô compilado**, o `.jar` gerado pelo empacotador do Robocode
     (*Robot → Package robot for upload*);
   - o **código fonte**, o arquivo `.java`.
+
+Cada campo traz, logo abaixo do nome, as regras que ele segue (tamanhos, formatos, o que é
+obrigatório). Antes de enviar, o navegador confere tudo e lista o que precisa ser corrigido, com os
+campos em vermelho, sem perder o que você já preencheu.
 
 **3. Clique em Salvar.** Pronto! Até as inscrições fecharem, você pode entrar de novo e trocar
 o robô quantas vezes quiser.
@@ -376,7 +401,7 @@ Segure **`Alt`** na tela inicial para ver esta lista.
 | `I` | Tela inicial |
 | `Ctrl + G` | Sorteia um novo campeonato |
 | `Ctrl + S` | Abre ou fecha as inscrições |
-| `Ctrl + E` | Abre as equipes e os robôs: vê o lema, as pessoas, a música e o código, e edita os textos |
+| `Ctrl + E` | Equipes e robôs: vê, edita, adiciona e exclui robôs e equipes |
 | `R` | Chaveamento (clique numa partida para selecioná-la) |
 | `N` | Seleciona a próxima partida (e voa até ela) |
 | `B` | Tela de versus da partida selecionada |

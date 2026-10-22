@@ -100,12 +100,14 @@ public final class OpponentService {
 		});
 	}
 
+	/** How many championships have the robot drawn: they go away with it, see {@link #delete(long)}. */
+	public static long championshipsOf(long opponentId) {
+		return Database.read(entityManager -> entityManager.createQuery("select count(c) from Championship c join c.seeds s where s.id = :id", Long.class).setParameter("id", opponentId).getSingleResult());
+	}
+
 	/**
-	 * Removes a robot. A robot that is only drawn in championships that have no results yet leaves the draw;
-	 * one that already has results stays, because the history of the championship would be wrong without it.
-	 *
-	 * @throws IllegalStateException
-	 *             with the message to show when the robot cannot be removed
+	 * Removes a robot. A championship cannot go on without one of its robots, so the championships that have it
+	 * drawn are removed too, with their results.
 	 */
 	public static void delete(long opponentId) {
 		Database.inTransaction(entityManager -> {
@@ -113,14 +115,9 @@ public final class OpponentService {
 			if (robot == null) {
 				return null;
 			}
-			Long results = entityManager.createQuery("select count(r) from MatchResult r where r.championship.id in (select c.id from Championship c join c.seeds s where s.id = :id)", Long.class)
-					.setParameter("id", opponentId).getSingleResult();
-			if (results > 0) {
-				throw new IllegalStateException("O robô está num campeonato que já tem resultados, e a história dele ficaria errada sem ele");
-			}
 			List<Championship> drawn = entityManager.createQuery("select c from Championship c join c.seeds s where s.id = :id", Championship.class).setParameter("id", opponentId).getResultList();
 			for (Championship championship : drawn) {
-				championship.getSeeds().removeIf(seed -> seed.getId() == opponentId);
+				entityManager.remove(championship);
 			}
 			entityManager.remove(robot);
 			return null;

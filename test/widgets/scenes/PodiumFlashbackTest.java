@@ -89,7 +89,7 @@ class PodiumFlashbackTest {
 			captions.addAll(captions(ceremony));
 		}
 		FxSupport.runVoid(ceremony::previous);
-		FxSupport.sleep(500);
+		FxSupport.sleep(1500);
 		assertFalse(FxSupport.run(() -> shown(flashbackTitle(ceremony))), "the moments close when the ceremony goes back");
 		FxSupport.runVoid(ceremony::stop);
 

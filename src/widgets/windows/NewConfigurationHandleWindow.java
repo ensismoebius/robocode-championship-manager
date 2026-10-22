@@ -259,7 +259,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			roundsCaption.getStyleClass().add("form-label");
 			Label battleRule = new Label();
 			battleRule.setWrapText(true);
-			battleRule.getStyleClass().add("form-hint");
+			battleRule.getStyleClass().addAll("form-hint", "battle-rule");
 			this.explainBattle(roundsCaption, battleRule);
 
 			GridPane grid = grid();

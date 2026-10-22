@@ -107,7 +107,7 @@ public final class ChampionshipFixture {
 	/** The picture of the program, used as the logo of the robots. */
 	public static byte[] logo() {
 		try {
-			return Files.readAllBytes(Path.of("src", "widgets", "scenes", "robocodeLogo.png"));
+			return Files.readAllBytes(Path.of("src", "assets", "robocodeLogo.png"));
 		} catch (IOException unreadable) {
 			throw new IllegalStateException(unreadable);
 		}

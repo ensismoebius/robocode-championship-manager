@@ -148,7 +148,7 @@ class RegistrationFlowTest {
 
 	private static Form newRobotForm(String login, String jarName) {
 		return new Form().field("login", login).field("password", "pass1").field("teamWarcry", "Vamos <script>alert(1)</script>").field("name[]", "Ana")
-				.field("email[]", "ana@example.com").file("robotJarFile", jarName, new byte[] { 1, 2, 3 }).file("robotJavaFile", "MyBot.java", "class MyBot {}".getBytes())
+				.field("email[]", "ana@example.com").field("registration[]", "12345").file("robotJarFile", jarName, new byte[] { 1, 2, 3 }).file("robotJavaFile", "MyBot.java", "class MyBot {}".getBytes())
 				.file("teamMusic", "song.mp3", music).file("teamLogo", "logo.png", logo);
 	}
 
@@ -240,8 +240,8 @@ class RegistrationFlowTest {
 		assertTrue(login(client, "team1", "pass1").contains("team1.MyBot"));
 
 		// No files and no password: they are kept. Adds a second author
-		String page = new Form().field("login", "team1").field("password", "").field("teamWarcry", "New cry").field("name[]", "Ana").field("email[]", "ana@example.com")
-				.field("name[]", "Bia").field("email[]", "bia@example.com").post(client, "edit");
+		String page = new Form().field("login", "team1").field("password", "").field("teamWarcry", "New cry").field("name[]", "Ana").field("email[]", "ana@example.com").field("registration[]", "12345")
+				.field("name[]", "Bia").field("email[]", "bia@example.com").field("registration[]", "12345").post(client, "edit");
 		assertTrue(page.contains("Robô salvo com sucesso"), page);
 
 		Opponent saved = findOpponent("team1");
@@ -250,7 +250,7 @@ class RegistrationFlowTest {
 		assertArrayEquals(new byte[] { 1, 2, 3 }, saved.getCompiledRobot());
 
 		// Removing an author deletes it, so it can not be used to log in anymore
-		page = new Form().field("login", "team1").field("password", "pass2").field("teamWarcry", "New cry").field("name[]", "Bia").field("email[]", "bia@example.com").post(client,
+		page = new Form().field("login", "team1").field("password", "pass2").field("teamWarcry", "New cry").field("name[]", "Bia").field("email[]", "bia@example.com").field("registration[]", "12345").post(client,
 				"edit");
 		assertTrue(page.contains("Robô salvo com sucesso"), page);
 		assertEquals(1L, count("Author"));
@@ -271,7 +271,7 @@ class RegistrationFlowTest {
 	@Test
 	@Order(6)
 	void rejectsMusicThatCanNotBePlayed() throws Exception {
-		String page = new Form().field("login", "noise").field("password", "x").field("teamWarcry", "x").field("name[]", "Ana").field("email[]", "ana@example.com")
+		String page = new Form().field("login", "noise").field("password", "x").field("teamWarcry", "x").field("name[]", "Ana").field("email[]", "ana@example.com").field("registration[]", "12345")
 				.file("robotJarFile", "noise.Bot_1.0.jar", new byte[] { 1 }).file("robotJavaFile", "Bot.java", "class Bot {}".getBytes())
 				.file("teamMusic", "song.mp3", "not really a song".getBytes()).file("teamLogo", "logo.png", logo).post(newClient(), "new");
 		assertTrue(page.contains("Não foi possível tocar a música"), page);

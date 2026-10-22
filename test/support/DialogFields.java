@@ -51,10 +51,10 @@ public final class DialogFields {
 		return nodes(root).stream().filter(match).findFirst().orElse(null);
 	}
 
-	/** The input under the caption of a field of the form: the caption is the first label of a box with two children. */
+	/** The input under the caption of a field of the form: the caption is the first label of a box, the input comes next and the rule under it. */
 	public static Node input(Node panel, String caption) {
 		for (Node node : nodes(panel)) {
-			if (node instanceof VBox box && box.getChildren().size() == 2 && box.getChildren().get(0) instanceof Label label && caption.equals(label.getText())) {
+			if (node instanceof VBox box && box.getChildren().size() >= 2 && box.getChildren().get(0) instanceof Label label && caption.equals(label.getText())) {
 				return box.getChildren().get(1);
 			}
 		}

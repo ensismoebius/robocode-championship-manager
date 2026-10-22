@@ -240,7 +240,7 @@ public class Podium extends StackPane {
 	public void startMusic(double volume) {
 		this.musicVolume.set(volume);
 		if (this.music == null) {
-			this.music = Sound.fromResource(getClass(), "versusMusic.mp3");
+			this.music = Sound.fromResource(getClass(), "/assets/versusMusic.mp3");
 		}
 		if (this.music != null) {
 			this.music.setLoop(true);

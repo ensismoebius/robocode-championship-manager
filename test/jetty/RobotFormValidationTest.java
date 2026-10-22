@@ -69,7 +69,7 @@ class RobotFormValidationTest {
 		}
 		if (emails != null) {
 			for (String email : emails) {
-				form.field("email[]", email);
+				form.field("email[]", email).field("registration[]", "12345");
 			}
 		}
 		if (jar != null) {

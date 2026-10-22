@@ -202,7 +202,7 @@ class RobotViewTest {
 			assertTrue(Math.abs(robot.tilt.getAngle()) < strong);
 
 			// And it comes to rest, standing straight
-			robot.rocking.jumpTo(Duration.millis(420));
+			robot.rocking.jumpTo(Duration.millis(520));
 			assertEquals(0, robot.tilt.getAngle(), 1e-6);
 		});
 	}

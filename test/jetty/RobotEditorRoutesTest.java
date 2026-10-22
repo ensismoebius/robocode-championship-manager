@@ -62,7 +62,7 @@ class RobotEditorRoutesTest {
 
 	/** A robot form with everything right, and the password and the battle cry given by the test. */
 	private static MultipartForm form(String login, String password, String warcry, String jarName) throws IOException {
-		return new MultipartForm().field("login", login).field("password", password).field("teamWarcry", warcry).field("name[]", "Ana").field("email[]", "ana@example.com")
+		return new MultipartForm().field("login", login).field("password", password).field("teamWarcry", warcry).field("name[]", "Ana").field("email[]", "ana@example.com").field("registration[]", "12345")
 				.file("robotJarFile", jarName, new byte[] { 1 }).file("robotJavaFile", "MyBot.java", "class MyBot {}".getBytes(StandardCharsets.UTF_8))
 				.file("teamMusic", "song.mp3", RobotEditorRoutesTest.class.getResourceAsStream("/fixtures/tone.mp3").readAllBytes()).file("teamLogo", "logo.png", png());
 	}

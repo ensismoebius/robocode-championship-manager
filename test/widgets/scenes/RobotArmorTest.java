@@ -53,11 +53,11 @@ class RobotArmorTest {
 		RobotView robot = wholeRobot();
 
 		FxSupport.runVoid(() -> {
-			// 40 plates, 32 parts it can fight without and the 2 skirts
-			assertEquals(74, robot.armor.pieces.size());
-			assertEquals(74, robot.armor.remaining());
+			// 40 plates, 30 parts it can fight without and the 2 skirts
+			assertEquals(72, robot.armor.pieces.size());
+			assertEquals(72, robot.armor.remaining());
 			// The antennas, the weapon station, the sight, the muzzle and the skirts (with the strip of light) are made of more than one shape
-			assertEquals(7, robot.armor.pieces.stream().filter(piece -> piece.getChildren().size() > 1).count());
+			assertEquals(6, robot.armor.pieces.stream().filter(piece -> piece.getChildren().size() > 1).count());
 		});
 	}
 
@@ -67,9 +67,9 @@ class RobotArmorTest {
 
 		FxSupport.runVoid(() -> {
 			robot.setEnergy(75);
-			assertEquals(56, robot.armor.remaining());
+			assertEquals(54, robot.armor.remaining());
 			robot.setEnergy(50);
-			assertEquals(37, robot.armor.remaining());
+			assertEquals(36, robot.armor.remaining());
 			robot.setEnergy(1);
 			assertEquals(1, robot.armor.remaining());
 			robot.setEnergy(0);
@@ -114,7 +114,7 @@ class RobotArmorTest {
 			robot.setEnergy(40);
 			// A hit gives energy back, not the pieces
 			robot.setEnergy(70);
-			assertEquals(30, robot.armor.remaining());
+			assertEquals(29, robot.armor.remaining());
 		});
 	}
 
@@ -253,7 +253,7 @@ class RobotArmorTest {
 			robot.setEnergy(20);
 			robot.reset();
 
-			assertEquals(74, robot.armor.remaining());
+			assertEquals(72, robot.armor.remaining());
 			assertTrue(robot.armor.thrown.isEmpty());
 			assertEquals(before, robot.host.effects.getChildren().size());
 		});
@@ -264,18 +264,18 @@ class RobotArmorTest {
 		RobotView robot = wholeRobot();
 
 		FxSupport.runVoid(() -> {
-			// Lost long before the death: 74 pieces, 60 kept at 80 of energy
+			// Lost long before the death: 72 pieces, 58 kept at 80 of energy
 			robot.setEnergy(80);
 			List<RobotArmor.Thrown> before = List.copyOf(robot.armor.thrown);
 			assertEquals(14, before.size());
 			// Lost in the moments the replay shows
 			robot.setEnergy(40);
-			assertEquals(44, robot.armor.thrown.size());
+			assertEquals(43, robot.armor.thrown.size());
 
 			// The replay starts: the effects are cleared and the robot goes back to 80
 			robot.host.effects.getChildren().clear();
 			robot.rewind(80);
-			assertEquals(60, robot.armor.remaining());
+			assertEquals(58, robot.armor.remaining());
 			assertEquals(before, robot.armor.thrown);
 			for (RobotArmor.Thrown piece : before) {
 				assertTrue(robot.host.effects.getChildren().contains(piece.flying), "still on the floor");
@@ -284,8 +284,8 @@ class RobotArmorTest {
 
 			// In the replay the later ones come off again, thrown
 			robot.setEnergy(40);
-			assertEquals(44, robot.armor.thrown.size());
-			assertEquals(30, robot.armor.remaining());
+			assertEquals(43, robot.armor.thrown.size());
+			assertEquals(29, robot.armor.remaining());
 		});
 	}
 
@@ -297,7 +297,7 @@ class RobotArmorTest {
 			robot.reset();
 			// The first energy after the reset is where the replay starts: nothing is thrown
 			robot.setEnergy(30);
-			assertEquals(23, robot.armor.remaining());
+			assertEquals(22, robot.armor.remaining());
 			assertTrue(robot.armor.thrown.isEmpty());
 		});
 	}

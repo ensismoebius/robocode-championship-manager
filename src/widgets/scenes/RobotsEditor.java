@@ -2,12 +2,8 @@ package widgets.scenes;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -31,7 +27,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.FileChooser;
 import model.Author;
 import model.Opponent;
 import tournament.OpponentService;
@@ -52,9 +47,6 @@ import widgets.Sound;
  */
 public class RobotsEditor extends StackPane {
 
-	/** Robocode packager generates files like team.RobotName_1.0.jar */
-	private static final Pattern JAR_FILE_NAME = Pattern.compile("^([^.]+)\\.(.+?)_[0-9][0-9.]*\\.jar$");
-
 	private final Runnable onSaved;
 	private final Runnable onBack;
 
@@ -71,16 +63,16 @@ public class RobotsEditor extends StackPane {
 	private final AuthorRows authors = new AuthorRows(this::markDirty);
 	private final Button addAuthor = new Button("+ Adicionar pessoa");
 	private final ImageView logo = new ImageView();
-	private final Button chooseLogo = new Button("Trocar logotipo...");
+	private final Button chooseLogo = new Button("Trocar...");
 	private final Button musicButton = new Button("▶ Ouvir");
-	private final Button chooseMusic = new Button("Trocar música...");
+	private final Button chooseMusic = new Button("Trocar...");
 	private final TextField musicStart = new TextField();
 	private final Label musicInfo = new Label();
 	private final Label jarInfo = new Label();
-	private final Button chooseJar = new Button("Trocar .jar...");
+	private final Button chooseJar = new Button("Trocar...");
 	private final TextArea source = new TextArea();
 	private final Label sourceInfo = new Label();
-	private final Button loadSource = new Button("Carregar .java...");
+	private final Button loadSource = new Button("Carregar...");
 	private final RobotPreview preview = new RobotPreview();
 	private final Label error = new Label();
 	private final Label saved = new Label();
@@ -195,6 +187,10 @@ public class RobotsEditor extends StackPane {
 		this.loadSource.setOnAction(event -> this.pickSource());
 		this.musicButton.setOnAction(event -> this.toggleMusic());
 		this.save.setOnAction(event -> this.save());
+		// A caption is never cut to dots, whatever the room left by the layout
+		for (Button button : List.of(this.newRobot, this.deleteRobot, this.addAuthor, this.chooseLogo, this.musicButton, this.chooseMusic, this.chooseJar, this.loadSource, this.save)) {
+			button.setMinWidth(Region.USE_PREF_SIZE);
+		}
 	}
 
 	/** The list of the robots at the left, with the buttons that add a robot and remove the one in the form. */
@@ -209,7 +205,8 @@ public class RobotsEditor extends StackPane {
 		});
 		this.robots.getSelectionModel().selectedItemProperty().addListener((observable, previous, selected) -> this.selectionChanged(previous, selected));
 		HBox buttons = new HBox(6, this.newRobot, this.deleteRobot);
-		VBox list = new VBox(6, this.label("Robôs cadastrados", "panel-title"), buttons, this.robots);
+		VBox list = new VBox(6, this.label("Robôs", "panel-title"), buttons, this.robots);
+		list.setMinWidth(Region.USE_PREF_SIZE);
 		VBox.setVgrow(this.robots, Priority.ALWAYS);
 		return list;
 	}
@@ -389,28 +386,10 @@ public class RobotsEditor extends StackPane {
 
 	// ---------------------------------------------------------------- files
 
-	/** Asks for a file, null when the organizer gives up. */
-	private File pickFile(String caption, String description, String... extensions) {
-		FileChooser chooser = new FileChooser();
-		chooser.setTitle(caption);
-		chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter(description, extensions));
-		return chooser.showOpenDialog(GameWindow.getWindow());
-	}
-
-	/** The bytes of a file, null (with the reason shown) when it cannot be read. */
-	private byte[] read(File file) {
-		try {
-			return Files.readAllBytes(file.toPath());
-		} catch (IOException ioException) {
-			this.error.setText("Não foi possível ler " + file.getName() + ": " + ioException.getMessage());
-			return null;
-		}
-	}
-
 	/** Chooses a new logo, shown at once. */
 	private void pickLogo() {
-		File file = this.pickFile("Logotipo do time (até 640 x 480 pixels e 1 MB)", "Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif");
-		byte[] bytes = file == null ? null : this.read(file);
+		File file = RobotFiles.pick("Logotipo do time (até 640 x 480 pixels e 1 MB)", "Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif");
+		byte[] bytes = RobotFiles.read(file, this.error);
 		if (bytes != null) {
 			this.pendingImage = bytes;
 			this.logo.setImage(new Image(new ByteArrayInputStream(bytes)));
@@ -420,8 +399,8 @@ public class RobotsEditor extends StackPane {
 
 	/** Chooses a new music, which can be played at once. */
 	private void pickMusic() {
-		File file = this.pickFile("Música tema do time (.mp3 até 1 MB)", "Música mp3", "*.mp3");
-		byte[] bytes = file == null ? null : this.read(file);
+		File file = RobotFiles.pick("Música tema do time (.mp3 até 1 MB)", "Música mp3", "*.mp3");
+		byte[] bytes = RobotFiles.read(file, this.error);
 		if (bytes != null) {
 			this.stopMusic();
 			this.pendingMusic = bytes;
@@ -434,15 +413,15 @@ public class RobotsEditor extends StackPane {
 
 	/** Chooses a new .jar. When its name is the one of the packager, the team and the robot take its names. */
 	private void pickJar() {
-		File file = this.pickFile("Robô compilado (.jar do empacotador do Robocode)", "Arquivo jar", "*.jar");
-		byte[] bytes = file == null ? null : this.read(file);
+		File file = RobotFiles.pick("Robô compilado (.jar do empacotador do Robocode)", "Arquivo jar", "*.jar");
+		byte[] bytes = RobotFiles.read(file, this.error);
 		if (bytes != null) {
 			this.pendingJar = bytes;
 			this.jarInfo.setText("Novo: " + file.getName() + " (" + bytes.length / 1024 + " KB)");
-			Matcher matcher = JAR_FILE_NAME.matcher(file.getName());
-			if (matcher.matches()) {
-				this.team.setText(matcher.group(1));
-				this.name.setText(matcher.group(2));
+			String[] names = RobotFiles.namesOf(file.getName());
+			if (names != null) {
+				this.team.setText(names[0]);
+				this.name.setText(names[1]);
 			}
 			this.markDirty();
 		}
@@ -450,8 +429,8 @@ public class RobotsEditor extends StackPane {
 
 	/** Loads the text of a .java file into the source. */
 	private void pickSource() {
-		File file = this.pickFile("Código fonte do robô (.java até 1 MB)", "Código Java", "*.java");
-		byte[] bytes = file == null ? null : this.read(file);
+		File file = RobotFiles.pick("Código fonte do robô (.java até 1 MB)", "Código Java", "*.java");
+		byte[] bytes = RobotFiles.read(file, this.error);
 		if (bytes != null) {
 			this.source.setText(new String(bytes, StandardCharsets.UTF_8));
 		}
@@ -495,7 +474,9 @@ public class RobotsEditor extends StackPane {
 		if (this.current == null || this.current.getId() == 0) {
 			return;
 		}
-		if (!GameDialog.confirm("Excluir robô", "Excluir " + this.current.getFullName() + " e tudo o que a equipe enviou? Isso não pode ser desfeito.")) {
+		long drawn = OpponentService.championshipsOf(this.current.getId());
+		String championships = drawn == 0 ? "" : "\n\nEle está em " + drawn + (drawn == 1 ? " campeonato" : " campeonatos") + ", que será apagado com todos os resultados.";
+		if (!GameDialog.confirm("Excluir robô", "Excluir " + this.current.getFullName() + " e tudo o que a equipe enviou? Isso não pode ser desfeito." + championships)) {
 			return;
 		}
 		try {
