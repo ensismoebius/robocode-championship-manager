@@ -256,6 +256,19 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/**
+	 * Checks the files sent with the form: the robot and the team files are required on a new robot, and the
+	 * names of the robot and the team come from the .jar file name, when it is sent
+	 */
+	private Names checkUploads(List<String> errors, boolean isNew, Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
+		requireFiles(errors, isNew, robotJar, robotJava, teamMusic, teamLogo);
+		Names names = checkJar(errors, robotJar, robot);
+		checkJava(errors, robotJava);
+		checkMusic(errors, teamMusic);
+		checkLogo(errors, teamLogo);
+		return names;
+	}
+
+	/**
 	 * Fills the robot with the posted data. When editing, the files and password
 	 * that were not sent are kept.
 	 *
@@ -279,12 +292,7 @@ public class RobotEditor extends HttpServlet {
 		Upload teamMusic = this.readUpload(req, "teamMusic");
 		Upload teamLogo = this.readUpload(req, "teamLogo");
 
-		requireFiles(errors, isNew, robotJar, robotJava, teamMusic, teamLogo);
-		// The team and robot names come from the .jar file name, when it is sent
-		Names names = checkJar(errors, robotJar, robot);
-		checkJava(errors, robotJava);
-		checkMusic(errors, teamMusic);
-		checkLogo(errors, teamLogo);
+		Names names = this.checkUploads(errors, isNew, robot, robotJar, robotJava, teamMusic, teamLogo);
 
 		boolean keepPassword = password == null || password.isBlank();
 		checkAccess(errors, login, keepPassword, robot);
@@ -315,7 +323,7 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/** Stores the files that were sent on the robot: the jar, the source, the music and the logo. */
-	private static void copyUploads(Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) {
+	private static void copyUploads(Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
 		if (robotJar != null) {
 			robot.setCompiledRobot(robotJar.content());
 		}
@@ -335,7 +343,7 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/** All of them are needed for new robots */
-	private static void requireFiles(List<String> errors, boolean isNew, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) {
+	private static void requireFiles(List<String> errors, boolean isNew, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
 		if (robotJar == null && isNew) {
 			errors.add("Envie o arquivo .jar do robô!");
 		}

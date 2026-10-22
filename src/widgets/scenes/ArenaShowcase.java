@@ -90,16 +90,28 @@ final class ArenaShowcase {
 		host.shotSubject = robot.getIndex();
 		host.shotSeed = host.random.nextDouble() * Math.PI * 2;
 		this.turntable();
-
-		// A spotlight in the color of the player
-		host.flashLight.setTranslateX(0);
-		host.flashLight.setTranslateY(-160);
-		host.flashLight.setTranslateZ(0);
-		host.flashLight.setColor(view.playerColor.deriveColor(0, 0.8, 0.9, 1));
+		this.spotlight(view.playerColor);
 
 		Opponent opponent = host.opponentOf(robot);
 		Node card = this.showcaseCard(robot, opponent, view.playerColor, order);
 		host.showcaseLayer.getChildren().setAll(card);
+		this.slideIn(card, order);
+
+		host.audio.whoosh();
+		this.playMusic(opponent);
+		host.director.cut();
+	}
+
+	/** A spotlight in the color of the player */
+	private void spotlight(Color color) {
+		host.flashLight.setTranslateX(0);
+		host.flashLight.setTranslateY(-160);
+		host.flashLight.setTranslateZ(0);
+		host.flashLight.setColor(color.deriveColor(0, 0.8, 0.9, 1));
+	}
+
+	/** The card of the robot slides in from its side, and the slam comes when it lands */
+	private void slideIn(Node card, int order) {
 		TranslateTransition slide = new TranslateTransition(Duration.millis(550), card);
 		double side = order % 2 == 0 ? -1 : 1;
 		slide.setFromX(side * Math.max(1200, host.getWidth()));
@@ -109,13 +121,14 @@ final class ArenaShowcase {
 		slide.setOnFinished(event -> Sfx.slam());
 		card.setTranslateX(slide.getFromX());
 		slide.play();
+	}
 
-		host.audio.whoosh();
+	/** The music of the robot, when it has one */
+	private void playMusic(Opponent opponent) {
 		host.showcaseMusic = opponent == null ? null : Sound.fromBytes(opponent.getMusic(), opponent.getFullName());
 		if (host.showcaseMusic != null) {
 			host.showcaseMusic.play();
 		}
-		host.director.cut();
 	}
 
 	/**
@@ -230,28 +243,39 @@ final class ArenaShowcase {
 		card.getChildren().add(name);
 
 		if (opponent != null) {
-			Label team = new Label("Time " + opponent.getTeam());
-			team.getStyleClass().add("showcase-team");
-			card.getChildren().add(team);
+			this.details(card, opponent);
+		}
+		this.frame(card, left, alignment, color);
+		return card;
+	}
 
-			if (opponent.getBattleCry() != null && !opponent.getBattleCry().isBlank()) {
-				Label cry = new Label("“" + opponent.getBattleCry() + "”");
-				cry.setWrapText(true);
-				cry.getStyleClass().add("showcase-cry");
-				card.getChildren().add(cry);
-			}
+	/** The team, the battle cry and the authors of the robot, when it has an opponent */
+	private void details(VBox card, Opponent opponent) {
+		Label team = new Label("Time " + opponent.getTeam());
+		team.getStyleClass().add("showcase-team");
+		card.getChildren().add(team);
 
-			if (!opponent.getAuthors().isEmpty()) {
-				Label section = new Label("EQUIPE");
-				section.getStyleClass().add("showcase-section");
-				card.getChildren().add(section);
-				for (Author author : opponent.getAuthors()) {
-					Label label = new Label("▸ " + author.getName());
-					label.getStyleClass().add("showcase-author");
-					card.getChildren().add(label);
-				}
+		if (opponent.getBattleCry() != null && !opponent.getBattleCry().isBlank()) {
+			Label cry = new Label("“" + opponent.getBattleCry() + "”");
+			cry.setWrapText(true);
+			cry.getStyleClass().add("showcase-cry");
+			card.getChildren().add(cry);
+		}
+
+		if (!opponent.getAuthors().isEmpty()) {
+			Label section = new Label("EQUIPE");
+			section.getStyleClass().add("showcase-section");
+			card.getChildren().add(section);
+			for (Author author : opponent.getAuthors()) {
+				Label label = new Label("▸ " + author.getName());
+				label.getStyleClass().add("showcase-author");
+				card.getChildren().add(label);
 			}
 		}
+	}
+
+	/** The alignment of the texts, the box with its border on the side of the screen, and its place on the layer */
+	private void frame(VBox card, boolean left, Pos alignment, Color color) {
 		for (Node node : card.getChildren()) {
 			if (node instanceof Label label) {
 				label.setAlignment(alignment);
@@ -265,7 +289,6 @@ final class ArenaShowcase {
 		card.setMaxHeight(Region.USE_PREF_SIZE);
 		StackPane.setAlignment(card, alignment);
 		StackPane.setMargin(card, new Insets(0, 70, 0, 70));
-		return card;
 	}
 
 	// ----------------------------------------------------------------- replay

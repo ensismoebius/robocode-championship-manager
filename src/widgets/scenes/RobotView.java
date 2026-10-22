@@ -218,32 +218,12 @@ final class RobotView {
 		for (int side = -1; side <= 1; side += 2) {
 			// Track with chamfered ends, hidden above by the skirt
 			tracks.prismZY(BELT, Math.min(side * BELT_INNER, side * BELT_OUTER), Math.max(side * BELT_INNER, side * BELT_OUTER));
-			int index = side < 0 ? 0 : 1;
-			// The links of the belt, each one turned to the belt where it is
-			for (int link = 0; link < TREAD_LINKS; link++) {
-				LowPoly piece = new LowPoly();
-				piece.box(0, 0, 0, BELT_WIDTH, 1.2, 2.4);
-				MeshView linkView = piece.view(materials.dark());
-				Rotate turn = new Rotate(0, Rotate.X_AXIS);
-				linkView.getTransforms().add(turn);
-				this.body.getChildren().add(linkView);
-				this.treadLinks[index][link] = linkView;
-				this.treadTurns[index][link] = turn;
-			}
+			this.addTreadLinks(side < 0 ? 0 : 1, materials);
 			// Hexagonal armor under the skirt, fixed to the hull
 			for (double posZ = -15; posZ <= 15; posZ += 6) {
 				armor.hexPlate(posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
 			}
-			// The skirt leans out at the top
-			hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
-			// Hexagonal plates on it, in two rows
-			for (int row = 0; row < 2; row++) {
-				double posY = row == 0 ? -10 : -7.2;
-				double face = 17.5 + (-5 - posY) / 7.5 * 2;
-				for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
-					plates.hexPlate(posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
-				}
-			}
+			this.addSkirt(side, hull, plates);
 			// A strip of light in the color of the player, lamps and rear lights
 			glowIdentity.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
 			glowLamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
@@ -255,6 +235,32 @@ final class RobotView {
 		}
 		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()), armor.view(materials.steel()), plates.view(materials.plate()), glowCyan.view(materials.cyan()), glowIdentity.view(materials.identity()),
 				glowWarning.view(materials.warning()), glowLamp.view(materials.lamp()));
+	}
+
+	/** The links of one belt, each one a short box turned to the belt where it is */
+	private void addTreadLinks(int belt, Materials materials) {
+		for (int link = 0; link < TREAD_LINKS; link++) {
+			LowPoly piece = new LowPoly();
+			piece.box(0, 0, 0, BELT_WIDTH, 1.2, 2.4);
+			MeshView linkView = piece.view(materials.dark());
+			Rotate turn = new Rotate(0, Rotate.X_AXIS);
+			linkView.getTransforms().add(turn);
+			this.body.getChildren().add(linkView);
+			this.treadLinks[belt][link] = linkView;
+			this.treadTurns[belt][link] = turn;
+		}
+	}
+
+	/** The skirt over one track: it leans out at the top, with two rows of hexagonal plates on it */
+	private void addSkirt(int side, LowPoly hull, LowPoly plates) {
+		hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
+		for (int row = 0; row < 2; row++) {
+			double posY = row == 0 ? -10 : -7.2;
+			double face = 17.5 + (-5 - posY) / 7.5 * 2;
+			for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
+				plates.hexPlate(posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
+			}
+		}
 	}
 
 	/** The turret and the gun, which turn on their own: a long wedge, a flat wing over the gun, a remote weapon station and antennas */
@@ -375,6 +381,25 @@ final class RobotView {
 		// The flames go with the robot, the smoke stays behind as a trail
 		double posX = this.root.getTranslateX();
 		double posZ = this.root.getTranslateZ();
+		this.trackSpeed(deltaTime, posX, posZ);
+		this.lastX = posX;
+		this.lastZ = posZ;
+
+		int spots = damage < 0.3 ? 1 : damage < 0.6 ? 2 : 3;
+		double heading = Math.toRadians(this.bodyRotate.getAngle());
+		double cos = Math.cos(heading);
+		double sin = Math.sin(heading);
+
+		this.flameDebt += deltaTime * (40 + 70 * damage);
+		this.smokeDebt += deltaTime * (5 + 16 * damage);
+		this.sparkDebt += deltaTime * (1.5 + 7 * damage);
+		while (this.flameDebt >= 1 || this.smokeDebt >= 1 || this.sparkDebt >= 1) {
+			this.burnPart(posX, posZ, spots, damage, cos, sin);
+		}
+	}
+
+	/** The speed of the robot, eased over the frames, from how far it moved since the last one */
+	private void trackSpeed(double deltaTime, double posX, double posZ) {
 		if (deltaTime > 0) {
 			double sxValue = Double.isNaN(this.lastX) ? 0 : (posX - this.lastX) / deltaTime;
 			double szValue = Double.isNaN(this.lastX) ? 0 : (posZ - this.lastZ) / deltaTime;
@@ -386,37 +411,27 @@ final class RobotView {
 			this.speedX += (sxValue - this.speedX) * ease;
 			this.speedZ += (szValue - this.speedZ) * ease;
 		}
-		this.lastX = posX;
-		this.lastZ = posZ;
+	}
 
-		Random random = host.random;
-		int spots = damage < 0.3 ? 1 : damage < 0.6 ? 2 : 3;
-		double heading = Math.toRadians(this.bodyRotate.getAngle());
-		double cos = Math.cos(heading);
-		double sin = Math.sin(heading);
-
-		this.flameDebt += deltaTime * (40 + 70 * damage);
-		this.smokeDebt += deltaTime * (5 + 16 * damage);
-		this.sparkDebt += deltaTime * (1.5 + 7 * damage);
-		while (this.flameDebt >= 1 || this.smokeDebt >= 1 || this.sparkDebt >= 1) {
-			// A burning spot of the hull, turning with the body
-			double[] spot = BURN_SPOTS[host.random.nextInt(spots)];
-			double lxValue = spot[0] + (host.random.nextDouble() - 0.5) * 6;
-			double lzValue = spot[2] + (host.random.nextDouble() - 0.5) * 6;
-			double wxValue = posX + lxValue * cos + lzValue * sin;
-			double wzValue = posZ - lxValue * sin + lzValue * cos;
-			if (this.flameDebt >= 1) {
-				this.flameDebt--;
-				// Anchored to the robot, its position is relative to it
-				Particle flame = host.fire.spawn(ParticleKind.FLAME, wxValue - posX, spot[1], wzValue - posZ, damage);
-				flame.anchor = this;
-			} else if (this.smokeDebt >= 1) {
-				this.smokeDebt--;
-				host.fire.spawn(ParticleKind.SMOKE, wxValue, spot[1] - 6, wzValue, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
-			} else {
-				this.sparkDebt--;
-				host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
-			}
+	/** One piece of the fire: a flame that stays with the robot, or smoke or sparks that stay behind it */
+	private void burnPart(double posX, double posZ, int spots, double damage, double cos, double sin) {
+		// A burning spot of the hull, turning with the body
+		double[] spot = BURN_SPOTS[host.random.nextInt(spots)];
+		double lxValue = spot[0] + (host.random.nextDouble() - 0.5) * 6;
+		double lzValue = spot[2] + (host.random.nextDouble() - 0.5) * 6;
+		double wxValue = posX + lxValue * cos + lzValue * sin;
+		double wzValue = posZ - lxValue * sin + lzValue * cos;
+		if (this.flameDebt >= 1) {
+			this.flameDebt--;
+			// Anchored to the robot, its position is relative to it
+			Particle flame = host.fire.spawn(ParticleKind.FLAME, wxValue - posX, spot[1], wzValue - posZ, damage);
+			flame.anchor = this;
+		} else if (this.smokeDebt >= 1) {
+			this.smokeDebt--;
+			host.fire.spawn(ParticleKind.SMOKE, wxValue, spot[1] - 6, wzValue, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
+		} else {
+			this.sparkDebt--;
+			host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
 		}
 	}
 
@@ -434,6 +449,23 @@ final class RobotView {
 		double posX = this.root.getTranslateX();
 		double posZ = this.root.getTranslateZ();
 		double heading = Math.toRadians(this.bodyRotate.getAngle());
+		this.shiftTreads(deltaTime, posX, posZ, heading);
+		// The turret: how far it turned on the hull since the last frame, round the short way
+		if (!Double.isNaN(this.lastGun) && !this.dead && deltaTime > 0) {
+			double turn = Math.IEEEremainder(gun - this.lastGun, 360);
+			if (Math.abs(turn) < 90) {
+				this.turretSpeed = Math.abs(turn) / deltaTime;
+			}
+		}
+		this.lastGun = gun;
+		this.rollX = posX;
+		this.rollZ = posZ;
+		this.rollHeading = heading;
+		this.placeLinks();
+	}
+
+	/** Moves each belt with the ground that its side of the hull went over since the last frame */
+	private void shiftTreads(double deltaTime, double posX, double posZ, double heading) {
 		// A jump (new round, replay) is not a movement
 		if (!Double.isNaN(this.rollX) && !this.dead && Math.hypot(posX - this.rollX, posZ - this.rollZ) < 60) {
 			double fastest = 0;
@@ -449,18 +481,10 @@ final class RobotView {
 				this.treadSpeed = fastest / deltaTime;
 			}
 		}
-		// The turret: how far it turned on the hull since the last frame, round the short way
-		if (!Double.isNaN(this.lastGun) && !this.dead && deltaTime > 0) {
-			double turn = Math.IEEEremainder(gun - this.lastGun, 360);
-			if (Math.abs(turn) < 90) {
-				this.turretSpeed = Math.abs(turn) / deltaTime;
-			}
-		}
-		this.lastGun = gun;
-		this.rollX = posX;
-		this.rollZ = posZ;
-		this.rollHeading = heading;
+	}
 
+	/** Puts every link of both belts where its point of the belt is, turned to follow the belt */
+	private void placeLinks() {
 		for (int side = 0; side < 2; side++) {
 			for (int link = 0; link < TREAD_LINKS; link++) {
 				double text = link * BELT_LENGTH / TREAD_LINKS + this.treadShift[side];

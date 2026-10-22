@@ -52,6 +52,34 @@ class PodiumTest {
 	}
 
 	@Test
+	void aChampionAloneHasNoPlacesToReveal() {
+		List<Opponent> podium = ChampionshipFixture.opponents(1);
+		Podium ceremony = FxSupport.run(() -> new Podium(podium, MOMENTS, ChampionshipFixture.byId(podium)));
+
+		Stage window = FxSupport.show(ceremony);
+		FxSupport.runVoid(ceremony::play);
+		// Nothing to step through: the ceremony is the crown only
+		FxSupport.runVoid(ceremony::next);
+		FxSupport.sleep(200);
+		FxSupport.close(window);
+	}
+
+	@Test
+	void aPodiumWithTwoPlacesIsShownWithoutTheThird() {
+		List<Opponent> podium = ChampionshipFixture.opponents(2);
+		Podium ceremony = FxSupport.run(() -> new Podium(podium, MOMENTS, ChampionshipFixture.byId(podium)));
+
+		Stage window = FxSupport.show(ceremony);
+		FxSupport.runVoid(ceremony::play);
+		// The second place is the first reveal: it shows the stage, which has no third place to build
+		FxSupport.runVoid(ceremony::next);
+		FxSupport.sleep(300);
+		FxSupport.runVoid(ceremony::next);
+		FxSupport.sleep(200);
+		FxSupport.close(window);
+	}
+
+	@Test
 	void theCeremonyWithoutMomentsStillCrowns() {
 		List<Opponent> podium = ChampionshipFixture.opponents(3);
 		Podium ceremony = FxSupport.run(() -> new Podium(podium, List.of(), ChampionshipFixture.byId(podium)));

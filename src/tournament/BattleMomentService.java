@@ -16,6 +16,10 @@ import utils.database.Database;
  */
 public class BattleMomentService {
 
+	/** Only static methods: this class is not instantiated. */
+	private BattleMomentService() {
+	}
+
 	/**
 	 * Saves the photos of a match, the ones it had before are replaced
 	 */

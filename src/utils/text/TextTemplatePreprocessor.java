@@ -37,7 +37,7 @@ public class TextTemplatePreprocessor {
 		List<String> template = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()
 				.collect(Collectors.toList());
 
-		HashMap<String, Object> parsed = this.process(template, "root", 0);
+		HashMap<String, Object> parsed = this.process(template, "root", 0, "");
 		return (ArrayList<HashMap<String, Object>>) parsed.get("root");
 	}
 
@@ -47,12 +47,17 @@ public class TextTemplatePreprocessor {
 	 * @param lines
 	 * @param blockName
 	 * @param initialLineIndex
+	 * @param sameLine
+	 *            the text written after the opener of the block, if any
 	 * @return
 	 */
-	private HashMap<String, Object> process(List<String> lines, String blockName, int initialLineIndex) {
+	private HashMap<String, Object> process(List<String> lines, String blockName, int initialLineIndex, String sameLine) {
 
 		// The list of object at the template
 		HashMap<String, Object> contents = new HashMap<String, Object>();
+
+		// The text of the opener belongs to this block, so it comes first in it
+		this.putSameLine(contents, blockName, sameLine);
 
 		for (this.lineIndex = initialLineIndex; this.lineIndex < lines.size(); this.lineIndex++) {
 
@@ -69,15 +74,12 @@ public class TextTemplatePreprocessor {
 				// The of the new find blovk
 				String newBlockName = matcher2.group(3).trim();
 
-				// Adds the contents of the sameline of the block opener if any
-				this.putSameLine(contents, newBlockName, startOrEnd.equals("begin") ? matcher2.group(4) : "");
-
 				// When block ends return its contents
 				if (startOrEnd.equals("end"))
 					return contents;
 
-				// Whem a new block has found parse this block
-				HashMap<String, Object> subContents = this.process(lines, newBlockName, this.lineIndex + 1);
+				// Whem a new block has found parse this block, with the text written on its opener line
+				HashMap<String, Object> subContents = this.process(lines, newBlockName, this.lineIndex + 1, matcher2.group(4));
 
 				this.putItem(contents, blockName, subContents);
 

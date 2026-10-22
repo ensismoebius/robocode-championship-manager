@@ -290,8 +290,18 @@ final class ArenaFire {
 
 	/** How a particle of each kind starts: its life, size, speed, texture; damage makes the flames bigger and the smoke darker */
 	private void setUp(Particle particle, ParticleKind kind, double damage) {
-	switch (kind) {
-	case FLAME -> {
+		switch (kind) {
+		case FLAME -> this.startFlame(particle, damage);
+		case SMOKE -> this.startSmoke(particle, damage);
+		case EMBER -> this.startEmber(particle);
+		case FIREFLY -> this.startFirefly(particle);
+		case SNOW -> this.startSnow(particle);
+		case SPARK -> this.startSpark(particle);
+		}
+	}
+
+	/** A flame: a tongue of fire that goes up, and some of them burn blue all the way */
+	private void startFlame(Particle particle, double damage) {
 		particle.life = 0.35 + host.random.nextDouble() * 0.35;
 		// Some tongues burn blue all the way, the others only at the base
 		particle.shade = host.random.nextDouble();
@@ -304,7 +314,9 @@ final class ArenaFire {
 		particle.spinSpeed = (host.random.nextDouble() - 0.5) * 30;
 		particle.material.setDiffuseMap(FLAME_TEXTURE);
 	}
-	case SMOKE -> {
+
+	/** A puff of smoke, thicker and blacker when the robot is almost destroyed */
+	private void startSmoke(Particle particle, double damage) {
 		particle.life = 1.6 + host.random.nextDouble() * 1.4;
 		particle.size = 9 + host.random.nextDouble() * 6;
 		particle.vx = (host.random.nextDouble() - 0.5) * 8 + 6;
@@ -315,7 +327,9 @@ final class ArenaFire {
 		particle.shade = 0.16 - 0.1 * damage + host.random.nextDouble() * 0.06;
 		particle.material.setDiffuseMap(SMOKE_TEXTURE);
 	}
-	case EMBER -> {
+
+	/** A glowing ember, drifting up from the fire */
+	private void startEmber(Particle particle) {
 		particle.life = 2.5 + host.random.nextDouble() * 2;
 		particle.size = 1.3 + host.random.nextDouble() * 1.2;
 		particle.vx = (host.random.nextDouble() - 0.5) * 12;
@@ -325,7 +339,9 @@ final class ArenaFire {
 		particle.shade = host.random.nextDouble();
 		particle.material.setDiffuseMap(SOFT_TEXTURE);
 	}
-	case FIREFLY -> {
+
+	/** A firefly, floating about slowly */
+	private void startFirefly(Particle particle) {
 		particle.life = 5 + host.random.nextDouble() * 4;
 		particle.size = 2.6 + host.random.nextDouble() * 1.6;
 		particle.vx = (host.random.nextDouble() - 0.5) * 14;
@@ -335,7 +351,9 @@ final class ArenaFire {
 		particle.shade = host.random.nextDouble();
 		particle.material.setDiffuseMap(SOFT_TEXTURE);
 	}
-	case SNOW -> {
+
+	/** A flake of snow, falling and drifting with the wind */
+	private void startSnow(Particle particle) {
 		particle.life = 12;
 		particle.size = 2.6 + host.random.nextDouble() * 2.2;
 		particle.vx = 5 + host.random.nextDouble() * 5;
@@ -345,7 +363,9 @@ final class ArenaFire {
 		particle.shade = host.random.nextDouble();
 		particle.material.setDiffuseMap(SOFT_TEXTURE);
 	}
-	case SPARK -> {
+
+	/** A spark, thrown out in a ring from the hit */
+	private void startSpark(Particle particle) {
 		particle.life = 0.5 + host.random.nextDouble() * 0.5;
 		particle.size = 1.6 + host.random.nextDouble() * 1.4;
 		double angle = host.random.nextDouble() * Math.PI * 2;
@@ -355,8 +375,6 @@ final class ArenaFire {
 		particle.vy = -(60 + host.random.nextDouble() * 70);
 		particle.spinSpeed = 0;
 		particle.material.setDiffuseMap(FLAME_TEXTURE);
-	}
-	}
 	}
 
 	/** Spawns a particle of the given kind at the given position, with the damage it carries. */
@@ -480,50 +498,57 @@ final class ArenaFire {
 
 	/** How a particle looks at its age, as its size and color */
 	private Look lookOf(Particle particle, double time) {
-		double width;
-		double height;
-		Color color;
-		switch (particle.kind) {
-		case FLAME -> {
-			// Grows fast, then thins out to a tip
-			double grow = Math.min(1, time * 5);
-			width = particle.size * grow * (1 - 0.5 * time);
-			height = width * 1.7;
-			double flicker = 0.85 + 0.15 * host.random.nextDouble();
-			color = flameColor(particle.shade < 0.35, step(time), level(Math.min(1, (1 - time) * 1.6) * flicker));
-		}
-		case SMOKE -> {
-			// Born in the fire, grows and fades
-			width = particle.size * (0.6 + 2.6 * Math.sqrt(time));
-			height = width;
-			color = smokeColor(Math.max(0, Math.min(SMOKE_SHADES - 1, (int) (particle.shade / SMOKE_SHADE_MAX * SMOKE_SHADES))), step(time), level(Math.min(1, time * 6) * Math.pow(1 - time, 1.4) * 0.7));
-		}
-		case EMBER -> {
-			double flicker = 0.7 + 0.3 * host.random.nextDouble();
-			width = particle.size * (1 - 0.3 * time) * flicker;
-			height = width;
-			color = emberColor(step(time));
-		}
-		case FIREFLY -> {
-			width = particle.size;
-			height = width;
-			// Fades in and out and blinks
-			double blink = 0.5 + 0.5 * Math.sin(particle.age * 4.2 + particle.shade * 20);
-			double envelope = Math.min(1, Math.min(time * 6, (1 - time) * 6));
-			color = fireflyColor(level(Math.max(0, envelope * (0.35 + 0.65 * blink))));
-		}
-		case SNOW -> {
-			width = particle.size;
-			height = width;
-			color = snowColor(level(Math.min(0.9, particle.age * 1.5)));
-		}
-		default -> {
-			width = particle.size * (1 - 0.5 * time);
-			height = width;
-			color = sparkColor(step(time));
-		}
-		}
-		return new Look(width, height, color);
+		return switch (particle.kind) {
+		case FLAME -> this.flameLook(particle, time);
+		case SMOKE -> this.smokeLook(particle, time);
+		case EMBER -> this.emberLook(particle, time);
+		case FIREFLY -> this.fireflyLook(particle, time);
+		case SNOW -> this.snowLook(particle);
+		default -> this.sparkLook(particle, time);
+		};
+	}
+
+	/** A flame at its age: it grows fast, thins out to a tip and flickers */
+	private Look flameLook(Particle particle, double time) {
+		// Grows fast, then thins out to a tip
+		double grow = Math.min(1, time * 5);
+		double width = particle.size * grow * (1 - 0.5 * time);
+		double flicker = 0.85 + 0.15 * host.random.nextDouble();
+		Color color = flameColor(particle.shade < 0.35, step(time), level(Math.min(1, (1 - time) * 1.6) * flicker));
+		return new Look(width, width * 1.7, color);
+	}
+
+	/** A puff of smoke at its age: born in the fire, it grows and fades */
+	private Look smokeLook(Particle particle, double time) {
+		double width = particle.size * (0.6 + 2.6 * Math.sqrt(time));
+		Color color = smokeColor(Math.max(0, Math.min(SMOKE_SHADES - 1, (int) (particle.shade / SMOKE_SHADE_MAX * SMOKE_SHADES))), step(time), level(Math.min(1, time * 6) * Math.pow(1 - time, 1.4) * 0.7));
+		return new Look(width, width, color);
+	}
+
+	/** An ember at its age: it shrinks a little and flickers */
+	private Look emberLook(Particle particle, double time) {
+		double flicker = 0.7 + 0.3 * host.random.nextDouble();
+		double width = particle.size * (1 - 0.3 * time) * flicker;
+		return new Look(width, width, emberColor(step(time)));
+	}
+
+	/** A firefly at its age: it fades in and out and blinks */
+	private Look fireflyLook(Particle particle, double time) {
+		// Fades in and out and blinks
+		double blink = 0.5 + 0.5 * Math.sin(particle.age * 4.2 + particle.shade * 20);
+		double envelope = Math.min(1, Math.min(time * 6, (1 - time) * 6));
+		return new Look(particle.size, particle.size, fireflyColor(level(Math.max(0, envelope * (0.35 + 0.65 * blink)))));
+	}
+
+	/** A flake of snow, which whitens as it falls */
+	private Look snowLook(Particle particle) {
+		return new Look(particle.size, particle.size, snowColor(level(Math.min(0.9, particle.age * 1.5))));
+	}
+
+	/** A spark at its age: it shrinks as it goes out */
+	private Look sparkLook(Particle particle, double time) {
+		double width = particle.size * (1 - 0.5 * time);
+		return new Look(width, width, sparkColor(step(time)));
 	}
 
 	/** Places the particle in the world, its material and its orientation towards the camera; keeps its distance to the eye */

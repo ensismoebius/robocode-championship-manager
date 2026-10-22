@@ -324,39 +324,9 @@ public class BattleArena3D extends StackPane {
 		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.sunbeams, this.fireLayer, this.fence);
 		this.buildLights();
 		this.buildArena();
-
-		this.camera.setNearClip(5);
-		this.camera.setFarClip(30000);
-		this.camera.getTransforms().setAll(this.cameraLook, this.cameraYaw, this.cameraPitch, this.cameraRoll, this.cameraDistance);
-		this.world.getChildren().add(this.camera);
-
-		this.subScene = new SubScene(this.world, 100, 100, true, Configuration.isAntialiasing() ? SceneAntialiasing.BALANCED : SceneAntialiasing.DISABLED);
-		this.subScene.setCamera(this.camera);
-		// A solid color: with a gradient the 3D frames are not cleared and leave
-		// trails
-		this.subScene.setFill(this.style.sky);
-		if (this.style == ArenaStyle.VOLCANO) {
-			// The hottest lava bleeds light around it
-			this.subScene.setEffect(new Bloom(0.6));
-		}
-		this.subScene.widthProperty().bind(this.widthProperty());
-		this.subScene.heightProperty().bind(this.heightProperty());
-
-		this.balloons.setMouseTransparent(true);
-
-		Region scanlines = new Region();
-		scanlines.getStyleClass().add("scanlines");
-		scanlines.setMouseTransparent(true);
-
-		this.whiteFlash.setStyle("-fx-background-color: white;");
-		this.whiteFlash.setOpacity(0);
-		this.whiteFlash.setMouseTransparent(true);
-
-		this.getStyleClass().add("arena-3d");
-		this.showcaseLayer.setMouseTransparent(true);
-		this.showcaseLayer.setPickOnBounds(false);
-
-		this.getChildren().setAll(this.subScene, this.balloons, this.hud.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.hud.buildHud(), this.whiteFlash, scanlines);
+		this.buildCamera();
+		this.subScene = this.buildSubScene();
+		this.buildOverlay();
 
 		this.controls.installControls();
 		this.hud.showBanner("", null);
@@ -374,6 +344,49 @@ public class BattleArena3D extends StackPane {
 				this.timer.start();
 			}
 		});
+	}
+
+	/** The camera that looks at the arena, with its clip planes, part of the world */
+	private void buildCamera() {
+		this.camera.setNearClip(5);
+		this.camera.setFarClip(30000);
+		this.camera.getTransforms().setAll(this.cameraLook, this.cameraYaw, this.cameraPitch, this.cameraRoll, this.cameraDistance);
+		this.world.getChildren().add(this.camera);
+	}
+
+	/** The 3D scene that fills the window, filled with the sky of the arena */
+	private SubScene buildSubScene() {
+		SubScene scene = new SubScene(this.world, 100, 100, true, Configuration.isAntialiasing() ? SceneAntialiasing.BALANCED : SceneAntialiasing.DISABLED);
+		scene.setCamera(this.camera);
+		// A solid color: with a gradient the 3D frames are not cleared and leave
+		// trails
+		scene.setFill(this.style.sky);
+		if (this.style == ArenaStyle.VOLCANO) {
+			// The hottest lava bleeds light around it
+			scene.setEffect(new Bloom(0.6));
+		}
+		scene.widthProperty().bind(this.widthProperty());
+		scene.heightProperty().bind(this.heightProperty());
+		return scene;
+	}
+
+	/** The layers over the 3D scene: the balloons, the letterbox, the showcase, the HUD, the scanlines and the flash */
+	private void buildOverlay() {
+		this.balloons.setMouseTransparent(true);
+
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+
+		this.whiteFlash.setStyle("-fx-background-color: white;");
+		this.whiteFlash.setOpacity(0);
+		this.whiteFlash.setMouseTransparent(true);
+
+		this.getStyleClass().add("arena-3d");
+		this.showcaseLayer.setMouseTransparent(true);
+		this.showcaseLayer.setPickOnBounds(false);
+
+		this.getChildren().setAll(this.subScene, this.balloons, this.hud.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.hud.buildHud(), this.whiteFlash, scanlines);
 	}
 
 	/**
@@ -538,7 +551,19 @@ public class BattleArena3D extends StackPane {
 	/** Advances the battle state machine by the time since the last frame. */
 	private void update(double deltaTime) {
 		this.phaseTime += deltaTime;
+		this.advancePhase(deltaTime);
 
+		this.rounds.updateTension(deltaTime);
+		this.announcer.tick(deltaTime);
+		this.director.updateCamera(deltaTime);
+		this.clock += deltaTime * this.effectRate;
+		this.updateSurfaces();
+		this.updateAudio(deltaTime);
+		this.updateEffects(deltaTime);
+	}
+
+	/** What the current phase does this frame, and when its time is over */
+	private void advancePhase(double deltaTime) {
 		switch (this.phase) {
 		case LOADING -> {
 		}
@@ -571,14 +596,6 @@ public class BattleArena3D extends StackPane {
 		case FINISHED -> {
 		}
 		}
-
-		this.rounds.updateTension(deltaTime);
-		this.announcer.tick(deltaTime);
-		this.director.updateCamera(deltaTime);
-		this.clock += deltaTime * this.effectRate;
-		this.updateSurfaces();
-		this.updateAudio(deltaTime);
-		this.updateEffects(deltaTime);
 	}
 
 	/** The lava breathes and its flows slide */

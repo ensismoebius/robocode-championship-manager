@@ -215,7 +215,12 @@ public class StartScreen extends StackPane {
 		this.controlsHint.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 		StackPane controlsArea = new StackPane(this.controlsHint, this.controls);
 		controlsArea.setAlignment(Pos.TOP_LEFT);
+		this.watchScene();
+		return controlsArea;
+	}
 
+	/** Watches the Alt key on the scene the panel is in, and stops watching the scene it leaves */
+	private void watchScene() {
 		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
 			if (oldScene != null) {
 				oldScene.removeEventFilter(KeyEvent.ANY, this.altWatcher);
@@ -230,7 +235,6 @@ public class StartScreen extends StackPane {
 				}
 			}
 		});
-		return controlsArea;
 	}
 
 	/** The address where the teams register their robots */

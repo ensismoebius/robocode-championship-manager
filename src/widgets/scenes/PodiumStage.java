@@ -228,9 +228,18 @@ final class PodiumStage extends Pane {
 	void show(int place) {
 		this.setBanner(place);
 		host.animate(Podium.slam(this.banner, 0, 550)).play();
-		Color color = place == 1 ? Podium.GOLD : place == 2 ? Podium.SILVER : Podium.BRONZE;
 		this.spots[place].setOpacity(0);
 		host.animate(new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(this.spots[place].opacityProperty(), 1)))).play();
+		this.dropFigure(place);
+		this.dropTrophy(place);
+		// The step lights up as the robot lands
+		Rectangle step = this.steps[place];
+		host.animate(new SequentialTransition(new PauseTransition(Duration.millis(700)), new Timeline(new KeyFrame(Duration.millis(120), new KeyValue(step.opacityProperty(), 0.55)),
+				new KeyFrame(Duration.millis(400), new KeyValue(step.opacityProperty(), 1))))).play();
+	}
+
+	/** The figure of a place falls onto its step with a bounce, and its photo glows in the colour of the place */
+	private void dropFigure(int place) {
 		VBox figure = this.figures[place];
 		if (figure != null) {
 			figure.setVisible(true);
@@ -244,6 +253,7 @@ final class PodiumStage extends Pane {
 			fade.setToValue(1);
 			host.animate(new ParallelTransition(fall, fade)).play();
 			if (this.images[place] != null) {
+				Color color = place == 1 ? Podium.GOLD : place == 2 ? Podium.SILVER : Podium.BRONZE;
 				DropShadow glow = new DropShadow(46, color);
 				this.images[place].setEffect(glow);
 				Timeline pulse = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(glow.radiusProperty(), 20)), new KeyFrame(Duration.millis(700), new KeyValue(glow.radiusProperty(), 60)));
@@ -252,9 +262,12 @@ final class PodiumStage extends Pane {
 				host.animate(pulse).play();
 			}
 		}
+	}
+
+	/** The trophy of a place comes down over the robot, with sparkles */
+	private void dropTrophy(int place) {
 		Group trophy = this.trophies[place];
 		if (trophy != null) {
-			// The trophy of the place comes down over the robot
 			trophy.setVisible(true);
 			trophy.setOpacity(0);
 			trophy.setTranslateY(-this.getHeight());
@@ -268,10 +281,6 @@ final class PodiumStage extends Pane {
 			host.animate(new ParallelTransition(fall, fade)).play();
 			host.sparkles(trophy);
 		}
-		// The step lights up as the robot lands
-		Rectangle step = this.steps[place];
-		host.animate(new SequentialTransition(new PauseTransition(Duration.millis(700)), new Timeline(new KeyFrame(Duration.millis(120), new KeyValue(step.opacityProperty(), 0.55)),
-				new KeyFrame(Duration.millis(400), new KeyValue(step.opacityProperty(), 1))))).play();
 	}
 
 	/** Hides the figure of a place. */

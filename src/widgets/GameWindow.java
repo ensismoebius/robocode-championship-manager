@@ -79,8 +79,23 @@ public final class GameWindow {
 
 		primaryStage.setScene(scene);
 		primaryStage.setTitle(title);
+		lockFullScreen(primaryStage);
+		primaryStage.setOnCloseRequest(event -> GameWindow.quit());
+		watchSize(primaryStage);
 
-		// No way out of the full screen, not even with Escape
+		primaryStage.show();
+		// Asked after the window appears: some window managers (like XWayland
+		// ones) ignore the request made before
+		PauseTransition mapped = new PauseTransition(Duration.millis(300));
+		mapped.setOnFinished(event -> {
+			GameWindow.fullScreenRequested = true;
+			primaryStage.setFullScreen(true);
+		});
+		mapped.play();
+	}
+
+	/** No way out of the full screen, not even with Escape: when the window leaves it, it goes back */
+	private static void lockFullScreen(Stage primaryStage) {
 		primaryStage.setFullScreenExitHint("");
 		primaryStage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
 		primaryStage.fullScreenProperty().addListener((observable, wasFullScreen, fullScreen) -> {
@@ -92,24 +107,14 @@ public final class GameWindow {
 				});
 			}
 		});
-		primaryStage.setOnCloseRequest(event -> GameWindow.quit());
+	}
 
-		// The window manager may take the window out of the full screen without
-		// JavaFX noticing, so the size is watched too
+	/** The window manager may take the window out of the full screen without JavaFX noticing, so the size is watched too */
+	private static void watchSize(Stage primaryStage) {
 		PauseTransition check = new PauseTransition(Duration.millis(400));
 		check.setOnFinished(event -> GameWindow.keepFullScreen());
 		primaryStage.widthProperty().addListener(observable -> check.playFromStart());
 		primaryStage.heightProperty().addListener(observable -> check.playFromStart());
-
-		primaryStage.show();
-		// Asked after the window appears: some window managers (like XWayland
-		// ones) ignore the request made before
-		PauseTransition mapped = new PauseTransition(Duration.millis(300));
-		mapped.setOnFinished(event -> {
-			GameWindow.fullScreenRequested = true;
-			primaryStage.setFullScreen(true);
-		});
-		mapped.play();
 	}
 
 	/**
@@ -216,6 +221,23 @@ public final class GameWindow {
 		StackPane backdrop = new StackPane(panel);
 		backdrop.getStyleClass().add("overlay-backdrop");
 
+		panelKeys(panel, defaultButton, cancelButton);
+
+		GameWindow.modals.push(backdrop);
+		GameWindow.overlayLayer.getChildren().add(backdrop);
+		appear(backdrop, panel);
+
+		if (defaultButton != null) {
+			defaultButton.requestFocus();
+		} else {
+			panel.requestFocus();
+		}
+
+		return Platform.enterNestedEventLoop(backdrop);
+	}
+
+	/** Enter fires the default button (or the focused one), Escape fires the cancel button; nothing else reaches the screens */
+	private static void panelKeys(Region panel, Button defaultButton, Button cancelButton) {
 		panel.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
 			if (event.getCode() == KeyCode.ENTER) {
 				Node focused = panel.getScene().getFocusOwner();
@@ -230,10 +252,10 @@ public final class GameWindow {
 		});
 		// Nothing typed in the panel reaches the shortcuts of the screens
 		panel.addEventHandler(KeyEvent.ANY, KeyEvent::consume);
+	}
 
-		GameWindow.modals.push(backdrop);
-		GameWindow.overlayLayer.getChildren().add(backdrop);
-
+	/** The panel and its backdrop fade in, the panel pops up with a small overshoot */
+	private static void appear(StackPane backdrop, Region panel) {
 		FadeTransition fade = new FadeTransition(Duration.millis(160), backdrop);
 		fade.setFromValue(0);
 		fade.setToValue(1);
@@ -244,14 +266,6 @@ public final class GameWindow {
 		pop.setToY(1);
 		pop.setInterpolator(Theme.OVERSHOOT);
 		new ParallelTransition(fade, pop).play();
-
-		if (defaultButton != null) {
-			defaultButton.requestFocus();
-		} else {
-			panel.requestFocus();
-		}
-
-		return Platform.enterNestedEventLoop(backdrop);
 	}
 
 	/**

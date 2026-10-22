@@ -26,6 +26,8 @@ final class IceArena {
 
 	/** Seconds between two paintings of the aurora */
 	private static final double AURORA_STEP = 0.05;
+	private static final double SEA_SURFACE = 4.6;
+	private static final int SEA_SIDES = 72;
 
 	private final BattleArena3D host;
 	private Aurora aurora;
@@ -186,28 +188,40 @@ final class IceArena {
 	 * A glacial sea: open dark water with a wavy shore, floes of cracked ice drifting
 	 * over it, icebergs standing in it and snow along the shore
 	 */
+	/**
+	 * A glacial sea: open dark water with a wavy shore, floes of cracked ice drifting
+	 * over it, icebergs standing in it and snow along the shore
+	 */
 	private void buildSea(double centreX, double centreZ, double radius, Random random) {
-		double surface = 4.6;
-		int sides = 72;
+		buildWater(centreX, centreZ, radius);
+		buildFloes(centreX, centreZ, radius, random);
+		buildBergs(centreX, centreZ, radius, random);
+		buildSnow(centreX, centreZ, radius, random);
+	}
+
+	/** The flat dark water, a fan from the middle to the wavy shore */
+	private void buildWater(double centreX, double centreZ, double radius) {
 		TriangleMesh water = new TriangleMesh();
 		water.getTexCoords().addAll(0, 0);
-		water.getPoints().addAll((float) centreX, (float) surface, (float) centreZ);
-		for (int index = 0; index < sides; index++) {
-			double angle = index * Math.PI * 2 / sides;
+		water.getPoints().addAll((float) centreX, (float) SEA_SURFACE, (float) centreZ);
+		for (int index = 0; index < SEA_SIDES; index++) {
+			double angle = index * Math.PI * 2 / SEA_SIDES;
 			double row = shore(angle, radius);
-			water.getPoints().addAll((float) (centreX + Math.cos(angle) * row), (float) surface, (float) (centreZ + Math.sin(angle) * row));
+			water.getPoints().addAll((float) (centreX + Math.cos(angle) * row), (float) SEA_SURFACE, (float) (centreZ + Math.sin(angle) * row));
 		}
-		for (int index2 = 0; index2 < sides; index2++) {
+		for (int index2 = 0; index2 < SEA_SIDES; index2++) {
 			int first = 1 + index2;
-			int second = 1 + (index2 + 1) % sides;
+			int second = 1 + (index2 + 1) % SEA_SIDES;
 			water.getFaces().addAll(0, 0, first, 0, second, 0);
 		}
 		PhongMaterial sea = ArenaMaterials.material(Color.web("#14365e"));
 		sea.setSpecularColor(Color.WHITE);
 		sea.setSpecularPower(90);
 		this.addIce(water, sea);
+	}
 
-		// The floes: rough discs of cracked ice, in several sizes, kept off the shore
+	/** The floes: rough discs of cracked ice, in several sizes, kept off the shore */
+	private void buildFloes(double centreX, double centreZ, double radius, Random random) {
 		TriangleMesh floes = new TriangleMesh();
 		for (int index3 = 0; index3 < 150; index3++) {
 			double angle = random.nextDouble() * Math.PI * 2;
@@ -217,14 +231,14 @@ final class IceArena {
 			double size = 14 + random.nextDouble() * 32;
 			int floeSides = 7 + random.nextInt(3);
 			int offset = floes.getPoints().size() / 3;
-			floes.getPoints().addAll((float) fxValue, (float) (surface - 0.2), (float) fzValue);
+			floes.getPoints().addAll((float) fxValue, (float) (SEA_SURFACE - 0.2), (float) fzValue);
 			floes.getTexCoords().addAll(0.5f, 0.5f);
 			for (int deepIndex = 0; deepIndex < floeSides; deepIndex++) {
 				double first2 = deepIndex * Math.PI * 2 / floeSides + random.nextDouble() * 0.3;
 				double row2 = size * (0.7 + 0.35 * random.nextDouble());
 				double cos = Math.cos(first2);
 				double sin = Math.sin(first2);
-				floes.getPoints().addAll((float) (fxValue + cos * row2), (float) (surface - 0.2 - random.nextDouble() * 0.3), (float) (fzValue + sin * row2));
+				floes.getPoints().addAll((float) (fxValue + cos * row2), (float) (SEA_SURFACE - 0.2 - random.nextDouble() * 0.3), (float) (fzValue + sin * row2));
 				floes.getTexCoords().addAll((float) (0.5 + cos * 0.5), (float) (0.5 + sin * 0.5));
 			}
 			for (int deepIndex2 = 0; deepIndex2 < floeSides; deepIndex2++) {
@@ -236,31 +250,35 @@ final class IceArena {
 		PhongMaterial floeIce = ArenaMaterials.textured(IceTexture.block(0xc4ecfa, 11), Color.WHITE);
 		floeIce.setSpecularPower(60);
 		this.addIce(floes, floeIce);
+	}
 
-		// Icebergs standing in the water
+	/** Icebergs standing in the water */
+	private void buildBergs(double centreX, double centreZ, double radius, Random random) {
 		TriangleMesh bergs = new TriangleMesh();
 		bergs.getTexCoords().addAll(0, 0);
 		for (int index4 = 0; index4 < 7; index4++) {
 			double angle = random.nextDouble() * Math.PI * 2;
 			double distance = Math.sqrt(random.nextDouble()) * shore(angle, radius) * 0.6;
-			IceArena.crystal(bergs, centreX + Math.cos(angle) * distance, surface + 0.4, centreZ + Math.sin(angle) * distance, 40 + random.nextDouble() * 40, 30 + random.nextDouble() * 50, 8, random);
+			IceArena.crystal(bergs, centreX + Math.cos(angle) * distance, SEA_SURFACE + 0.4, centreZ + Math.sin(angle) * distance, 40 + random.nextDouble() * 40, 30 + random.nextDouble() * 50, 8, random);
 		}
 		PhongMaterial berg = ArenaMaterials.material(Color.web("#e8f8ff"));
 		berg.setSpecularColor(Color.WHITE);
 		berg.setSpecularPower(100);
 		this.addIce(bergs, berg);
+	}
 
-		// Snow along the shore
+	/** Snow along the shore: a row of flattened spheres */
+	private void buildSnow(double centreX, double centreZ, double radius, Random random) {
 		PhongMaterial snow = ArenaMaterials.material(Color.web("#eef6fc"));
 		snow.setSpecularPower(20);
-		for (int index5 = 0; index5 < sides; index5 += 3) {
-			double angle = index5 * Math.PI * 2 / sides;
+		for (int index5 = 0; index5 < SEA_SIDES; index5 += 3) {
+			double angle = index5 * Math.PI * 2 / SEA_SIDES;
 			double row3 = shore(angle, radius) * 1.03;
 			Sphere rim = new Sphere(9 + random.nextDouble() * 10, 8);
 			rim.setMaterial(snow);
 			rim.setScaleY(0.5);
 			rim.setTranslateX(centreX + Math.cos(angle) * row3);
-			rim.setTranslateY(surface - 0.4);
+			rim.setTranslateY(SEA_SURFACE - 0.4);
 			rim.setTranslateZ(centreZ + Math.sin(angle) * row3);
 			host.arena.getChildren().add(rim);
 		}

@@ -204,13 +204,22 @@ public final class BattleCommentary {
 			messages.add(new Message(true, "DANO CRÍTICO!", attacker, Tone.GOLD, 4, Topic.BLOWS));
 			messages.add(this.comment(attacker, 3, Topic.BLOWS, "Que pancada de {A}! Tiro de potência máxima!", "{B} sentiu esse golpe!", "Potência máxima! {A} não economizou energia!"));
 		}
+		this.comboMessages(attacker, owner, messages);
+		this.distanceMessages(turn, attacker, victim, messages);
+	}
+
+	/** The combo of the attacker: every second hit from the third on, and the start of the streak */
+	private void comboMessages(int attacker, Stats owner, List<Message> messages) {
 		if (owner.combo >= 3 && owner.combo % 2 == 1) {
 			messages.add(new Message(true, "COMBO x" + owner.combo + "!", attacker, Tone.PLAYER, 3, Topic.BLOWS));
 			if (owner.combo == 3) {
 				messages.add(this.comment(attacker, 2, Topic.BLOWS, "{A} está pegando fogo!", "Sequência implacável de {A}!", "{B} não consegue sair da mira de {A}!"));
 			}
 		}
+	}
 
+	/** How far the shot flew: a sniper shot from the other side of the arena, or a shot point blank */
+	private void distanceMessages(Turn turn, int attacker, int victim, List<Message> messages) {
 		RobotState shooter = find(turn, attacker);
 		RobotState hit = find(turn, victim);
 		if (shooter != null && hit != null) {
@@ -243,28 +252,33 @@ public final class BattleCommentary {
 				}
 				continue;
 			}
-			boolean changed = before == null || before.state() != state.state();
-			if (state.state() == BattleRecording.ROBOT_HIT_WALL && changed) {
-				robot.wallHits++;
-				if (robot.wallHits == 1 || robot.wallHits % 4 == 0) {
-					messages.add(this.comment(state.index(), 1, Topic.FOULS, "{A} deu de cara com o campo de força!", "{A} testou a parede da arena... e perdeu.", "Cuidado com a parede, {A}!"));
-				}
-			}
-			if (state.state() == BattleRecording.ROBOT_HIT_ROBOT && changed && turn.turn() - this.lastRamTurn > 90) {
-				this.lastRamTurn = turn.turn();
-				messages.add(this.comment(state.index(), 2, Topic.FOULS, "{A} e {B} se chocam! Luta corpo a corpo!", "Batida! {A} parte pra cima de {B}!"));
-			}
-			if (robot.energy < DANGER_ENERGY && !robot.danger) {
-				robot.danger = true;
-				messages.add(new Message(true, "PERIGO!", state.index(), Tone.DANGER, 4, Topic.HEALTH));
-				messages.add(this.comment(state.index(), 3, Topic.HEALTH, "{A} está por um fio! Mais um tiro forte e acabou!", "Alerta vermelho para {A}!", "{A} precisa de um milagre!"));
-			}
+			this.livingRobot(turn, state, before, robot, messages);
 		}
 		if (deaths >= 2) {
 			messages.add(new Message(true, "DUPLO K.O.!", -1, Tone.GOLD, 5, Topic.HEALTH));
 			messages.add(this.comment(-1, 4, Topic.HEALTH, "Os dois caem juntos! Ninguém leva esse round!"));
 		}
 		this.deficitsAndLead(messages);
+	}
+
+	/** What a robot that is still alive does in the turn: it hits a wall, rams another robot, or is in danger */
+	private void livingRobot(Turn turn, RobotState state, RobotState before, Stats robot, List<Message> messages) {
+		boolean changed = before == null || before.state() != state.state();
+		if (state.state() == BattleRecording.ROBOT_HIT_WALL && changed) {
+			robot.wallHits++;
+			if (robot.wallHits == 1 || robot.wallHits % 4 == 0) {
+				messages.add(this.comment(state.index(), 1, Topic.FOULS, "{A} deu de cara com o campo de força!", "{A} testou a parede da arena... e perdeu.", "Cuidado com a parede, {A}!"));
+			}
+		}
+		if (state.state() == BattleRecording.ROBOT_HIT_ROBOT && changed && turn.turn() - this.lastRamTurn > 90) {
+			this.lastRamTurn = turn.turn();
+			messages.add(this.comment(state.index(), 2, Topic.FOULS, "{A} e {B} se chocam! Luta corpo a corpo!", "Batida! {A} parte pra cima de {B}!"));
+		}
+		if (robot.energy < DANGER_ENERGY && !robot.danger) {
+			robot.danger = true;
+			messages.add(new Message(true, "PERIGO!", state.index(), Tone.DANGER, 4, Topic.HEALTH));
+			messages.add(this.comment(state.index(), 3, Topic.HEALTH, "{A} está por um fio! Mais um tiro forte e acabou!", "Alerta vermelho para {A}!", "{A} precisa de um milagre!"));
+		}
 	}
 
 	/**

@@ -168,16 +168,7 @@ final class PodiumFlashback {
 		title.getStyleClass().add("podium-banner");
 		title.styleProperty().bind(host.heightProperty().multiply(0.05).asString("-fx-font-size: %.0fpx;"));
 
-		this.flashbackImage = new ImageView();
-		this.flashbackImage.setSmooth(true);
-		this.flashbackImage.setPreserveRatio(true);
-		this.flashbackImage.fitWidthProperty().bind(host.widthProperty().multiply(0.66));
-		this.flashbackImage.fitHeightProperty().bind(host.heightProperty().multiply(0.5));
-		StackPane frame = new StackPane(this.flashbackImage);
-		// The frame holds the photo, it does not stretch over the page
-		frame.setMaxWidth(Region.USE_PREF_SIZE);
-		frame.setStyle("-fx-background-color: #000000; -fx-border-color: #ffd400; -fx-border-width: 4;");
-		frame.setEffect(new DropShadow(40, Podium.GOLD));
+		StackPane frame = this.flashbackFrame();
 
 		this.flashbackRound = new Label();
 		this.flashbackRound.getStyleClass().add("podium-name");
@@ -189,6 +180,31 @@ final class PodiumFlashback {
 		this.flashbackEvent.getStyleClass().add("podium-cry");
 		this.flashbackEvent.styleProperty().bind(host.heightProperty().multiply(0.034).asString("-fx-font-size: %.0fpx;"));
 
+		HBox dots = this.dotRow(count);
+
+		VBox page = new VBox(10, title, frame, this.flashbackRound, this.flashbackTeam, this.flashbackEvent, dots);
+		page.setAlignment(Pos.CENTER);
+		page.setMouseTransparent(true);
+		this.pane.getChildren().setAll(shade, page);
+	}
+
+	/** The photo of the flashback, in a black frame that does not stretch over the page */
+	private StackPane flashbackFrame() {
+		this.flashbackImage = new ImageView();
+		this.flashbackImage.setSmooth(true);
+		this.flashbackImage.setPreserveRatio(true);
+		this.flashbackImage.fitWidthProperty().bind(host.widthProperty().multiply(0.66));
+		this.flashbackImage.fitHeightProperty().bind(host.heightProperty().multiply(0.5));
+		StackPane frame = new StackPane(this.flashbackImage);
+		// The frame holds the photo, it does not stretch over the page
+		frame.setMaxWidth(Region.USE_PREF_SIZE);
+		frame.setStyle("-fx-background-color: #000000; -fx-border-color: #ffd400; -fx-border-width: 4;");
+		frame.setEffect(new DropShadow(40, Podium.GOLD));
+		return frame;
+	}
+
+	/** A row of dots, one for each moment, kept in the list so the page can light the current one */
+	private HBox dotRow(int count) {
 		HBox dots = new HBox(8);
 		dots.setAlignment(Pos.CENTER);
 		for (int index = 0; index < count; index++) {
@@ -196,11 +212,7 @@ final class PodiumFlashback {
 			this.flashbackDots.add(dot);
 			dots.getChildren().add(dot);
 		}
-
-		VBox page = new VBox(10, title, frame, this.flashbackRound, this.flashbackTeam, this.flashbackEvent, dots);
-		page.setAlignment(Pos.CENTER);
-		page.setMouseTransparent(true);
-		this.pane.getChildren().setAll(shade, page);
+		return dots;
 	}
 
 	/**

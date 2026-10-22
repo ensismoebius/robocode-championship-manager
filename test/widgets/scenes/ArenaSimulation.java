@@ -15,10 +15,10 @@ import support.TestConfiguration;
  * Drives a {@link BattleArena3D} through a whole battle without a window: the
  * frames come from the arena's own timer, so every phase of the scene runs.
  */
-final class ArenaSimulation {
+public final class ArenaSimulation {
 
 	/** The turns of a battle, copied from a real run of the BattleStarter. */
-	static final List<String> OUTPUT = List.of( //
+	public static final List<String> OUTPUT = List.of( //
 			"#F 800 600 2", //
 			"#N 0 sample.Walls", //
 			"#N 1 sample.SpinBot", //
@@ -39,7 +39,7 @@ final class ArenaSimulation {
 	}
 
 	/** The two robots of {@link #OUTPUT}, as the championship knows them. */
-	static List<Opponent> fighters() {
+	public static List<Opponent> fighters() {
 		return List.of(opponent("sample", "Walls"), opponent("sample", "SpinBot"));
 	}
 
@@ -52,7 +52,7 @@ final class ArenaSimulation {
 	}
 
 	/** Builds the arena of the fighters on the JavaFX thread, with a random style. */
-	static BattleArena3D arena(List<Opponent> fighters) {
+	public static BattleArena3D arena(List<Opponent> fighters) {
 		return arena(fighters, Configuration.RANDOM);
 	}
 
@@ -63,7 +63,7 @@ final class ArenaSimulation {
 	}
 
 	/** Parses the turns of a battle. */
-	static BattleRecording recording(List<String> output) {
+	public static BattleRecording recording(List<String> output) {
 		return BattleRecording.parse(output);
 	}
 
@@ -93,13 +93,20 @@ final class ArenaSimulation {
 		}
 	}
 
+	/**
+	 * The clock of the frames. The arena also gets the real pulses of JavaFX, which
+	 * come from the system clock, so each call starts at the later of the two: the
+	 * time never runs backwards for the arena.
+	 */
+	private static long clock;
+
 	/** Advances the arena by frames of the given length, on the JavaFX thread. */
 	static void frames(BattleArena3D arena, int frames, double seconds) {
 		FxSupport.runVoid(() -> {
-			long now = 1_000_000_000L;
+			clock = Math.max(clock, System.nanoTime());
 			for (int index = 0; index < frames; index++) {
-				arena.timer.handle(now);
-				now += (long) (seconds * 1e9);
+				arena.timer.handle(clock);
+				clock += (long) (seconds * 1e9);
 			}
 		});
 	}

@@ -56,7 +56,13 @@ final class NeonTexture {
 			int grain = random.nextInt(7);
 			pixels[index] = 0xff000000 | TextureMath.mix(0x0b0e1c, 0x131830, grain / 6.0);
 		}
-		// Seams: dark groove with a thin light edge inside
+		seams(pixels, size);
+		traces(pixels, size, random);
+		return image(size, size, pixels);
+	}
+
+	/** The seams: a dark groove along each edge of the panel, with a thin light edge inside */
+	private static void seams(int[] pixels, int size) {
 		for (int index2 = 0; index2 < size; index2++) {
 			for (int deepIndex = 0; deepIndex < 3; deepIndex++) {
 				pixels[index2 * size + deepIndex] = 0xff04050b;
@@ -67,7 +73,10 @@ final class NeonTexture {
 			pixels[index2 * size + 3] = 0xff17304a;
 			pixels[3 * size + index2] = 0xff17304a;
 		}
-		// Traces: each turns a few times, ends in a node
+	}
+
+	/** The traces of circuit: each turns a few times, and ends in a glowing node */
+	private static void traces(int[] pixels, int size, Random random) {
 		for (int trace = 0; trace < 9; trace++) {
 			int posX = 24 + random.nextInt(size - 48);
 			int posY = 24 + random.nextInt(size - 48);
@@ -90,7 +99,6 @@ final class NeonTexture {
 				}
 			}
 		}
-		return image(size, size, pixels);
 	}
 
 	/**

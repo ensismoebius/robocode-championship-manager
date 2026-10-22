@@ -60,14 +60,8 @@ final class BracketLayout {
 			top += ROUND_TITLE_H + losersHeight;
 		}
 
-		// Finals to the right of everything
 		int columns = Math.max(winners.size(), losers.size());
-		List<Match> finals = host.bracket.getFinals();
-		for (int index = 0; index < finals.size(); index++) {
-			double posX = (columns + index) * COL_W;
-			this.addRoundTitle(host.bracket.roundName(finals.get(index)), posX, finalsY - CARD_H / 2 - ROUND_TITLE_H);
-			host.positions.put(finals.get(index), new double[] { posX, finalsY });
-		}
+		this.placeFinals(columns, finalsY);
 
 		// Standings in the free space under the finals
 		Node standings = host.buildStandings();
@@ -76,6 +70,23 @@ final class BracketLayout {
 			host.canvas.getChildren().add(standings);
 		}
 
+		this.placeCards();
+
+		host.canvas.setMinHeight(top);
+	}
+
+	/** The finals, to the right of everything, each one with its round title */
+	private void placeFinals(int columns, double finalsY) {
+		List<Match> finals = host.bracket.getFinals();
+		for (int index = 0; index < finals.size(); index++) {
+			double posX = (columns + index) * COL_W;
+			this.addRoundTitle(host.bracket.roundName(finals.get(index)), posX, finalsY - CARD_H / 2 - ROUND_TITLE_H);
+			host.positions.put(finals.get(index), new double[] { posX, finalsY });
+		}
+	}
+
+	/** The connectors, then the cards over them */
+	private void placeCards() {
 		// Lines first so the cards are drawn over them
 		for (Match match : host.bracket.getMatches()) {
 			this.addConnectors(match);
@@ -86,8 +97,6 @@ final class BracketLayout {
 			card.relocate(position[0], position[1] - CARD_H / 2);
 			host.canvas.getChildren().add(card);
 		}
-
-		host.canvas.setMinHeight(top);
 	}
 
 	/**

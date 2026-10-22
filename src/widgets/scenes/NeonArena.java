@@ -263,8 +263,11 @@ final class NeonArena {
 		}
 		host.glowing.getChildren().add(host.meshView(edges, this.neonGlow(Color.web("#1fa8e0"), true, random)));
 		host.glowing.getChildren().add(host.meshView(dashes, this.neonGlow(Color.web("#d63fa0"), false, random)));
+		this.addCars(roadsX, roadsZ, reach, random);
+	}
 
-		// Cars: white lights going one way, magenta ones coming back
+	/** Cars on the streets: white lights going one way, magenta ones coming back */
+	private void addCars(double[] roadsX, double[] roadsZ, double reach, Random random) {
 		PhongMaterial going = this.neonGlow(Color.web("#e6fbff"), false, random);
 		PhongMaterial coming = this.neonGlow(Color.web("#ff3fa4"), false, random);
 		for (int axis = 0; axis < 2; axis++) {

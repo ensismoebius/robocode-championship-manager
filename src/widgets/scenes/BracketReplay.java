@@ -124,66 +124,83 @@ final class BracketReplay {
 				continue;
 			}
 			boolean winner = participant.equals(finished.getWinner());
-			String styleClass = winner ? "winner" : "loser";
-			Label score = host.scores.get(row);
-			String finalScore = score == null ? null : score.getText();
-
-			// Hidden until the reveal
-			row.getStyleClass().remove(styleClass);
-			if (score != null) {
-				score.setOpacity(0);
-			}
-			Runnable done = () -> {
-				if (!row.getStyleClass().contains(styleClass)) {
-					row.getStyleClass().add(styleClass);
-				}
-				if (score != null) {
-					score.textProperty().unbind();
-					score.setText(finalScore);
-					score.setOpacity(1);
-				}
-				row.setTranslateX(0);
-				row.setEffect(null);
-			};
-			this.finalStates.add(done);
-
-			Timeline show = new Timeline(new KeyFrame(BracketViewer.ACTION_TIME, event -> {
-				row.getStyleClass().add(styleClass);
-				if (score != null) {
-					score.setOpacity(1);
-				}
-			}));
-			reveal.getChildren().add(show);
-
-			if (score != null && finalScore.matches("\\d+")) {
-				// Arcade score counter
-				IntegerProperty counter = new SimpleIntegerProperty(0);
-				score.textProperty().bind(counter.asString());
-				Timeline count = new Timeline(new KeyFrame(Duration.millis(700), new KeyValue(counter, Integer.parseInt(finalScore), Interpolator.EASE_OUT)));
-				count.setOnFinished(event -> score.textProperty().unbind());
-				reveal.getChildren().add(count);
-			}
-
-			if (winner) {
-				DropShadow flash = new DropShadow(0, Color.web("#5af08f"));
-				flash.setSpread(0.45);
-				row.setEffect(flash);
-				Timeline glow = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(flash.radiusProperty(), 0)), new KeyFrame(Duration.millis(220), new KeyValue(flash.radiusProperty(), 40)),
-						new KeyFrame(Duration.millis(900), new KeyValue(flash.radiusProperty(), 0)));
-				glow.setOnFinished(event -> row.setEffect(null));
-				reveal.getChildren().add(glow);
-			} else {
-				Timeline shake = new Timeline();
-				double[] offsets = { 10, -9, 7, -5, 3, -1, 0 };
-				for (int index = 0; index < offsets.length; index++) {
-					shake.getKeyFrames().add(new KeyFrame(Duration.millis(45 * (index + 1)), new KeyValue(row.translateXProperty(), offsets[index])));
-				}
-				reveal.getChildren().add(shake);
-			}
+			this.revealRow(reveal, row, host.scores.get(row), winner);
 		}
 
 		reveal.getChildren().add(new Timeline(new KeyFrame(BracketViewer.ACTION_TIME, event -> Sfx.slam())));
 		return reveal;
+	}
+
+	/** One row of the match: hidden until the action, then shown with its final score and the effect of its result */
+	private void revealRow(ParallelTransition reveal, HBox row, Label score, boolean winner) {
+		String styleClass = winner ? "winner" : "loser";
+		String finalScore = score == null ? null : score.getText();
+
+		// Hidden until the reveal
+		row.getStyleClass().remove(styleClass);
+		if (score != null) {
+			score.setOpacity(0);
+		}
+		Runnable done = () -> {
+			if (!row.getStyleClass().contains(styleClass)) {
+				row.getStyleClass().add(styleClass);
+			}
+			if (score != null) {
+				score.textProperty().unbind();
+				score.setText(finalScore);
+				score.setOpacity(1);
+			}
+			row.setTranslateX(0);
+			row.setEffect(null);
+		};
+		this.finalStates.add(done);
+
+		Timeline show = new Timeline(new KeyFrame(BracketViewer.ACTION_TIME, event -> {
+			row.getStyleClass().add(styleClass);
+			if (score != null) {
+				score.setOpacity(1);
+			}
+		}));
+		reveal.getChildren().add(show);
+
+		this.countScore(reveal, score, finalScore);
+		if (winner) {
+			this.flashWinner(reveal, row);
+		} else {
+			this.shakeLoser(reveal, row);
+		}
+	}
+
+	/** The arcade counter that counts the score up to its final value */
+	private void countScore(ParallelTransition reveal, Label score, String finalScore) {
+		if (score != null && finalScore.matches("\\d+")) {
+			IntegerProperty counter = new SimpleIntegerProperty(0);
+			score.textProperty().bind(counter.asString());
+			Timeline count = new Timeline(new KeyFrame(Duration.millis(700), new KeyValue(counter, Integer.parseInt(finalScore), Interpolator.EASE_OUT)));
+			count.setOnFinished(event -> score.textProperty().unbind());
+			reveal.getChildren().add(count);
+		}
+	}
+
+	/** The card of the winner glows green, then goes back to normal */
+	private void flashWinner(ParallelTransition reveal, HBox row) {
+		DropShadow flash = new DropShadow(0, Color.web("#5af08f"));
+		flash.setSpread(0.45);
+		row.setEffect(flash);
+		Timeline glow = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(flash.radiusProperty(), 0)), new KeyFrame(Duration.millis(220), new KeyValue(flash.radiusProperty(), 40)),
+				new KeyFrame(Duration.millis(900), new KeyValue(flash.radiusProperty(), 0)));
+		glow.setOnFinished(event -> row.setEffect(null));
+		reveal.getChildren().add(glow);
+	}
+
+	/** The card of the loser shakes sideways and settles */
+	private void shakeLoser(ParallelTransition reveal, HBox row) {
+		Timeline shake = new Timeline();
+		double[] offsets = { 10, -9, 7, -5, 3, -1, 0 };
+		for (int index = 0; index < offsets.length; index++) {
+			shake.getKeyFrames().add(new KeyFrame(Duration.millis(45 * (index + 1)), new KeyValue(row.translateXProperty(), offsets[index])));
+		}
+		reveal.getChildren().add(shake);
 	}
 
 	/**
@@ -208,6 +225,13 @@ final class BracketReplay {
 			travel.getChildren().add(this.drawLine(line, Duration.millis(800)));
 		}
 
+		SequentialTransition step = new SequentialTransition(travel, new Timeline(new KeyFrame(BracketViewer.ACTION_TIME, event -> Sfx.blip())), this.arrive(row, arrival.winner()),
+				new PauseTransition(Duration.millis(250)));
+		return step;
+	}
+
+	/** The card pops in at its new place, and blinks where the robot arrives */
+	private ParallelTransition arrive(HBox row, boolean winner) {
 		ScaleTransition pop = new ScaleTransition(Duration.millis(320), row);
 		pop.setFromX(0.4);
 		pop.setFromY(0.4);
@@ -220,16 +244,14 @@ final class BracketReplay {
 		ParallelTransition arrive = new ParallelTransition(pop, appear);
 		arrive.setOnFinished(event -> {
 			// Blink of the card that received the robot
-			DropShadow flash = new DropShadow(30, arrival.winner() ? Color.web("#5af08f") : Color.web("#ff9f1c"));
+			DropShadow flash = new DropShadow(30, winner ? Color.web("#5af08f") : Color.web("#ff9f1c"));
 			flash.setSpread(0.4);
 			row.setEffect(flash);
 			Timeline fade = new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(flash.radiusProperty(), 0)));
 			fade.setOnFinished(event2 -> row.setEffect(null));
 			fade.play();
 		});
-
-		SequentialTransition step = new SequentialTransition(travel, new Timeline(new KeyFrame(BracketViewer.ACTION_TIME, event -> Sfx.blip())), arrive, new PauseTransition(Duration.millis(250)));
-		return step;
+		return arrive;
 	}
 
 	/**

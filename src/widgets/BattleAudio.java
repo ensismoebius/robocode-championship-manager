@@ -39,7 +39,7 @@ public final class BattleAudio {
 	/** The drive of the tracks, over the machines: how loud the hum and the rumble are */
 	private static final double TRACK_GAIN = 2.5;
 	/** The placement of a sound in the middle: both ears hear it the same */
-	private static final double[] CENTER = { 1, 1 };
+	static final double[] CENTER = { 1, 1 };
 	/** The distance between two links of a track, in arena units */
 	private static final double TREAD_PITCH = 3.2;
 
@@ -103,68 +103,6 @@ public final class BattleAudio {
 	private final double[] smallDrum = Percussion.smallDrum();
 	private final double[] woodBlock = Percussion.woodBlock();
 	private final double[][] toms = { Synth.sineSweep(230, 115, 0.28), Synth.sineSweep(175, 88, 0.3), Synth.sineSweep(130, 62, 0.34) };
-
-	/**
-	 * A sound being played, at a rate (pitch) and gain
-	 */
-	private static final class Voice {
-		final double[] samples;
-		final double gain;
-		final double rate;
-		double position;
-
-		final double left;
-		final double right;
-
-		/** A sound at the centre of the stereo field. */
-		Voice(double[] samples, double gain, double rate) {
-			this(samples, gain, rate, CENTER[0], CENTER[1]);
-		}
-
-		/** A sound that plays from the given stereo position. */
-		Voice(double[] samples, double gain, double rate, double left, double right) {
-			this.samples = samples;
-			this.gain = gain;
-			this.rate = rate;
-			this.left = left;
-			this.right = right;
-		}
-
-		/** Tells whether the sound has played to its end. */
-		boolean finished() {
-			return this.position >= this.samples.length - 1;
-		}
-
-		/** The next sample of the sound, interpolated between the two closest ones. */
-		double next() {
-			int index = (int) this.position;
-			double fraction = this.position - index;
-			double value = this.samples[index] + (this.samples[Math.min(index + 1, this.samples.length - 1)] - this.samples[index]) * fraction;
-			this.position += this.rate;
-			return value * this.gain;
-		}
-	}
-
-	/**
-	 * The machines of one robot: how fast its tracks run and its turret turns, where
-	 * it is, and the state of their sounds
-	 */
-	private static final class Machine {
-		// Written by the JavaFX thread
-		volatile double treadSpeed;
-		volatile double turretSpeed;
-		volatile double leftGain = 1;
-		volatile double rightGain = 1;
-		// Eased and played by the audio thread
-		double left = 1;
-		double right = 1;
-		double treadLevel;
-		double turretLevel;
-		double humPhase;
-		double gearPhase;
-		double rumble;
-		double servoPhase;
-	}
 
 	// ------------------------------------------------------------------- control
 
@@ -520,30 +458,11 @@ public final class BattleAudio {
 	 * The next moment of the mix, for the left and the right ear
 	 */
 	void nextFrame(double[] out) {
-		// Eases the controls, per sample, so nothing clicks
-		Voice voice;
-		while ((voice = this.incoming.poll()) != null) {
-			this.sfxVoices.add(new Voice(voice.samples, voice.gain, voice.rate * (this.slowMotion ? 0.45 : 1), voice.left, voice.right));
-		}
-		this.intensity += (this.targetIntensity - this.intensity) * 0.00003;
-		this.slow += ((this.slowMotion ? 1 : 0) - this.slow) * 0.0002;
-		this.musicVolume += ((this.musicOn ? 1 : 0) - this.musicVolume) * 0.00005;
-		this.duck += (1 - this.duck) * 0.00004;
+		this.easeControls();
 
 		double music = this.music() * this.musicVolume * this.duck * MUSIC_GAIN * this.musicLevel;
 
-		this.effects[0] = 0;
-		this.effects[1] = 0;
-		for (Iterator<Voice> iterator2 = this.sfxVoices.iterator(); iterator2.hasNext();) {
-			Voice playing = iterator2.next();
-			double value = playing.next();
-			this.effects[0] += value * playing.left;
-			this.effects[1] += value * playing.right;
-			if (playing.finished()) {
-				iterator2.remove();
-			}
-		}
-		this.mixMachines(this.effects);
+		this.mixEffects();
 
 		// In slow motion the effects are muffled too
 		this.sfxFilterLeft += (this.effects[0] - this.sfxFilterLeft) * (1 - 0.8 * this.slow);
@@ -563,6 +482,34 @@ public final class BattleAudio {
 		// The master gain keeps the whole mix under the tanh curve, which only bends the loudest peaks
 		out[0] = Math.tanh((music + left) * MASTER_GAIN * 1.1) * 0.92;
 		out[1] = Math.tanh((music + right) * MASTER_GAIN * 1.1) * 0.92;
+	}
+
+	/** Eases the controls a little toward their targets, per sample, so nothing clicks, and takes the new voices in */
+	private void easeControls() {
+		Voice voice;
+		while ((voice = this.incoming.poll()) != null) {
+			this.sfxVoices.add(new Voice(voice.samples, voice.gain, voice.rate * (this.slowMotion ? 0.45 : 1), voice.left, voice.right));
+		}
+		this.intensity += (this.targetIntensity - this.intensity) * 0.00003;
+		this.slow += ((this.slowMotion ? 1 : 0) - this.slow) * 0.0002;
+		this.musicVolume += ((this.musicOn ? 1 : 0) - this.musicVolume) * 0.00005;
+		this.duck += (1 - this.duck) * 0.00004;
+	}
+
+	/** Adds up the sound effects that are playing into the effects bus, each one leaving the list when it is done */
+	private void mixEffects() {
+		this.effects[0] = 0;
+		this.effects[1] = 0;
+		for (Iterator<Voice> iterator2 = this.sfxVoices.iterator(); iterator2.hasNext();) {
+			Voice playing = iterator2.next();
+			double value = playing.next();
+			this.effects[0] += value * playing.left;
+			this.effects[1] += value * playing.right;
+			if (playing.finished()) {
+				iterator2.remove();
+			}
+		}
+		this.mixMachines(this.effects);
 	}
 
 	/**
@@ -617,23 +564,8 @@ public final class BattleAudio {
 			this.onStep(step, tension);
 		}
 
-		// Pad: three detuned saws through a low pass that opens with the tension.
-		// The drums have a drone instead: root, fifth and octave, darker.
 		int bar = (int) Math.floor(this.beat / 4) % current.roots.length;
-		this.padFrequency += (current.roots[bar] - this.padFrequency) * 0.0005;
-		double third = current == Song.WAR_DRUMS ? 1 : current.minor[bar] ? 1.189 : 1.26;
-		this.padPhase1 = (this.padPhase1 + this.padFrequency / Synth.RATE) % 1;
-		this.padPhase2 = (this.padPhase2 + this.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
-		this.padPhase3 = (this.padPhase3 + this.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
-		double raw = (this.padPhase1 * 2 - 1) + (this.padPhase2 * 2 - 1) * 0.7 + (this.padPhase3 * 2 - 1) * 0.5;
-		double cutoff = (current == Song.WAR_DRUMS ? 0.006 + 0.02 * tension : current == Song.SYNTHWAVE ? 0.02 + 0.05 * tension : 0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
-		this.padFilter += (raw - this.padFilter) * cutoff;
-		double pad = this.padFilter * (current == Song.WAR_DRUMS ? 0.1 : 0.32 - 0.1 * tension);
-		if (current == Song.SYNTHWAVE && tension > 0.2 && this.slow < 0.5) {
-			// Pumps with the kick, the synthwave sound
-			double inBeat = this.beat - Math.floor(this.beat);
-			pad *= 1 - 0.65 * Math.exp(-inBeat * 7);
-		}
+		double pad = this.pad(current, bar, tension);
 
 		double voices = 0;
 		for (Iterator<Voice> iterator2 = this.musicVoices.iterator(); iterator2.hasNext();) {
@@ -644,6 +576,27 @@ public final class BattleAudio {
 			}
 		}
 		return pad + voices;
+	}
+
+	/** The pad: three detuned saws through a low pass that opens with the tension, and the pump of synthwave with the kick */
+	private double pad(Song current, int bar, double tension) {
+	// Pad: three detuned saws through a low pass that opens with the tension.
+	// The drums have a drone instead: root, fifth and octave, darker.
+	this.padFrequency += (current.roots[bar] - this.padFrequency) * 0.0005;
+	double third = current == Song.WAR_DRUMS ? 1 : current.minor[bar] ? 1.189 : 1.26;
+	this.padPhase1 = (this.padPhase1 + this.padFrequency / Synth.RATE) % 1;
+	this.padPhase2 = (this.padPhase2 + this.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
+	this.padPhase3 = (this.padPhase3 + this.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
+	double raw = (this.padPhase1 * 2 - 1) + (this.padPhase2 * 2 - 1) * 0.7 + (this.padPhase3 * 2 - 1) * 0.5;
+	double cutoff = (current == Song.WAR_DRUMS ? 0.006 + 0.02 * tension : current == Song.SYNTHWAVE ? 0.02 + 0.05 * tension : 0.012 + 0.05 * tension) * (1 - 0.7 * this.slow);
+	this.padFilter += (raw - this.padFilter) * cutoff;
+	double pad = this.padFilter * (current == Song.WAR_DRUMS ? 0.1 : 0.32 - 0.1 * tension);
+	if (current == Song.SYNTHWAVE && tension > 0.2 && this.slow < 0.5) {
+		// Pumps with the kick, the synthwave sound
+		double inBeat = this.beat - Math.floor(this.beat);
+		pad *= 1 - 0.65 * Math.exp(-inBeat * 7);
+	}
+		return pad;
 	}
 
 	/**
@@ -762,24 +715,35 @@ public final class BattleAudio {
 		if (tension > 0.2 && (inBar == 5 || inBar == 7 || inBar == 13 || inBar == 15 || (tension > 0.6 && inBar % 2 == 1))) {
 			this.musicVoices.add(new Voice(this.smallDrum, 0.3 + 0.15 * tension, 0.95 + 0.1 * ((inBar * 7) % 3)));
 		}
-		// Hats on the eighths, ghost notes on the sixteenths
+		this.hatsAndBass(inBar, root, tension);
+		this.kalimbaMotif(step, inBar, bar, root, tension);
+		this.warHorns(inBar, bar, root, tension);
+	}
+
+	/** Hats on the eighths, ghost notes on the sixteenths, and a plucked bass in the pulse: the root, and the octave on the off beats */
+	private void hatsAndBass(int inBar, double root, double tension) {
 		if (tension > 0.25 && (inBar % 2 == 0 || tension > 0.55)) {
 			double gain = inBar % 2 == 1 ? 0.08 : inBar % 4 == 2 ? 0.24 : 0.16;
 			this.musicVoices.add(new Voice(this.hat, gain, 1));
 		}
-		// A plucked bass in the pulse: the root, and the octave on the off beats
 		if (tension > 0.15 && (inBar % 2 == 0 || tension > 0.5)) {
 			double frequency = root * (inBar % 4 == 2 ? 2 : 1);
 			this.musicVoices.add(new Voice(Synth.lowpass(Synth.saw(frequency, 0.14, 12), 0.25), 0.22 + 0.2 * tension, 1));
 		}
-		// The kalimba motif: the first two bars call, the next two answer two steps higher
+	}
+
+	/** The kalimba motif: the first two bars call, the next two answer two steps higher */
+	private void kalimbaMotif(int step, int inBar, int bar, double root, double tension) {
 		if (tension > 0.12 && (inBar % 4 == 0 || (tension > 0.3 && inBar % 2 == 0))) {
 			int degree = MOTIF[(step / 2) % MOTIF.length] + (bar >= 2 ? 2 : 0);
 			double frequency = root * 4 * PENTATONIC[Math.floorMod(degree, PENTATONIC.length)];
 			double[] kalimba = Synth.mix(Synth.sine(frequency, 0.35, 7), Synth.sine(frequency * 2.01, 0.35, 16), 0.3);
 			this.musicVoices.add(new Voice(kalimba, 0.2 + 0.1 * tension, 1));
 		}
-		// War horns close the phrases at the top
+	}
+
+	/** War horns close the phrases at the top, and a roll sits under everything when the fight is at its peak */
+	private void warHorns(int inBar, int bar, double root, double tension) {
 		if (tension > 0.8 && inBar == 0 && bar % 2 == 0) {
 			double[] horn = Synth.lowpass(Synth.mix(Synth.saw(root * 2, 1.5, 1.1), Synth.saw(root * 3, 1.5, 1.1), 0.6), 0.06);
 			this.musicVoices.add(new Voice(horn, 0.35, 1));

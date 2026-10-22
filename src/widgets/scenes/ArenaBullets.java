@@ -1,6 +1,5 @@
 package widgets.scenes;
 
-import static widgets.scenes.BattleArena3D.FENCE_BASE;
 import static widgets.scenes.BattleArena3D.PHOTO_DESTRUCTION_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_POWER;
@@ -14,10 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javafx.animation.FadeTransition;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.ScaleTransition;
-import javafx.animation.Timeline;
 import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -27,7 +22,6 @@ import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import utils.robocode.BattleRecording;
-import widgets.scenes.ArenaFence.FenceSegment;
 import widgets.scenes.BattleArena3D.PendingPhoto;
 import widgets.scenes.BattleArena3D.Phase;
 
@@ -85,6 +79,18 @@ final class ArenaBullets {
 		if (known != null) {
 			return known;
 		}
+		Flight flight = this.newFlight(turns, this.path(turns, index, seen));
+		// A bullet with no flight is never drawn: it was born hitting
+		this.flights.put(seen.id(), flight == null ? new Flight(0, 0, 0, 0, 0, 0, 0, null, 0, 0) : flight);
+		return this.flights.get(seen.id());
+	}
+
+	/** Where a bullet is in the turns: its first and last records, the hit if it has one, and the last turn it is seen in */
+	record Path(int first, Bullet start, Bullet last, Bullet previous, Bullet hit, int end) {
+	}
+
+	/** Follows a bullet through the turns, from the first one it is seen in until it hits or is no longer recorded */
+	Path path(List<Turn> turns, int index, Bullet seen) {
 		int first = index;
 		while (first > 0 && findBullet(turns.get(first - 1), seen.id()) != null) {
 			first--;
@@ -112,48 +118,61 @@ final class ArenaBullets {
 			previous = now;
 			last = now;
 		}
+		return new Path(first, start, last, previous, hit, end);
+	}
+
+	/** The flight of a bullet along its path, or null when the path has no length or the bullet was born hitting */
+	Flight newFlight(List<Turn> turns, Path path) {
+		Bullet start = path.start();
 		double speed = 20 - 3 * start.power();
-		double deltaX = last.x() - start.x();
-		double deltaY = last.y() - start.y();
+		double deltaX = path.last().x() - start.x();
+		double deltaY = path.last().y() - start.y();
 		double length = Math.hypot(deltaX, deltaY);
-		Flight flight = null;
-		if (length > 1e-6 && !start.isHit()) {
-			deltaX /= length;
-			deltaY /= length;
-			double born = first - 1;
-			// Gets there when the last step is done
-			double duration = hit != null ? end - 1 - born + Math.hypot(hit.x() - previous.x(), hit.y() - previous.y()) / speed : end - born;
-			duration = Math.max(0.01, duration);
-			double sxValue = start.x() - deltaX * speed;
-			double syValue = start.y() - deltaY * speed;
-			double exValue = last.x();
-			double eyValue = last.y();
-			// Where it hits the victim, in the frame of the tank (across and ahead),
-			// and where that point of the hull is drawn when the bolt gets there: the
-			// bolt flies straight to it
-			double side = 0;
-			double ahead = 0;
-			if (hit != null && hit.state() == BattleRecording.BULLET_HIT_VICTIM) {
-				RobotState victim = BattleArena3D.find(turns.get(end).robots(), hit.victim(), null);
-				double[] pose = pose(turns, hit.victim(), born + duration);
-				if (victim != null && pose != null) {
-					double oxValue = hit.x() - victim.x();
-					double oyValue = hit.y() - victim.y();
-					double heading = victim.bodyHeading();
-					side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, oxValue * Math.cos(heading) - oyValue * Math.sin(heading)));
-					ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, oxValue * Math.sin(heading) + oyValue * Math.cos(heading)));
-					exValue = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
-					eyValue = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
-				}
-			}
-			double total = Math.hypot(exValue - sxValue, eyValue - syValue);
-			if (total > 1e-6) {
-				flight = new Flight(sxValue, syValue, (exValue - sxValue) / total, (eyValue - syValue) / total, total, born, duration, hit, side, ahead);
+		if (length <= 1e-6 || start.isHit()) {
+			return null;
+		}
+		deltaX /= length;
+		deltaY /= length;
+		double born = path.first() - 1;
+		Bullet hit = path.hit();
+		// Gets there when the last step is done
+		double duration = hit != null ? path.end() - 1 - born + Math.hypot(hit.x() - path.previous().x(), hit.y() - path.previous().y()) / speed : path.end() - born;
+		duration = Math.max(0.01, duration);
+		double sxValue = start.x() - deltaX * speed;
+		double syValue = start.y() - deltaY * speed;
+		double[] aim = this.aim(turns, path, born + duration);
+		double total = Math.hypot(aim[2] - sxValue, aim[3] - syValue);
+		if (total <= 1e-6) {
+			return null;
+		}
+		return new Flight(sxValue, syValue, (aim[2] - sxValue) / total, (aim[3] - syValue) / total, total, born, duration, hit, aim[0], aim[1]);
+	}
+
+	/**
+	 * Where the bolt ends, as {side, ahead, x, y}. When it hits a tank, that is the point of the hit
+	 * in the frame of the tank (across and ahead), drawn where the hull is when the bolt gets there:
+	 * the bolt flies straight to it. Otherwise it is the end of the path.
+	 */
+	private double[] aim(List<Turn> turns, Path path, double when) {
+		Bullet hit = path.hit();
+		double exValue = path.last().x();
+		double eyValue = path.last().y();
+		double side = 0;
+		double ahead = 0;
+		if (hit != null && hit.state() == BattleRecording.BULLET_HIT_VICTIM) {
+			RobotState victim = BattleArena3D.find(turns.get(path.end()).robots(), hit.victim(), null);
+			double[] pose = pose(turns, hit.victim(), when);
+			if (victim != null && pose != null) {
+				double oxValue = hit.x() - victim.x();
+				double oyValue = hit.y() - victim.y();
+				double heading = victim.bodyHeading();
+				side = Math.max(-HULL_SIDE, Math.min(HULL_SIDE, oxValue * Math.cos(heading) - oyValue * Math.sin(heading)));
+				ahead = Math.max(-HULL_AHEAD, Math.min(HULL_AHEAD, oxValue * Math.sin(heading) + oyValue * Math.cos(heading)));
+				exValue = pose[0] + side * Math.cos(pose[2]) + ahead * Math.sin(pose[2]);
+				eyValue = pose[1] - side * Math.sin(pose[2]) + ahead * Math.cos(pose[2]);
 			}
 		}
-		// A bullet with no flight is never drawn: it was born hitting
-		this.flights.put(seen.id(), flight == null ? new Flight(0, 0, 0, 0, 0, 0, 0, null, 0, 0) : flight);
-		return this.flights.get(seen.id());
+		return new double[] { side, ahead, exValue, eyValue };
 	}
 
 	/** Shows the bullets of a turn, placed between this turn and the next one by the fraction of the turn. */
@@ -166,39 +185,7 @@ final class ArenaBullets {
 				if (bullet.isHit() || bullet.state() > BattleRecording.BULLET_HIT_WALL || flying.contains(bullet.id())) {
 					continue;
 				}
-				Flight flight = this.flight(turns, turn == current ? index : index + 1, bullet);
-				if (flight.total() <= 0) {
-					continue;
-				}
-				double progress = (host.turnPosition - flight.born()) / flight.duration();
-				if (progress < 0) {
-					continue;
-				}
-				if (progress >= 1) {
-					if (flight.hit() != null) {
-						double[] target = this.target(flight);
-						this.bulletHit(flight.hit(), target[0], target[1]);
-						continue;
-					}
-					progress = 1;
-				}
-				// From the muzzle to the end, the speed is the same all the way
-				double distance = flight.total() > MUZZLE ? MUZZLE + (flight.total() - MUZZLE) * progress : flight.total() * progress;
-				double posX = flight.sx() + flight.ux() * distance;
-				double posY = flight.sy() + flight.uy() * distance;
-				// The ones that hit a tank come down, little by little, from the height of
-				// the gun to the middle of the hull
-				double height = BARREL_HEIGHT;
-				if (flight.hit() != null && flight.hit().state() == BattleRecording.BULLET_HIT_VICTIM) {
-					double along = flight.total() > MUZZLE ? (distance - MUZZLE) / (flight.total() - MUZZLE) : progress;
-					height += (HULL_HEIGHT - BARREL_HEIGHT) * Math.max(0, Math.min(1, along));
-				}
-				if (distance >= MUZZLE) {
-					this.bulletFired(bullet, flight.sx() + flight.ux() * MUZZLE, flight.sy() + flight.uy() * MUZZLE);
-				} else if (host.bulletsSeen.contains(bullet.id()) == false) {
-					this.bulletFired(bullet, flight.sx() + flight.ux() * Math.min(MUZZLE, flight.total()), flight.sy() + flight.uy() * Math.min(MUZZLE, flight.total()));
-				}
-				this.placeBullet(bullet, flying, posX, posY, flight.ux(), flight.uy(), height);
+				this.showBullet(turns, turn == current ? index : index + 1, bullet, flying);
 			}
 		}
 		host.bullets.entrySet().removeIf(entry -> {
@@ -208,6 +195,55 @@ final class ArenaBullets {
 			}
 			return false;
 		});
+	}
+
+	/** One bullet at the moment of the battle: it is still on the way, it hits, or it is over */
+	private void showBullet(List<Turn> turns, int flightIndex, Bullet bullet, Set<Integer> flying) {
+		Flight flight = this.flight(turns, flightIndex, bullet);
+		if (flight.total() <= 0) {
+			return;
+		}
+		double progress = (host.turnPosition - flight.born()) / flight.duration();
+		if (progress < 0) {
+			return;
+		}
+		if (progress >= 1) {
+			if (flight.hit() != null) {
+				double[] target = this.target(flight);
+				this.bulletHit(flight.hit(), target[0], target[1]);
+				return;
+			}
+			progress = 1;
+		}
+		// From the muzzle to the end, the speed is the same all the way
+		double distance = flight.total() > MUZZLE ? MUZZLE + (flight.total() - MUZZLE) * progress : flight.total() * progress;
+		double posX = flight.sx() + flight.ux() * distance;
+		double posY = flight.sy() + flight.uy() * distance;
+		double height = this.heightOf(flight, distance, progress);
+		this.muzzle(bullet, flight, distance);
+		this.placeBullet(bullet, flying, posX, posY, flight.ux(), flight.uy(), height);
+	}
+
+	/** The shot, when the bolt is still at the muzzle: the sound and the flash come out of the gun */
+	private void muzzle(Bullet bullet, Flight flight, double distance) {
+		if (distance >= MUZZLE) {
+			this.bulletFired(bullet, flight.sx() + flight.ux() * MUZZLE, flight.sy() + flight.uy() * MUZZLE);
+		} else if (host.bulletsSeen.contains(bullet.id()) == false) {
+			this.bulletFired(bullet, flight.sx() + flight.ux() * Math.min(MUZZLE, flight.total()), flight.sy() + flight.uy() * Math.min(MUZZLE, flight.total()));
+		}
+	}
+
+	/**
+	 * The height of the bolt: the ones that hit a tank come down, little by little, from the height
+	 * of the gun to the middle of the hull
+	 */
+	private double heightOf(Flight flight, double distance, double progress) {
+		double height = BARREL_HEIGHT;
+		if (flight.hit() != null && flight.hit().state() == BattleRecording.BULLET_HIT_VICTIM) {
+			double along = flight.total() > MUZZLE ? (distance - MUZZLE) / (flight.total() - MUZZLE) : progress;
+			height += (HULL_HEIGHT - BARREL_HEIGHT) * Math.max(0, Math.min(1, along));
+		}
+		return height;
 	}
 
 	/** Places a bullet at the given position, turned to the direction it flies. */
@@ -281,7 +317,7 @@ final class ArenaBullets {
 		} else {
 			host.audio.sparkAt(host.worldX(posX), host.worldZ(posY));
 			if (bullet.state() == BattleRecording.BULLET_HIT_WALL) {
-				this.flashFence(bullet.x(), bullet.y());
+				host.forceField.flashFence(bullet.x(), bullet.y());
 			}
 		}
 	}
@@ -300,34 +336,39 @@ final class ArenaBullets {
 			}
 		}
 		for (RobotState state : turn.robots()) {
-			RobotState before = previous == null ? null : BattleArena3D.find(previous.robots(), state.index(), null);
-			RobotView view = host.robots.get(state.index());
-			if (view == null) {
-				continue;
+			this.robotEvents(state, previous, turnIndex);
+		}
+	}
+
+	/** What happens to one robot in a turn: it hits a wall or a robot, runs low on energy, or is destroyed */
+	private void robotEvents(RobotState state, Turn previous, int turnIndex) {
+		RobotState before = previous == null ? null : BattleArena3D.find(previous.robots(), state.index(), null);
+		RobotView view = host.robots.get(state.index());
+		if (view == null) {
+			return;
+		}
+		if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
+			host.audio.thudAt(host.worldX(state.x()), host.worldZ(state.y()));
+			this.startle(host.worldX(state.x()), host.worldZ(state.y()), 120, 0.3);
+			host.shake += 1.5;
+			if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
+				host.forceField.flashFence(state.x(), state.y());
 			}
-			if ((state.state() == BattleRecording.ROBOT_HIT_WALL || state.state() == BattleRecording.ROBOT_HIT_ROBOT) && before != null && before.state() != state.state()) {
-				host.audio.thudAt(host.worldX(state.x()), host.worldZ(state.y()));
-				this.startle(host.worldX(state.x()), host.worldZ(state.y()), 120, 0.3);
-				host.shake += 1.5;
-				if (state.state() == BattleRecording.ROBOT_HIT_WALL) {
-					this.flashFence(state.x(), state.y());
-				}
+		}
+		if (!state.isDead() && state.energy() < 20 && host.lowEnergyWarned.add(state.index())) {
+			host.audio.lowEnergyAt(view.position()[0], view.position()[2]);
+		}
+		if (state.isDead() && before != null && !before.isDead() && !view.dead) {
+			view.destroy();
+			host.audio.destroyedAt(view.position()[0], view.position()[2]);
+			this.startle(view.position()[0], view.position()[2], 340, 1);
+			host.shake += 22;
+			this.whiteFlash();
+			if (host.phase == Phase.PLAYING) {
+				host.pendingPhotos.add(new PendingPhoto(PHOTO_DESTRUCTION_DELAY, host.round + 1, true, view.opponent, 0));
 			}
-			if (!state.isDead() && state.energy() < 20 && host.lowEnergyWarned.add(state.index())) {
-				host.audio.lowEnergyAt(view.position()[0], view.position()[2]);
-			}
-			if (state.isDead() && before != null && !before.isDead() && !view.dead) {
-				view.destroy();
-				host.audio.destroyedAt(view.position()[0], view.position()[2]);
-				this.startle(view.position()[0], view.position()[2], 340, 1);
-				host.shake += 22;
-				this.whiteFlash();
-				if (host.phase == Phase.PLAYING) {
-					host.pendingPhotos.add(new PendingPhoto(PHOTO_DESTRUCTION_DELAY, host.round + 1, true, view.opponent, 0));
-				}
-				if (host.phase == Phase.PLAYING && !host.replayed) {
-					host.showcase.freezeForReplay(state.index(), turnIndex);
-				}
+			if (host.phase == Phase.PLAYING && !host.replayed) {
+				host.showcase.freezeForReplay(state.index(), turnIndex);
 			}
 		}
 	}
@@ -391,100 +432,4 @@ final class ArenaBullets {
 		flash.play();
 	}
 
-	/**
-	 * The cage lights up where a robot or a bullet hit it, the glow spreads to
-	 * the neighboring panels like a shockwave
-	 */
-	void flashFence(double posX, double posY) {
-		double width = host.fieldWidth;
-		double height = host.fieldHeight;
-		double cxValue = Math.max(0, Math.min(width, posX));
-		double cyValue = Math.max(0, Math.min(height, posY));
-
-		double[] distances = { cyValue, height - cyValue, cxValue, width - cxValue };
-		int wall = 0;
-		for (int index2 = 1; index2 < distances.length; index2++) {
-			if (distances[index2] < distances[wall]) {
-				wall = index2;
-			}
-		}
-
-		double along = wall <= 1 ? cxValue : cyValue;
-		int count = (int) Math.round((wall <= 1 ? width : height) / 100);
-		int index = Math.max(0, Math.min(count - 1, (int) Math.floor(along / 100)));
-
-		this.flashSegment(wall, index, 1.0, Duration.ZERO);
-		this.flashSegment(wall, index - 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index + 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index - 2, 0.3, Duration.millis(120));
-		this.flashSegment(wall, index + 2, 0.3, Duration.millis(120));
-	}
-
-	/** Flashes the fence segments of a wall at the given index, with the given intensity, after the delay. */
-	void flashSegment(int wall, int index, double intensity, Duration delay) {
-		for (FenceSegment segment : host.fenceSegments) {
-			if (segment.wall() != wall || segment.index() != index) {
-				continue;
-			}
-			if (segment.animation != null) {
-				segment.animation.stop();
-				segment.animation = null;
-			}
-
-			segment.box().setVisible(true);
-
-			// Electric force field energy flare: transparent translucent barrier
-			double peakAlpha = 0.20 + 0.08 * Math.min(1.0, intensity);
-			Color tint = host.style.fence;
-			Color shieldBright = Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), peakAlpha);
-			Color shieldMid = Color.color(tint.getRed() * 0.6, tint.getGreen() * 0.8, tint.getBlue(), peakAlpha * 0.45);
-			Color shieldFade = Color.color(tint.getRed() * 0.4, tint.getGreen() * 0.8, tint.getBlue(), 0.0);
-
-			segment.material().setSpecularColor(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.20));
-
-			Timeline flash = new Timeline();
-			flash.getKeyFrames().addAll(
-					new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), shieldBright)),
-					new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(segment.material().diffuseColorProperty(), shieldMid)),
-					new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(segment.material().diffuseColorProperty(), shieldFade)));
-			flash.setOnFinished(event -> {
-				segment.box().setVisible(false);
-				segment.material().setDiffuseColor(FENCE_BASE);
-				segment.material().setSpecularColor(Color.TRANSPARENT);
-				segment.animation = null;
-			});
-			segment.animation = flash;
-			flash.play();
-
-			if (intensity >= 0.8) {
-				ScaleTransition pulse = new ScaleTransition(Duration.millis(90), segment.box());
-				pulse.setFromX(1);
-				pulse.setToX(1.04);
-				pulse.setFromY(1);
-				pulse.setToY(1.04);
-				pulse.setFromZ(1);
-				pulse.setToZ(1.04);
-				pulse.setCycleCount(2);
-				pulse.setAutoReverse(true);
-				pulse.play();
-			}
-			return;
-		}
-	}
-
-	/** Back to the base look when a new round starts */
-	void resetFence() {
-		for (FenceSegment segment : host.fenceSegments) {
-			if (segment.animation != null) {
-				segment.animation.stop();
-				segment.animation = null;
-			}
-			segment.box().setVisible(false);
-			segment.material().setDiffuseColor(FENCE_BASE);
-			segment.material().setSpecularColor(Color.TRANSPARENT);
-			segment.box().setScaleX(1);
-			segment.box().setScaleY(1);
-			segment.box().setScaleZ(1);
-		}
-	}
 }

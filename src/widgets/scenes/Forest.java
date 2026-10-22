@@ -130,16 +130,28 @@ final class Forest {
 		tube(path, radii);
 
 		if (depth >= DEPTH) {
-			// A clump of leaves at the tip, and now and then a smaller one hanging from
-			// the middle (every clump is many triangles, and there are many trees)
-			double[] tip = path.get(steps);
-			blob(tip, (65 + random.nextDouble() * 45) * Math.min(1.4, 0.45 + length / 120), random);
-			if (random.nextDouble() < 0.35) {
-				double[] middle = path.get(steps / 2);
-				blob(new double[] { middle[0], middle[1] + 8, middle[2] }, 30 + random.nextDouble() * 22, random);
-			}
+			crown(path, steps, length, random);
 			return;
 		}
+		growForks(path, directions, radii, length, depth, random);
+	}
+
+	/**
+	 * A clump of leaves at the tip, and now and then a smaller one hanging from the
+	 * middle (every clump is many triangles, and there are many trees)
+	 */
+	private void crown(List<double[]> path, int steps, double length, Random random) {
+		double[] tip = path.get(steps);
+		blob(tip, (65 + random.nextDouble() * 45) * Math.min(1.4, 0.45 + length / 120), random);
+		if (random.nextDouble() < 0.35) {
+			double[] middle = path.get(steps / 2);
+			blob(new double[] { middle[0], middle[1] + 8, middle[2] }, 30 + random.nextDouble() * 22, random);
+		}
+	}
+
+	/** The branches of a branch that is not a tip, each one starting along the upper part of it */
+	private void growForks(List<double[]> path, List<double[]> directions, double[] radii, double length, int depth, Random random) {
+		int steps = path.size() - 1;
 		int forks = depth == 0 ? 3 + random.nextInt(2) : 2 + random.nextInt(2);
 		for (int deepIndex = 0; deepIndex < forks; deepIndex++) {
 			// The branches start along the upper part of this one

@@ -58,6 +58,16 @@ class VoronoiTest {
 		assertTrue(area > 800 * 600 * 0.9 && area < 800 * 600, String.valueOf(area));
 	}
 
+	@Test
+	void seedsInTheSamePlaceShareNoBorder() {
+		// No bisector between two seeds on the same point: each one keeps the whole field, back from its border by its gap
+		List<double[][]> cells = Voronoi.cells(new double[][] { { 0, 0 }, { 0, 0 } }, new double[] { 1, 1 }, -50, -30, 50, 30);
+
+		assertEquals(2, cells.size());
+		assertEquals(-49, min(cells.get(0), 0), 1e-9);
+		assertEquals(49, max(cells.get(1), 0), 1e-9);
+	}
+
 	private static double area(double[][] polygon) {
 		double sum = 0;
 		for (int i = 0; i < polygon.length; i++) {

@@ -2,16 +2,27 @@ package utils.configuration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import utils.robocode.BattleControl.WinnerCriterion;
 
@@ -179,6 +190,151 @@ class ConfigurationTest {
 		// Already closed
 		Configuration.setEnabledRegistration(false);
 		assertEquals(1, this.changes.get());
+	}
+
+	/** The configurations kept in memory, read and set the way the program holds them, so a test can restore them. */
+	private static Properties keptConfigurations() throws ReflectiveOperationException {
+		Field field = Configuration.class.getDeclaredField("configurations");
+		field.setAccessible(true);
+		return (Properties) field.get(null);
+	}
+
+	private static void keepConfigurations(Properties configurations) throws ReflectiveOperationException {
+		Field field = Configuration.class.getDeclaredField("configurations");
+		field.setAccessible(true);
+		field.set(null, configurations);
+	}
+
+	@Test
+	void theStartScriptIsTheOneOfTheRobocodeStarterFolder() {
+		// The project folder has the script, the one next to the program is found first
+		assertTrue(Configuration.getStartBattleScript().endsWith("start.sh"), Configuration.getStartBattleScript());
+	}
+
+	@Test
+	void theFolderOfTheProgramIsTheFolderOfItsJar(@TempDir Path folder) throws Exception {
+		// The classes of this build, packed in a jar of their own
+		Path classes = Path.of(Configuration.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+		Path jar = folder.resolve("program.jar");
+		try (JarOutputStream output = new JarOutputStream(Files.newOutputStream(jar)); Stream<Path> files = Files.walk(classes)) {
+			for (Path file : files.filter(Files::isRegularFile).toList()) {
+				output.putNextEntry(new JarEntry(classes.relativize(file).toString().replace('\\', '/')));
+				Files.copy(file, output);
+				output.closeEntry();
+			}
+		}
+
+		// Loaded from the jar, the class tells where the jar is
+		try (URLClassLoader loader = new URLClassLoader(new URL[] { jar.toUri().toURL() }, ClassLoader.getPlatformClassLoader())) {
+			Object found = loader.loadClass(Configuration.class.getName()).getMethod("applicationDirectory").invoke(null);
+
+			assertEquals(folder, found);
+		}
+	}
+
+	@Test
+	void aConfigurationThatIsNotLoadedIsSaidSo() throws ReflectiveOperationException {
+		Properties loaded = keptConfigurations();
+		try {
+			keepConfigurations(null);
+
+			assertThrows(IllegalStateException.class, Configuration::getWebserverPort);
+			assertThrows(IllegalStateException.class, () -> Configuration.setEnabledRegistration(true));
+		} finally {
+			keepConfigurations(loaded);
+		}
+	}
+
+	@Test
+	void aConfigurationFileThatCanNotBeReadIsReplacedByTheAnswer() throws Exception {
+		Path file = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
+		Files.deleteIfExists(file);
+		// A folder where the file should be: it can be neither read nor written
+		Files.createDirectory(file);
+		keepConfigurations(null);
+		try {
+			this.answer = properties("8181", "true");
+
+			assertTrue(Configuration.askForProperties());
+			assertEquals(8181, Configuration.getWebserverPort());
+		} finally {
+			Files.deleteIfExists(file);
+		}
+	}
+
+	@Test
+	void theSavedConfigurationIsLoadedBeforeItIsShown() throws Exception {
+		Path file = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
+		Files.deleteIfExists(file);
+		try (OutputStream output = Files.newOutputStream(file)) {
+			properties("8282", "false").store(output, null);
+		}
+		keepConfigurations(null);
+		AtomicReference<Properties> shown = new AtomicReference<Properties>();
+		Configuration.setNewConfigurationHandle(old -> {
+			shown.set(old);
+			// Cancelled: the saved one is still there
+			return null;
+		});
+		try {
+			assertTrue(Configuration.askForProperties());
+			assertEquals("8282", shown.get().getProperty(INewConfigurationHandle.WEBSERVER_PORT));
+		} finally {
+			Configuration.setNewConfigurationHandle(old -> this.answer);
+			Files.deleteIfExists(file);
+		}
+	}
+
+	@Test
+	void theOptionsMissingFromTheConfigurationHaveDefaults() {
+		this.answer = properties("8080", "true");
+		this.answer.remove(INewConfigurationHandle.ROBOCODE_PATH);
+		this.answer.remove(INewConfigurationHandle.DATABASE_FILE);
+		this.answer.remove(INewConfigurationHandle.ROBOCODE_ROUNDS);
+		this.answer.remove(INewConfigurationHandle.WINNER_CRITERION);
+		this.answer.remove(INewConfigurationHandle.BATTLE_VIEW);
+		assertTrue(Configuration.askForProperties());
+
+		assertEquals("", Configuration.getRobocodePath());
+		assertEquals(Configuration.DEFAULT_DATABASE_FILE, Configuration.getDatabaseFile());
+		assertEquals(5, Configuration.getRobocodeRounds());
+		assertEquals(WinnerCriterion.RANK, Configuration.getWinnerCriterion());
+		assertTrue(Configuration.isBattleView3D());
+	}
+
+	@Test
+	void theOptionsOfTheBattleAreReadAsTheyAreWritten() {
+		this.answer = properties("8080", "true");
+		this.answer.setProperty(INewConfigurationHandle.DATABASE_FILE, "  ");
+		this.answer.setProperty(INewConfigurationHandle.ROBOCODE_ROUNDS, "0");
+		this.answer.setProperty(INewConfigurationHandle.WINNER_CRITERION, "SCORE");
+		this.answer.setProperty(INewConfigurationHandle.BATTLE_VIEW, "CLASSIC");
+		assertTrue(Configuration.askForProperties());
+
+		assertEquals(Configuration.DEFAULT_DATABASE_FILE, Configuration.getDatabaseFile());
+		// There is at least one round
+		assertEquals(1, Configuration.getRobocodeRounds());
+		assertEquals(WinnerCriterion.SCORE, Configuration.getWinnerCriterion());
+		assertFalse(Configuration.isBattleView3D());
+		assertEquals(System.getProperty("java.io.tmpdir"), Configuration.getTempDir());
+	}
+
+	@Test
+	void aMissingConfigurationFileStartsFromNothing() throws Exception {
+		Path file = Path.of(System.getProperty("user.home"), "robocodeChampManager.config");
+		Files.deleteIfExists(file);
+		keepConfigurations(null);
+		AtomicReference<Properties> shown = new AtomicReference<Properties>(properties("1", "1"));
+		Configuration.setNewConfigurationHandle(old -> {
+			shown.set(old);
+			return null;
+		});
+		try {
+			assertFalse(Configuration.askForProperties());
+			assertNull(shown.get());
+		} finally {
+			Configuration.setNewConfigurationHandle(old -> this.answer);
+		}
 	}
 
 	@Test

@@ -76,11 +76,32 @@ final class ForestBackdrop {
 	}
 
 	/** Paints the forest: the sky, the trees and the undergrowth, in a single picture. */
+	/** Paints the forest: the sky, the trees and the undergrowth, in a single picture. */
 	private static Image paint() {
 		Random random = new Random(77);
 		int[] pixels = new int[WIDTH * HEIGHT];
 		double ground = HEIGHT * UNDERGROWTH;
+		paintSky(pixels);
 
+		// The trees, from the farthest to the nearest, so that each one covers the ones behind it.
+		// Depth sets the size and the height, and the haze of the air between the tree and the eye
+		List<Tree> trees = new ArrayList<>();
+		for (int index = 0; index < 900; index++) {
+			trees.add(new Tree(random, ground));
+		}
+		trees.sort(Comparator.comparingDouble(tree -> tree.depth));
+		for (Tree tree : trees) {
+			tree.paint(pixels);
+		}
+		paintUndergrowth(pixels, ground, random);
+
+		WritableImage image = new WritableImage(WIDTH, HEIGHT);
+		image.getPixelWriter().setPixels(0, 0, WIDTH, HEIGHT, PixelFormat.getIntArgbInstance(), pixels, 0, WIDTH);
+		return image;
+	}
+
+	/** Paints the sky and the layers of the tree line, from noise: the haze above, the misty trees, then the nearer ones */
+	private static void paintSky(int[] pixels) {
 		// Where each layer of the tree line starts, column by column, from noise
 		double[] farTop = new double[WIDTH];
 		double[] midTop = new double[WIDTH];
@@ -103,20 +124,10 @@ final class ForestBackdrop {
 				pixels[posY * WIDTH + posX2] = color;
 			}
 		}
+	}
 
-		// The trees, from the farthest to the nearest, so that each one covers the ones behind it.
-		// Depth sets the size and the height, and the haze of the air between the tree and the eye
-		List<Tree> trees = new ArrayList<>();
-		for (int index = 0; index < 900; index++) {
-			trees.add(new Tree(random, ground));
-		}
-		trees.sort(Comparator.comparingDouble(tree -> tree.depth));
-		for (Tree tree : trees) {
-			tree.paint(pixels);
-		}
-
-		// Undergrowth: the ground, with the same moss as the field, darker toward the
-		// bottom, and ferns standing on it
+	/** Paints the undergrowth: the ground with the same moss as the field, darker toward the bottom, and ferns standing on it */
+	private static void paintUndergrowth(int[] pixels, double ground, Random random) {
 		PixelReader moss = JungleTexture.MOSS.getPixelReader();
 		int mossSize = (int) JungleTexture.MOSS.getWidth();
 		for (int posY2 = (int) ground; posY2 < HEIGHT; posY2++) {
@@ -137,10 +148,6 @@ final class ForestBackdrop {
 				}
 			}
 		}
-
-		WritableImage image = new WritableImage(WIDTH, HEIGHT);
-		image.getPixelWriter().setPixels(0, 0, WIDTH, HEIGHT, PixelFormat.getIntArgbInstance(), pixels, 0, WIDTH);
-		return image;
 	}
 
 	/**

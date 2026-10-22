@@ -43,6 +43,7 @@ final class VolcanoArena {
 
 	/** Under the field of the battle the lava glows little, it shows in the cracks of the gray plates: the robots are what should stand out */
 	private static final Image FIELD_TEXTURE = LavaTexture.floor(0.6, 0.5, 0x120403);
+	private static final String[] BASALT_TONES = { "#4a4a52", "#41414a", "#55555d" };
 
 
 	/**
@@ -93,8 +94,24 @@ final class VolcanoArena {
 
 	/** Basalt plates (Voronoi cells) with glowing lava in the cracks, and the border of the field */
 	void basaltPlates(double width, double height, Random rocks) {
-		// Basalt plates over it: Voronoi cells of jittered seeds, each shrunk a
-		// bit so the lava glows between them, in cracks of different widths
+		TriangleMesh[] plates = basaltMeshes(basaltCells(width, height, rocks), rocks);
+		for (int index3 = 0; index3 < plates.length; index3++) {
+			PhongMaterial basaltTone = new PhongMaterial(Color.web(BASALT_TONES[index3]));
+			basaltTone.setSpecularColor(Color.web("#6a6a72"));
+			basaltTone.setSpecularPower(10);
+			MeshView view = new MeshView(plates[index3]);
+			view.setMaterial(basaltTone);
+			view.setCullFace(CullFace.NONE);
+			host.arena.getChildren().add(view);
+		}
+		fieldBorder(width, height);
+	}
+
+	/**
+	 * Voronoi cells of jittered seeds over the field, each shrunk a bit so the lava
+	 * glows between them, in cracks of different widths
+	 */
+	private static List<double[][]> basaltCells(double width, double height, Random rocks) {
 		double cell = 68;
 		List<double[]> seeds = new ArrayList<double[]>();
 		for (double posX = cell / 2; posX < width; posX += cell) {
@@ -106,11 +123,12 @@ final class VolcanoArena {
 		for (int index = 0; index < gaps.length; index++) {
 			gaps[index] = 0.9 + rocks.nextDouble() * rocks.nextDouble() * 2.6;
 		}
-		List<double[][]> cells = Voronoi.cells(seeds.toArray(new double[0][]), gaps, -width / 2, -height / 2, width / 2, height / 2);
+		return Voronoi.cells(seeds.toArray(new double[0][]), gaps, -width / 2, -height / 2, width / 2, height / 2);
+	}
 
-		// One mesh for each tone of basalt
-		String[] tones = { "#4a4a52", "#41414a", "#55555d" };
-		TriangleMesh[] plates = new TriangleMesh[tones.length];
+	/** One mesh for each tone of basalt, each cell going to one of them as a fan of triangles */
+	private static TriangleMesh[] basaltMeshes(List<double[][]> cells, Random rocks) {
+		TriangleMesh[] plates = new TriangleMesh[BASALT_TONES.length];
 		for (int index2 = 0; index2 < plates.length; index2++) {
 			plates[index2] = new TriangleMesh();
 			plates[index2].getTexCoords().addAll(0, 0);
@@ -129,20 +147,13 @@ final class VolcanoArena {
 				mesh.getFaces().addAll(first, 0, first + deepIndex + 1, 0, first + deepIndex, 0);
 			}
 		}
-		for (int index3 = 0; index3 < plates.length; index3++) {
-			PhongMaterial basaltTone = new PhongMaterial(Color.web(tones[index3]));
-			basaltTone.setSpecularColor(Color.web("#6a6a72"));
-			basaltTone.setSpecularPower(10);
-			MeshView view = new MeshView(plates[index3]);
-			view.setMaterial(basaltTone);
-			view.setCullFace(CullFace.NONE);
-			host.arena.getChildren().add(view);
-		}
+		return plates;
+	}
 
+	/** The border of the field: glowing crack lines along its four edges */
+	private void fieldBorder(double width, double height) {
 		PhongMaterial crack = new PhongMaterial(Color.web("#a8380e"));
 		crack.setSpecularColor(Color.web("#7a4a30"));
-
-		// The field border
 		host.glowing.getChildren().addAll(box(width, 0.5, 2, 0, -0.3, -height / 2, crack), box(width, 0.5, 2, 0, -0.3, height / 2, crack), box(2, 0.5, height, -width / 2, -0.3, 0, crack),
 				box(2, 0.5, height, width / 2, -0.3, 0, crack));
 	}
@@ -204,7 +215,6 @@ final class VolcanoArena {
 
 	/** Volcanoes on the horizon: stacked tiers make a cone, glowing on the top */
 	void volcanoes(Random rocks) {
-		// Volcanoes on the horizon: stacked tiers make a cone, glowing on the top
 		PhongMaterial rock = new PhongMaterial(Color.web("#1c110e"));
 		rock.setSpecularColor(Color.web("#2c1a14"));
 		for (int index = 0; index < 9; index++) {
@@ -214,36 +224,45 @@ final class VolcanoArena {
 			double radius = 110 + rocks.nextDouble() * 130;
 			double posX = Math.cos(angle) * distance;
 			double posZ = Math.sin(angle) * distance;
-			int tiers = 8;
-			for (int tier = 0; tier < tiers; tier++) {
-				Cylinder part = new Cylinder(radius * (1 - tier * 0.1), height / tiers, 9);
-				part.setMaterial(rock);
-				part.setTranslateX(posX);
-				part.setTranslateZ(posZ);
-				part.setTranslateY(5 - height / tiers * (tier + 0.5));
-				host.arena.getChildren().add(part);
-			}
-			// Lava falls down the slopes, a bit off them so the tiers do not cover them
-			for (int fall = 0; fall < 3; fall++) {
-				double side = (fall + rocks.nextDouble() * 0.6) * Math.PI * 2 / 3;
-				double deltaX = Math.cos(side);
-				double deltaZ = Math.sin(side);
-				double top = radius * 0.3 * 1.12;
-				double bottom = radius * 1.12;
-				double topWidth = radius * 0.15;
-				double bottomWidth = radius * 0.42;
-				host.lavaFlows.flow(new double[][] { //
-						{ posX + deltaX * top - deltaZ * topWidth, 5 - height, posZ + deltaZ * top + deltaX * topWidth }, //
-						{ posX + deltaX * top + deltaZ * topWidth, 5 - height, posZ + deltaZ * top - deltaX * topWidth }, //
-						{ posX + deltaX * bottom + deltaZ * bottomWidth, 5, posZ + deltaZ * bottom - deltaX * bottomWidth }, //
-						{ posX + deltaX * bottom - deltaZ * bottomWidth, 5, posZ + deltaZ * bottom + deltaX * bottomWidth } }, 0, -0.4);
-			}
+			cone(posX, posZ, radius, height, rock);
+			lavaFalls(posX, posZ, radius, height, rocks);
 			Cylinder crater = new Cylinder(radius * 0.3, 4, 7);
 			crater.setMaterial(host.lava);
 			crater.setTranslateX(posX);
 			crater.setTranslateZ(posZ);
 			crater.setTranslateY(5 - height - 1);
 			host.glowing.getChildren().add(crater);
+		}
+	}
+
+	/** The cone of a volcano: eight tiers, each one a little narrower than the one below */
+	private void cone(double posX, double posZ, double radius, double height, PhongMaterial rock) {
+		int tiers = 8;
+		for (int tier = 0; tier < tiers; tier++) {
+			Cylinder part = new Cylinder(radius * (1 - tier * 0.1), height / tiers, 9);
+			part.setMaterial(rock);
+			part.setTranslateX(posX);
+			part.setTranslateZ(posZ);
+			part.setTranslateY(5 - height / tiers * (tier + 0.5));
+			host.arena.getChildren().add(part);
+		}
+	}
+
+	/** Lava falling down three slopes of a volcano, a bit off them so the tiers do not cover them */
+	private void lavaFalls(double posX, double posZ, double radius, double height, Random rocks) {
+		for (int fall = 0; fall < 3; fall++) {
+			double side = (fall + rocks.nextDouble() * 0.6) * Math.PI * 2 / 3;
+			double deltaX = Math.cos(side);
+			double deltaZ = Math.sin(side);
+			double top = radius * 0.3 * 1.12;
+			double bottom = radius * 1.12;
+			double topWidth = radius * 0.15;
+			double bottomWidth = radius * 0.42;
+			host.lavaFlows.flow(new double[][] { //
+					{ posX + deltaX * top - deltaZ * topWidth, 5 - height, posZ + deltaZ * top + deltaX * topWidth }, //
+					{ posX + deltaX * top + deltaZ * topWidth, 5 - height, posZ + deltaZ * top - deltaX * topWidth }, //
+					{ posX + deltaX * bottom + deltaZ * bottomWidth, 5, posZ + deltaZ * bottom - deltaX * bottomWidth }, //
+					{ posX + deltaX * bottom - deltaZ * bottomWidth, 5, posZ + deltaZ * bottom + deltaX * bottomWidth } }, 0, -0.4);
 		}
 	}
 }

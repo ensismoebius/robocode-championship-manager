@@ -54,6 +54,12 @@ final class Aurora {
 	 * number of times around the sky, so the picture has no seam where it closes.
 	 */
 	void update(double time) {
+		this.updateCurtains(time);
+		this.paintRows();
+	}
+
+	/** The edge, the rays and the shine of each column of the curtains, at the time */
+	private void updateCurtains(double time) {
 		for (int column = 0; column < CURTAINS; column++) {
 			for (int posX = 0; posX < WIDTH; posX++) {
 				double around = (double) posX / WIDTH;
@@ -70,6 +76,10 @@ final class Aurora {
 				this.patch[column][posX] = Math.max(0, Math.min(1, glow * 1.6 - 0.15)) * breath;
 			}
 		}
+	}
+
+	/** Paints the rows of the picture: each pixel gets the light of the curtains that cross it */
+	private void paintRows() {
 		int baseRed = (this.sky >> 16) & 0xff;
 		int baseGreen = (this.sky >> 8) & 0xff;
 		int baseBlue = this.sky & 0xff;

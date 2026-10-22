@@ -150,59 +150,7 @@ final class ArenaHud {
 
 		List<BattleRecording.Robot> list = host.recording.getRobots();
 		for (int index = 0; index < list.size() && index < 2; index++) {
-			BattleRecording.Robot robot = list.get(index);
-			Opponent opponent = host.opponentOf(robot);
-			Color color = PLAYER_COLORS[index];
-
-			Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
-			name.getStyleClass().add("arena-player-name");
-			name.setTextFill(color);
-			Label team = new Label(opponent == null ? "" : opponent.getTeam());
-			team.getStyleClass().add("arena-player-team");
-
-			// A flat futuristic bar: slanted at its outer end, solid colors, a thin outline, cells
-			// every 5 %, and a light trail that shows the damage just taken before it drains away
-			double height = 14;
-			double slant = 8;
-			String css = toCss(color);
-			Region back = new Region();
-			back.setStyle("-fx-background-color: derive(" + css + ", -80%);");
-			Region lag = new Region();
-			lag.getStyleClass().add("arena-energy-lag");
-			Region energy = new Region();
-			energy.getStyleClass().add("arena-energy");
-			energy.setStyle("-fx-background-color: " + css + ";");
-			Region cells = new Region();
-			cells.getStyleClass().add("arena-energy-cells");
-			StackPane bar = new StackPane(back, lag, energy, cells);
-			bar.setMinSize(HUD_BAR_WIDTH, height);
-			bar.setPrefSize(HUD_BAR_WIDTH, height);
-			bar.setMaxSize(HUD_BAR_WIDTH, height);
-			Pos anchor = index == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
-			StackPane.setAlignment(lag, anchor);
-			StackPane.setAlignment(energy, anchor);
-			double[] corners = index == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
-					: new double[] { 0, 0, HUD_BAR_WIDTH - slant, 0, HUD_BAR_WIDTH, height, 0, height };
-			bar.setClip(new Polygon(corners));
-			Polygon outline = new Polygon(corners);
-			outline.setFill(Color.TRANSPARENT);
-			outline.setStroke(color);
-			outline.setStrokeWidth(1.5);
-			outline.setMouseTransparent(true);
-			StackPane frame = new StackPane(bar, outline);
-			Label energyText = new Label("100");
-			energyText.getStyleClass().add("arena-energy-text");
-			energyText.setStyle("-fx-text-fill: " + css + "; -fx-border-color: " + css + ";");
-			HBox pips = new HBox(6);
-
-			HBox nameRow = index == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
-			nameRow.setAlignment(index == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
-			HBox barRow = index == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
-			barRow.setAlignment(Pos.CENTER);
-			VBox panel = new VBox(6, nameRow, barRow, pips);
-			panel.setAlignment(index == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
-
-			host.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, lag, energyText, pips));
+			VBox panel = this.playerPanel(index, list.get(index));
 			if (index == 1) {
 				host.hudTop.getChildren().addAll(spacer(), host.roundLabel, spacer());
 			}
@@ -212,6 +160,70 @@ final class ArenaHud {
 			host.hudTop.getChildren().add(host.roundLabel);
 		}
 		this.updatePips();
+	}
+
+	/** The name, the team, the energy bar and the pips of one player, and the registration of its bar */
+	private VBox playerPanel(int index, BattleRecording.Robot robot) {
+		Opponent opponent = host.opponentOf(robot);
+		Color color = PLAYER_COLORS[index];
+		String css = toCss(color);
+
+		Label name = new Label(opponent == null ? robot.getName() : opponent.getName().toUpperCase());
+		name.getStyleClass().add("arena-player-name");
+		name.setTextFill(color);
+		Label team = new Label(opponent == null ? "" : opponent.getTeam());
+		team.getStyleClass().add("arena-player-team");
+
+		Region lag = new Region();
+		lag.getStyleClass().add("arena-energy-lag");
+		Region energy = new Region();
+		energy.getStyleClass().add("arena-energy");
+		energy.setStyle("-fx-background-color: " + css + ";");
+		StackPane frame = this.energyBar(index, color, lag, energy);
+		Label energyText = new Label("100");
+		energyText.getStyleClass().add("arena-energy-text");
+		energyText.setStyle("-fx-text-fill: " + css + "; -fx-border-color: " + css + ";");
+		HBox pips = new HBox(6);
+
+		HBox nameRow = index == 0 ? new HBox(10, name, team) : new HBox(10, team, name);
+		nameRow.setAlignment(index == 0 ? Pos.BOTTOM_LEFT : Pos.BOTTOM_RIGHT);
+		HBox barRow = index == 0 ? new HBox(10, energyText, frame) : new HBox(10, frame, energyText);
+		barRow.setAlignment(Pos.CENTER);
+		VBox panel = new VBox(6, nameRow, barRow, pips);
+		panel.setAlignment(index == 0 ? Pos.TOP_LEFT : Pos.TOP_RIGHT);
+
+		host.hudPlayers.add(new HudPlayer(robot.getIndex(), energy, lag, energyText, pips));
+		return panel;
+	}
+
+	/**
+	 * The energy bar of a player: a flat futuristic bar, slanted at its outer end, with solid colors, a thin
+	 * outline, cells every 5 %, and the light trail (lag) that shows the damage just taken before it drains away
+	 */
+	private StackPane energyBar(int index, Color color, Region lag, Region energy) {
+		double height = 14;
+		double slant = 8;
+		String css = toCss(color);
+		Region back = new Region();
+		back.setStyle("-fx-background-color: derive(" + css + ", -80%);");
+		Region cells = new Region();
+		cells.getStyleClass().add("arena-energy-cells");
+		StackPane bar = new StackPane(back, lag, energy, cells);
+		bar.setMinSize(HUD_BAR_WIDTH, height);
+		bar.setPrefSize(HUD_BAR_WIDTH, height);
+		bar.setMaxSize(HUD_BAR_WIDTH, height);
+		Pos anchor = index == 0 ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT;
+		StackPane.setAlignment(lag, anchor);
+		StackPane.setAlignment(energy, anchor);
+		double[] corners = index == 0 ? new double[] { slant, 0, HUD_BAR_WIDTH, 0, HUD_BAR_WIDTH, height, 0, height }
+				: new double[] { 0, 0, HUD_BAR_WIDTH - slant, 0, HUD_BAR_WIDTH, height, 0, height };
+		bar.setClip(new Polygon(corners));
+		Polygon outline = new Polygon(corners);
+		outline.setFill(Color.TRANSPARENT);
+		outline.setStroke(color);
+		outline.setStrokeWidth(1.5);
+		outline.setMouseTransparent(true);
+		return new StackPane(bar, outline);
 	}
 
 	/** A region that takes the free space of a row. */

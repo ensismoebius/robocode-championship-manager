@@ -68,6 +68,25 @@ class ShowOponentTest {
 	}
 
 	@Test
+	void theCardCanBeSetWithoutTitleOrWithOne() throws IOException {
+		Opponent plain = robot();
+		Opponent titled = robot();
+		ShowOponent card = FxSupport.run(ShowOponent::new);
+
+		FxSupport.runVoid(() -> {
+			try {
+				card.setOponent(plain);
+				card.setOponent(titled, "Vencedor");
+			} catch (IOException ioException) {
+				throw new IllegalStateException(ioException);
+			}
+		});
+
+		// The card has its parts: the picture, the name and the rest of the robot
+		assertTrue(FxSupport.run(() -> card.getChildren().size()) > 0);
+	}
+
+	@Test
 	void theCardWithoutTitleHasNoPrompt() throws IOException {
 		ShowOponent card = card(robot(), null, false);
 		playFor(card, 100);

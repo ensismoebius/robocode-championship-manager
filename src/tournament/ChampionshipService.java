@@ -23,6 +23,10 @@ import utils.database.Database;
  */
 public class ChampionshipService {
 
+	/** Only static methods: this class is not instantiated. */
+	private ChampionshipService() {
+	}
+
 	/**
 	 * @return the most recent championship or null if there is none
 	 */

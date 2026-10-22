@@ -96,23 +96,36 @@ public class ArcadeBackground extends Pane {
 		GraphicsContext graphicsContext = this.canvas.getGraphicsContext2D();
 		double horizon = height * HORIZON;
 
-		// Sky
+		this.drawSky(graphicsContext, width, height);
+		this.drawStars(graphicsContext, seconds, width, height);
+		this.drawHorizonGlow(graphicsContext, width, height, horizon);
+		this.drawFloor(graphicsContext, seconds, width, height, horizon);
+	}
+
+	/** The sky: a gradient from the dark top to the purple near the horizon */
+	private void drawSky(GraphicsContext graphicsContext, double width, double height) {
 		graphicsContext.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#05060c")), new Stop(0.58, Color.web("#1a1033")), new Stop(1, Color.web("#0b0e14"))));
 		graphicsContext.fillRect(0, 0, width, height);
+	}
 
-		// Stars
+	/** The stars, twinkling at their own pace */
+	private void drawStars(GraphicsContext graphicsContext, double seconds, double width, double height) {
 		for (double[] star : this.stars) {
 			double twinkle = 0.35 + 0.65 * Math.abs(Math.sin(seconds * 1.3 + star[2]));
 			graphicsContext.setFill(Color.gray(1, twinkle * 0.8));
 			double size = star[2] > 5 ? 2.5 : 1.5;
 			graphicsContext.fillRect(star[0] * width, star[1] * height, size, size);
 		}
+	}
 
-		// Glow on the horizon
+	/** Glow on the horizon */
+	private void drawHorizonGlow(GraphicsContext graphicsContext, double width, double height, double horizon) {
 		graphicsContext.setFill(new RadialGradient(0, 0, width / 2, horizon, width * 0.45, false, CycleMethod.NO_CYCLE, new Stop(0, Color.web("#ff3d6e", 0.35)), new Stop(1, Color.TRANSPARENT)));
 		graphicsContext.fillRect(0, 0, width, height);
+	}
 
-		// Floor
+	/** The floor, its grid moving towards the viewer, and the horizon line */
+	private void drawFloor(GraphicsContext graphicsContext, double seconds, double width, double height, double horizon) {
 		graphicsContext.setFill(Color.web("#07080f"));
 		graphicsContext.fillRect(0, horizon, width, height - horizon);
 

@@ -136,6 +136,21 @@ final class ArenaRounds {
 
 	/** Starts a round: its turns are played from the beginning. */
 	void startRound(int round) {
+		this.resetRound(round);
+
+		// Skips empty rounds
+		List<Turn> turns = host.turns();
+		if (turns.isEmpty()) {
+			host.phase = Phase.ROUND_END;
+			host.phaseTime = ROUND_END_SECONDS;
+			return;
+		}
+		this.showTurn(turns);
+		this.craneShot(round);
+	}
+
+	/** Puts everything of the arena back to the start of the round, and the robots where they begin */
+	private void resetRound(int round) {
 		host.round = round;
 		host.turnPosition = 0;
 		host.lastTurnProcessed = -1;
@@ -147,7 +162,7 @@ final class ArenaRounds {
 		host.shots.clearBullets();
 		host.effects.getChildren().clear();
 		host.fire.clear();
-		host.shots.resetFence();
+		host.forceField.resetFence();
 		if (host.commentary != null) {
 			host.commentary.startRound();
 			if (round > 0 && round + 1 == host.recording.getRounds().size()) {
@@ -158,17 +173,10 @@ final class ArenaRounds {
 		for (RobotView view : host.robots.values()) {
 			view.reset();
 		}
+	}
 
-		// Skips empty rounds
-		List<Turn> turns = host.turns();
-		if (turns.isEmpty()) {
-			host.phase = Phase.ROUND_END;
-			host.phaseTime = ROUND_END_SECONDS;
-			return;
-		}
-		this.showTurn(turns);
-
-		// The camera at the start of the battle: a crane shot down to the arena
+	/** The camera at the start of a round: a crane shot down to the arena, and before the first battle, the flight over it */
+	private void craneShot(int round) {
 		host.shot = Shot.CRANE;
 		host.shotTime = 0;
 		host.shotDuration = INTRO_SECONDS + 2.5;

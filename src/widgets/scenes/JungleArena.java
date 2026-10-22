@@ -300,9 +300,24 @@ final class JungleArena {
 			stones[index] = new LowPoly();
 		}
 		LowPoly moss = new LowPoly();
-		double toward = -side;
+		rockBody(posX, posZ, side, stones, moss, wild);
+		rockButtresses(posX, posZ, side, stones, moss, wild);
+		rockBoulders(posX, posZ, side, stones, wild);
 
-		// The body: tiers side by side, tall behind the water and lower at the sides
+		for (int index6 = 0; index6 < stones.length; index6++) {
+			PhongMaterial material = new PhongMaterial(tones[index6]);
+			material.setSpecularColor(Color.gray(0.08));
+			material.setSpecularPower(14);
+			host.arena.getChildren().add(stones[index6].view(material));
+		}
+		PhongMaterial mossy = new PhongMaterial(Color.web("#2f5a1f"));
+		mossy.setSpecularColor(Color.gray(0.05));
+		host.arena.getChildren().add(moss.view(mossy));
+	}
+
+	/** The body of the mountain: tiers side by side, tall behind the water and lower at the sides */
+	private void rockBody(double posX, double posZ, int side, LowPoly[] stones, LowPoly moss, Random wild) {
+		double toward = -side;
 		for (int index2 = 0; index2 < 10; index2++) {
 			double deltaZ = -250 + index2 * 55 + (wild.nextDouble() - 0.5) * 30;
 			boolean channel = Math.abs(deltaZ) < 105;
@@ -320,8 +335,11 @@ final class JungleArena {
 				moss.rock(cxValue, posZ + deltaZ, 6 - height * 0.88, 7, rxValue * 0.5, rzValue * 0.5, 6, 0.8, 0.4, wild);
 			}
 		}
+	}
 
-		// Buttresses: rocks coming out of the mountain to the sides of the water
+	/** Buttresses: rocks coming out of the mountain to the sides of the water, and a lip of rock over the water */
+	private void rockButtresses(double posX, double posZ, int side, LowPoly[] stones, LowPoly moss, Random wild) {
+		double toward = -side;
 		for (int index3 = 0; index3 < 8; index3++) {
 			double deltaZ2 = (index3 % 2 == 0 ? 1 : -1) * (100 + wild.nextDouble() * 130);
 			double rxValue2 = 30 + wild.nextDouble() * 30;
@@ -338,29 +356,21 @@ final class JungleArena {
 		stones[1].rock(posX + toward * 16, posZ, 6 - 400, 80, 70, 100, 8, 0.75, 0.45, wild);
 		stones[3].rock(posX + toward * 6, posZ + 55, 6 - 380, 70, 40, 45, 6, 0.7, 0.5, wild);
 		stones[0].rock(posX + toward * 6, posZ - 55, 6 - 385, 70, 40, 45, 6, 0.7, 0.5, wild);
+	}
 
-		// Boulders at the foot, on both sides of the pool
+	/** Boulders at the foot on both sides of the pool, and a few stones in the water at its edge */
+	private void rockBoulders(double posX, double posZ, int side, LowPoly[] stones, Random wild) {
+		double toward = -side;
 		for (int index4 = 0; index4 < 12; index4++) {
 			double deltaZ3 = (wild.nextBoolean() ? 1 : -1) * (95 + wild.nextDouble() * 140);
 			double radius = 16 + wild.nextDouble() * 28;
 			double cxValue3 = posX + toward * (20 + wild.nextDouble() * 230);
 			stones[wild.nextInt(stones.length)].rock(cxValue3, posZ + deltaZ3, 6, radius * (0.8 + wild.nextDouble() * 0.8), radius, radius * 0.9, 6, 0.6, 0.55, wild);
 		}
-		// Stones in the water, at the edge of the pool
 		for (int index5 = 0; index5 < 4; index5++) {
 			double radius = 10 + wild.nextDouble() * 12;
 			stones[wild.nextInt(stones.length)].rock(posX + toward * (60 + wild.nextDouble() * 170), posZ + (wild.nextDouble() - 0.5) * 220, 6, radius, radius, radius, 6, 0.6, 0.5, wild);
 		}
-
-		for (int index6 = 0; index6 < stones.length; index6++) {
-			PhongMaterial material = new PhongMaterial(tones[index6]);
-			material.setSpecularColor(Color.gray(0.08));
-			material.setSpecularPower(14);
-			host.arena.getChildren().add(stones[index6].view(material));
-		}
-		PhongMaterial mossy = new PhongMaterial(Color.web("#2f5a1f"));
-		mossy.setSpecularColor(Color.gray(0.05));
-		host.arena.getChildren().add(moss.view(mossy));
 	}
 
 	/**

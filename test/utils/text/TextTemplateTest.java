@@ -65,6 +65,28 @@ class TextTemplateTest {
 	}
 
 	@Test
+	void aNestedBlockNotParsedYetLeavesNoText() throws IOException {
+		TextTemplate t = template("<!-- begin:main -->\n<ul>\n<!-- begin:item -->\n<li>{name}</li>\n<!-- end:item -->\n</ul>\n<!-- end:main -->\n");
+		t.assign("name", "x");
+
+		// The item is parsed by its own name, before it is shown: until then it has no text
+		t.parse("main");
+
+		assertFalse(t.out("main").contains("<li>"), t.out("main"));
+	}
+
+	@Test
+	void textAfterTheBlockOpenerIsTheFirstTextOfTheBlock() throws IOException {
+		TextTemplate t = template("<!-- begin:main -->primeiro\n<p>segundo</p>\n<!-- end:main -->\n");
+
+		t.parse("main");
+
+		String out = t.out("main");
+		assertTrue(out.contains("primeiro"), out);
+		assertTrue(out.indexOf("primeiro") < out.indexOf("segundo"), out);
+	}
+
+	@Test
 	void aBlockThatIsNotInTheTemplateCanNotBeParsed() throws IOException {
 		TextTemplate template = new TextTemplate(new ByteArrayInputStream("<!-- begin:bloco --> oi <!-- end:bloco -->".getBytes(StandardCharsets.UTF_8)));
 

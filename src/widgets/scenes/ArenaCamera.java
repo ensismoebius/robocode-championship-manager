@@ -191,12 +191,7 @@ final class ArenaCamera {
 		host.rollTarget = 0;
 
 		if (host.phase == Phase.FLYBY) {
-			// The camera stays on the critter, following it, and then the trip begins
-			double hold = host.rounds.flyByHold();
-			if (host.phaseTime < hold) {
-				host.flyFocus = host.flyFocusSource.get();
-			}
-			host.rounds.flyByPose(Math.max(0, Math.min(1, (host.phaseTime - hold) / FLYBY_SECONDS)));
+			this.flyBy();
 			return;
 		}
 		if (host.phase == Phase.SHOWCASE && !host.versus) {
@@ -212,32 +207,51 @@ final class ArenaCamera {
 		}
 
 		// When a bot wins, focus the camera directly on the victor!
-		List<RobotView> livingRobots = host.robots.values().stream().filter(vCoord2 -> !vCoord2.dead).toList();
-		boolean roundOver = host.phase == Phase.ROUND_END || host.phase == Phase.FINISHED;
-		RobotView winner = null;
-		// Not while a death is held on screen: the wreck is framed then, see freezeForReplay
-		if (host.robots.size() >= 2 && livingRobots.size() == 1 && host.phase != Phase.FREEZE) {
-			winner = livingRobots.get(0);
-		} else if (roundOver && host.robots.containsKey(host.shotSubject)) {
-			winner = host.robots.get(host.shotSubject);
-		}
-
+		RobotView winner = this.winner();
 		if (winner != null) {
-			host.cinematicOrbitAngle += deltaTime * 0.35;
-			double[] winPos = winner.position();
-			double winDist = 175.0; // Heroic victory framing
-			double winHeight = -42.0; // Elevated view looking proud at the victor
-			double winAngle = host.cinematicOrbitAngle;
-
-			this.setShot(winPos[0] + Math.cos(winAngle) * winDist, winHeight, winPos[2] + Math.sin(winAngle) * winDist,
-					winPos[0], -18, winPos[2], 44.0, 3.5);
-			host.rollTarget = 0;
-			this.keepClear();
-			host.eyeTarget[1] = Math.min(host.eyeTarget[1], -10);
+			this.frameWinner(winner, deltaTime);
 			return;
 		}
 
 		this.frameFighters(deltaTime, first, second);
+	}
+
+	/** The camera stays on the critter, following it, and then the trip begins */
+	private void flyBy() {
+		double hold = host.rounds.flyByHold();
+		if (host.phaseTime < hold) {
+			host.flyFocus = host.flyFocusSource.get();
+		}
+		host.rounds.flyByPose(Math.max(0, Math.min(1, (host.phaseTime - hold) / FLYBY_SECONDS)));
+	}
+
+	/** The victor, when the battle is decided: the last robot alive, or the one of the round that ended */
+	private RobotView winner() {
+		List<RobotView> livingRobots = host.robots.values().stream().filter(vCoord2 -> !vCoord2.dead).toList();
+		boolean roundOver = host.phase == Phase.ROUND_END || host.phase == Phase.FINISHED;
+		// Not while a death is held on screen: the wreck is framed then, see freezeForReplay
+		if (host.robots.size() >= 2 && livingRobots.size() == 1 && host.phase != Phase.FREEZE) {
+			return livingRobots.get(0);
+		}
+		if (roundOver && host.robots.containsKey(host.shotSubject)) {
+			return host.robots.get(host.shotSubject);
+		}
+		return null;
+	}
+
+	/** The victor alone in the frame, orbited from above, looking proud */
+	private void frameWinner(RobotView winner, double deltaTime) {
+		host.cinematicOrbitAngle += deltaTime * 0.35;
+		double[] winPos = winner.position();
+		double winDist = 175.0; // Heroic victory framing
+		double winHeight = -42.0; // Elevated view looking proud at the victor
+		double winAngle = host.cinematicOrbitAngle;
+
+		this.setShot(winPos[0] + Math.cos(winAngle) * winDist, winHeight, winPos[2] + Math.sin(winAngle) * winDist,
+				winPos[0], -18, winPos[2], 44.0, 3.5);
+		host.rollTarget = 0;
+		this.keepClear();
+		host.eyeTarget[1] = Math.min(host.eyeTarget[1], -10);
 	}
 
 	/**
@@ -256,13 +270,29 @@ final class ArenaCamera {
 		double posZ = uxValue * host.shotSide;
 		host.cinematicOrbitAngle += deltaTime * 0.25;
 
-		// Calculate distance required to guarantee both robots are comfortably inside the field of view
-		// Fit the bounding circle encompassing both combatants to the horizontal field of view
-		double aspect = Math.max(0.5, host.getWidth() / Math.max(1.0, host.getHeight()));
 		double fovVal = 48.0;
-		double vFovRad = Math.toRadians(fovVal);
-		double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspect);
+		double bestAngle = this.bestAngle(mid, posX, posZ);
+		double targetDist = this.targetDistance(separation, fovVal);
 
+		// Elevation: ringside referee perspective looking slightly down into the arena
+		double eyeY = -Math.max(65.0, targetDist * 0.23);
+
+		// Roll target: subtle dynamic tilt on impacts, otherwise level
+		host.rollTarget = (host.shot == Shot.IMPACT ? 2.0 : 0.5) * Math.sin(host.cinematicOrbitAngle);
+
+		// Aim directly at the midpoint between the fighters
+		this.setShot(mid[0] + Math.cos(bestAngle) * targetDist, eyeY, mid[2] + Math.sin(bestAngle) * targetDist,
+				mid[0], -16, mid[2], fovVal, 3.5);
+		this.keepClear();
+		// Never under the floor
+		host.eyeTarget[1] = Math.min(host.eyeTarget[1], -10);
+	}
+
+	/**
+	 * The referee's angle around the fighters: the flank of the combat line that is closest to where the
+	 * camera is (for continuity), with a little pacing from side to side
+	 */
+	private double bestAngle(double[] mid, double posX, double posZ) {
 		// Boxing referee camera: continuously seeks the best angle of the fight,
 		// circling the combatants on the flank to keep both clearly in sight.
 		double curDx = host.eye[0] - mid[0];
@@ -280,7 +310,14 @@ final class ArenaCamera {
 
 		// Dynamic 3/4 angle & referee footwork: gently pacing to keep an unobstructed view
 		double pacing = Math.sin(host.cinematicOrbitAngle) * 0.16;
-		double bestAngle = baseFlank + pacing;
+		return baseFlank + pacing;
+	}
+
+	/** How far the referee stands: both fighters fit the horizontal field of view, a bit closer on impacts */
+	private double targetDistance(double separation, double fovVal) {
+		double aspect = Math.max(0.5, host.getWidth() / Math.max(1.0, host.getHeight()));
+		double vFovRad = Math.toRadians(fovVal);
+		double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspect);
 
 		// Frame both combatants with generous margins so neither leaves the view nor feels cramped
 		double sphereRadius = separation * 0.5 + 80.0;
@@ -291,19 +328,7 @@ final class ArenaCamera {
 		if (host.shot == Shot.IMPACT || host.hitTension > 0.15) {
 			targetDist *= 0.95;
 		}
-
-		// Elevation: ringside referee perspective looking slightly down into the arena
-		double eyeY = -Math.max(65.0, targetDist * 0.23);
-
-		// Roll target: subtle dynamic tilt on impacts, otherwise level
-		host.rollTarget = (host.shot == Shot.IMPACT ? 2.0 : 0.5) * Math.sin(host.cinematicOrbitAngle);
-
-		// Aim directly at the midpoint between the fighters
-		this.setShot(mid[0] + Math.cos(bestAngle) * targetDist, eyeY, mid[2] + Math.sin(bestAngle) * targetDist,
-				mid[0], -16, mid[2], fovVal, 3.5);
-		this.keepClear();
-		// Never under the floor
-		host.eyeTarget[1] = Math.min(host.eyeTarget[1], -10);
+		return targetDist;
 	}
 
 	/**

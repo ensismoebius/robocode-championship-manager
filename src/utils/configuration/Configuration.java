@@ -53,6 +53,10 @@ public class Configuration {
 	 */
 	private static final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
+	/** Only static methods: this class is not instantiated. */
+	private Configuration() {
+	}
+
 	/** Calls the listener every time the configuration changes. */
 	public static void addListener(Runnable listener) {
 		Configuration.listeners.add(listener);

@@ -177,17 +177,6 @@ final class ArenaEffects {
 		ring.setScaleY(1.5);
 		ring.setVisible(false);
 		blast.getChildren().add(ring);
-		ParallelTransition spread = new ParallelTransition();
-		ScaleTransition ringSpread = new ScaleTransition(Duration.millis(millis), ring);
-		ringSpread.setFromX(radius * 0.05);
-		ringSpread.setFromZ(radius * 0.05);
-		ringSpread.setToX(radius);
-		ringSpread.setToZ(radius);
-		ringSpread.setInterpolator(Interpolator.EASE_OUT);
-		FadeTransition ringFade = new FadeTransition(Duration.millis(millis), ring);
-		ringFade.setFromValue(1);
-		ringFade.setToValue(0);
-		ringFade.setInterpolator(Interpolator.EASE_IN);
 		// The bubble of the same wave: a see through dome that grows as the ring does
 		Sphere bubble = new Sphere(1, 32);
 		bubble.setMaterial(bubble(color));
@@ -195,25 +184,50 @@ final class ArenaEffects {
 		bubble.setTranslateY(floorY - 0.5);
 		bubble.setVisible(false);
 		blast.getChildren().add(bubble);
-		ScaleTransition bubbleSpread = new ScaleTransition(Duration.millis(millis), bubble);
-		bubbleSpread.setFromX(radius * 0.05);
-		bubbleSpread.setFromY(radius * 0.05);
-		bubbleSpread.setFromZ(radius * 0.05);
-		bubbleSpread.setToX(radius);
-		bubbleSpread.setToY(radius);
-		bubbleSpread.setToZ(radius);
-		bubbleSpread.setInterpolator(Interpolator.EASE_OUT);
-		FadeTransition bubbleFade = new FadeTransition(Duration.millis(millis), bubble);
-		bubbleFade.setFromValue(1);
-		bubbleFade.setToValue(0);
-		bubbleFade.setInterpolator(Interpolator.EASE_IN);
-		spread.getChildren().addAll(ringSpread, ringFade, bubbleSpread, bubbleFade);
+		ParallelTransition spread = new ParallelTransition();
+		spread.getChildren().addAll(ringGrowth(ring, radius, millis), fadeOut(ring, millis), bubbleGrowth(bubble, radius, millis), fadeOut(bubble, millis));
 		spread.setDelay(Duration.millis(delay));
 		spread.statusProperty().addListener((observable, before, now) -> {
 			ring.setVisible(now == Animation.Status.RUNNING);
 			bubble.setVisible(now == Animation.Status.RUNNING);
 		});
 		all.getChildren().add(spread);
+	}
+
+	/** The ring grows flat, along the floor */
+	private static ScaleTransition ringGrowth(MeshView ring, double radius, double millis) {
+		return growth(ring, radius, millis, true);
+	}
+
+	/** Grows a shape from a small size to the radius, flat along the floor or in every direction */
+	private static ScaleTransition growth(Node shape, double radius, double millis, boolean flat) {
+		ScaleTransition spread = new ScaleTransition(Duration.millis(millis), shape);
+		spread.setFromX(radius * 0.05);
+		if (!flat) {
+			spread.setFromY(radius * 0.05);
+		}
+		spread.setFromZ(radius * 0.05);
+		spread.setToX(radius);
+		if (!flat) {
+			spread.setToY(radius);
+		}
+		spread.setToZ(radius);
+		spread.setInterpolator(Interpolator.EASE_OUT);
+		return spread;
+	}
+
+	/** The dome grows in every direction */
+	private static ScaleTransition bubbleGrowth(Sphere bubble, double radius, double millis) {
+		return growth(bubble, radius, millis, false);
+	}
+
+	/** The part of the wave fades out while it spreads */
+	private static FadeTransition fadeOut(Node node, double millis) {
+		FadeTransition fade = new FadeTransition(Duration.millis(millis), node);
+		fade.setFromValue(1);
+		fade.setToValue(0);
+		fade.setInterpolator(Interpolator.EASE_IN);
+		return fade;
 	}
 
 	/** A flash at the muzzle of a shot, tinted with the given colour. */

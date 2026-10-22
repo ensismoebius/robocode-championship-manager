@@ -21,6 +21,10 @@ import utils.configuration.Configuration;
  */
 public class Database {
 
+	/** Only static methods: this class is not instantiated. */
+	private Database() {
+	}
+
 	private static EntityManagerFactory entityManagerFactory;
 
 	/** The entity manager of the database, created the first time it is needed. */

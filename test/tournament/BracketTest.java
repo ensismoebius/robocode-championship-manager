@@ -168,6 +168,18 @@ class BracketTest {
 	}
 
 	@Test
+	void theRoundsAreNamedFromTheFinalBackwards() {
+		Bracket sixteen = new Bracket(ids(16), false);
+
+		assertEquals("Oitavas de final", sixteen.winnersRoundName(1));
+		assertEquals("Quartas de final", sixteen.winnersRoundName(2));
+		assertEquals("Semifinal", sixteen.winnersRoundName(3));
+		assertEquals("Final", sixteen.winnersRoundName(4));
+		// A bigger bracket counts its first rounds by number
+		assertEquals("1ª rodada", new Bracket(ids(32), false).winnersRoundName(1));
+	}
+
+	@Test
 	void byesGoToTheFirstSeedsAndAreDecidedAutomatically() {
 		// 5 participants: bracket of 8, seeds 1, 2 and 3 get byes
 		Bracket bracket = new Bracket(ids(5), true);

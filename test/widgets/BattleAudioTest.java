@@ -1,8 +1,10 @@
 package widgets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.Random;
 
 import org.junit.jupiter.api.Test;
@@ -66,6 +68,39 @@ class BattleAudioTest {
 		assertEquals(0, rms(BattleAudio.machines(0, 0, 2)), 1e-12);
 		assertTrue(rms(BattleAudio.machines(40, 0, 3)) > 0.01, "tracks are silent");
 		assertTrue(rms(BattleAudio.machines(0, 90, 3)) > 0.005, "turret is silent");
+	}
+
+	@Test
+	void theSongIsKeptAndTheSlowMotionLeavesAHeartbeat() {
+		BattleAudio audio = new BattleAudio();
+		audio.setSong(Song.SYNTHWAVE);
+		assertEquals(Song.SYNTHWAVE, audio.getSong());
+
+		audio.setSlowMotion(true);
+		double[] frame = new double[2];
+		double energy = 0;
+		for (int i = 0; i < 3 * Synth.RATE; i++) {
+			audio.nextFrame(frame);
+			energy += frame[0] * frame[0] + frame[1] * frame[1];
+		}
+
+		// Only the heartbeat is left of the soundtrack, but it is still there
+		assertTrue(energy > 0);
+	}
+
+	@Test
+	void theMixerIsStartedOnlyOnce() throws ReflectiveOperationException {
+		BattleAudio audio = new BattleAudio();
+		// Already running: a second start does not open another mixer thread
+		Field running = BattleAudio.class.getDeclaredField("running");
+		running.setAccessible(true);
+		running.setBoolean(audio, true);
+
+		audio.start();
+
+		Field thread = BattleAudio.class.getDeclaredField("thread");
+		thread.setAccessible(true);
+		assertNull(thread.get(audio));
 	}
 
 	@Test

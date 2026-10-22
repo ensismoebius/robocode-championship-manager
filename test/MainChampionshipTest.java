@@ -1,4 +1,5 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -163,6 +164,12 @@ class MainChampionshipTest {
 		}
 
 		assertTrue(FxSupport.run(() -> program.playableSelectedMatch().isEmpty()));
+
+		// The screen fades to the champion: the class ends once the podium is in place, or the fade would reach a stopped program
+		for (int wait = 0; wait < 200 && FxSupport.run(() -> program.championTransition); wait++) {
+			FxSupport.sleep(50);
+		}
+		assertFalse(FxSupport.run(() -> program.championTransition));
 	}
 
 	@Test

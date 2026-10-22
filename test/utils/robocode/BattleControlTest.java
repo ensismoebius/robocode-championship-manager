@@ -48,6 +48,16 @@ class BattleControlTest {
 	}
 
 	@Test
+	void linesThatAreNotAPlaceAreLeftOut() {
+		Opponent first = opponent("alpha", "Bot");
+
+		// A line with one field, and a place that is not a number: neither is a robot of the ranking
+		List<String> output = List.of("garbage", "x\tbeta.Bot\t5", "1\talpha.Bot\t300");
+
+		assertEquals(List.of(first), ranked(BattleControl.parseRanking(output, List.of(first), BattleControl.WinnerCriterion.RANK)));
+	}
+
+	@Test
 	void winnerByRankOrByScore() {
 		Opponent corners = opponent("alpha", "Corners");
 		Opponent crazy = opponent("bravo", "Crazy");

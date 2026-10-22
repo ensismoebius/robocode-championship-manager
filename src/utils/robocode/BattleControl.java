@@ -19,6 +19,10 @@ import model.Opponent;
  */
 public class BattleControl {
 
+	/** Only static methods: this class is not instantiated. */
+	private BattleControl() {
+	}
+
 	/**
 	 * A robot, its robocode rank, its total score and the rounds it won (-1 if
 	 * the battle starter did not report it)

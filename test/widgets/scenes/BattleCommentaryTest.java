@@ -40,7 +40,14 @@ class BattleCommentaryTest {
 	 * The next turn, robots at 200 units from each other
 	 */
 	private List<Message> turn(double energy0, double energy1, Bullet... bullets) {
-		Turn turn = new Turn(0, ++this.turnNumber, List.of(robot(0, 100, energy0), robot(1, 300, energy1)), List.of(bullets));
+		return this.turnAt(300, energy0, energy1, bullets);
+	}
+
+	/**
+	 * The next turn, with the second robot at the given position of the field
+	 */
+	private List<Message> turnAt(double secondX, double energy0, double energy1, Bullet... bullets) {
+		Turn turn = new Turn(0, ++this.turnNumber, List.of(robot(0, 100, energy0), robot(1, secondX, energy1)), List.of(bullets));
 		List<Message> messages = this.commentary.turn(turn, this.previous);
 		this.previous = turn;
 		return messages;
@@ -126,6 +133,69 @@ class BattleCommentaryTest {
 	void doubleKnockOut() {
 		this.turn(10, 10);
 		assertTrue(callouts(this.turn(0, 0)).contains("DUPLO K.O.!"));
+	}
+
+	@Test
+	void aSilentBattleIsCommentedAfterALongQuiet() {
+		// Nothing happens for more turns than the quiet limit
+		this.turnNumber += 500;
+
+		assertEquals(1, this.turn(100, 100).size());
+	}
+
+	@Test
+	void aHitIsToldOnceEvenWhenItStaysInTheRecords() {
+		this.turn(100, 96, hit(1, 0, 1));
+
+		assertEquals(List.of(), callouts(this.turn(100, 96, hit(1, 0, 1))));
+	}
+
+	@Test
+	void sixAndTwelveMissesInARowAreCommented() {
+		for (int shot = 1; shot <= 5; shot++) {
+			assertEquals(List.of(), this.turn(100, 100, new Bullet(shot, 0, 0, 0, 1, BattleRecording.BULLET_HIT_WALL, -1)).stream().filter(m -> m.text().contains("tiros seguidos") || m.text().contains("erros seguidos")).toList());
+		}
+		assertTrue(this.turn(100, 100, new Bullet(6, 0, 0, 0, 1, BattleRecording.BULLET_HIT_WALL, -1)).stream().anyMatch(m -> m.text().contains("6 tiros") || m.text().contains("6 erros")));
+	}
+
+	@Test
+	void aHitFromFarAwayIsASniperShot() {
+		assertTrue(callouts(this.turnAt(600, 100, 96, hit(1, 0, 1))).contains("SNIPER!"));
+	}
+
+	@Test
+	void aHitFromPointBlankIsCalledOut() {
+		assertTrue(callouts(this.turnAt(150, 100, 96, hit(1, 0, 1))).contains("À QUEIMA-ROUPA!"));
+	}
+
+	@Test
+	void aHitWhoseShooterIsNotInTheTurnIsNotMeasured() {
+		Turn turn = new Turn(0, ++this.turnNumber, List.of(robot(1, 300, 96)), List.of(hit(1, 0, 1)));
+
+		// The hit is still told, but there is no distance to tell it by
+		assertEquals(List.of("PRIMEIRO HIT!"), callouts(this.commentary.turn(turn, this.previous)));
+	}
+
+	@Test
+	void aRobotThatIsNotInTheBattleIsIgnored() {
+		Turn stranger = new Turn(0, ++this.turnNumber, List.of(robot(7, 50, 100)), List.of());
+
+		assertEquals(0, this.commentary.turn(stranger, this.previous).size());
+	}
+
+	@Test
+	void theLeadChangesHandsWithAReversal() {
+		// Each comment has more than one wording, the one of the lead is chosen at random
+		assertTrue(this.turn(90, 40).stream().anyMatch(m -> m.text().matches(".*(abre vantagem|dominar a luta).*")));
+		assertTrue(this.turn(40, 90).stream().anyMatch(m -> m.text().matches(".*(Reviravolta|vira o jogo|quem manda).*")));
+	}
+
+	@Test
+	void aWinnerWithALittleEnergyLeftWasNearlyBeaten() {
+		this.turn(5, 90);
+		this.turn(5, 0);
+
+		assertTrue(callouts(this.commentary.roundEnd(0)).contains("POR UM FIO!"));
 	}
 
 	private Headline battle(int... winners) {

@@ -279,24 +279,12 @@ public class Podium extends StackPane {
 	 * The champion, big and loud
 	 */
 	private void showChampion() {
-		this.stopAnimations();
-		this.fireworks.clear();
-		this.fireworks.setRain(0);
-		this.fireworks.setAutoFireworks(0);
+		this.resetForChampion();
 		Opponent champion = this.places[1];
-
-		this.background = new ArcadeBackground(GOLD);
-		this.rays.setRays(GOLD, 0.5, 0.42);
 
 		// The trophy
 		Group trophy = trophy(GOLD);
-		trophy.scaleXProperty().bind(this.heightProperty().multiply(0.00135));
-		trophy.scaleYProperty().bind(this.heightProperty().multiply(0.00135));
-		StackPane trophyBox = new StackPane(trophy);
-		trophyBox.setMaxHeight(Region.USE_PREF_SIZE);
-		trophyBox.prefHeightProperty().bind(this.heightProperty().multiply(0.22));
-		trophyBox.prefWidthProperty().bind(this.widthProperty().multiply(0.2));
-		trophyBox.setMinHeight(0);
+		StackPane trophyBox = this.trophyBox(trophy);
 
 		Node title = this.title("CAMPEÃO!", 0.09);
 		DropShadow glow = new DropShadow(40, GOLD);
@@ -326,7 +314,33 @@ public class Podium extends StackPane {
 		this.getChildren().setAll(this.background, this.rays, this.content, this.fireworks, this.flashback.pane, this.flash, this.hint);
 		this.updateHint();
 
-		// Everything at once, in sequence
+		this.celebrate(trophy, title, image, name, team, cry);
+	}
+
+	/** Stops what was playing, clears the fireworks and turns the stage gold */
+	private void resetForChampion() {
+		this.stopAnimations();
+		this.fireworks.clear();
+		this.fireworks.setRain(0);
+		this.fireworks.setAutoFireworks(0);
+		this.background = new ArcadeBackground(GOLD);
+		this.rays.setRays(GOLD, 0.5, 0.42);
+	}
+
+	/** The trophy in its box, which takes the share of the page that the champion column needs */
+	private StackPane trophyBox(Group trophy) {
+		trophy.scaleXProperty().bind(this.heightProperty().multiply(0.00135));
+		trophy.scaleYProperty().bind(this.heightProperty().multiply(0.00135));
+		StackPane trophyBox = new StackPane(trophy);
+		trophyBox.setMaxHeight(Region.USE_PREF_SIZE);
+		trophyBox.prefHeightProperty().bind(this.heightProperty().multiply(0.22));
+		trophyBox.prefWidthProperty().bind(this.widthProperty().multiply(0.2));
+		trophyBox.setMinHeight(0);
+		return trophyBox;
+	}
+
+	/** Everything of the champion comes at once, in sequence: the flash, the shake, the pieces dropping in and the fireworks */
+	private void celebrate(Group trophy, Node title, ImageView image, Label name, Label team, Label cry) {
 		this.flash.setOpacity(1);
 		this.animate(new Timeline(new KeyFrame(Duration.millis(1100), new KeyValue(this.flash.opacityProperty(), 0, Interpolator.EASE_OUT)))).play();
 		this.rays.flare();
