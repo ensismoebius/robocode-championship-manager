@@ -114,7 +114,7 @@ public class StartScreen extends StackPane {
 	/** The robocode logo, which has a black background that blends with the sky */
 	private static ImageView logo() {
 		ImageView robocodeLogo = new ImageView();
-		try (InputStream logo = StartScreen.class.getResourceAsStream("robocodeLogo.png")) {
+		try (InputStream logo = StartScreen.class.getResourceAsStream("/assets/robocodeLogo.png")) {
 			robocodeLogo.setImage(new Image(logo));
 		} catch (IOException ioException) {
 			GameDialog.error(ioException.getMessage());

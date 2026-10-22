@@ -57,7 +57,7 @@ public class BattleViewer extends StackPane {
 	public BattleViewer() {
 		super();
 
-		try (InputStream inputStream = getClass().getResourceAsStream("vs.gif")) {
+		try (InputStream inputStream = getClass().getResourceAsStream("/assets/vs.gif")) {
 			this.vsImage.setImage(new Image(inputStream));
 		} catch (IOException ioException) {
 			GameDialog.error(ioException.getMessage());
@@ -68,7 +68,7 @@ public class BattleViewer extends StackPane {
 		// Blends the black background of the image with the background
 		this.vsImage.setBlendMode(BlendMode.LIGHTEN);
 
-		this.versusMusic = Sound.fromResource(getClass(), "versusMusic.mp3");
+		this.versusMusic = Sound.fromResource(getClass(), "/assets/versusMusic.mp3");
 
 		this.layout.setPadding(new Insets(30, 0, 30, 0));
 

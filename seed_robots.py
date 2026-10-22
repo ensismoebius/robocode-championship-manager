@@ -258,7 +258,7 @@ def main():
     db_path = os.path.join(repo_dir, 'database', 'robochamp.db')
     robocode_dir = os.path.expanduser('~/robocode')
     robots_dir = os.path.join(robocode_dir, 'robots')
-    logo_path = os.path.join(repo_dir, 'src', 'widgets', 'scenes', 'robocodeLogo.png')
+    logo_path = os.path.join(repo_dir, 'src', 'assets', 'robocodeLogo.png')
     music_path = os.path.join(repo_dir, 'test', 'fixtures', 'tone.mp3')
 
     logo_data = read_file(logo_path)

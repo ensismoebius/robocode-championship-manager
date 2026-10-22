@@ -296,7 +296,7 @@ public class Main extends Application {
 	 */
 	void playMenuMusic(double volume) {
 		if (this.menuMusic == null) {
-			this.menuMusic = Sound.fromResource(StartScreen.class, "versusMusic.mp3");
+			this.menuMusic = Sound.fromResource(StartScreen.class, "/assets/versusMusic.mp3");
 			if (this.menuMusic != null) {
 				this.menuMusic.setLoop(true);
 			}

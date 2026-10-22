@@ -14,32 +14,43 @@
 			<a href="./robotEditor?action=logout">Sair do sistema</a>
 		</div>
 		<p class="message">{message}</p>
-		<form action="./robotEditor?action={action}" method="post" enctype="multipart/form-data">
+		<div id="formErrors" class="form-errors" role="alert" hidden>
+			<p>Corrija os campos destacados antes de salvar:</p>
+			<ul id="formErrorList"></ul>
+		</div>
+		<form action="./robotEditor?action={action}" method="post" enctype="multipart/form-data" novalidate>
 			<fieldset>
 				<legend>Dados de login - o mesmo login e senha podem ser usados por todos do time</legend>
 				<label for="login">Login</label>
-				<input type="text" id="login" name="login" value="{login}" placeholder="Login" required="required">
+				<p class="hint" id="loginHint">Obrigatório. Escolha um login que ainda não esteja em uso por outro time. Geralmente um e-mail é uma boa escolha.</p>
+				<input type="text" id="login" name="login" value="{login}" placeholder="Login" required="required" aria-describedby="loginHint">
 				<label for="password">Senha</label>
-				<input type="password" id="password" name="password" placeholder="{passwordPlaceholder}" {passwordRequired}>
+				<p class="hint" id="passwordHint">Obrigatória no cadastro. Ao editar, deixe em branco para manter a senha atual.</p>
+				<input type="password" id="password" name="password" placeholder="{passwordPlaceholder}" {passwordRequired} aria-describedby="passwordHint">
 			</fieldset>
 
 			<fieldset>
 				<legend>Dados do time</legend>
 				<label for="teamWarcry">Lema do time</label>
-				<input type="text" id="teamWarcry" name="teamWarcry" value="{teamWarcry}" placeholder="Lema do time" maxlength="500" required="required">
-				<label for="teamMusic">Música tema do time - arquivo .mp3 de no máximo 1MB</label>
-				<input type="file" id="teamMusic" name="teamMusic" accept=".mp3,audio/mpeg" {fileRequired}>
-				<label for="teamLogo">Logotipo do time - no máximo 640 x 480 pixels e 1MB, em .gif, .jpg ou .png</label>
-				<input type="file" id="teamLogo" name="teamLogo" accept=".gif,.jpg,.jpeg,.png,image/*" {fileRequired}>
+				<p class="hint" id="teamWarcryHint">Obrigatório, com até 500 caracteres. <span id="teamWarcryCount">0/500</span></p>
+				<input type="text" id="teamWarcry" name="teamWarcry" value="{teamWarcry}" placeholder="Lema do time" maxlength="500" required="required" aria-describedby="teamWarcryHint">
+				<label for="teamMusic">Música tema do time</label>
+				<p class="hint" id="teamMusicHint">Arquivo .mp3 de no máximo 1 MB. Precisa ser um áudio que possa ser tocado.</p>
+				<input type="file" id="teamMusic" name="teamMusic" accept=".mp3,audio/mpeg" {fileRequired} aria-describedby="teamMusicHint">
+				<label for="teamLogo">Logotipo do time</label>
+				<p class="hint" id="teamLogoHint">Arquivo .gif, .jpg ou .png de no máximo 1 MB e 640 x 480 pixels.</p>
+				<input type="file" id="teamLogo" name="teamLogo" accept=".gif,.jpg,.jpeg,.png,image/*" {fileRequired} aria-describedby="teamLogoHint">
 			</fieldset>
 
 			<fieldset>
 				<legend>Quem desenvolveu (mínimo uma pessoa)</legend>
+				<p class="hint">Cada linha é uma pessoa. Nome: obrigatório, não pode ficar em branco. RM: obrigatório, apenas números, até 20 dígitos. E-mail: obrigatório, no formato nome@dominio.</p>
 				<div id="devFields">
 					<!-- begin:author -->
 					<div class="author">
-						<input type="text" name="name[]" value="{name}" placeholder="Nome" required="required">
-						<input type="email" name="email[]" value="{email}" placeholder="E-mail" required="required">
+						<input type="text" name="name[]" value="{name}" placeholder="Nome" required="required" aria-label="Nome da pessoa desenvolvedora">
+						<input type="text" name="registration[]" value="{registration}" placeholder="RM" inputmode="numeric" required="required" aria-label="RM da pessoa desenvolvedora">
+						<input type="email" name="email[]" value="{email}" placeholder="E-mail" required="required" aria-label="E-mail da pessoa desenvolvedora">
 					</div>
 					<!-- end:author -->
 				</div>
@@ -51,9 +62,11 @@
 				<legend>Dados do robô</legend>
 				<p class="info">{robotInfo}</p>
 				<label for="robotJarFile">Robô compilado: o arquivo .jar gerado pelo empacotador do Robocode</label>
-				<input type="file" id="robotJarFile" name="robotJarFile" accept=".jar" {fileRequired}>
+				<p class="hint" id="robotJarFileHint">Nome no formato time.NomeDoRobo_1.0.jar, como gerado pelo empacotador. O nome do time e o do robô são lidos desse nome: no time use apenas letras sem acento, números e _; no robô use letras sem acento, números, _ e pontos entre as partes. Até 100 caracteres em cada nome.</p>
+				<input type="file" id="robotJarFile" name="robotJarFile" accept=".jar" {fileRequired} aria-describedby="robotJarFileHint">
 				<label for="robotJavaFile">Código fonte do robô: o arquivo .java</label>
-				<input type="file" id="robotJavaFile" name="robotJavaFile" accept=".java" {fileRequired}>
+				<p class="hint" id="robotJavaFileHint">Arquivo .java com o código fonte do robô, de no máximo 1 MB.</p>
+				<input type="file" id="robotJavaFile" name="robotJavaFile" accept=".java" {fileRequired} aria-describedby="robotJavaFileHint">
 			</fieldset>
 
 			<input type="submit" value="{submitButton}" {submitDisabled}>
@@ -61,6 +74,162 @@
 	</main>
 
 	<script>
+		const LIMITS = {
+			warcryMax: 500,
+			nameMax: 100,
+			fileMaxBytes: 1024 * 1024,
+			logoMaxWidth: 640,
+			logoMaxHeight: 480
+		};
+
+		const EMAIL = /^[^@\s]+@[^@\s]+$/;
+		const TEAM_NAME = /^[A-Za-z0-9_]+$/;
+		const ROBOT_NAME = /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$/;
+		const JAR_FILE_NAME = /^([^.]+)\.(.+?)_[0-9][0-9.]*\.jar$/;
+
+		const form = document.querySelector("form");
+		const errorBox = document.getElementById("formErrors");
+		const errorList = document.getElementById("formErrorList");
+		const warcry = document.getElementById("teamWarcry");
+		const warcryCount = document.getElementById("teamWarcryCount");
+
+		/** Checks the presence, the extension, the size and the content of a file. Returns the error or an empty text. */
+		function checkFile(input, extensions, emptyMessage, missingMessage) {
+			const file = input.files[0];
+			if (!file) {
+				return input.required ? missingMessage : "";
+			}
+			if (!extensions.some(extension => file.name.toLowerCase().endsWith(extension))) {
+				return "Envie um arquivo " + extensions.join(", ") + ".";
+			}
+			if (file.size === 0) {
+				return emptyMessage;
+			}
+			if (file.size > LIMITS.fileMaxBytes) {
+				return "O arquivo tem mais de 1 MB. Envie um arquivo menor.";
+			}
+			return "";
+		}
+
+		/** Reads the width and height of an image, or null when the browser cannot read it. */
+		function imageSize(file) {
+			return new Promise(resolve => {
+				const url = URL.createObjectURL(file);
+				const image = new Image();
+				image.onload = () => {
+					URL.revokeObjectURL(url);
+					resolve({ width: image.naturalWidth, height: image.naturalHeight });
+				};
+				image.onerror = () => {
+					URL.revokeObjectURL(url);
+					resolve(null);
+				};
+				image.src = url;
+			});
+		}
+
+		/** The rules of each field, by its name. Each one returns the error to show, or an empty text. */
+		const RULES = {
+			"login": input => input.value.trim() === "" ? "Preencha o login." : "",
+
+			"password": input => input.required && input.value === "" ? "Preencha a senha." : "",
+
+			"teamWarcry": input => {
+				const text = input.value.trim();
+				if (text === "") {
+					return "Informe o lema do time.";
+				}
+				return text.length > LIMITS.warcryMax ? "O lema pode ter no máximo 500 caracteres." : "";
+			},
+
+			"name[]": input => input.value.trim() === "" ? "Informe o nome de cada pessoa desenvolvedora." : "",
+
+			"registration[]": input => {
+				const registration = input.value.trim();
+				if (registration === "") {
+					return "Informe o RM de cada pessoa desenvolvedora.";
+				}
+				return /^[0-9]{1,20}$/.test(registration) ? "" : "O RM deve ter apenas números, com até 20 dígitos.";
+			},
+
+			"email[]": input => {
+				const mail = input.value.trim();
+				if (mail === "") {
+					return "Informe o e-mail de cada pessoa desenvolvedora.";
+				}
+				return EMAIL.test(mail) ? "" : "Informe um e-mail válido, no formato nome@dominio.";
+			},
+
+			"robotJarFile": input => {
+				const message = checkFile(input, [".jar"], "O arquivo .jar está vazio.", "Envie o arquivo .jar do robô.");
+				if (message || !input.files[0]) {
+					return message;
+				}
+				const match = JAR_FILE_NAME.exec(input.files[0].name);
+				if (!match) {
+					return "O nome do arquivo deve ser como time.NomeDoRobo_1.0.jar, gerado pelo empacotador do Robocode.";
+				}
+				if (match[1].length > LIMITS.nameMax || !TEAM_NAME.test(match[1])) {
+					return "O nome do time pode ter apenas letras sem acento, números e _, com até 100 caracteres.";
+				}
+				if (match[2].length > LIMITS.nameMax || !ROBOT_NAME.test(match[2])) {
+					return "O nome do robô pode ter apenas letras sem acento, números, _ e pontos entre as partes, com até 100 caracteres.";
+				}
+				return "";
+			},
+
+			"robotJavaFile": input => checkFile(input, [".java"], "O arquivo .java está vazio.", "Envie o arquivo .java do robô."),
+
+			"teamMusic": input => checkFile(input, [".mp3"], "A música está vazia.", "Envie a música do time."),
+
+			"teamLogo": async input => {
+				const message = checkFile(input, [".gif", ".jpg", ".jpeg", ".png"], "O logotipo está vazio.", "Envie o logotipo do time.");
+				if (message || !input.files[0]) {
+					return message;
+				}
+				const size = await imageSize(input.files[0]);
+				if (size === null) {
+					return "Arquivo de logotipo inválido! Use .gif, .jpg ou .png.";
+				}
+				if (size.width > LIMITS.logoMaxWidth || size.height > LIMITS.logoMaxHeight) {
+					return "O logotipo deve ter no máximo 640 x 480 pixels, mas tem " + size.width + " x " + size.height + " pixels.";
+				}
+				return "";
+			}
+		};
+
+		/** Checks one field, marks it as invalid when needed and returns its error. */
+		async function validateField(input) {
+			const rule = RULES[input.name];
+			const message = rule ? await rule(input) : "";
+			input.setAttribute("aria-invalid", message === "" ? "false" : "true");
+			return message;
+		}
+
+		/** Checks every field, shows the errors in the summary and returns true when the form can be sent. */
+		async function validateForm() {
+			const messages = [];
+			for (const input of form.querySelectorAll("input:not([type=submit])")) {
+				const message = await validateField(input);
+				if (message !== "") {
+					messages.push(message);
+				}
+			}
+			const unique = [...new Set(messages)];
+			errorList.replaceChildren(...unique.map(message => {
+				const item = document.createElement("li");
+				item.textContent = message;
+				return item;
+			}));
+			errorBox.hidden = unique.length === 0;
+			return unique.length === 0;
+		}
+
+		/** Updates the character count of the battle cry. */
+		function updateWarcryCount() {
+			warcryCount.textContent = warcry.value.trim().length + "/" + LIMITS.warcryMax;
+		}
+
 		function addDeveloperFields() {
 			let row = document.createElement("div");
 			row.className = "author";
@@ -70,17 +239,57 @@
 			inputName.type = "text";
 			inputName.placeholder = "Nome";
 			inputName.required = true;
+			inputName.setAttribute("aria-label", "Nome da pessoa desenvolvedora");
+
+			let inputRegistration = document.createElement("input");
+			inputRegistration.name = "registration[]";
+			inputRegistration.type = "text";
+			inputRegistration.placeholder = "RM";
+			inputRegistration.inputMode = "numeric";
+			inputRegistration.required = true;
+			inputRegistration.setAttribute("aria-label", "RM da pessoa desenvolvedora");
 
 			let inputEmail = document.createElement("input");
 			inputEmail.name = "email[]";
 			inputEmail.type = "email";
 			inputEmail.placeholder = "E-mail";
 			inputEmail.required = true;
+			inputEmail.setAttribute("aria-label", "E-mail da pessoa desenvolvedora");
 
 			row.appendChild(inputName);
+			row.appendChild(inputRegistration);
 			row.appendChild(inputEmail);
 			document.getElementById("devFields").appendChild(row);
 		}
+
+		// Fields are checked when they change, and the summary is refreshed once it is shown
+		form.addEventListener("input", async event => {
+			if (event.target === warcry) {
+				updateWarcryCount();
+			}
+			await validateField(event.target);
+			if (!errorBox.hidden) {
+				await validateForm();
+			}
+		});
+
+		form.addEventListener("change", async event => {
+			await validateField(event.target);
+			if (!errorBox.hidden) {
+				await validateForm();
+			}
+		});
+
+		form.addEventListener("submit", async event => {
+			event.preventDefault();
+			if (await validateForm()) {
+				form.submit();
+				return;
+			}
+			form.querySelector("[aria-invalid=true]").focus();
+		});
+
+		updateWarcryCount();
 	</script>
 </body>
 </html>

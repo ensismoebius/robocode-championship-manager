@@ -36,6 +36,19 @@ public class Author {
 	@Column(nullable = false)
 	private String mail;
 
+	/** Registration number (RM). Nullable so the authors saved before it existed can still be loaded. */
+	private String registration;
+
+	/** Returns the registration number, or an empty text when it was never informed. */
+	public String getRegistration() {
+		return registration == null ? "" : registration;
+	}
+
+	/** Sets the registration number. */
+	public void setRegistration(String registration) {
+		this.registration = registration;
+	}
+
 	/** Returns the mail. */
 	public String getMail() {
 		return mail;

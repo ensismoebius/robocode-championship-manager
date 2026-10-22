@@ -33,6 +33,7 @@ public class RobotEditor extends HttpServlet {
 	private static final long serialVersionUID = 4848049705802230040L;
 
 	private static final int MAX_NAME_LENGTH = 100;
+	private static final int MAX_REGISTRATION_LENGTH = 20;
 
 	private static final String ACTION_NEW = "new";
 	private static final String ACTION_EDIT = "edit";
@@ -44,6 +45,7 @@ public class RobotEditor extends HttpServlet {
 	private static final Pattern JAR_FILE_NAME = Pattern.compile("^([^.]+)\\.(.+?)_[0-9][0-9.]*\\.jar$");
 	private static final Pattern TEAM_NAME = Pattern.compile("[A-Za-z0-9_]{1," + MAX_NAME_LENGTH + "}");
 	private static final Pattern ROBOT_NAME = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
+	private static final Pattern REGISTRATION = Pattern.compile("[0-9]{1," + MAX_REGISTRATION_LENGTH + "}");
 
 	/** Shows the robot editor for the logged author: the form of a new robot or of the robot being edited. */
 	@Override
@@ -130,6 +132,7 @@ public class RobotEditor extends HttpServlet {
 		for (Author author : authors) {
 			template.assign("name", Html.escape(author.getName()));
 			template.assign("email", Html.escape(author.getMail()));
+			template.assign("registration", Html.escape(author.getRegistration()));
 			template.parse("author");
 		}
 	}
@@ -252,6 +255,7 @@ public class RobotEditor extends HttpServlet {
 
 		String[] arrName = req.getParameterValues("name[]");
 		String[] arrEmail = req.getParameterValues("email[]");
+		String[] arrRegistration = req.getParameterValues("registration[]");
 
 		Upload robotJar = RobotUploads.read(req, "robotJarFile");
 		Upload robotJava = RobotUploads.read(req, "robotJavaFile");
@@ -263,7 +267,7 @@ public class RobotEditor extends HttpServlet {
 		boolean keepPassword = password == null || password.isBlank();
 		checkAccess(errors, login, keepPassword, robot);
 		checkWarcry(errors, teamWarcry);
-		String[][] authorsForm = authorsForm(errors, arrName, arrEmail);
+		String[][] authorsForm = authorsForm(errors, arrName, arrEmail, arrRegistration);
 
 		// Kept so the form shows it again if something is wrong
 		robot.setBattleCry(teamWarcry);
@@ -282,7 +286,7 @@ public class RobotEditor extends HttpServlet {
 	/** Fills the team, the robot name and the authors; the password is kept when the form did not send a new one. */
 	private static void fillIdentity(Opponent robot, Names names, String[][] authorsForm, String login, String password, boolean keepPassword) {
 		String passwordHash = keepPassword ? robot.getAuthors().get(0).getPassword() : PasswordHasher.hash(password);
-		fillAuthors(robot, authorsForm[0], authorsForm[1], login, passwordHash);
+		fillAuthors(robot, authorsForm[0], authorsForm[1], authorsForm[2], login, passwordHash);
 
 		robot.setTeam(names == null ? robot.getTeam() : names.team());
 		robot.setName(names == null ? robot.getName() : names.robot());
@@ -352,13 +356,20 @@ public class RobotEditor extends HttpServlet {
 	 *
 	 * @return the names and e-mails to save, both empty if the form has none
 	 */
-	private static String[][] authorsForm(List<String> errors, String[] arrName, String[] arrEmail) {
-		if (arrName == null || arrEmail == null || arrName.length == 0) {
+	private static String[][] authorsForm(List<String> errors, String[] arrName, String[] arrEmail, String[] arrRegistration) {
+		if (arrName == null || arrEmail == null || arrRegistration == null || arrName.length == 0) {
 			errors.add("Informe ao menos uma pessoa desenvolvedora");
-			return new String[][] { new String[0], new String[0] };
+			return new String[][] { new String[0], new String[0], new String[0] };
 		}
-		if (arrEmail.length != arrName.length) {
-			errors.add("Cada membro do time deve ter um e-mail");
+		if (arrEmail.length != arrName.length || arrRegistration.length != arrName.length) {
+			errors.add("Cada membro do time deve ter um e-mail e um RM");
+		}
+
+		for (String registration : arrRegistration) {
+			if (registration == null || !REGISTRATION.matcher(registration.trim()).matches()) {
+				errors.add("Informe RMs válidos, apenas com números e até " + MAX_REGISTRATION_LENGTH + " dígitos");
+				break;
+			}
 		}
 
 		for (String mail : arrEmail) {
@@ -374,14 +385,14 @@ public class RobotEditor extends HttpServlet {
 				break;
 			}
 		}
-		return new String[][] { arrName, arrEmail };
+		return new String[][] { arrName, arrEmail, arrRegistration };
 	}
 
 	/**
 	 * Updates existing authors (matched by e-mail), adds the new ones and drops the
 	 * ones that were removed from the form
 	 */
-	private static void fillAuthors(Opponent robot, String[] arrName, String[] arrEmail, String login, String passwordHash) {
+	private static void fillAuthors(Opponent robot, String[] arrName, String[] arrEmail, String[] arrRegistration, String login, String passwordHash) {
 		List<Author> authors = new ArrayList<Author>();
 		for (int index = 0; index < arrName.length; index++) {
 			String mail = arrEmail[index].trim();
@@ -389,6 +400,7 @@ public class RobotEditor extends HttpServlet {
 			Author author = robot.getAuthors().stream().filter(first -> first.getMail().equals(mail)).findFirst().orElseGet(Author::new);
 			author.setName(arrName[index].trim());
 			author.setMail(mail);
+			author.setRegistration(arrRegistration[index].trim());
 			author.setLogin(login);
 			author.setPassword(passwordHash);
 			if (!authors.contains(author)) {
