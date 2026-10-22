@@ -422,62 +422,77 @@ public class Main extends Application {
 		return cause.getMessage();
 	}
 
+	/** Loads the current championship and keeps the selected match when it can still be played. */
 	private void loadChampionship() {
 		flow.loadChampionship();
 	}
 
+	/** Shows the given championship and its bracket, or nothing when it is null. */
 	private void setChampionship(Championship championship) {
 		flow.setChampionship(championship);
 	}
 
+	/** Draws a new championship from the registered robots. */
 	void newChampionship() {
 		flow.newChampionship();
 	}
 
+	/** Shows the bracket of the championship, creating it when needed. */
 	void showBracket() {
 		flow.showBracket();
 	}
 
+	/** The selected match when it can be played; otherwise the reason is shown and nothing is returned. */
 	Optional<Match> playableSelectedMatch() {
 		return flow.playableSelectedMatch();
 	}
 
+	/** Saves the result of a match and shows the winner. */
 	private void recordResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		flow.recordResult(match, winnerId, winnerScore, loserScore);
 	}
 
+	/** Saves the result of a match; false when it could not be saved, and the error was shown. */
 	boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		return flow.saveResult(match, winnerId, winnerScore, loserScore);
 	}
 
+	/** Shows the winner of the match, or the champion when the bracket is finished. */
 	void showResult(long winnerId) {
 		flow.showResult(winnerId);
 	}
 
+	/** Declares the first or the second opponent of the selected match as the winner. */
 	void declareWinner(boolean slotA) {
 		flow.declareWinner(slotA);
 	}
 
+	/** Undoes the last result of the championship. */
 	void undoLastResult() {
 		flow.undoLastResult();
 	}
 
+	/** The name of an opponent for the messages, or a question mark when it is unknown. */
 	private String nameOf(Long identifier) {
 		return flow.nameOf(identifier);
 	}
 
+	/** Shows the robots of the selected match, one at a time. */
 	void showNextSelectedOpponent() {
 		ceremony.showNextSelectedOpponent();
 	}
 
+	/** Shows the champion, after the transition of a battle when there is one. */
 	void showChampion(boolean transition) {
 		ceremony.showChampion(transition);
 	}
 
+	/** Opens the podium of the championship. */
 	private void openPodium() {
 		ceremony.openPodium();
 	}
 
+	/** Shows the card of an opponent with the given title. */
 	void showOpponent(Opponent item, String title, boolean champion) {
 		ceremony.showOpponent(item, title, champion);
 	}

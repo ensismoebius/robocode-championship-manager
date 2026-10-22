@@ -14,6 +14,7 @@ final class BattleAudioEffects {
 
 	private final BattleAudio host;
 
+	/** Creates the one-shot sounds of the given battle audio. */
 	BattleAudioEffects(BattleAudio host) {
 		this.host = host;
 	}

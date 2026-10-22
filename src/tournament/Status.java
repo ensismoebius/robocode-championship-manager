@@ -1,6 +1,7 @@
 package tournament;
 
 
+/** The state of a match in the bracket. */
 public enum Status {
 	/** Waiting for the result of previous matches */
 	WAITING,

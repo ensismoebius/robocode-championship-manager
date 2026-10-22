@@ -21,6 +21,7 @@ final class BracketHeader {
 
 	private final BracketViewer host;
 
+	/** Creates the header of the given bracket viewer. */
 	BracketHeader(BracketViewer host) {
 		this.host = host;
 	}

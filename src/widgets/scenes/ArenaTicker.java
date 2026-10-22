@@ -15,6 +15,7 @@ final class ArenaTicker {
 
 	private final BattleArena3D host;
 
+	/** Creates the clock of the given arena. */
 	ArenaTicker(BattleArena3D host) {
 		this.host = host;
 	}

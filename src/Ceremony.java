@@ -23,6 +23,7 @@ final class Ceremony {
 
 	private final Main host;
 
+	/** Creates the ceremonies for the given main window. */
 	Ceremony(Main host) {
 		this.host = host;
 	}

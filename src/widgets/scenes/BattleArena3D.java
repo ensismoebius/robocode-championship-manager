@@ -442,6 +442,7 @@ public class BattleArena3D extends StackPane {
 
 	private final ArenaTicker ticker = new ArenaTicker(this);
 
+	/** Advances the arena by the time since the last frame. */
 	private void update(double deltaTime) {
 		this.ticker.update(deltaTime);
 	}

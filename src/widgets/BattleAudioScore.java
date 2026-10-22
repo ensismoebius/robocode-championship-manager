@@ -11,6 +11,7 @@ final class BattleAudioScore {
 
 	private final BattleAudio host;
 
+	/** Creates the score of the given battle audio. */
 	BattleAudioScore(BattleAudio host) {
 		this.host = host;
 	}

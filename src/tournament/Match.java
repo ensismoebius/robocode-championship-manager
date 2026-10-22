@@ -1,6 +1,7 @@
 package tournament;
 
 
+/** A match of the bracket: its two slots, its round and its place in the bracket. */
 public final class Match {
 
 	final String code;

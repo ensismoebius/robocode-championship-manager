@@ -20,6 +20,7 @@ final class ChampionshipFlow {
 
 	private final Main host;
 
+	/** Creates the flow of the championship for the given main window. */
 	ChampionshipFlow(Main host) {
 		this.host = host;
 	}

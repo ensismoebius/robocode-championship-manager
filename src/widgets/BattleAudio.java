@@ -316,46 +316,57 @@ public final class BattleAudio {
 		this.fadeSeconds = Math.max(0.05, seconds);
 	}
 
+	/** A cannon shot, heavier with more power. */
 	public void shot(double power) {
 		this.oneShots.shot(power);
 	}
 
+	/** A bullet hitting a robot. */
 	public void hit(double power) {
 		this.oneShots.hit(power);
 	}
 
+	/** Bullets hitting each other or a wall. */
 	public void spark() {
 		this.oneShots.spark();
 	}
 
+	/** A robot blowing up. */
 	public void destroyed() {
 		this.oneShots.destroyed();
 	}
 
+	/** A robot hitting a wall or another robot. */
 	public void thud() {
 		this.oneShots.thud();
 	}
 
+	/** Alarm when a robot is about to die. */
 	public void lowEnergy() {
 		this.oneShots.lowEnergy();
 	}
 
+	/** "ROUND N": an impact. */
 	public void roundCall() {
 		this.oneShots.roundCall();
 	}
 
+	/** One number of the countdown: a beep, higher for the last. */
 	public void countdown(boolean last) {
 		this.oneShots.countdown(last);
 	}
 
+	/** "FIGHT!": a brass like stab. */
 	public void fight() {
 		this.oneShots.fight();
 	}
 
+	/** "K.O.!": a big hit and a falling tone. */
 	public void knockOut() {
 		this.oneShots.knockOut();
 	}
 
+	/** Entering the replay: a reversed rising whoosh. */
 	public void whoosh() {
 		this.oneShots.whoosh();
 	}

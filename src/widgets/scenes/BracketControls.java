@@ -15,6 +15,7 @@ final class BracketControls {
 
 	private final BracketViewer host;
 
+	/** Creates the controls of the given bracket viewer. */
 	BracketControls(BracketViewer host) {
 		this.host = host;
 	}

@@ -26,6 +26,7 @@ final class BracketCards {
 
 	private final BracketViewer host;
 
+	/** Creates the cards of the given bracket viewer. */
 	BracketCards(BracketViewer host) {
 		this.host = host;
 	}

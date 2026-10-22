@@ -16,6 +16,7 @@ final class ArenaBuilder {
 
 	private final BattleArena3D host;
 
+	/** Creates the builder of the scene of the given arena. */
 	ArenaBuilder(BattleArena3D host) {
 		this.host = host;
 	}
