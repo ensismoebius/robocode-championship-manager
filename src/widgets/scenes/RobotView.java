@@ -559,14 +559,31 @@ final class RobotView {
 	}
 
 	/**
-	 * Back to a whole tank, for a new round or the replay
+	 * Back to a whole tank, for a new round
 	 */
 	void reset() {
+		this.standAgain();
+		this.armor.restore();
+	}
+
+	/**
+	 * Back to the moment the replay starts: standing again, without the pieces
+	 * it had lost by then, which stay on the floor where they fell
+	 *
+	 * @param lowest
+	 *            the lowest energy of the robot up to that moment
+	 */
+	void rewind(double lowest) {
+		this.standAgain();
+		this.armor.rewind(lowest);
+	}
+
+	/** Standing again, alive, in its colors, with the parts the blast threw back in place */
+	private void standAgain() {
 		for (Animation animation : this.running) {
 			animation.stop();
 		}
 		this.running.clear();
-		this.armor.restore();
 		this.dead = false;
 		this.flashing = false;
 		this.settle();
@@ -576,6 +593,8 @@ final class RobotView {
 		this.gunMaterial.setDiffuseColor(this.gunColor);
 		this.setGlowing(true);
 		for (Node part : List.of(this.turret, this.radar, this.body)) {
+			// The hull and the turret of a wreck were taken as pieces of the floor
+			part.setVisible(true);
 			part.setTranslateX(0);
 			part.setTranslateY(0);
 			part.setTranslateZ(0);

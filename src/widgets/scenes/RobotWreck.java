@@ -47,7 +47,12 @@ final class RobotWreck {
 		throwHull(view, all);
 
 		view.host.effects.getChildren().add(blast);
-		view.host.fx.effect(all).setOnFinished(event -> view.host.effects.getChildren().remove(blast));
+		view.host.fx.effect(all).setOnFinished(event -> {
+			view.host.effects.getChildren().remove(blast);
+			// Lying on the floor now, the hull and the turret are pushed around by the robots
+			view.armor.adopt(view.body);
+			view.armor.adopt(view.turret);
+		});
 		view.running.add(all);
 		all.play();
 		view.host.fx.lightFlash(posX, posZ, tint, 1.4);

@@ -186,6 +186,48 @@ class RobotArmorTest {
 	}
 
 	@Test
+	void theWreckIsPushedAroundByTheRobotsStillFighting() {
+		RobotView wreck = wholeRobot();
+
+		FxSupport.runVoid(() -> {
+			RobotView other = wreck.host.robots.values().stream().filter(robot -> robot != wreck).findFirst().orElseThrow();
+			other.reset();
+			other.root.setVisible(true);
+			wreck.setEnergy(0);
+			wreck.dead = true;
+			wreck.armor.adopt(wreck.body);
+			RobotArmor.Thrown hull = wreck.armor.thrown.get(wreck.armor.thrown.size() - 1);
+			assertFalse(wreck.body.isVisible(), "the hull is now a piece of the floor");
+			assertTrue(hull.big && hull.landed);
+
+			double[] before = hull.position();
+			double[] along = hull.axis();
+			other.place(before[0] + along[0] * hull.halfLength * 0.7, before[2] + along[1] * hull.halfLength * 0.7, 0, 0, 0);
+			burnFor(wreck, 1);
+
+			double[] after = hull.position();
+			assertTrue(Math.hypot(after[0] - before[0], after[2] - before[2]) > 5, "pushed away");
+		});
+	}
+
+	@Test
+	void theReplayStandsTheWreckUpAgain() {
+		RobotView wreck = wholeRobot();
+
+		FxSupport.runVoid(() -> {
+			wreck.setEnergy(0);
+			wreck.dead = true;
+			wreck.armor.adopt(wreck.body);
+			wreck.armor.adopt(wreck.turret);
+			wreck.rewind(RobotArmor.FULL_ENERGY);
+
+			assertTrue(wreck.body.isVisible());
+			assertTrue(wreck.turret.isVisible());
+			assertTrue(wreck.armor.thrown.isEmpty());
+		});
+	}
+
+	@Test
 	void theSmallPiecesStayWhereTheyFell() {
 		RobotView robot = wholeRobot();
 
@@ -214,6 +256,36 @@ class RobotArmorTest {
 			assertEquals(57, robot.armor.remaining());
 			assertTrue(robot.armor.thrown.isEmpty());
 			assertEquals(before, robot.host.effects.getChildren().size());
+		});
+	}
+
+	@Test
+	void theReplayKeepsOnTheFloorThePiecesLostBeforeItAndThrowsTheOthersAgain() {
+		RobotView robot = wholeRobot();
+
+		FxSupport.runVoid(() -> {
+			// Lost long before the death: 57 pieces, 46 kept at 80 of energy
+			robot.setEnergy(80);
+			List<RobotArmor.Thrown> before = List.copyOf(robot.armor.thrown);
+			assertEquals(11, before.size());
+			// Lost in the moments the replay shows
+			robot.setEnergy(40);
+			assertEquals(34, robot.armor.thrown.size());
+
+			// The replay starts: the effects are cleared and the robot goes back to 80
+			robot.host.effects.getChildren().clear();
+			robot.rewind(80);
+			assertEquals(46, robot.armor.remaining());
+			assertEquals(before, robot.armor.thrown);
+			for (RobotArmor.Thrown piece : before) {
+				assertTrue(robot.host.effects.getChildren().contains(piece.flying), "still on the floor");
+				assertTrue(piece.landed);
+			}
+
+			// In the replay the later ones come off again, thrown
+			robot.setEnergy(40);
+			assertEquals(34, robot.armor.thrown.size());
+			assertEquals(23, robot.armor.remaining());
 		});
 	}
 

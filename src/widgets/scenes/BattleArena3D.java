@@ -299,7 +299,9 @@ public class BattleArena3D extends StackPane {
 		this.audio.setSong(Configuration.isArenaMusic() ? this.style.song : Song.resolve(Configuration.getBattleMusic(), this.random));
 		this.audio.setMusicLevel(Configuration.getMusicVolume() / 100.0);
 
-		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.sunbeams, this.fireLayer, this.fence);
+		// The see-through layers last, the particles at the very end: a smoke puff
+		// in front of the force field blends over it instead of hiding it
+		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.fence, this.sunbeams, this.fireLayer);
 		new ArenaBuilder(this).buildLights();
 		new ArenaBuilder(this).buildArena();
 		new ArenaBuilder(this).buildCamera();

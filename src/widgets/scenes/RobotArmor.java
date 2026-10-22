@@ -1,6 +1,7 @@
 package widgets.scenes;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import javafx.animation.Interpolator;
@@ -11,6 +12,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.NonInvertibleTransformException;
@@ -55,7 +57,12 @@ final class RobotArmor {
 		final double halfLength;
 		final double halfWidth;
 		final boolean big;
+		/** The piece of the robot it was thrown from */
+		Group source;
 		boolean landed;
+		/** Puts it at once where its throw ends, on the floor */
+		Runnable land = () -> {
+		};
 		double fire = FIRE_SECONDS;
 		double flameDebt;
 		double smokeDebt;
@@ -161,7 +168,88 @@ final class RobotArmor {
 		this.settled = true;
 	}
 
-	/** The whole robot again, for a new round or the replay: the pieces back on it, the ones on the floor gone. */
+	/**
+	 * Back to the moment the replay starts, when the robot had gone down to the
+	 * given energy: the pieces it had lost by then stay on the floor where they
+	 * fell (one still in the air lands at once), the ones it lost later go back
+	 * on it, to come off again in the replay.
+	 */
+	void rewind(double energy) {
+		this.lowest = Math.min(FULL_ENERGY, energy);
+		int kept = this.piecesFor(this.lowest);
+		for (int index = 0; index < this.pieces.size(); index++) {
+			this.pieces.get(index).setVisible(index < kept);
+		}
+		Group arena = this.view.host.effects;
+		for (Iterator<Thrown> iterator = this.thrown.iterator(); iterator.hasNext();) {
+			Thrown piece = iterator.next();
+			// The parts of the wreck go too: in the replay the robot is standing again
+			if (piece.source == null || piece.source.isVisible()) {
+				arena.getChildren().remove(piece.flying);
+				iterator.remove();
+				continue;
+			}
+			if (!piece.landed) {
+				piece.land.run();
+			}
+			if (!arena.getChildren().contains(piece.flying)) {
+				arena.getChildren().add(piece.flying);
+			}
+		}
+		this.settled = true;
+	}
+
+	/**
+	 * Takes a part the blast threw (the hull, the turret), once it lies on the
+	 * floor, as a piece of the floor: a copy of it in its colors, which the robots
+	 * push around like the other big pieces. The part itself is hidden.
+	 */
+	void adopt(Group part) {
+		Group arena = this.view.host.effects;
+		Transform toArena;
+		try {
+			toArena = arena.getLocalToSceneTransform().createInverse();
+		} catch (NonInvertibleTransformException exception) {
+			return;
+		}
+		List<MeshView> shapes = new ArrayList<MeshView>();
+		this.copyShapes(part, toArena, shapes);
+		if (shapes.isEmpty()) {
+			return;
+		}
+		Transform place = toArena.createConcatenation(part.getLocalToSceneTransform());
+		Bounds bounds = part.getBoundsInLocal();
+		Point3D center = place.transform(bounds.getCenterX(), bounds.getCenterY(), bounds.getCenterZ());
+		Point3D length = place.deltaTransform(0, 0, 1);
+		Point3D axis = new Point3D(length.getX(), 0, length.getZ());
+		axis = axis.magnitude() < 1e-6 ? new Point3D(0, 0, 1) : axis.normalize();
+		Thrown piece = new Thrown(new Group(shapes.toArray(new MeshView[0])), shapes, center, axis, bounds.getDepth() / 2, bounds.getWidth() / 2);
+		piece.flying.getTransforms().add(piece.turn);
+		piece.landed = true;
+		piece.fire = 0;
+		arena.getChildren().add(piece.flying);
+		this.thrown.add(piece);
+		part.setVisible(false);
+	}
+
+	/** Copies every visible shape under the node, each one where it is in the arena */
+	private void copyShapes(Node node, Transform toArena, List<MeshView> shapes) {
+		if (!node.isVisible()) {
+			return;
+		}
+		if (node instanceof MeshView original) {
+			MeshView copy = new MeshView(original.getMesh());
+			copy.setMaterial(this.materialOf((PhongMaterial) original.getMaterial()));
+			copy.getTransforms().add(toArena.createConcatenation(original.getLocalToSceneTransform()));
+			shapes.add(copy);
+		} else if (node instanceof Parent parent) {
+			for (Node child : parent.getChildrenUnmodifiable()) {
+				this.copyShapes(child, toArena, shapes);
+			}
+		}
+	}
+
+	/** The whole robot again, for a new round: the pieces back on it, the ones on the floor gone. */
 	void restore() {
 		this.lowest = FULL_ENERGY;
 		this.settled = false;
@@ -346,6 +434,7 @@ final class RobotArmor {
 		axis = axis.magnitude() < 1e-6 ? new Point3D(0, 0, 1) : axis.normalize();
 		List<MeshView> shapes = this.copyOf(piece, place);
 		Thrown thrown = new Thrown(new Group(shapes.toArray(new MeshView[0])), shapes, center, axis, bounds.getDepth() / 2, (standing ? bounds.getHeight() : bounds.getWidth()) / 2);
+		thrown.source = piece;
 		thrown.flying.getTransforms().addAll(thrown.turn, spin);
 		arena.getChildren().add(thrown.flying);
 		this.thrown.add(thrown);
@@ -355,6 +444,14 @@ final class RobotArmor {
 	/** Up, tumbling, then down onto the floor at the landing point, where it stays */
 	private void toss(Thrown thrown, Rotate spin, Point3D landing, double turn, double rest) {
 		Group flying = thrown.flying;
+		thrown.land = () -> {
+			flying.setTranslateX(landing.getX());
+			flying.setTranslateY(rest);
+			flying.setTranslateZ(landing.getZ());
+			spin.setAngle(turn);
+			thrown.landed = true;
+			thrown.fire = 0;
+		};
 		Timeline timeline = new Timeline(new KeyFrame(Duration.millis(250), new KeyValue(flying.translateYProperty(), -9, Interpolator.EASE_OUT)),
 				new KeyFrame(Duration.millis(700), new KeyValue(flying.translateXProperty(), landing.getX()), new KeyValue(flying.translateZProperty(), landing.getZ()),
 						new KeyValue(flying.translateYProperty(), rest, Interpolator.EASE_IN), new KeyValue(spin.angleProperty(), turn)));

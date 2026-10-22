@@ -9,6 +9,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import support.FxSupport;
 import utils.robocode.BattleRecording;
@@ -23,6 +24,18 @@ class BattleArena3DTest {
 		boolean finished = ArenaSimulation.battle(arena, recording, 4000, 0.05);
 
 		assertTrue(finished, "the battle should call back when it ends");
+	}
+
+	@Test
+	void theForceFieldIsDrawnBeforeTheSmokeInFrontOfIt() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
+
+		FxSupport.runVoid(() -> {
+			// The see-through particles come last, so they blend over the force field instead of hiding it
+			List<Node> layers = arena.world.getChildren();
+			assertTrue(layers.indexOf(arena.fence) < layers.indexOf(arena.fireLayer));
+			assertTrue(layers.indexOf(arena.fence) < layers.indexOf(arena.sunbeams));
+		});
 	}
 
 	@Test

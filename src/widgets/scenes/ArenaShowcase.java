@@ -8,6 +8,7 @@ import widgets.scenes.Shot;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Map;
 import javafx.animation.Interpolator;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
@@ -24,6 +25,7 @@ import javafx.util.Duration;
 import model.Author;
 import model.Opponent;
 import utils.robocode.BattleRecording.Bullet;
+import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import utils.robocode.BattleRecording;
 import widgets.Sfx;
@@ -348,8 +350,9 @@ final class ArenaShowcase {
 		host.bulletsExploded.clear();
 		host.shots.clearBullets();
 		host.effects.getChildren().clear();
-		for (RobotView view : host.robots.values()) {
-			view.reset();
+		// The pieces lost before the replay stay on the floor, the later ones come off again
+		for (Map.Entry<Integer, RobotView> robot : host.robots.entrySet()) {
+			robot.getValue().rewind(this.lowestEnergy(robot.getKey(), this.replayFrom));
 		}
 		// Bullets already flying when the replay starts are not new shots, and the
 		// ones still exploding there hit before it
@@ -369,6 +372,20 @@ final class ArenaShowcase {
 		host.shotSide = host.random.nextBoolean() ? 1 : -1;
 		host.rounds.showTurn(host.turns());
 		host.director.cut();
+	}
+
+	/** The lowest energy of the robot from the start of the round up to the turn: it tells the pieces lost by then */
+	private double lowestEnergy(int robot, int turn) {
+		double lowest = RobotArmor.FULL_ENERGY;
+		List<Turn> turns = host.turns();
+		for (int index = 0; index <= Math.min(turn, turns.size() - 1); index++) {
+			for (RobotState state : turns.get(index).robots()) {
+				if (state.index() == robot) {
+					lowest = Math.min(lowest, state.isDead() ? 0 : state.energy());
+				}
+			}
+		}
+		return lowest;
 	}
 
 	/** Ends the replay and goes back to the battle, when it was in the replay or frozen. */
