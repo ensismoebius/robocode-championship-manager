@@ -42,7 +42,7 @@ class BracketTest {
 	void importanceCountsRepechageFinalsAndGrandFinal() {
 		Bracket bracket = new Bracket(ids(8), true);
 		for (Match m : bracket.getMatches()) {
-			boolean big = bracket.roundName(m).startsWith("Final") || bracket.roundName(m).startsWith("Grande");
+			boolean big = bracket.roundName(m).startsWith("Fim da") || bracket.roundName(m).startsWith("Grande");
 			assertEquals(big, bracket.importance(m) == Importance.FINAL, bracket.roundName(m));
 		}
 		assertTrue(bracket.getMatches().stream().anyMatch(m -> bracket.importance(m) == Importance.SEMIFINAL));
@@ -175,6 +175,10 @@ class BracketTest {
 		assertEquals("Quartas de final", sixteen.winnersRoundName(2));
 		assertEquals("Semifinal", sixteen.winnersRoundName(3));
 		assertEquals("Final", sixteen.winnersRoundName(4));
+		// With the repechage the main bracket and the repechage end in finals of their own
+		Bracket repechage = new Bracket(ids(16), true);
+		assertEquals("Fim da chave principal", repechage.winnersRoundName(4));
+		assertEquals("Fim da repescagem", repechage.losersRoundName(repechage.getLosersRounds().size()));
 		// A bigger bracket counts its first rounds by number
 		assertEquals("1ª rodada", new Bracket(ids(32), false).winnersRoundName(1));
 	}

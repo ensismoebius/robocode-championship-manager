@@ -69,6 +69,7 @@ final class ArenaHud {
 	Node buildHud() {
 		host.banner.getStyleClass().add("arena-banner");
 		host.subBanner.getStyleClass().add("arena-sub-banner");
+		host.stageLabel.getStyleClass().add("arena-stage-big");
 		host.stageLabel.setVisible(false);
 		host.stageLabel.setManaged(false);
 		VBox center = new VBox(10, host.stageLabel, host.loading, host.banner, host.subBanner);

@@ -1,6 +1,7 @@
 package widgets.scenes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import support.FxSupport;
+import tournament.Importance;
 import utils.robocode.BattleRecording;
 
 class BattleArena3DTest {
@@ -24,6 +26,21 @@ class BattleArena3DTest {
 		boolean finished = ArenaSimulation.battle(arena, recording, 4000, 0.05);
 
 		assertTrue(finished, "the battle should call back when it ends");
+	}
+
+	@Test
+	void onlySemifinalsAndFinalsAreWarned() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
+
+		FxSupport.runVoid(() -> {
+			arena.setStage("Quartas de final", Importance.REGULAR);
+			assertFalse(arena.stageLabel.isVisible());
+			arena.setStage("Semifinal", Importance.SEMIFINAL);
+			assertTrue(arena.stageLabel.isVisible());
+			arena.setStage("Fim da repescagem", Importance.FINAL);
+			assertTrue(arena.stageLabel.isVisible());
+			assertEquals("★ FIM DA REPESCAGEM ★", arena.stageLabel.getText());
+		});
 	}
 
 	@Test

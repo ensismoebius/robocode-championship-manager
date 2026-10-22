@@ -273,18 +273,17 @@ public class BattleArena3D extends StackPane {
 	 *            the robots, to show their names, teams and logos
 	 */
 	/**
-	 * Warns which stage of the championship this battle is: a semifinal and a
-	 * final are highlighted. Call it before the battle starts.
+	 * Warns which stage of the championship this battle is, only when it is a
+	 * semifinal or a final. Call it before the battle starts.
 	 */
 	public void setStage(String name, Importance importance) {
 		this.stageName = name == null ? "" : name.toUpperCase();
 		this.stageImportance = importance == null ? Importance.REGULAR : importance;
 		boolean big = this.stageImportance != Importance.REGULAR;
-		this.stageLabel.setText(big ? "★ " + this.stageName + " ★" : this.stageName);
-		this.stageLabel.getStyleClass().removeAll("arena-stage", "arena-stage-big");
-		this.stageLabel.getStyleClass().add(big ? "arena-stage-big" : "arena-stage");
-		this.stageLabel.setVisible(!this.stageName.isEmpty());
-		this.stageLabel.setManaged(!this.stageName.isEmpty());
+		boolean shown = big && !this.stageName.isEmpty();
+		this.stageLabel.setText("★ " + this.stageName + " ★");
+		this.stageLabel.setVisible(shown);
+		this.stageLabel.setManaged(shown);
 		this.roundLabel.getStyleClass().remove("arena-round-big");
 		if (big) {
 			this.roundLabel.getStyleClass().add("arena-round-big");

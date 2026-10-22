@@ -289,7 +289,7 @@ public class Bracket {
 	 */
 	public String winnersRoundName(int round) {
 		return switch (this.winnersRounds.size() - round) {
-		case 0 -> this.repechage ? "Final da chave principal" : "Final";
+		case 0 -> this.repechage ? "Fim da chave principal" : "Final";
 		case 1 -> "Semifinal";
 		case 2 -> "Quartas de final";
 		case 3 -> "Oitavas de final";
@@ -302,7 +302,7 @@ public class Bracket {
 	 *            1 based round of the repechage
 	 */
 	public String losersRoundName(int round) {
-		return round == this.losersRounds.size() ? "Final da repescagem" : "Repescagem " + round;
+		return round == this.losersRounds.size() ? "Fim da repescagem" : "Repescagem " + round;
 	}
 
 	/**

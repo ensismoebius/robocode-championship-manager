@@ -549,13 +549,6 @@
 	-fx-effect: dropshadow(gaussian, rgba(255, 213, 74, 0.7), 14, 0.4, 0, 0);
 }
 
-.arena-stage {
-	-fx-font-family: "Press Start 2P";
-	-fx-font-size: 20px;
-	-fx-text-fill: -rc-text;
-	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.9), 8, 0.6, 0, 0);
-}
-
 .arena-stage-big {
 	-fx-font-family: "Press Start 2P";
 	-fx-font-size: 46px;

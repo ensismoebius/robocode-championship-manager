@@ -122,7 +122,7 @@ final class RobotView {
 	static final Color RADAR_COLOR = Color.web("#ffd400");
 
 	/** The materials of the tank model: the dark parts, the plates, the steel, the cyan lights, the identity colour, the lamp and the warning. */
-	private record Materials(PhongMaterial dark, PhongMaterial plate, PhongMaterial steel, PhongMaterial cyan, PhongMaterial identity, PhongMaterial lamp, PhongMaterial warning) {
+	record Materials(PhongMaterial dark, PhongMaterial plate, PhongMaterial steel, PhongMaterial cyan, PhongMaterial identity, PhongMaterial lamp, PhongMaterial warning) {
 	}
 
 	/** Creates the model of a robot in the arena, in the colour of its place in the order, with its name above it. */
@@ -167,7 +167,6 @@ final class RobotView {
 		// The hull: a wedge, sloped in front and behind, with a deck over it
 		hull.prismZY(new double[][] { { -21, -7 }, { -22.5, -9.5 }, { -20, -13 }, { 14, -13.5 }, { 22, -10 }, { 23, -7.5 } }, -13.5, 13.5);
 		hull.frustum(new double[][] { { -11.5, -17 }, { 11.5, -17 }, { 11.5, 9 }, { -11.5, 9 } }, -13.4, -15.2, 0.9);
-		tracks.box(0, -14.5, -17.5, 14, 2.2, 6); // engine deck, m.dark()
 		for (int side = -1; side <= 1; side += 2) {
 			// Track with chamfered ends, hidden above by the skirt
 			tracks.prismZY(BELT, Math.min(side * BELT_INNER, side * BELT_OUTER), Math.max(side * BELT_INNER, side * BELT_OUTER));
@@ -177,30 +176,11 @@ final class RobotView {
 			for (double posZ = -15; posZ <= 15; posZ += 6) {
 				hanging.add(this.armor.plate(this.body, materials.steel(), posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9))));
 			}
-			this.addSkirt(side, materials, hanging);
+			RobotFittings.addSkirt(this, side, materials, hanging);
 		}
-		this.addFittings(materials);
+		RobotFittings.addFittings(this, materials);
+		RobotFittings.addStowage(this, materials);
 		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()));
-	}
-
-	/** The lamps, the rear lights, the visor on the front and the vents on the engine deck: all of them can come off */
-	private void addFittings(Materials materials) {
-		for (int side = -1; side <= 1; side += 2) {
-			LowPoly lamp = new LowPoly();
-			lamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
-			this.armor.piece(this.body, lamp.view(materials.lamp()));
-			LowPoly rearLight = new LowPoly();
-			rearLight.box(side * 9, -10, -22.6, 3, 1.2, 1);
-			this.armor.piece(this.body, rearLight.view(materials.warning()));
-		}
-		LowPoly visor = new LowPoly();
-		visor.box(0, -9, 22.9, 14, 0.9, 0.6);
-		this.armor.piece(this.body, visor.view(materials.cyan()));
-		for (double posX = -4; posX <= 4; posX += 4) {
-			LowPoly vent = new LowPoly();
-			vent.box(posX, -14.9, -19.5, 2, 0.5, 2.4);
-			this.armor.piece(this.body, vent.view(materials.cyan()));
-		}
 	}
 
 	/** The links of one belt, each one a short box turned to the belt where it is */
@@ -217,28 +197,6 @@ final class RobotView {
 		}
 	}
 
-	/**
-	 * The skirt over one track: it leans out at the top, with two rows of
-	 * hexagonal plates on it and the hanging plates under it. It comes off too,
-	 * but only after the last of them, so no plate is ever left in the air.
-	 */
-	private void addSkirt(int side, Materials materials, List<Group> hanging) {
-		List<Group> plates = new ArrayList<Group>(hanging);
-		for (int row = 0; row < 2; row++) {
-			double posY = row == 0 ? -10 : -7.2;
-			double face = 17.5 + (-5 - posY) / 7.5 * 2;
-			for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
-				plates.add(this.armor.plate(this.body, materials.plate(), posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5))));
-			}
-		}
-		LowPoly skirt = new LowPoly();
-		skirt.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
-		// The strip of light in the color of the player runs along the top of the skirt, and goes with it
-		LowPoly strip = new LowPoly();
-		strip.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
-		this.armor.holder(this.body, plates, skirt.view(this.bodyMaterial), strip.view(materials.identity()));
-	}
-
 	/** The turret and the gun, which turn on their own: a long wedge, a flat wing over the gun, a remote weapon station and antennas */
 	private void buildTurret(Materials materials) {
 		// Turret and the gun turn on their own: a long wedge, a flat wing over the
@@ -246,54 +204,16 @@ final class RobotView {
 		this.turret.getTransforms().add(this.gunRotate);
 		LowPoly shell = new LowPoly();
 		LowPoly barrel = new LowPoly();
-		LowPoly turretCyan = new LowPoly();
 		shell.frustum(new double[][] { { -9, -12 }, { 9, -12 }, { 12, -3 }, { 10, 6 }, { 4, 12 }, { -4, 12 }, { -10, 6 }, { -12, -3 } }, -14.8, -19.5, 0.72);
 		shell.prismZY(new double[][] { { -9, -19.5 }, { -9, -21 }, { 2, -21.4 }, { 11, -19.5 } }, -5, 5);
 		shell.frustum(new double[][] { { -3.6, 6 }, { 3.6, 6 }, { 0.9, 36 }, { -0.9, 36 } }, -20.2, -21.2, 1); // wing over the gun
 		shell.box(0, -17.4, 12, 7, 4.6, 5); // gun mantlet
-		// The flanks, with plates like the skirts
-		for (int side = -1; side <= 1; side += 2) {
-			for (int index = 0; index < 3; index++) {
-				double posZ = -4.5 + index * 4.5;
-				double posY = index == 1 ? -16.2 : -17.9;
-				double time = (posY + 14.8) / -4.7;
-				double edge = posZ < -3 ? 9 + (posZ + 12) / 3 : 12 - (posZ + 3) * 2 / 9;
-				double face = edge * (1 - 0.28 * time);
-				this.armor.plate(this.turret, materials.plate(), posZ, posY, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
-			}
-			// The sensors on the cheeks and the antennas, with lights on top, can come off
-			LowPoly sensor = new LowPoly();
-			sensor.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1);
-			this.armor.piece(this.turret, sensor.view(materials.cyan()));
-			LowPoly antenna = new LowPoly();
-			antenna.cylinderY(side * 7, -9, 0.3, -19, -26, 5);
-			LowPoly antennaLight = new LowPoly();
-			antennaLight.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5);
-			this.armor.piece(this.turret, antenna.view(materials.dark()), antennaLight.view(materials.warning()));
-		}
-		// The gun: a very long barrel with a fume extractor and a muzzle ring
+		RobotFittings.addTurretSides(this, materials);
+		// The gun: a very long barrel, with a fume extractor and a muzzle ring that can come off
 		barrel.cylinderZ(0, -17.2, 1.35, 12, 43, 6);
-		barrel.cylinderZ(0, -17.2, 1.95, 21, 27, 6);
-		barrel.cylinderZ(0, -17.2, 1.8, 40, 43.6, 6);
-		turretCyan.cylinderZ(0, -17.2, 2, 43.6, 44.1, 6);
-		this.addRoofGear(materials);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretCyan.view(materials.cyan()));
-	}
-
-	/** The remote weapon station on the roof of the turret and the commander sight, which can come off */
-	private void addRoofGear(Materials materials) {
-		LowPoly station = new LowPoly();
-		station.box(-4.6, -22.4, -4, 4.4, 2.2, 4.4);
-		LowPoly stationGun = new LowPoly();
-		stationGun.cylinderZ(-4.6, -22.6, 0.5, -1.5, 3.5, 5);
-		LowPoly stationLens = new LowPoly();
-		stationLens.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
-		this.armor.piece(this.turret, station.view(this.gunMaterial), stationGun.view(materials.dark()), stationLens.view(materials.cyan()));
-		LowPoly sight = new LowPoly();
-		sight.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
-		LowPoly sightLens = new LowPoly();
-		sightLens.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
-		this.armor.piece(this.turret, sight.view(this.gunMaterial), sightLens.view(materials.cyan()));
+		RobotFittings.addGunGear(this, materials);
+		RobotFittings.addRoofGear(this, materials);
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()));
 	}
 
 	/** The radar: a flat panel on a mast, turning over the roof */

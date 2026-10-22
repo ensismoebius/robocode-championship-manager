@@ -153,7 +153,7 @@ final class ArenaShowcase {
 		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
 		host.announcer.announce(switch (host.stageImportance) {
 		case SEMIFINAL -> "Atenção, é uma SEMIFINAL! " + versusLine + " Quem vence vai para a final!";
-		case FINAL -> "Atenção, é a FINAL! " + versusLine + " Quem vencer leva a glória!";
+		case FINAL -> "Atenção: " + host.stageName + "! " + versusLine;
 		default -> versusLine;
 		}, 5);
 		host.audio.whoosh();
