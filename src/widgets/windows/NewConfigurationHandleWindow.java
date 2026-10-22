@@ -6,9 +6,11 @@ package widgets.windows;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Properties;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -22,6 +24,8 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -29,7 +33,7 @@ import utils.configuration.Configuration;
 import utils.configuration.INewConfigurationHandle;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.WinnerCriterion;
-import widgets.GameDialog;
+import widgets.ArcadeBackground;
 import widgets.BattleAudio;
 import widgets.Song;
 import widgets.GameWindow;
@@ -61,26 +65,49 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		Button save = new Button("Salvar");
 		save.getStyleClass().add("primary");
 		Button cancel = new Button("Cancelar");
-		VBox panel = GameDialog.panel("Configurações", new VBox(12, tabs, error), cancel, save);
-		panel.setStyle("-fx-pref-width: 900;");
+		StackPane page = page(tabs, error, save, cancel);
 
 		save.setOnAction(event -> {
+			form.unmarkFields();
 			Problem problem = form.problem();
 			if (problem != null) {
 				error.setText(problem.message());
+				problem.field().getStyleClass().add("field-invalid");
 				tabs.getSelectionModel().select(problem.tab());
 				return;
 			}
-			GameWindow.close(panel, form.properties());
+			error.setText("");
+			GameWindow.close(page, form.properties());
 		});
-		cancel.setOnAction(event -> GameWindow.close(panel, null));
+		cancel.setOnAction(event -> GameWindow.close(page, null));
 
-		// The save button gets the focus, so Enter saves
-		return (Properties) GameWindow.showModal(panel, save, cancel);
+		// The page takes the whole window, like a screen; the save button gets the focus, so Enter saves
+		return (Properties) GameWindow.showPage(page, save, cancel);
 	}
 
-	/** What is wrong in the form, and the tab where it is */
-	private record Problem(String message, Tab tab) {
+	/**
+	 * The configuration as a page of the game: the title, the tabs, the message of the error and the buttons over
+	 * the arcade background
+	 */
+	private static StackPane page(TabPane tabs, Label error, Button save, Button cancel) {
+		Label title = new Label("CONFIGURAÇÕES");
+		title.getStyleClass().add("game-title");
+
+		HBox buttons = new HBox(12, cancel, save);
+		buttons.setAlignment(Pos.CENTER_RIGHT);
+
+		VBox content = new VBox(16, title, tabs, error, buttons);
+		VBox.setVgrow(tabs, Priority.ALWAYS);
+		content.setPadding(new Insets(30));
+
+		Region scanlines = new Region();
+		scanlines.getStyleClass().add("scanlines");
+		scanlines.setMouseTransparent(true);
+		return new StackPane(new ArcadeBackground(), content, scanlines);
+	}
+
+	/** What is wrong in the form, the tab where it is and the field that is wrong */
+	private record Problem(String message, Tab tab, TextField field) {
 	}
 
 	/**
@@ -219,10 +246,10 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 		/** The tab of the start screen: its title and its subtitle. */
 		private Tab startTab() {
 			GridPane grid = grid();
-			grid.add(field("Título da tela inicial", this.title), 0, 0);
-			grid.add(field("Subtítulo da tela inicial", this.subtitle), 1, 0);
-			grid.add(field("Inscrições", this.registrationEnabled), 0, 1);
-			grid.add(field("Porta do servidor web de cadastro", this.webserverPort), 1, 1);
+			grid.add(field("Título da tela inicial", this.title, "Aparece no topo da tela inicial. Vazio usa o nome padrão."), 0, 0);
+			grid.add(field("Subtítulo da tela inicial", this.subtitle, "Opcional. Vazio para não exibir."), 1, 0);
+			grid.add(field("Inscrições", this.registrationEnabled, "Desmarcado: os times não podem se cadastrar pela web."), 0, 1);
+			grid.add(field("Porta do servidor web de cadastro", this.webserverPort, "Número de 1 a 65535. É por ela que os times acessam o cadastro."), 1, 1);
 			return new Tab("Tela inicial", grid);
 		}
 
@@ -236,12 +263,12 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			this.explainBattle(roundsCaption, battleRule);
 
 			GridPane grid = grid();
-			grid.add(field("Tipo de batalha", this.winnerCriterion), 0, 0);
-			grid.add(new VBox(6, roundsCaption, this.robocodeRounds), 1, 0);
+			grid.add(field("Tipo de batalha", this.winnerCriterion, "Por pontos: a soma dos pontos decide. Por K.O.: quem vencer mais partidas leva a batalha."), 0, 0);
+			grid.add(field(roundsCaption, this.robocodeRounds, "Número inteiro, maior que zero."), 1, 0);
 			grid.add(battleRule, 0, 1, 2, 1);
-			grid.add(field("Exibição da batalha", this.battleView), 0, 2);
-			grid.add(field("Velocidade inicial da batalha 3D", this.battleSpeed), 1, 2);
-			grid.add(field("Texto do início do round", this.fightText), 0, 3, 2, 1);
+			grid.add(field("Exibição da batalha", this.battleView, "3D: a batalha acontece na arena do gerenciador. Clássica: abre a janela do próprio robocode."), 0, 2);
+			grid.add(field("Velocidade inicial da batalha 3D", this.battleSpeed, "A velocidade com que a batalha 3D começa."), 1, 2);
+			grid.add(field("Texto do início do round", this.fightText, "Mostrado antes de cada round. Vazio usa o texto padrão."), 0, 3, 2, 1);
 			return new Tab("Batalha", grid);
 		}
 
@@ -251,11 +278,12 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			musicVolumeValue.setMinWidth(54);
 			musicVolumeValue.textProperty().bind(this.musicVolume.valueProperty().asString("%.0f%%"));
 
+			Label arenaMusicHint = hint("Cada arena tem a sua própria música: com esta opção marcada, a escolha ao lado não vale.");
 			GridPane grid = grid();
-			grid.add(field("Arena da batalha 3D", this.arena), 0, 0);
-			grid.add(field("Qualidade gráfica da batalha 3D", this.antialiasing), 1, 0);
-			grid.add(field("Música da batalha 3D", new VBox(8, this.music, this.arenaMusic)), 0, 1);
-			grid.add(field("Volume da música de fundo", new HBox(10, this.musicVolume, musicVolumeValue)), 1, 1);
+			grid.add(field("Arena da batalha 3D", this.arena, "Aleatória sorteia uma arena a cada batalha."), 0, 0);
+			grid.add(field("Qualidade gráfica da batalha 3D", this.antialiasing, "Deixa as bordas mais suaves, mas pesa mais na tela."), 1, 0);
+			grid.add(field("Música da batalha 3D", new VBox(8, this.music, this.arenaMusic, arenaMusicHint), "Aleatória sorteia uma música a cada batalha."), 0, 1);
+			grid.add(field("Volume da música de fundo", new HBox(10, this.musicVolume, musicVolumeValue), "De 0% (mudo) a 100%."), 1, 1);
 			return new Tab("Arena e som", grid);
 		}
 
@@ -283,8 +311,8 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			});
 
 			GridPane grid = grid();
-			grid.add(field("Arquivo do banco de dados SQLite", new HBox(6, this.databaseFile, chooseDatabaseFile)), 0, 0, 2, 1);
-			grid.add(field("Diretório do robocode", new HBox(6, this.robocodeDirectory, chooseRobocodeDirectory)), 0, 1, 2, 1);
+			grid.add(field("Arquivo do banco de dados SQLite", new HBox(6, this.databaseFile, chooseDatabaseFile), "Arquivo SQLite. Se não existir, é criado. Não pode ser uma pasta."), 0, 0, 2, 1);
+			grid.add(field("Diretório do robocode", new HBox(6, this.robocodeDirectory, chooseRobocodeDirectory), "A pasta de instalação do robocode: a que contém o diretório robots."), 0, 1, 2, 1);
 			return new Tab("Sistema", grid);
 		}
 
@@ -300,18 +328,25 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 			String robocodePath = this.robocodeDirectory.getText().trim();
 
 			if (this.databaseFile.getText().isBlank() || Files.isDirectory(Path.of(this.databaseFile.getText().trim()))) {
-				return new Problem("Informe o arquivo do banco de dados", this.systemTab);
+				return new Problem("Informe o arquivo do banco de dados", this.systemTab, this.databaseFile);
 			}
 			if (robocodePath.isEmpty() || !Files.isDirectory(Path.of(robocodePath, "robots"))) {
-				return new Problem("Escolha o diretório onde o robocode está instalado (o que contém o diretório robots)", this.systemTab);
+				return new Problem("Escolha o diretório onde o robocode está instalado (o que contém o diretório robots)", this.systemTab, this.robocodeDirectory);
 			}
 			if (rounds < 1) {
-				return new Problem("O número de partidas deve ser um número maior que zero", this.battleTab);
+				return new Problem("O número de partidas deve ser um número maior que zero", this.battleTab, this.robocodeRounds);
 			}
 			if (port < 1 || port > 65535) {
-				return new Problem("A porta deve ser um número entre 1 e 65535", this.startTab);
+				return new Problem("A porta deve ser um número entre 1 e 65535", this.startTab, this.webserverPort);
 			}
 			return null;
+		}
+
+		/** Takes the marks of the fields that were wrong in the last save. */
+		void unmarkFields() {
+			for (TextField field : List.of(this.title, this.subtitle, this.fightText, this.robocodeRounds, this.webserverPort, this.databaseFile, this.robocodeDirectory)) {
+				field.getStyleClass().remove("field-invalid");
+			}
 		}
 
 		/**
@@ -392,11 +427,27 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 	}
 
 	/**
-	 * A caption above the field
+	 * A caption above the field, and below it what the field accepts
 	 */
-	private static VBox field(String caption, Node input) {
-		Label label = new Label(caption);
-		label.getStyleClass().add("form-label");
-		return new VBox(6, label, input);
+	private static VBox field(String caption, Node input, String description) {
+		return field(new Label(caption), input, description);
+	}
+
+	/**
+	 * A caption above the field, and below it what the field accepts
+	 */
+	private static VBox field(Node caption, Node input, String description) {
+		if (caption instanceof Label label) {
+			label.getStyleClass().add("form-label");
+		}
+		return new VBox(6, caption, input, hint(description));
+	}
+
+	/** A line that explains a field, wrapped to the width of its column. */
+	private static Label hint(String text) {
+		Label hint = new Label(text);
+		hint.setWrapText(true);
+		hint.getStyleClass().add("form-hint");
+		return hint;
 	}
 }

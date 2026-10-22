@@ -236,6 +236,36 @@ public final class GameWindow {
 		return Platform.enterNestedEventLoop(backdrop);
 	}
 
+	/**
+	 * Shows a page that covers the whole window, like a screen of its own, and waits until it is closed with
+	 * {@link #close(Region, Object)}. The screen below stays where it is and the keys are only for the page.
+	 *
+	 * @return the result given to close, null if the program is closing
+	 */
+	public static Object showPage(Region page, Button defaultButton, Button cancelButton) {
+		if (GameWindow.closing) {
+			return null;
+		}
+
+		StackPane backdrop = new StackPane(page);
+		backdrop.prefWidthProperty().bind(GameWindow.overlayLayer.widthProperty());
+		backdrop.prefHeightProperty().bind(GameWindow.overlayLayer.heightProperty());
+		page.prefWidthProperty().bind(backdrop.widthProperty());
+		page.prefHeightProperty().bind(backdrop.heightProperty());
+
+		panelKeys(page, defaultButton, cancelButton);
+
+		GameWindow.modals.push(backdrop);
+		GameWindow.overlayLayer.getChildren().add(backdrop);
+		if (defaultButton != null) {
+			defaultButton.requestFocus();
+		} else {
+			page.requestFocus();
+		}
+
+		return Platform.enterNestedEventLoop(backdrop);
+	}
+
 	/** Enter fires the default button (or the focused one), Escape fires the cancel button; nothing else reaches the screens */
 	private static void panelKeys(Region panel, Button defaultButton, Button cancelButton) {
 		panel.addEventHandler(KeyEvent.KEY_PRESSED, event -> {

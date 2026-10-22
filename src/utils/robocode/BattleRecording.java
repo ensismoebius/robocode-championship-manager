@@ -43,6 +43,15 @@ public final class BattleRecording {
 			this.name = name;
 		}
 
+		/** A robot with its name and its colors, to show its model outside a battle. */
+		public static Robot named(String name, int bodyColor, int gunColor, int radarColor) {
+			Robot robot = new Robot(0, name);
+			robot.bodyColor = bodyColor;
+			robot.gunColor = gunColor;
+			robot.radarColor = radarColor;
+			return robot;
+		}
+
 		/** Returns the index. */
 		public int getIndex() {
 			return this.index;

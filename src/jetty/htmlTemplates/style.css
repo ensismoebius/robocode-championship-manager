@@ -114,6 +114,10 @@ h1 {
 	font-weight: 600;
 }
 
+.message.error {
+	color: var(--rc-danger);
+}
+
 .message:empty {
 	display: none;
 }

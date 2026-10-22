@@ -168,6 +168,10 @@
 	-fx-padding: 8 10 8 10;
 }
 
+.text-field, .password-field {
+	-fx-prompt-text-fill: -rc-muted;
+}
+
 .text-field:focused, .password-field:focused {
 	-fx-background-color: -rc-accent, -rc-bg;
 }
@@ -233,6 +237,66 @@
 .form-hint {
 	-fx-text-fill: -rc-info;
 	-fx-font-size: 14px;
+}
+
+/* Tabs of the forms: dark like the screens, the chosen one lit in the accent color */
+.tab-pane > .tab-header-area > .tab-header-background {
+	-fx-background-color: -rc-border;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+	-fx-background-color: -rc-surface-2;
+	-fx-background-radius: 4 4 0 0;
+	-fx-padding: 8 18 8 18;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+	-fx-background-color: -rc-surface;
+	-fx-border-color: -rc-accent transparent transparent transparent;
+	-fx-border-width: 2 0 0 0;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
+	-fx-text-fill: -rc-muted;
+	-fx-font-size: 15px;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label {
+	-fx-text-fill: -rc-accent;
+}
+
+.tab-pane > .tab-content-area {
+	-fx-background-color: -rc-surface;
+	-fx-background-radius: 0 0 4 4;
+}
+
+/* Lists: the chosen item is lit in the accent color, never white over white */
+.list-view {
+	-fx-background-color: -rc-border, -rc-surface;
+	-fx-background-insets: 0, 1;
+}
+
+.list-view .list-cell {
+	-fx-background-color: transparent;
+	-fx-text-fill: -rc-text;
+	-fx-padding: 5 10 5 10;
+}
+
+.list-view .list-cell:filled:hover {
+	-fx-background-color: -rc-surface-2;
+}
+
+.list-view .list-cell:filled:selected, .list-view .list-cell:filled:selected:focused {
+	-fx-background-color: -rc-surface-2;
+	-fx-text-fill: -rc-accent;
+	-fx-border-color: -rc-accent;
+	-fx-border-width: 0 0 0 3;
+}
+
+/* The field that was wrong when the form was saved, until the next save */
+.text-field.field-invalid {
+	-fx-background-color: -rc-danger, -rc-bg;
+	-fx-background-insets: 0, 1;
 }
 
 .error-text {

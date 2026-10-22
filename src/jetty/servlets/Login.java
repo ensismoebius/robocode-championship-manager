@@ -29,7 +29,7 @@ public class Login extends HttpServlet {
 			resp.sendRedirect("/robotEditor?action=edit");
 			return;
 		}
-		this.showAuthScreen(resp, "Olá!");
+		this.showAuthScreen(resp, "Olá!", false);
 	}
 
 	/** Checks the login and the password of the form: logs the author in, or shows the screen again with the error. */
@@ -44,18 +44,19 @@ public class Login extends HttpServlet {
 			resp.setStatus(HttpServletResponse.SC_SEE_OTHER);
 			resp.setHeader("Location", "/robotEditor?action=edit");
 		} else {
-			this.showAuthScreen(resp, "Falha ao autenticar!");
+			this.showAuthScreen(resp, "Falha ao autenticar!", true);
 		}
 	}
 
 	/** Writes the login screen with a message, such as an error. */
-	private void showAuthScreen(HttpServletResponse resp, String message) throws IOException {
+	private void showAuthScreen(HttpServletResponse resp, String message, boolean failed) throws IOException {
 		/*
 		 * JSP is a better tecnology than this,but looks like jetty does not gives
 		 * support to it so i have to use this workaround
 		 */
 		TextTemplate template = new TextTemplate(getClass().getResourceAsStream("/jetty/htmlTemplates/main.html"));
 		template.assign("message", Html.escape(message));
+		template.assign("messageClass", failed ? "error" : "");
 		boolean open = Configuration.isEnabledRegistration();
 		template.assign("registrationClass", open ? "open" : "closed");
 		template.assign("registrationStatus", open ? "● Inscrições abertas: cadastre seu robô" : "■ Inscrições encerradas: novos robôs não são aceitos");
