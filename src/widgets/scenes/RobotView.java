@@ -428,11 +428,13 @@ final class RobotView {
 		this.settle();
 		// Turning around this axis, the top of the tank goes away from the hit
 		this.tilt.setAxis(new Point3D(towardZ / length, 0, -towardX / length));
-		double peak = Math.min(10, 3.5 + power * 2.2);
+		// A hard hit throws the tank much further over, and it swings back and forth longer
+		double peak = Math.min(18, 6 + power * 4);
 		this.rocking = new Timeline(new KeyFrame(Duration.millis(60), new KeyValue(this.tilt.angleProperty(), peak, Interpolator.EASE_OUT)),
-				new KeyFrame(Duration.millis(180), new KeyValue(this.tilt.angleProperty(), -peak * 0.45, Interpolator.EASE_BOTH)),
-				new KeyFrame(Duration.millis(290), new KeyValue(this.tilt.angleProperty(), peak * 0.18, Interpolator.EASE_BOTH)),
-				new KeyFrame(Duration.millis(420), new KeyValue(this.tilt.angleProperty(), 0, Interpolator.EASE_BOTH)));
+				new KeyFrame(Duration.millis(180), new KeyValue(this.tilt.angleProperty(), -peak * 0.6, Interpolator.EASE_BOTH)),
+				new KeyFrame(Duration.millis(300), new KeyValue(this.tilt.angleProperty(), peak * 0.35, Interpolator.EASE_BOTH)),
+				new KeyFrame(Duration.millis(400), new KeyValue(this.tilt.angleProperty(), -peak * 0.12, Interpolator.EASE_BOTH)),
+				new KeyFrame(Duration.millis(520), new KeyValue(this.tilt.angleProperty(), 0, Interpolator.EASE_BOTH)));
 		host.fx.effect(this.rocking).play();
 	}
 
