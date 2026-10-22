@@ -300,7 +300,7 @@ final class ArenaHud {
 		if (host.recording != null) {
 			boolean knockout = Configuration.getWinnerCriterion().isKnockout();
 			String stage = host.stageImportance == Importance.REGULAR ? "" : host.stageName + " · ";
-			host.roundLabel.setText(stage + "ROUND " + (host.round + 1) + (knockout ? " · MELHOR DE " + Configuration.getRobocodeRounds() : "/" + host.recording.getRounds().size()));
+			host.roundLabel.setText(stage + "ROUND " + (host.round + 1) + (knockout ? " · MD" + Configuration.getRobocodeRounds() : "/" + host.recording.getRounds().size()));
 		}
 	}
 

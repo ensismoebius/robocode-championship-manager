@@ -146,6 +146,7 @@ final class RobotView {
 		this.buildRadar(materials, this.radarMaterial);
 		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 		this.tank.getTransforms().add(this.tilt);
+		this.tilt.angleProperty().addListener((observable, oldAngle, newAngle) -> this.liftTracks());
 
 		// The pieces thrown by the blast stay here, beside the wreck
 		this.debris = new Group();
@@ -209,7 +210,7 @@ final class RobotView {
 		shell.frustum(new double[][] { { -3.6, 6 }, { 3.6, 6 }, { 0.9, 36 }, { -0.9, 36 } }, -20.2, -21.2, 1); // wing over the gun
 		shell.box(0, -17.4, 12, 7, 4.6, 5); // gun mantlet
 		RobotFittings.addTurretSides(this, materials);
-		// The gun: a very long barrel, with a fume extractor and a muzzle ring that can come off
+		// The gun: a very long barrel, with a fume extractor and a muzzle ring, which stay on it
 		barrel.cylinderZ(0, -17.2, 1.35, 12, 43, 6);
 		RobotFittings.addGunGear(this, materials);
 		RobotFittings.addRoofGear(this, materials);
@@ -428,6 +429,7 @@ final class RobotView {
 		this.settle();
 		// Turning around this axis, the top of the tank goes away from the hit
 		this.tilt.setAxis(new Point3D(towardZ / length, 0, -towardX / length));
+		this.liftTracks();
 		// A hard hit throws the tank much further over, and it swings back and forth longer
 		double peak = Math.min(18, 6 + power * 4);
 		this.rocking = new Timeline(new KeyFrame(Duration.millis(60), new KeyValue(this.tilt.angleProperty(), peak, Interpolator.EASE_OUT)),
@@ -445,6 +447,38 @@ final class RobotView {
 			this.rocking = null;
 		}
 		this.tilt.setAngle(0);
+	}
+
+	/**
+	 * The tilt turns the belts into the floor on the side that goes down, so the tank is raised by as much as
+	 * its lowest belt point goes below the place it has standing still
+	 */
+	private void liftTracks() {
+		double rest = lowestBelt(0, this.tilt.getAxis());
+		double lowest = lowestBelt(Math.toRadians(this.tilt.getAngle()), this.tilt.getAxis());
+		// The y axis points down, so a belt in the floor has a larger y than at rest
+		this.tank.setTranslateY(Math.min(0, rest - lowest));
+	}
+
+	/** The largest y of the belts, the lowest point of them, after turning them round the axis */
+	private static double lowestBelt(double angle, Point3D axis) {
+		double lowest = Double.NEGATIVE_INFINITY;
+		for (double[] point : RobotTreads.BELT) {
+			for (double across : new double[] { -RobotTreads.BELT_OUTER, -RobotTreads.BELT_INNER, RobotTreads.BELT_INNER, RobotTreads.BELT_OUTER }) {
+				Point3D turned = turn(new Point3D(across, point[1], point[0]), axis, angle);
+				lowest = Math.max(lowest, turned.getY());
+			}
+		}
+		return lowest;
+	}
+
+	/** Turns a point round an axis through the origin, by the angle in radians (Rodrigues' rotation formula). */
+	private static Point3D turn(Point3D point, Point3D axis, double angle) {
+		double cos = Math.cos(angle);
+		double sin = Math.sin(angle);
+		Point3D cross = axis.crossProduct(point);
+		double along = axis.dotProduct(point) * (1 - cos);
+		return point.multiply(cos).add(cross.multiply(sin)).add(axis.multiply(along));
 	}
 
 	/**

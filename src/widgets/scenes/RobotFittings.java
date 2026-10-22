@@ -7,8 +7,8 @@ import widgets.scenes.RobotView.Materials;
 
 /**
  * The parts of a robot it can fight without: the plates, the lights, the
- * stowage, the gear on the turret and on the gun. Each one is a piece of its
- * armor, which comes off as the robot loses energy.
+ * stowage and the gear on the turret. Each one is a piece of its armor, which
+ * comes off as the robot loses energy. The gear on the gun stays on it.
  */
 final class RobotFittings {
 
@@ -106,16 +106,15 @@ final class RobotFittings {
 		}
 	}
 
-	/** The fume extractor and the muzzle ring of the gun, with its light */
+	/** The fume extractor and the muzzle ring of the gun, with its light: they stay on the gun, they never come off */
 	static void addGunGear(RobotView view, Materials materials) {
 		LowPoly extractor = new LowPoly();
 		extractor.cylinderZ(0, -17.2, 1.95, 21, 27, 6);
-		view.armor.piece(view.turret, extractor.view(materials.dark()));
 		LowPoly muzzle = new LowPoly();
 		muzzle.cylinderZ(0, -17.2, 1.8, 40, 43.6, 6);
 		LowPoly turretCyan = new LowPoly();
 		turretCyan.cylinderZ(0, -17.2, 2, 43.6, 44.1, 6);
-		view.armor.piece(view.turret, muzzle.view(materials.dark()), turretCyan.view(materials.cyan()));
+		view.turret.getChildren().addAll(extractor.view(materials.dark()), muzzle.view(materials.dark()), turretCyan.view(materials.cyan()));
 	}
 
 	/** The remote weapon station on the roof of the turret and the commander sight, which can come off */

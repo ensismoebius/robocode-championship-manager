@@ -1,8 +1,6 @@
 package widgets.scenes;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -14,13 +12,19 @@ import javafx.animation.ScaleTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Reflection;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -28,10 +32,15 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.StrokeLineJoin;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.util.Duration;
 import model.Opponent;
 import widgets.ArcadeBackground;
-import widgets.GameDialog;
 import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
@@ -48,6 +57,8 @@ public class BattleViewer extends StackPane {
 
 	private final BorderPane layout = new BorderPane();
 	private final ImageView vsImage = new ImageView();
+	private final VersusFlames flames;
+	private final StackPane vsSign;
 	private final Region flash = new Region();
 	private VBox player1;
 	private VBox player2;
@@ -57,16 +68,18 @@ public class BattleViewer extends StackPane {
 	public BattleViewer() {
 		super();
 
-		try (InputStream inputStream = getClass().getResourceAsStream("/assets/vs.gif")) {
-			this.vsImage.setImage(new Image(inputStream));
-		} catch (IOException ioException) {
-			GameDialog.error(ioException.getMessage());
-		}
+		WritableImage letters = versusImage();
+		this.vsImage.setImage(letters);
 		this.vsImage.setPreserveRatio(true);
 		this.vsImage.fitWidthProperty().bind(this.widthProperty().multiply(0.16));
 		this.vsImage.setEffect(new Reflection(0, 0.4, 0.5, 0));
 		// Blends the black background of the image with the background
 		this.vsImage.setBlendMode(BlendMode.LIGHTEN);
+
+		// The flames are drawn over the letters, so they go in the same place and move with them
+		this.flames = new VersusFlames(letters, this.vsImage.fitWidthProperty());
+		this.vsSign = new StackPane(this.vsImage, this.flames);
+		this.vsSign.setAlignment(Pos.BOTTOM_CENTER);
 
 		this.versusMusic = Sound.fromResource(getClass(), "/assets/versusMusic.mp3");
 
@@ -104,7 +117,7 @@ public class BattleViewer extends StackPane {
 		HBox.setHgrow(this.player2, Priority.ALWAYS);
 		this.player1.setMaxWidth(Double.MAX_VALUE);
 		this.player2.setMaxWidth(Double.MAX_VALUE);
-		HBox fighters = new HBox(this.player1, this.vsImage, this.player2);
+		HBox fighters = new HBox(this.player1, this.vsSign, this.player2);
 		fighters.setAlignment(Pos.CENTER);
 
 		Label key = new Label("S");
@@ -120,6 +133,45 @@ public class BattleViewer extends StackPane {
 		this.layout.setTop(header);
 		this.layout.setCenter(fighters);
 		this.layout.setBottom(prompt);
+	}
+
+	/**
+	 * Draws the "VS" with the theme colors: a fire gradient, a dark outline and a glow
+	 *
+	 * @return the picture of the "VS", with a transparent background
+	 */
+	private static WritableImage versusImage() {
+		Theme.loadFonts();
+		Font font = Font.font("Press Start 2P", 150);
+
+		Text measure = new Text("VS");
+		measure.setFont(font);
+		Bounds bounds = measure.getLayoutBounds();
+
+		double padding = 30;
+		Canvas canvas = new Canvas(bounds.getWidth() + padding * 2, bounds.getHeight() + padding * 2);
+		GraphicsContext graphics = canvas.getGraphicsContext2D();
+		graphics.setFont(font);
+		graphics.setTextBaseline(VPos.BASELINE);
+		double x = padding - bounds.getMinX();
+		double y = padding - bounds.getMinY();
+
+		graphics.setEffect(Theme.glow(Theme.ACCENT, 24));
+		graphics.setLineWidth(12);
+		graphics.setLineJoin(StrokeLineJoin.ROUND);
+		graphics.setStroke(Color.web("#1a0a00"));
+		graphics.strokeText("VS", x, y);
+
+		graphics.setFill(new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+				new Stop(0, Color.web("#fff7b0")),
+				new Stop(0.4, Theme.ACCENT),
+				new Stop(0.75, Color.web("#ff7a00")),
+				new Stop(1, Theme.PLAYER_2)));
+		graphics.fillText("VS", x, y);
+
+		SnapshotParameters parameters = new SnapshotParameters();
+		parameters.setFill(Color.TRANSPARENT);
+		return canvas.snapshot(parameters, null);
 	}
 
 	/**
@@ -156,6 +208,7 @@ public class BattleViewer extends StackPane {
 	public void play() {
 		if (this.versusMusic != null)
 			this.versusMusic.play();
+		this.flames.start();
 
 		if (this.player1 == null) {
 			return;
@@ -172,14 +225,14 @@ public class BattleViewer extends StackPane {
 		in2.setToX(0);
 		in2.setInterpolator(Interpolator.EASE_OUT);
 
-		this.vsImage.setOpacity(0);
-		ScaleTransition slam = new ScaleTransition(Duration.millis(220), this.vsImage);
+		this.vsSign.setOpacity(0);
+		ScaleTransition slam = new ScaleTransition(Duration.millis(220), this.vsSign);
 		slam.setFromX(5);
 		slam.setFromY(5);
 		slam.setToX(1);
 		slam.setToY(1);
 		slam.setInterpolator(Interpolator.EASE_IN);
-		FadeTransition appear = new FadeTransition(Duration.millis(220), this.vsImage);
+		FadeTransition appear = new FadeTransition(Duration.millis(220), this.vsSign);
 		appear.setFromValue(0);
 		appear.setToValue(1);
 		ParallelTransition parallelTransition = new ParallelTransition(slam, appear);
@@ -210,5 +263,6 @@ public class BattleViewer extends StackPane {
 	public void stop() {
 		if (this.versusMusic != null)
 			this.versusMusic.stop();
+		this.flames.stop();
 	}
 }
