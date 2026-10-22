@@ -304,6 +304,7 @@ final class ArenaBullets {
 		RobotView victim = host.robots.get(bullet.victim());
 		if (bullet.state() == BattleRecording.BULLET_HIT_VICTIM && victim != null) {
 			victim.flash();
+			victim.rock(host.worldX(posX), host.worldZ(posY), bullet.power());
 			host.audio.hitAt(bullet.power(), host.worldX(posX), host.worldZ(posY));
 			host.hitTension = Math.min(0.25, host.hitTension + 0.08 + bullet.power() * 0.03);
 			host.shake += 3 + bullet.power() * 3;

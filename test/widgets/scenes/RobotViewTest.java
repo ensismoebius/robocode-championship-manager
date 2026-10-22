@@ -3,13 +3,16 @@ package widgets.scenes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 import model.Opponent;
 import support.ChampionshipFixture;
 import support.FxSupport;
@@ -172,6 +175,50 @@ class RobotViewTest {
 			robot.setColors(0xff00ffff, 0xff00ff00, 0xff0000ff);
 			assertEquals(Color.WHITE, robot.bodyMaterial.getDiffuseColor());
 			assertEquals(Color.rgb(0, 255, 255), robot.bodyColor);
+		});
+	}
+
+	@Test
+	void aHitRobotRocksAwayFromTheBulletAndComesToRest() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			robot.place(100, 50, 0, 0, 0);
+			// Struck on its right side
+			robot.rock(130, 50, 3);
+			robot.rocking.pause();
+			robot.rocking.jumpTo(Duration.millis(60));
+			Point3D top = robot.tank.localToParent(0, -25, 0);
+			assertTrue(top.getX() < -1, "the top leans away from the hit: " + top);
+			assertEquals(0, top.getZ(), 1e-6);
+			double strong = Math.abs(robot.tilt.getAngle());
+
+			// A weak bullet rocks it less
+			robot.rock(130, 50, 0.1);
+			robot.rocking.pause();
+			robot.rocking.jumpTo(Duration.millis(60));
+			assertTrue(Math.abs(robot.tilt.getAngle()) < strong);
+
+			// And it comes to rest, standing straight
+			robot.rocking.jumpTo(Duration.millis(420));
+			assertEquals(0, robot.tilt.getAngle(), 1e-6);
+		});
+	}
+
+	@Test
+	void aDestroyedRobotDoesNotRock() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			robot.destroy();
+			robot.rock(robot.position()[0] + 30, robot.position()[2], 3);
+
+			assertNull(robot.rocking);
+			assertEquals(0, robot.tilt.getAngle(), 1e-9);
 		});
 	}
 

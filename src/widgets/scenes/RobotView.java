@@ -22,7 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import javafx.animation.Animation;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -63,6 +68,9 @@ final class RobotView {
 	final Rotate bodyRotate = new Rotate(0, Rotate.Y_AXIS);
 	final Rotate gunRotate = new Rotate(0, Rotate.Y_AXIS);
 	final Rotate radarRotate = new Rotate(0, Rotate.Y_AXIS);
+	/** The whole tank tilts on the ground after a hit, around the axis the hit gives it */
+	final Rotate tilt = new Rotate(0, Rotate.X_AXIS);
+	Timeline rocking;
 	final PhongMaterial bodyMaterial;
 	final PhongMaterial gunMaterial;
 	final PhongMaterial radarMaterial;
@@ -137,6 +145,7 @@ final class RobotView {
 		this.buildTurret(materials);
 		this.buildRadar(materials, this.radarMaterial);
 		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
+		this.tank.getTransforms().add(this.tilt);
 
 		// The pieces thrown by the blast stay here, beside the wreck
 		this.debris = new Group();
@@ -475,10 +484,53 @@ final class RobotView {
 	}
 
 	/**
+	 * Rocks with the hit: the tank tilts away from where the bullet struck, the
+	 * more the stronger the bullet, and sways back to rest in a moment. A new hit
+	 * starts the rocking again.
+	 *
+	 * @param hitX
+	 *            where the bullet struck, in the arena
+	 * @param power
+	 *            of the bullet, 0.1 to 3
+	 */
+	void rock(double hitX, double hitZ, double power) {
+		if (this.dead) {
+			return;
+		}
+		double towardX = hitX - this.root.getTranslateX();
+		double towardZ = hitZ - this.root.getTranslateZ();
+		double length = Math.hypot(towardX, towardZ);
+		if (length < 1e-6) {
+			towardX = 0;
+			towardZ = 1;
+			length = 1;
+		}
+		this.settle();
+		// Turning around this axis, the top of the tank goes away from the hit
+		this.tilt.setAxis(new Point3D(towardZ / length, 0, -towardX / length));
+		double peak = Math.min(10, 3.5 + power * 2.2);
+		this.rocking = new Timeline(new KeyFrame(Duration.millis(60), new KeyValue(this.tilt.angleProperty(), peak, Interpolator.EASE_OUT)),
+				new KeyFrame(Duration.millis(180), new KeyValue(this.tilt.angleProperty(), -peak * 0.45, Interpolator.EASE_BOTH)),
+				new KeyFrame(Duration.millis(290), new KeyValue(this.tilt.angleProperty(), peak * 0.18, Interpolator.EASE_BOTH)),
+				new KeyFrame(Duration.millis(420), new KeyValue(this.tilt.angleProperty(), 0, Interpolator.EASE_BOTH)));
+		host.fx.effect(this.rocking).play();
+	}
+
+	/** Stops the rocking, the tank standing straight */
+	void settle() {
+		if (this.rocking != null) {
+			this.rocking.stop();
+			this.rocking = null;
+		}
+		this.tilt.setAngle(0);
+	}
+
+	/**
 	 * Blows up in its own colors: fireballs, shock waves seen as bubbles, smoke,
 	 * debris, the hull, the turret and the radar thrown across the arena
 	 */
 	void destroy() {
+		this.settle();
 		RobotWreck.destroy(this);
 	}
 
@@ -517,6 +569,7 @@ final class RobotView {
 		this.armor.restore();
 		this.dead = false;
 		this.flashing = false;
+		this.settle();
 		this.tank.setVisible(true);
 		this.debris.getChildren().clear();
 		this.bodyMaterial.setDiffuseColor(this.bodyColor);
