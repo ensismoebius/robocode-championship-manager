@@ -19,6 +19,7 @@ import static widgets.scenes.RobotTreads.sidePoint;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javafx.animation.Animation;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Pos;
@@ -73,6 +74,8 @@ final class RobotView {
 	final Label nameLabel;
 	final String displayName;
 	final List<Animation> running = new ArrayList<Animation>();
+	/** The hexagonal plates, which come off as the robot loses energy */
+	final RobotArmor armor;
 	/** Parts that shine by themselves, and the pictures that make them shine */
 	final List<PhongMaterial> glows = new ArrayList<PhongMaterial>();
 	final List<Image> glowMaps = new ArrayList<Image>();
@@ -118,6 +121,8 @@ final class RobotView {
 		PhongMaterial steel = material(Color.web("#6c7488"));
 		steel.setSpecularPower(50);
 		Materials materials = new Materials(material(Color.web("#171b26")), material(Color.web("#2d3345")), steel, this.glow(Color.web("#38e6ff")), this.glow(this.playerColor), this.glow(Color.web("#fff6c8")), this.glow(Color.web("#ff3b3b")));
+		// The same robot loses the same plates in every replay
+		this.armor = new RobotArmor(this, Objects.hash(robot.getName(), order));
 		this.buildBody(materials);
 		this.buildTurret(materials);
 		this.buildRadar(materials, radarMaterial);
@@ -140,8 +145,6 @@ final class RobotView {
 		this.body.getTransforms().add(this.bodyRotate);
 		LowPoly hull = new LowPoly();
 		LowPoly tracks = new LowPoly();
-		LowPoly armor = new LowPoly();
-		LowPoly plates = new LowPoly();
 		LowPoly glowCyan = new LowPoly();
 		LowPoly glowIdentity = new LowPoly();
 		LowPoly glowWarning = new LowPoly();
@@ -156,9 +159,9 @@ final class RobotView {
 			this.addTreadLinks(side < 0 ? 0 : 1, materials);
 			// Hexagonal armor under the skirt, fixed to the hull
 			for (double posZ = -15; posZ <= 15; posZ += 6) {
-				armor.hexPlate(posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
+				this.armor.plate(this.body, materials.steel(), posZ, -3, 2.6, 2.6, Math.min(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)), Math.max(side * (BELT_OUTER + 0.2), side * (BELT_OUTER + 0.9)));
 			}
-			this.addSkirt(side, hull, plates);
+			this.addSkirt(side, hull, materials.plate());
 			// A strip of light in the color of the player, lamps and rear lights
 			glowIdentity.box(side * 19.7, -11.2, -13, 0.7, 0.9, 9);
 			glowLamp.box(side * 8.5, -10.4, 22.3, 3, 1.2, 1);
@@ -168,7 +171,7 @@ final class RobotView {
 		for (double posX = -4; posX <= 4; posX += 4) {
 			glowCyan.box(posX, -14.9, -19.5, 2, 0.5, 2.4); // vents on the engine deck
 		}
-		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()), armor.view(materials.steel()), plates.view(materials.plate()), glowCyan.view(materials.cyan()), glowIdentity.view(materials.identity()),
+		this.body.getChildren().addAll(hull.view(this.bodyMaterial), tracks.view(materials.dark()), glowCyan.view(materials.cyan()), glowIdentity.view(materials.identity()),
 				glowWarning.view(materials.warning()), glowLamp.view(materials.lamp()));
 	}
 
@@ -187,13 +190,13 @@ final class RobotView {
 	}
 
 	/** The skirt over one track: it leans out at the top, with two rows of hexagonal plates on it */
-	private void addSkirt(int side, LowPoly hull, LowPoly plates) {
+	private void addSkirt(int side, LowPoly hull, PhongMaterial plateMaterial) {
 		hull.prismXY(new double[][] { { side * 13, -5 }, { side * 17.5, -5 }, { side * 19.5, -12.5 }, { side * 13, -12.5 } }, -19, 19);
 		for (int row = 0; row < 2; row++) {
 			double posY = row == 0 ? -10 : -7.2;
 			double face = 17.5 + (-5 - posY) / 7.5 * 2;
 			for (double posZ2 = row == 0 ? -15 : -12; posZ2 <= 16; posZ2 += 6) {
-				plates.hexPlate(posZ2, posY, 2.9, 2.5, Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
+				this.armor.plate(this.body, plateMaterial, posZ2, posY, 2.9, 2.5,Math.min(side * (face - 0.2), side * (face + 0.5)), Math.max(side * (face - 0.2), side * (face + 0.5)));
 			}
 		}
 	}
@@ -205,7 +208,6 @@ final class RobotView {
 		this.turret.getTransforms().add(this.gunRotate);
 		LowPoly shell = new LowPoly();
 		LowPoly barrel = new LowPoly();
-		LowPoly turretPlates = new LowPoly();
 		LowPoly turretCyan = new LowPoly();
 		LowPoly turretWarning = new LowPoly();
 		shell.frustum(new double[][] { { -9, -12 }, { 9, -12 }, { 12, -3 }, { 10, 6 }, { 4, 12 }, { -4, 12 }, { -10, 6 }, { -12, -3 } }, -14.8, -19.5, 0.72);
@@ -220,7 +222,7 @@ final class RobotView {
 				double time = (posY + 14.8) / -4.7;
 				double edge = posZ < -3 ? 9 + (posZ + 12) / 3 : 12 - (posZ + 3) * 2 / 9;
 				double face = edge * (1 - 0.28 * time);
-				turretPlates.hexPlate(posZ, posY, 2.3, 1.9, Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
+				this.armor.plate(this.turret, materials.plate(), posZ, posY, 2.3, 1.9,Math.min(side * (face - 0.4), side * (face + 0.45)), Math.max(side * (face - 0.4), side * (face + 0.45)));
 			}
 			turretCyan.box(side * 5.2, -17.6, 11.5, 1.8, 1.2, 1); // sensors on the cheeks
 			turretWarning.cylinderY(side * 7, -9, 0.9, -26, -26.9, 5); // lights on the antennas
@@ -237,7 +239,7 @@ final class RobotView {
 		turretCyan.box(-4.6, -23.2, -1.6, 1.4, 0.9, 0.6);
 		shell.frustum(new double[][] { { 3, -4 }, { 6, -4 }, { 6, -1 }, { 3, -1 } }, -21, -22.6, 0.7);
 		turretCyan.box(4.5, -22, -0.8, 1.6, 0.8, 0.4);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretPlates.view(materials.plate()), turretCyan.view(materials.cyan()), turretWarning.view(materials.warning()));
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()), turretCyan.view(materials.cyan()), turretWarning.view(materials.warning()));
 	}
 
 	/** The radar: a flat panel on a mast, turning over the roof */
@@ -293,10 +295,11 @@ final class RobotView {
 		}
 	}
 
-	/** Sets the energy. */
+	/** Sets the energy: the bar over the robot, and the armor, which comes off as the energy goes. */
 	void setEnergy(double energy) {
 		this.energy = energy;
 		this.energyFill.setMaxWidth(90 * Math.max(0, Math.min(1, energy / 100)));
+		this.armor.wear(energy);
 	}
 
 	/**
@@ -428,6 +431,7 @@ final class RobotView {
 			animation.stop();
 		}
 		this.running.clear();
+		this.armor.restore();
 		this.dead = false;
 		this.tank.setVisible(true);
 		this.debris.getChildren().clear();
