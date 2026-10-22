@@ -1,9 +1,9 @@
 package widgets.scenes;
 
 import static widgets.scenes.ArenaMaterials.argb;
-import widgets.scenes.BattleArena3D.BattlePhoto;
-import widgets.scenes.BattleArena3D.PendingPhoto;
-import widgets.scenes.BattleArena3D.Phase;
+import widgets.scenes.BattlePhoto;
+import widgets.scenes.PendingPhoto;
+import widgets.scenes.Phase;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;

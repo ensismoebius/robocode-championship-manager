@@ -1,8 +1,10 @@
 package widgets.scenes;
 
+import tournament.Importance;
+
 import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
 import static widgets.scenes.BattleArena3D.SPEEDS;
-import static widgets.scenes.BattleArena3D.toCss;
+import static widgets.scenes.ArenaHelpers.toCss;
 
 import java.util.HashMap;
 import java.util.List;
@@ -296,7 +298,7 @@ final class ArenaHud {
 		host.viewLabel.setText("◉ " + host.viewMode.label);
 		if (host.recording != null) {
 			boolean knockout = Configuration.getWinnerCriterion().isKnockout();
-			String stage = host.stageImportance == Bracket.Importance.REGULAR ? "" : host.stageName + " · ";
+			String stage = host.stageImportance == Importance.REGULAR ? "" : host.stageName + " · ";
 			host.roundLabel.setText(stage + "ROUND " + (host.round + 1) + (knockout ? " · MELHOR DE " + Configuration.getRobocodeRounds() : "/" + host.recording.getRounds().size()));
 		}
 	}

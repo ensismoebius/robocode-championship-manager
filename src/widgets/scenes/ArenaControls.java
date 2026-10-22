@@ -1,8 +1,8 @@
 package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.SPEEDS;
-import widgets.scenes.BattleArena3D.Phase;
-import widgets.scenes.BattleArena3D.ViewMode;
+import widgets.scenes.Phase;
+import widgets.scenes.ViewMode;
 
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;

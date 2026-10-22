@@ -17,7 +17,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import model.Opponent;
-import tournament.Bracket.Match;
+import tournament.Match;
 import support.ChampionshipFixture;
 import support.FxSupport;
 import support.TestConfiguration;

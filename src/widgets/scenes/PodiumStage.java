@@ -96,7 +96,7 @@ final class PodiumStage extends Pane {
 
 	/** The picture and the names of the robot, in its column of the podium */
 	private VBox buildFigure(int place, Color color, Opponent opponent) {
-		ImageView image = host.image(opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, Podium.COLUMN_WIDTH, false);
+		ImageView image = PodiumPieces.image(host, opponent, place == 1 ? 0.31 : place == 2 ? 0.27 : 0.24, Podium.COLUMN_WIDTH, false);
 		image.setEffect(new DropShadow(30, color));
 		this.images[place] = image;
 		Label name = new Label(opponent.getName().toUpperCase());
@@ -128,7 +128,7 @@ final class PodiumStage extends Pane {
 			if (this.figures[place] == null) {
 				continue;
 			}
-			Group trophy = Podium.trophy(PLACE_COLORS[place]);
+			Group trophy = PodiumTrophy.trophy(PLACE_COLORS[place]);
 			trophy.scaleXProperty().bind(host.heightProperty().multiply(this.trophyScales[place]));
 			trophy.scaleYProperty().bind(host.heightProperty().multiply(this.trophyScales[place]));
 			trophy.setVisible(false);
@@ -227,7 +227,7 @@ final class PodiumStage extends Pane {
 	/** Shows the figure of a place: its banner, its step and its colour. */
 	void show(int place) {
 		this.setBanner(place);
-		host.animate(Podium.slam(this.banner, 0, 550)).play();
+		host.animate(PodiumAnimations.slam(this.banner, 0, 550)).play();
 		this.spots[place].setOpacity(0);
 		host.animate(new Timeline(new KeyFrame(Duration.millis(500), new KeyValue(this.spots[place].opacityProperty(), 1)))).play();
 		this.dropFigure(place);

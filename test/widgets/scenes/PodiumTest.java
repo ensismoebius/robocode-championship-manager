@@ -99,16 +99,16 @@ class PodiumTest {
 		List<Opponent> podium = ChampionshipFixture.opponents(3);
 		Podium ceremony = FxSupport.run(() -> new Podium(podium, MOMENTS, ChampionshipFixture.byId(podium)));
 		FxSupport.runVoid(() -> {
-			Group cup = Podium.trophy(Color.GOLD);
+			Group cup = PodiumTrophy.trophy(Color.GOLD);
 			assertNotNull(cup);
 			Node sparkle = new Box(1, 1, 1);
 			ceremony.sparkles(cup);
 			for (Animation animation : List.of(
-					Podium.slam(sparkle, 0, 100),
-					Podium.drop(sparkle, 0, 100),
-					Podium.zoomSpin(sparkle, 0, 100),
-					Podium.delayed(0.1, Podium.rise(sparkle, 0), Podium.slam(sparkle, 0, 50)),
-					Podium.rise(sparkle, 0))) {
+					PodiumAnimations.slam(sparkle, 0, 100),
+					PodiumAnimations.drop(sparkle, 0, 100),
+					PodiumAnimations.zoomSpin(sparkle, 0, 100),
+					PodiumAnimations.delayed(0.1, PodiumAnimations.rise(sparkle, 0), PodiumAnimations.slam(sparkle, 0, 50)),
+					PodiumAnimations.rise(sparkle, 0))) {
 				assertNotNull(animation);
 				animation.play();
 				animation.stop();

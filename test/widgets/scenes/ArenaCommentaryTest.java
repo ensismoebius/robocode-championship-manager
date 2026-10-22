@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import javafx.scene.control.Label;
 import support.DialogFields;
 import support.FxSupport;
-import widgets.scenes.BattleArena3D.Phase;
+import widgets.scenes.Phase;
 import widgets.scenes.BattleCommentary.Message;
 import widgets.scenes.BattleCommentary.Tone;
 

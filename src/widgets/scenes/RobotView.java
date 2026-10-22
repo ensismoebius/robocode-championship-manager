@@ -1,30 +1,26 @@
 package widgets.scenes;
 
-import static widgets.scenes.BattleArena3D.BURN_ENERGY;
-import static widgets.scenes.BattleArena3D.BURN_SPOTS;
-import static widgets.scenes.ArenaMaterials.CRYSTAL;
 import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
 import static widgets.scenes.ArenaMaterials.argb;
 import static widgets.scenes.ArenaMaterials.energy;
-import static widgets.scenes.ArenaMaterials.grow;
 import static widgets.scenes.ArenaMaterials.material;
 import static widgets.scenes.ArenaMaterials.paint;
-import static widgets.scenes.ArenaMaterials.shape;
-import static widgets.scenes.ArenaMaterials.shrink;
-import static widgets.scenes.BattleArena3D.toCss;
+import static widgets.scenes.ArenaHelpers.toCss;
+import static widgets.scenes.RobotTreads.TREAD_LINKS;
+import static widgets.scenes.RobotTreads.BELT;
+import static widgets.scenes.RobotTreads.BELT_LENGTH;
+import static widgets.scenes.RobotTreads.BELT_INNER;
+import static widgets.scenes.RobotTreads.BELT_OUTER;
+import static widgets.scenes.RobotTreads.BELT_CENTER;
+import static widgets.scenes.RobotTreads.BELT_WIDTH;
+import static widgets.scenes.RobotTreads.beltPoint;
+import static widgets.scenes.RobotTreads.sidePoint;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import javafx.animation.Animation;
-import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
-import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -38,14 +34,11 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 import model.Opponent;
 import utils.robocode.BattleRecording;
-import widgets.scenes.ArenaFire.Particle;
-import widgets.scenes.ArenaFire.ParticleKind;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -58,65 +51,7 @@ import widgets.scenes.ArenaFire.ParticleKind;
  */
 final class RobotView {
 
-	private final BattleArena3D host;
-
-	/** The links of a tread, which go round the belt of their side of the hull */
-	private static final int TREAD_LINKS = 30;
-	/** The belt in the side view, as a closed outline: its back, up, over the top, down and back along the bottom */
-	private static final double[][] BELT = { { -20, -1 }, { -21.5, -4 }, { -19.5, -9 }, { 18.5, -9 }, { 21.5, -4 }, { 20, -1 } };
-	/** The length of the outline: one turn of the belt */
-	private static final double BELT_LENGTH = beltLength();
-	/** The width of a belt, sideways, from its inner face to its outer one, where the links are */
-	private static final double BELT_INNER = 8;
-	private static final double BELT_OUTER = 17.5;
-	private static final double BELT_CENTER = (BELT_INNER + BELT_OUTER) / 2;
-	private static final double BELT_WIDTH = BELT_OUTER - BELT_INNER;
-
-	/** The length of the belt of the tracks, around the wheels. */
-	private static double beltLength() {
-		double length = 0;
-		for (int index = 0; index < BELT.length; index++) {
-			double[] first = BELT[index];
-			double[] second = BELT[(index + 1) % BELT.length];
-			length += Math.hypot(second[0] - first[0], second[1] - first[1]);
-		}
-		return length;
-	}
-
-	/**
-	 * Where a link is on the belt, s from 0 to BELT_LENGTH along its outline: its z
-	 * and its y in the body, and the angle of the outline there (turned round x).
-	 * The links follow the shape of the track, its chamfers included.
-	 */
-	private static double[] beltPoint(double text) {
-		double rest = text;
-		for (int index = 0; index < BELT.length - 1; index++) {
-			double[] first = BELT[index];
-			double[] second = BELT[index + 1];
-			double deltaZ = second[0] - first[0];
-			double deltaY = second[1] - first[1];
-			double length = Math.hypot(deltaZ, deltaY);
-			if (rest <= length) {
-				return new double[] { first[0] + deltaZ * rest / length, first[1] + deltaY * rest / length, Math.atan2(-deltaY, deltaZ) };
-			}
-			rest -= length;
-		}
-		// The last piece of the outline, back to its start
-		double[] first2 = BELT[BELT.length - 1];
-		double[] second2 = BELT[0];
-		double deltaZ2 = second2[0] - first2[0];
-		double deltaY2 = second2[1] - first2[1];
-		double length = Math.hypot(deltaZ2, deltaY2);
-		return new double[] { first2[0] + deltaZ2 * rest / length, first2[1] + deltaY2 * rest / length, Math.atan2(-deltaY2, deltaZ2) };
-	}
-
-	/**
-	 * A point on one side of the hull, in the arena (side 0 is the left)
-	 */
-	private static double[] sidePoint(double posX, double posZ, double heading, int side) {
-		double sideways = side == 0 ? -BELT_CENTER : BELT_CENTER;
-		return new double[] { posX + sideways * Math.cos(heading), posZ - sideways * Math.sin(heading) };
-	}
+	final BattleArena3D host;
 
 	final Group root = new Group();
 	final Group tank = new Group();
@@ -372,67 +307,7 @@ final class RobotView {
 	 *            seconds, slower in the replay
 	 */
 	void burn(double deltaTime) {
-		double damage = this.dead ? 0 : Math.max(0, Math.min(1, (BURN_ENERGY - this.energy) / BURN_ENERGY));
-		if (damage <= 0 || !this.root.isVisible()) {
-			this.flameDebt = this.smokeDebt = this.sparkDebt = 0;
-			this.lastX = Double.NaN;
-			return;
-		}
-		// The flames go with the robot, the smoke stays behind as a trail
-		double posX = this.root.getTranslateX();
-		double posZ = this.root.getTranslateZ();
-		this.trackSpeed(deltaTime, posX, posZ);
-		this.lastX = posX;
-		this.lastZ = posZ;
-
-		int spots = damage < 0.3 ? 1 : damage < 0.6 ? 2 : 3;
-		double heading = Math.toRadians(this.bodyRotate.getAngle());
-		double cos = Math.cos(heading);
-		double sin = Math.sin(heading);
-
-		this.flameDebt += deltaTime * (40 + 70 * damage);
-		this.smokeDebt += deltaTime * (5 + 16 * damage);
-		this.sparkDebt += deltaTime * (1.5 + 7 * damage);
-		while (this.flameDebt >= 1 || this.smokeDebt >= 1 || this.sparkDebt >= 1) {
-			this.burnPart(posX, posZ, spots, damage, cos, sin);
-		}
-	}
-
-	/** The speed of the robot, eased over the frames, from how far it moved since the last one */
-	private void trackSpeed(double deltaTime, double posX, double posZ) {
-		if (deltaTime > 0) {
-			double sxValue = Double.isNaN(this.lastX) ? 0 : (posX - this.lastX) / deltaTime;
-			double szValue = Double.isNaN(this.lastX) ? 0 : (posZ - this.lastZ) / deltaTime;
-			// A jump (new round, replay) is not a movement
-			if (Math.hypot(sxValue, szValue) * deltaTime > 60) {
-				sxValue = szValue = 0;
-			}
-			double ease = 1 - Math.exp(-12 * deltaTime);
-			this.speedX += (sxValue - this.speedX) * ease;
-			this.speedZ += (szValue - this.speedZ) * ease;
-		}
-	}
-
-	/** One piece of the fire: a flame that stays with the robot, or smoke or sparks that stay behind it */
-	private void burnPart(double posX, double posZ, int spots, double damage, double cos, double sin) {
-		// A burning spot of the hull, turning with the body
-		double[] spot = BURN_SPOTS[host.random.nextInt(spots)];
-		double lxValue = spot[0] + (host.random.nextDouble() - 0.5) * 6;
-		double lzValue = spot[2] + (host.random.nextDouble() - 0.5) * 6;
-		double wxValue = posX + lxValue * cos + lzValue * sin;
-		double wzValue = posZ - lxValue * sin + lzValue * cos;
-		if (this.flameDebt >= 1) {
-			this.flameDebt--;
-			// Anchored to the robot, its position is relative to it
-			Particle flame = host.fire.spawn(ParticleKind.FLAME, wxValue - posX, spot[1], wzValue - posZ, damage);
-			flame.anchor = this;
-		} else if (this.smokeDebt >= 1) {
-			this.smokeDebt--;
-			host.fire.spawn(ParticleKind.SMOKE, wxValue, spot[1] - 6, wzValue, damage).inherit(this.speedX * 0.15, this.speedZ * 0.15);
-		} else {
-			this.sparkDebt--;
-			host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(this.speedX * 0.3, this.speedZ * 0.3);
-		}
+		RobotFire.burn(this, deltaTime);
 	}
 
 	/**
@@ -518,124 +393,7 @@ final class RobotView {
 	 * debris, the hull, the turret and the radar thrown across the arena
 	 */
 	void destroy() {
-		if (this.dead) {
-			return;
-		}
-		this.dead = true;
-		double posX = this.root.getTranslateX();
-		double posZ = this.root.getTranslateZ();
-		Group blast = new Group();
-		blast.setTranslateX(posX);
-		blast.setTranslateZ(posZ);
-		ParallelTransition all = new ParallelTransition();
-		Color tint = this.playerColor;
-		this.burst(blast, all, tint);
-		this.smoke(posX, posZ);
-		this.throwDebris(all);
-		this.throwTurretAndRadar(all);
-		this.throwHull(all);
-
-		host.effects.getChildren().add(blast);
-		host.fx.effect(all).setOnFinished(event -> host.effects.getChildren().remove(blast));
-		this.running.add(all);
-		all.play();
-		host.fx.lightFlash(posX, posZ, tint, 1.4);
-
-		this.nameLabel.setText("☠ " + this.displayName);
-		this.balloon.setOpacity(0.6);
-	}
-
-	/** The flash of the blast, a bolt from the sky, the shock waves, the discharges of lightning and the sparks */
-	private void burst(Group blast, ParallelTransition all, Color tint) {
-		Color hot = tint.interpolate(Color.WHITE, 0.85);
-		MeshView core = shape(CRYSTAL, energy(Color.WHITE, 0.85));
-		core.setTranslateY(-20);
-		blast.getChildren().add(core);
-		all.getChildren().addAll(grow(core, 2, 9, 140), shrink(core, 140, 180));
-		double[] center = { 0, -20, 0 };
-		// The bolt from the sky strikes first
-		LowPoly strikeGlow = new LowPoly();
-		LowPoly strikeCore = new LowPoly();
-		host.fx.bolt(strikeGlow, strikeCore, new double[] { 0, -420, 0 }, center, 0.6, 0);
-		Group strike = new Group(shape(strikeGlow.mesh, energy(tint.interpolate(Color.web("#8fe9ff"), 0.5), 0.45)), shape(strikeCore.mesh, energy(Color.WHITE, 1)));
-		blast.getChildren().add(strike);
-		all.getChildren().add(new Timeline(new KeyFrame(Duration.millis(120), event -> strike.setVisible(false))));
-		// The shock wave: rings spreading on the floor from the wreck
-		Color air = tint.interpolate(Color.WHITE, 0.7);
-		host.fx.shockwave(blast, all, -1, 300, 0, 900, air);
-		host.fx.shockwave(blast, all, -1, 210, 160, 750, Color.web("#8fe9ff"));
-		host.fx.shockwave(blast, all, -1, 130, 0, 500, Color.WHITE);
-		host.fx.discharge(blast, all, center, -1, 9, 110, 0.4, tint, 60);
-		host.fx.discharge(blast, all, center, -1, 7, 90, 0.35, tint, 400);
-		host.fx.discharge(blast, all, center, -1, 6, 120, 0.38, tint, 800);
-		host.fx.sparks(blast, all, center, -1, 40, 120, 1.1, Color.web("#fff3b0"), 1100);
-		host.fx.sparks(blast, all, center, -1, 18, 80, 0.9, hot, 1500);
-	}
-
-	/** The smoke rising from the wreck: particles, like the fire of the burning robots, thick and dark since it is destroyed */
-	private void smoke(double posX, double posZ) {
-		// The smoke rising from the wreck: particles, like the fire of the burning robots,
-		// thick and dark since it is destroyed
-		Timeline smoke = new Timeline();
-		for (int index = 0; index < 40; index++) {
-			smoke.getKeyFrames().add(new KeyFrame(Duration.millis(index * 90), event -> {
-				for (int puff = 0; puff < 2; puff++) {
-					host.fire.spawn(ParticleKind.SMOKE, posX + (host.random.nextDouble() - 0.5) * 40, -20, posZ + (host.random.nextDouble() - 0.5) * 40, 0.8);
-				}
-			}));
-		}
-		this.running.add(smoke);
-		smoke.play();
-	}
-
-	/** Debris in the colors of the robot, thrown across the arena */
-	private void throwDebris(ParallelTransition all) {
-		PhongMaterial[] colors = { this.bodyMaterial, this.gunMaterial, new PhongMaterial(Color.web("#22252e")), new PhongMaterial(Color.web("#ffb000")) };
-		for (int index = 0; index < 26; index++) {
-			double angle = Math.PI * 2 * index / 26 + host.random.nextDouble() * 0.3;
-			double size = 3 + host.random.nextDouble() * 5;
-			Box piece = new Box(size, size, size);
-			piece.setMaterial(colors[index % colors.length]);
-			piece.setTranslateY(-15);
-			this.debris.getChildren().add(piece);
-			double reach = 120 + host.random.nextDouble() * 180;
-			all.getChildren().add(host.fx.fly(piece, Math.cos(angle) * reach, Math.sin(angle) * reach, 70 + host.random.nextDouble() * 120, 1500));
-		}
-	}
-
-	/** The turret and the radar are thrown in the air */
-	private void throwTurretAndRadar(ParallelTransition all) {
-		// The turret and the radar are thrown in the air
-		double throwAngle = host.random.nextDouble() * Math.PI * 2;
-		this.turret.setRotationAxis(new Point3D(1, 0, 0.4));
-		this.radar.setRotationAxis(new Point3D(0.3, 0, 1));
-		Timeline thrown = new Timeline( //
-				new KeyFrame(Duration.millis(550), new KeyValue(this.turret.translateYProperty(), -140, Interpolator.EASE_OUT), new KeyValue(this.radar.translateYProperty(), -190, Interpolator.EASE_OUT)), //
-				new KeyFrame(Duration.millis(1400), //
-						new KeyValue(this.turret.translateYProperty(), 14, Interpolator.EASE_IN), //
-						new KeyValue(this.turret.translateXProperty(), Math.cos(throwAngle) * 170, Interpolator.EASE_OUT), //
-						new KeyValue(this.turret.translateZProperty(), Math.sin(throwAngle) * 170, Interpolator.EASE_OUT), //
-						new KeyValue(this.turret.rotateProperty(), 720, Interpolator.LINEAR), //
-						new KeyValue(this.radar.translateYProperty(), 24, Interpolator.EASE_IN), //
-						new KeyValue(this.radar.translateXProperty(), -Math.cos(throwAngle) * 200, Interpolator.EASE_OUT), //
-						new KeyValue(this.radar.translateZProperty(), -Math.sin(throwAngle) * 200, Interpolator.EASE_OUT), //
-						new KeyValue(this.radar.rotateProperty(), -900, Interpolator.LINEAR)));
-		all.getChildren().add(thrown);
-	}
-
-	/** The hull is thrown too: it flies over the arena, turns over and lands tilted */
-	private void throwHull(ParallelTransition all) {
-		// The hull is thrown too: it flies over the arena, turns over and lands tilted
-		double hullAngle = host.random.nextDouble() * Math.PI * 2;
-		double hullReach = 130 + host.random.nextDouble() * 80;
-		double hullX = Math.cos(hullAngle) * hullReach;
-		double hullZ = Math.sin(hullAngle) * hullReach;
-		this.body.setRotationAxis(new Point3D(-Math.sin(hullAngle), 0, Math.cos(hullAngle)));
-		all.getChildren().add(new Timeline( //
-				new KeyFrame(Duration.millis(450), new KeyValue(this.body.translateYProperty(), -80, Interpolator.EASE_OUT), new KeyValue(this.body.translateXProperty(), hullX * 0.5, Interpolator.EASE_OUT),
-						new KeyValue(this.body.translateZProperty(), hullZ * 0.5, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 60, Interpolator.LINEAR)), //
-				new KeyFrame(Duration.millis(1300), new KeyValue(this.body.translateYProperty(), 0, Interpolator.EASE_IN), new KeyValue(this.body.translateXProperty(), hullX, Interpolator.EASE_OUT),
-						new KeyValue(this.body.translateZProperty(), hullZ, Interpolator.EASE_OUT), new KeyValue(this.body.rotateProperty(), 35, Interpolator.EASE_OUT))));
+		RobotWreck.destroy(this);
 	}
 
 	/**

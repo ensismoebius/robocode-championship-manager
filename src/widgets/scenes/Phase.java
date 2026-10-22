@@ -1,0 +1,6 @@
+package widgets.scenes;
+
+
+enum Phase {
+	LOADING, SHOWCASE, FLYBY, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
+}

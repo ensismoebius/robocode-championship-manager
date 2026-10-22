@@ -4,8 +4,9 @@ import java.util.List;
 import model.Opponent;
 import model.BattleMoment;
 import tournament.BattleMomentService;
-import tournament.Bracket.Match;
+import tournament.Match;
 import widgets.scenes.BattleArena3D;
+import widgets.scenes.BattlePhoto;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -26,7 +27,7 @@ final class MatchPhotos {
 	 */
 	static void keep(long championshipId, BattleArena3D arena, Match match, List<Opponent> fighters) {
 		List<BattleMoment> moments = new ArrayList<BattleMoment>();
-		for (BattleArena3D.BattlePhoto photo : arena.photos()) {
+		for (BattlePhoto photo : arena.photos()) {
 			if (photo.subject() == null) {
 				continue;
 			}

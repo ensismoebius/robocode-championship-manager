@@ -22,7 +22,7 @@ class ArenaMaterialsTest {
 
 	@Test
 	void theSkyIsAHugeDomeSeenFromInside() {
-		Image picture = FxSupport.run(() -> BattleArena3D.solidMap(Color.NAVY));
+		Image picture = FxSupport.run(() -> ArenaHelpers.solidMap(Color.NAVY));
 
 		Sphere sky = FxSupport.run(() -> ArenaMaterials.skyDome(picture));
 
@@ -38,7 +38,7 @@ class ArenaMaterialsTest {
 	@Test
 	void materialsKeepTheirLookAndTheirColor() {
 		FxSupport.runVoid(() -> {
-			PhongMaterial texture = ArenaMaterials.textured(BattleArena3D.solidMap(Color.GREEN), Color.WHITE);
+			PhongMaterial texture = ArenaMaterials.textured(ArenaHelpers.solidMap(Color.GREEN), Color.WHITE);
 			assertEquals(40, texture.getSpecularPower(), 1e-9);
 			assertEquals(Color.WHITE, texture.getSpecularColor());
 

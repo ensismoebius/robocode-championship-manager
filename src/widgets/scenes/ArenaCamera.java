@@ -1,5 +1,7 @@
 package widgets.scenes;
 
+import tournament.Side;
+
 import static widgets.scenes.BattleArena3D.FLYBY_SECONDS;
 import static widgets.scenes.ArenaMaterials.energy;
 
@@ -8,9 +10,9 @@ import java.util.Map;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
-import widgets.scenes.BattleArena3D.Phase;
-import widgets.scenes.BattleArena3D.Shot;
-import widgets.scenes.BattleArena3D.ViewMode;
+import widgets.scenes.Phase;
+import widgets.scenes.Shot;
+import widgets.scenes.ViewMode;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

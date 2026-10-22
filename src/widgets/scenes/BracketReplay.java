@@ -23,9 +23,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polyline;
 import javafx.util.Duration;
-import tournament.Bracket.Match;
-import tournament.Bracket.Slot;
-import tournament.Bracket.Status;
+import tournament.Match;
+import tournament.Slot;
+import tournament.Status;
 import widgets.Sfx;
 import widgets.Theme;
 

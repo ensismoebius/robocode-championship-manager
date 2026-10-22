@@ -1,23 +1,16 @@
 package jetty.servlets;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.imageio.ImageIO;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.Part;
+import jetty.servlets.RobotUploads.Upload;
 import model.Author;
 import model.Opponent;
 import utils.configuration.Configuration;
@@ -26,7 +19,6 @@ import utils.text.TextTemplate;
 import utils.web.Html;
 import utils.web.PasswordHasher;
 import utils.web.ServletAuthenticator;
-import widgets.Sound;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -40,9 +32,6 @@ public class RobotEditor extends HttpServlet {
 
 	private static final long serialVersionUID = 4848049705802230040L;
 
-	private static final int MAX_FILE_SIZE = 1024 * 1024;
-	private static final int MAX_LOGO_WIDTH = 640;
-	private static final int MAX_LOGO_HEIGHT = 480;
 	private static final int MAX_NAME_LENGTH = 100;
 
 	private static final String ACTION_NEW = "new";
@@ -55,12 +44,6 @@ public class RobotEditor extends HttpServlet {
 	private static final Pattern JAR_FILE_NAME = Pattern.compile("^([^.]+)\\.(.+?)_[0-9][0-9.]*\\.jar$");
 	private static final Pattern TEAM_NAME = Pattern.compile("[A-Za-z0-9_]{1," + MAX_NAME_LENGTH + "}");
 	private static final Pattern ROBOT_NAME = Pattern.compile("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)*");
-
-	/**
-	 * An uploaded file
-	 */
-	private record Upload(String fileName, byte[] content) {
-	}
 
 	/** Shows the robot editor for the logged author: the form of a new robot or of the robot being edited. */
 	@Override
@@ -239,32 +222,15 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/**
-	 * Reads an uploaded file
-	 *
-	 * @return the file or null if no file was sent
-	 */
-	private Upload readUpload(HttpServletRequest req, String name) throws IOException, ServletException {
-		Part part = req.getPart(name);
-		if (part == null || part.getSubmittedFileName() == null || part.getSubmittedFileName().isEmpty()) {
-			return null;
-		}
-
-		String fileName = Paths.get(part.getSubmittedFileName()).getFileName().toString();
-		try (InputStream content = part.getInputStream()) {
-			return new Upload(fileName, content.readAllBytes());
-		}
-	}
-
-	/**
 	 * Checks the files sent with the form: the robot and the team files are required on a new robot, and the
 	 * names of the robot and the team come from the .jar file name, when it is sent
 	 */
 	private Names checkUploads(List<String> errors, boolean isNew, Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
-		requireFiles(errors, isNew, robotJar, robotJava, teamMusic, teamLogo);
+		RobotUploads.requireFiles(errors, isNew, robotJar, robotJava, teamMusic, teamLogo);
 		Names names = checkJar(errors, robotJar, robot);
-		checkJava(errors, robotJava);
-		checkMusic(errors, teamMusic);
-		checkLogo(errors, teamLogo);
+		RobotUploads.checkJava(errors, robotJava);
+		RobotUploads.checkMusic(errors, teamMusic);
+		RobotUploads.checkLogo(errors, teamLogo);
 		return names;
 	}
 
@@ -287,10 +253,10 @@ public class RobotEditor extends HttpServlet {
 		String[] arrName = req.getParameterValues("name[]");
 		String[] arrEmail = req.getParameterValues("email[]");
 
-		Upload robotJar = this.readUpload(req, "robotJarFile");
-		Upload robotJava = this.readUpload(req, "robotJavaFile");
-		Upload teamMusic = this.readUpload(req, "teamMusic");
-		Upload teamLogo = this.readUpload(req, "teamLogo");
+		Upload robotJar = RobotUploads.read(req, "robotJarFile");
+		Upload robotJava = RobotUploads.read(req, "robotJavaFile");
+		Upload teamMusic = RobotUploads.read(req, "teamMusic");
+		Upload teamLogo = RobotUploads.read(req, "teamLogo");
 
 		Names names = this.checkUploads(errors, isNew, robot, robotJar, robotJava, teamMusic, teamLogo);
 
@@ -308,7 +274,7 @@ public class RobotEditor extends HttpServlet {
 
 		// Nothing is wrong, fill the robot!!
 		fillIdentity(robot, names, authorsForm, login, password, keepPassword);
-		copyUploads(robot, robotJar, robotJava, teamMusic, teamLogo);
+		RobotUploads.copyUploads(robot, robotJar, robotJava, teamMusic, teamLogo);
 
 		return errors;
 	}
@@ -322,40 +288,8 @@ public class RobotEditor extends HttpServlet {
 		robot.setName(names == null ? robot.getName() : names.robot());
 	}
 
-	/** Stores the files that were sent on the robot: the jar, the source, the music and the logo. */
-	private static void copyUploads(Opponent robot, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
-		if (robotJar != null) {
-			robot.setCompiledRobot(robotJar.content());
-		}
-		if (robotJava != null) {
-			robot.setSourceCode(new String(robotJava.content(), StandardCharsets.UTF_8));
-		}
-		if (teamMusic != null) {
-			robot.setMusic(teamMusic.content());
-		}
-		if (teamLogo != null) {
-			robot.setImage(teamLogo.content());
-		}
-	}
-
 	/** The team and robot names read from the .jar file name */
 	private record Names(String team, String robot) {
-	}
-
-	/** All of them are needed for new robots */
-	private static void requireFiles(List<String> errors, boolean isNew, Upload robotJar, Upload robotJava, Upload teamMusic, Upload teamLogo) throws IOException {
-		if (robotJar == null && isNew) {
-			errors.add("Envie o arquivo .jar do robô!");
-		}
-		if (robotJava == null && isNew) {
-			errors.add("Envie o arquivo .java do robô!");
-		}
-		if (teamMusic == null && isNew) {
-			errors.add("Envie a música do time!");
-		}
-		if (teamLogo == null && isNew) {
-			errors.add("Envie o logotipo do time!");
-		}
 	}
 
 	/**
@@ -388,50 +322,6 @@ public class RobotEditor extends HttpServlet {
 			errors.add("Já existe um robô chamado " + names.team() + "." + names.robot() + ", escolha outro nome.");
 		}
 		return names;
-	}
-
-	/** Adds an error when the uploaded Java file is empty. */
-	private static void checkJava(List<String> errors, Upload robotJava) {
-		if (robotJava != null && robotJava.content().length == 0) {
-			errors.add("Arquivo .java inválido!");
-		}
-		if (robotJava != null && robotJava.content().length > MAX_FILE_SIZE) {
-			errors.add("Arquivo .java muito grande!");
-		}
-	}
-
-	/** Adds an error when the uploaded music is empty. */
-	private static void checkMusic(List<String> errors, Upload teamMusic) {
-		if (teamMusic != null && teamMusic.content().length == 0) {
-			errors.add("Arquivo música inválido!");
-		}
-		if (teamMusic != null && teamMusic.content().length > MAX_FILE_SIZE) {
-			errors.add("Arquivo música muito grande!");
-		} else if (teamMusic != null && teamMusic.content().length > 0 && !Sound.isPlayable(teamMusic.content())) {
-			errors.add("Não foi possível tocar a música, envie um arquivo .mp3 válido!");
-		}
-	}
-
-	/** Checks the uploaded logo: its size, that it is an image and that it is not too large. */
-	private static void checkLogo(List<String> errors, Upload teamLogo) throws IOException {
-		if (teamLogo == null) {
-			return;
-		}
-		if (teamLogo.content().length > MAX_FILE_SIZE) {
-			errors.add("Arquivo de logotipo muito grande!");
-		}
-
-		BufferedImage logo = ImageIO.read(new ByteArrayInputStream(teamLogo.content()));
-		if (logo == null) {
-			errors.add("Arquivo de logotipo inválido! Use .gif, .jpg ou .png");
-		} else {
-			if (logo.getWidth() > MAX_LOGO_WIDTH) {
-				errors.add("A largura do logotipo é maior que " + MAX_LOGO_WIDTH + " pixels!");
-			}
-			if (logo.getHeight() > MAX_LOGO_HEIGHT) {
-				errors.add("A altura do logotipo é maior que " + MAX_LOGO_HEIGHT + " pixels!");
-			}
-		}
 	}
 
 	/** Login, and the password (kept when editing and not sent) */

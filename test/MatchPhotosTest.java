@@ -13,6 +13,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import tournament.Match;
+
 import javafx.stage.Stage;
 import model.Opponent;
 import support.ChampionshipFixture;
@@ -27,7 +29,7 @@ import widgets.scenes.BattleArena3D;
 class MatchPhotosTest {
 
 	private static List<Opponent> fighters;
-	private static Bracket.Match match;
+	private static Match match;
 
 	@BeforeAll
 	static void emptyDatabase() {

@@ -15,7 +15,7 @@ import utils.robocode.BattleRecording;
 import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
-import widgets.scenes.BattleArena3D.Phase;
+import widgets.scenes.Phase;
 
 /** The shots of the arena: the bolts from the guns, their hits, the flashes of the force field and the critters they startle. */
 class ArenaBulletsTest {

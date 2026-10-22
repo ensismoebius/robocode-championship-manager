@@ -22,10 +22,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
-import static widgets.scenes.BattleArena3D.toCss;
+import static widgets.scenes.ArenaHelpers.toCss;
 import utils.robocode.BattleRecording;
 import widgets.Theme;
-import widgets.scenes.BattleArena3D.Phase;
+import widgets.scenes.Phase;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

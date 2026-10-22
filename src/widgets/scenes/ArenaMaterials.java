@@ -14,7 +14,7 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 import javafx.util.Duration;
-import static widgets.scenes.BattleArena3D.solidMap;
+import static widgets.scenes.ArenaHelpers.solidMap;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

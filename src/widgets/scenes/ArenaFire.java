@@ -1,17 +1,43 @@
 package widgets.scenes;
 
+import static widgets.scenes.FireTextures.SPRITE;
+import static widgets.scenes.FireTextures.FLAME_TEXTURE;
+import static widgets.scenes.FireTextures.SMOKE_TEXTURE;
+import static widgets.scenes.FireTextures.SOFT_TEXTURE;
+import static widgets.scenes.FireTextures.softTexture;
+import static widgets.scenes.FireTextures.sprite;
+import static widgets.scenes.FireTextures.flameTexture;
+import static widgets.scenes.FireTextures.smokeTexture;
+import static widgets.scenes.FireColors.LIFE_STEPS;
+import static widgets.scenes.FireColors.OPACITY_LEVELS;
+import static widgets.scenes.FireColors.SMOKE_SHADES;
+import static widgets.scenes.FireColors.SMOKE_SHADE_MAX;
+import static widgets.scenes.FireColors.FLAME_COLORS;
+import static widgets.scenes.FireColors.SMOKE_COLORS;
+import static widgets.scenes.FireColors.EMBER_COLORS;
+import static widgets.scenes.FireColors.SPARK_COLORS;
+import static widgets.scenes.FireColors.FIREFLY_COLORS;
+import static widgets.scenes.FireColors.SNOW_COLORS;
+import static widgets.scenes.FireColors.step;
+import static widgets.scenes.FireColors.level;
+import static widgets.scenes.FireColors.middle;
+import static widgets.scenes.FireColors.opacity;
+import static widgets.scenes.FireColors.withOpacity;
+import static widgets.scenes.FireColors.flameColor;
+import static widgets.scenes.FireColors.smokeColor;
+import static widgets.scenes.FireColors.emberColor;
+import static widgets.scenes.FireColors.sparkColor;
+import static widgets.scenes.FireColors.fireflyColor;
+import static widgets.scenes.FireColors.snowColor;
+import static widgets.scenes.FireColors.cachedColor;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Random;
 import javafx.scene.Node;
-import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.MeshView;
-import javafx.scene.shape.TriangleMesh;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 
@@ -41,214 +67,10 @@ final class ArenaFire {
 		FLAME, SMOKE, SPARK, EMBER, SNOW, FIREFLY
 	}
 
-	/** A quad of size 1 facing -Z, shared by all the sprites */
-	private static final TriangleMesh SPRITE = sprite();
-	private static final Image FLAME_TEXTURE = flameTexture();
-	private static final Image SMOKE_TEXTURE = smokeTexture();
-	private static final Image SOFT_TEXTURE = softTexture();
-
-	/**
-	 * A soft white dot, for embers and snow
-	 */
-	private static Image softTexture() {
-		int size = 32;
-		WritableImage image = new WritableImage(size, size);
-		for (int posY = 0; posY < size; posY++) {
-			for (int posX = 0; posX < size; posX++) {
-				double radius = Math.hypot((posX + 0.5) / size * 2 - 1, (posY + 0.5) / size * 2 - 1);
-				double alpha = Math.max(0, 1 - radius);
-				image.getPixelWriter().setColor(posX, posY, Color.color(1, 1, 1, Math.min(1, alpha * alpha * 1.6)));
-			}
-		}
-		return image;
-	}
-
-	/** A square sprite, two triangles, with its texture coordinates. */
-	private static TriangleMesh sprite() {
-		TriangleMesh mesh = new TriangleMesh();
-		mesh.getPoints().addAll(-0.5f, -0.5f, 0, 0.5f, -0.5f, 0, 0.5f, 0.5f, 0, -0.5f, 0.5f, 0);
-		mesh.getTexCoords().addAll(0, 0, 1, 0, 1, 1, 0, 1);
-		mesh.getFaces().addAll(0, 0, 2, 2, 1, 1, 0, 0, 3, 3, 2, 2);
-		return mesh;
-	}
-
-	/**
-	 * A tongue of fire: white hot at the base, round at the bottom and pointed at
-	 * the top, soft borders
-	 */
-	private static Image flameTexture() {
-		int size = 64;
-		WritableImage image = new WritableImage(size, size);
-		for (int posY = 0; posY < size; posY++) {
-			for (int posX = 0; posX < size; posX++) {
-				double uCoord = (posX + 0.5) / size * 2 - 1;
-				// 1 at the top, -1 at the bottom
-				double vCoord = 1 - (posY + 0.5) / size * 2;
-				// Narrower going up
-				double width = 0.62 * Math.pow(Math.max(0, (1 - vCoord) / 2), 0.55) + 0.04;
-				double center = -0.25;
-				double deltaX = uCoord / width;
-				double deltaY = vCoord < center ? (vCoord - center) / 0.75 : (vCoord - center) / 1.2;
-				double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-				double alpha = Math.max(0, 1 - distance);
-				alpha = alpha * alpha * (3 - 2 * alpha);
-				double heat = Math.max(0, 1 - distance * 1.4);
-				image.getPixelWriter().setColor(posX, posY, Color.color(1, 0.75 + 0.25 * heat, 0.45 + 0.55 * heat, Math.min(1, alpha)));
-			}
-		}
-		return image;
-	}
-
-	/**
-	 * A puff: soft round blob with some noise, so it does not look like a ball
-	 */
-	private static Image smokeTexture() {
-		int size = 64;
-		WritableImage image = new WritableImage(size, size);
-		Random random = new Random(7);
-		double[] phase = new double[6];
-		for (int index = 0; index < phase.length; index++) {
-			phase[index] = random.nextDouble() * Math.PI * 2;
-		}
-		for (int posY = 0; posY < size; posY++) {
-			for (int posX = 0; posX < size; posX++) {
-				double uCoord = (posX + 0.5) / size * 2 - 1;
-				double vCoord = (posY + 0.5) / size * 2 - 1;
-				double angle = Math.atan2(vCoord, uCoord);
-				double radius = Math.hypot(uCoord, vCoord);
-				// Bumpy border
-				double border = 0.78 + 0.08 * Math.sin(3 * angle + phase[0]) + 0.06 * Math.sin(5 * angle + phase[1]) + 0.04 * Math.sin(9 * angle + phase[2]);
-				double alpha = Math.max(0, 1 - radius / border);
-				alpha = Math.pow(alpha, 0.8);
-				// Darker and lighter spots inside
-				double grain = 0.85 + 0.15 * Math.sin(uCoord * 7 + phase[3]) * Math.sin(vCoord * 6 + phase[4]) + 0.08 * Math.sin((uCoord + vCoord) * 11 + phase[5]);
-				double gray = Math.max(0, Math.min(1, grain));
-				image.getPixelWriter().setColor(posX, posY, Color.color(gray, gray, gray, Math.min(1, alpha * (0.75 + 0.25 * grain))));
-			}
-		}
-		return image;
-	}
-
 	/** Farthest first */
 	private static final Comparator<Particle> FARTHEST_FIRST = (first, second) -> Double.compare(second.distance, first.distance);
 	/** Reused every frame, so it does not make garbage */
 	private final List<Node> fireViews = new ArrayList<Node>();
-
-	// The colors of the particles are made once: every one is a step of its life
-	// and a level of opacity, and the particles take them from these tables
-	// instead of making new colors in every frame
-	private static final int LIFE_STEPS = 48;
-	private static final int OPACITY_LEVELS = 16;
-	private static final int SMOKE_SHADES = 8;
-	/** The darkest gray of the smoke, the shades go from 0 to this */
-	private static final double SMOKE_SHADE_MAX = 0.25;
-	private static final Color[] FLAME_COLORS = new Color[2 * LIFE_STEPS * OPACITY_LEVELS];
-	private static final Color[] SMOKE_COLORS = new Color[SMOKE_SHADES * LIFE_STEPS * OPACITY_LEVELS];
-	private static final Color[] EMBER_COLORS = new Color[LIFE_STEPS];
-	private static final Color[] SPARK_COLORS = new Color[LIFE_STEPS];
-	private static final Color[] FIREFLY_COLORS = new Color[OPACITY_LEVELS];
-	private static final Color[] SNOW_COLORS = new Color[OPACITY_LEVELS];
-
-	/** The index of the life step of a particle, from its life between zero and one. */
-	private static int step(double time) {
-		return Math.max(0, Math.min(LIFE_STEPS - 1, (int) (time * LIFE_STEPS)));
-	}
-
-	/** The index of the opacity level closest to the given opacity. */
-	private static int level(double opacity) {
-		return Math.max(0, Math.min(OPACITY_LEVELS - 1, (int) Math.round(opacity * (OPACITY_LEVELS - 1))));
-	}
-
-	/** The middle of a life step, as a fraction of the life. */
-	private static double middle(int step) {
-		return (step + 0.5) / LIFE_STEPS;
-	}
-
-	/** The opacity of an opacity level. */
-	private static double opacity(int level) {
-		return (double) level / (OPACITY_LEVELS - 1);
-	}
-
-	/** The colour with the given opacity. */
-	private static Color withOpacity(Color color, double opacity) {
-		return Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity);
-	}
-
-	/** The colour of a flame, cached by its life step and opacity level. */
-	private static Color flameColor(boolean blue, int step, int level) {
-		int index = ((blue ? 1 : 0) * LIFE_STEPS + step) * OPACITY_LEVELS + level;
-		Color color = FLAME_COLORS[index];
-		if (color == null) {
-			double time = middle(step);
-			Color base;
-			if (blue) {
-				// A blue tongue: pale at the base, deep blue at the tip
-				base = time < 0.25 ? Color.web("#d6f1ff").interpolate(Color.web("#4aa8ff"), time / 0.25) : Color.web("#4aa8ff").interpolate(Color.web("#2a46ff"), (time - 0.25) / 0.75);
-			} else if (time < 0.14) {
-				// Every flame is blue where it is born
-				base = Color.web("#5aa9ff").interpolate(Color.web("#fff0b8"), time / 0.14);
-			} else if (time < 0.3) {
-				base = Color.web("#fff0b8").interpolate(Color.web("#ffb12a"), (time - 0.14) / 0.16);
-			} else {
-				base = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (time - 0.3) / 0.7);
-			}
-			color = FLAME_COLORS[index] = withOpacity(base, opacity(level));
-		}
-		return color;
-	}
-
-	/** The colour of a smoke particle, cached by its shade, life step and opacity level. */
-	private static Color smokeColor(int shade, int step, int level) {
-		int index = (shade * LIFE_STEPS + step) * OPACITY_LEVELS + level;
-		Color color = SMOKE_COLORS[index];
-		if (color == null) {
-			double time = middle(step);
-			double gray = (shade + 0.5) / SMOKE_SHADES * SMOKE_SHADE_MAX;
-			Color base = time < 0.12 ? Color.web("#ff7a2a").interpolate(Color.gray(gray), time / 0.12) : Color.gray(gray).interpolate(Color.gray(Math.min(0.4, gray + 0.12)), (time - 0.12) / 0.88);
-			color = SMOKE_COLORS[index] = withOpacity(base, opacity(level));
-		}
-		return color;
-	}
-
-	/** The colour of an ember, cached by its life step. */
-	private static Color emberColor(int step) {
-		Color color = EMBER_COLORS[step];
-		if (color == null) {
-			double time = middle(step);
-			double alpha = (time < 0.1 ? time * 10 : 1 - (time - 0.1) / 0.9) * 0.95;
-			color = EMBER_COLORS[step] = Color.color(1, 0.62 - 0.4 * time, 0.15 - 0.1 * time, Math.max(0, alpha));
-		}
-		return color;
-	}
-
-	/** The colour of a spark, cached by its life step. */
-	private static Color sparkColor(int step) {
-		Color color = SPARK_COLORS[step];
-		if (color == null) {
-			double time = middle(step);
-			color = SPARK_COLORS[step] = Color.color(1, 0.85 - 0.4 * time, 0.4 - 0.3 * time, 1 - time * time);
-		}
-		return color;
-	}
-
-	/** The colour of a firefly for the given opacity level. */
-	private static Color fireflyColor(int level) {
-		return cachedColor(FIREFLY_COLORS, level, 0.78, 1, 0.35);
-	}
-
-	/** The colour of a snowflake for the given opacity level. */
-	private static Color snowColor(int level) {
-		return cachedColor(SNOW_COLORS, level, 0.94, 0.97, 1);
-	}
-
-	/** The color of a level of opacity, made the first time it is needed */
-	private static Color cachedColor(Color[] cache, int level, double red, double green, double blue) {
-		Color color = cache[level];
-		if (color == null) {
-			color = cache[level] = Color.color(red, green, blue, opacity(level));
-		}
-		return color;
-	}
 
 	/**
 	 * A flame, a spark or a puff of smoke: a sprite that always faces the camera.

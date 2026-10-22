@@ -16,18 +16,13 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -38,11 +33,8 @@ import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import model.Opponent;
 import tournament.Bracket;
-import tournament.Bracket.Match;
-import tournament.Bracket.Slot;
-import tournament.Bracket.Status;
+import tournament.Match;
 import widgets.ArcadeBackground;
-import widgets.Sfx;
 import widgets.Theme;
 
 /**
@@ -61,8 +53,8 @@ import widgets.Theme;
 public class BracketViewer extends StackPane {
 
 	static final double CARD_W = 300;
-	private static final double ROW_H = 50;
-	private static final double HEADER_H = 24;
+	static final double ROW_H = 50;
+	static final double HEADER_H = 24;
 	static final double CARD_H = HEADER_H + 2 * ROW_H + 4;
 	static final double SLOT_H = CARD_H + 26;
 	static final double COL_GAP = 70;
@@ -72,8 +64,8 @@ public class BracketViewer extends StackPane {
 	static final double SECTION_GAP = 50;
 
 	final Bracket bracket;
-	private final Map<Long, Opponent> opponents;
-	private final Consumer<String> onSelect;
+	final Map<Long, Opponent> opponents;
+	final Consumer<String> onSelect;
 
 	private static final double MIN_ZOOM = 0.15;
 	private static final double MAX_ZOOM = 2.5;
@@ -89,7 +81,7 @@ public class BracketViewer extends StackPane {
 
 	final Pane canvas = new Pane();
 	private final VBox content = new VBox(24);
-	private final Pane viewport = new Pane();
+	final Pane viewport = new Pane();
 
 	final Map<Match, double[]> positions = new HashMap<Match, double[]>();
 	final Map<String, VBox> cards = new HashMap<String, VBox>();
@@ -104,20 +96,20 @@ public class BracketViewer extends StackPane {
 
 	// The camera: the point of the content in the center of the screen and the
 	// zoom. Where it is going is kept apart, so fast wheel turns add up.
-	private final DoubleProperty cameraX = new SimpleDoubleProperty();
-	private final DoubleProperty cameraY = new SimpleDoubleProperty();
-	private final DoubleProperty cameraZoom = new SimpleDoubleProperty(1);
-	private double targetX;
-	private double targetY;
-	private double targetZoom = 1;
+	final DoubleProperty cameraX = new SimpleDoubleProperty();
+	final DoubleProperty cameraY = new SimpleDoubleProperty();
+	final DoubleProperty cameraZoom = new SimpleDoubleProperty(1);
+	double targetX;
+	double targetY;
+	double targetZoom = 1;
 	private Timeline cameraMove;
 	private final Translate translate = new Translate();
 	private final Scale scale = new Scale(1, 1, 0, 0);
-	private final BracketReplay replay = new BracketReplay(this);
+	final BracketReplay replay = new BracketReplay(this);
 
 	private boolean cameraReady = false;
-	private double dragX;
-	private double dragY;
+	double dragX;
+	double dragY;
 
 	// The result being shown, see playResult
 	private String pendingResult;
@@ -141,7 +133,7 @@ public class BracketViewer extends StackPane {
 
 		this.content.setPadding(new Insets(30));
 		this.content.getStyleClass().add("bracket-root");
-		this.content.getChildren().add(this.buildHeader(title, robotsOutside));
+		this.content.getChildren().add(new BracketHeader(this).build(title, robotsOutside));
 		this.content.getTransforms().setAll(this.translate, this.scale);
 
 		new BracketLayout(this).build();
@@ -152,7 +144,7 @@ public class BracketViewer extends StackPane {
 		this.viewport.getStyleClass().add("bracket-root");
 		this.bindCamera();
 
-		this.installControls();
+		new BracketControls(this).install();
 		this.getChildren().setAll(this.screen());
 	}
 
@@ -187,207 +179,10 @@ public class BracketViewer extends StackPane {
 
 	// ------------------------------------------------------------------ header
 
-	/** The title of the bracket with the robots that are not in it. */
-	private Node buildHeader(String title, long robotsOutside) {
-		VBox header = new VBox(8);
-
-		Label titleLabel = new Label(title);
-		titleLabel.getStyleClass().add("title");
-		header.getChildren().add(titleLabel);
-
-		String format = this.bracket.hasRepechage() ? "Dupla eliminação com repescagem" : "Eliminação simples";
-		Label subtitle = new Label(this.bracket.getParticipants().size() + " robôs • " + format);
-		subtitle.getStyleClass().add("subtitle");
-		header.getChildren().add(subtitle);
-
-		Long champion = this.bracket.getChampion();
-		if (champion != null) {
-			header.getChildren().add(this.championBanner(champion));
-		} else {
-			header.getChildren().add(this.nextMatchLabel());
-		}
-
-		if (robotsOutside > 0) {
-			Label warning = new Label(robotsOutside + " robô(s) cadastrado(s) depois do sorteio não estão no campeonato. Ctrl + G sorteia um novo campeonato.");
-			warning.getStyleClass().add("warning");
-			header.getChildren().add(warning);
-		}
-
-		Label help = new Label(
-				"Clique em uma partida para selecioná-la • B: tela versus • S: inicia a batalha • 1/2: declara o vencedor • Ctrl+Z: desfaz o último resultado • Ctrl+roda ou +/-: zoom • arraste, roda ou setas: move • 0: visão geral");
-		help.getStyleClass().add("help");
-		header.getChildren().add(help);
-
-		return header;
-	}
-
-	/** The banner that says who won the championship, with the logo of the champion */
-	private HBox championBanner(Long champion) {
-		HBox banner = new HBox(16);
-		banner.setAlignment(Pos.CENTER_LEFT);
-		banner.getStyleClass().add("champion-banner");
-		ImageView logo = this.logo(champion, 96, 72);
-		if (logo != null) {
-			banner.getChildren().add(logo);
-		}
-		Label championLabel = new Label("CAMPEÃO: " + this.nameOf(champion).toUpperCase());
-		banner.getChildren().add(championLabel);
-		Theme.pulseGlow(banner, Theme.ACCENT);
-		banner.setMaxWidth(Region.USE_PREF_SIZE);
-		return banner;
-	}
-
-	/** The next match, with its stage marked by a star when it is a decisive one */
-	private Label nextMatchLabel() {
-		Label next = new Label(this.bracket.getNextMatch().map(matrix -> {
-			Bracket.Importance importance = this.bracket.importance(matrix);
-			String stage = importance == Bracket.Importance.REGULAR ? "" : "★ " + this.bracket.roundName(matrix).toUpperCase() + " ★  ";
-			return stage + "Próxima partida: " + matrix.getCode() + " — " + this.nameOf(matrix.getA().getParticipant()) + " × " + this.nameOf(matrix.getB().getParticipant());
-		}).orElse(""));
-		next.getStyleClass().add("subtitle");
-		if (this.bracket.getNextMatch().map(matrix2 -> this.bracket.importance(matrix2) != Bracket.Importance.REGULAR).orElse(false)) {
-			next.setStyle("-fx-text-fill: #ffd54a;");
-		}
-		return next;
-	}
-
 	// ------------------------------------------------------------------ cards
 
-	/** A card with the two slots of a match, its status and its code. */
-	VBox buildCard(Match match) {
-		VBox card = new VBox();
-		card.setPrefSize(CARD_W, CARD_H);
-		card.setMinSize(CARD_W, CARD_H);
-		card.setMaxSize(CARD_W, CARD_H);
-		card.getStyleClass().add("match-card");
-
-		switch (match.getStatus()) {
-		case READY -> card.getStyleClass().add("ready");
-		case BYE -> card.getStyleClass().add(match.getWinner() == null ? "empty" : "bye");
-		default -> {
-		}
-		}
-
-		HBox header = this.statusHeader(match);
-
-		HBox rowA = this.buildSlotRow(match, match.getA());
-		HBox rowB = this.buildSlotRow(match, match.getB());
-		this.rows.put(match.getCode(), new HBox[] { rowA, rowB });
-		card.getChildren().addAll(header, rowA, rowB);
-
-		if (match.getStatus() == Status.READY) {
-			this.selectOnClick(card, match);
-		}
-
-		this.cards.put(match.getCode(), card);
-		if (match.getCode().equals(this.selected)) {
-			this.styleSelected(card, true);
-		}
-		return card;
-	}
-
-	/** The header of a card: its code on the left and its status on the right */
-	private HBox statusHeader(Match match) {
-		Label code = new Label(match.getCode());
-		code.getStyleClass().add("match-code");
-		Region spacer = new Region();
-		HBox.setHgrow(spacer, Priority.ALWAYS);
-		Label status = new Label(this.statusText(match));
-		status.getStyleClass().add("match-status");
-		HBox header = new HBox(code, spacer, status);
-		header.setAlignment(Pos.CENTER_LEFT);
-		header.setMinHeight(HEADER_H);
-		header.getStyleClass().add("match-header");
-		return header;
-	}
-
-	/** A click on a card that can be played selects its match, and tells the owner of the viewer */
-	private void selectOnClick(VBox card, Match match) {
-		card.setOnMouseClicked(event -> {
-			// The end of a drag is not a click
-			if (!event.isStillSincePress()) {
-				return;
-			}
-			Sfx.blip();
-			this.select(match.getCode());
-			this.onSelect.accept(match.getCode());
-		});
-	}
-
-	/** The status of a match, as the word shown in its card. */
-	private String statusText(Match match) {
-		boolean isNext = this.bracket.getNextMatch().map(matrix -> matrix == match).orElse(false);
-		return switch (match.getStatus()) {
-		case WAITING -> "aguardando";
-		case READY -> match.getCode().equals(this.selected) ? "▶ SELECIONADA" : isNext ? "próxima" : "pronta";
-		case FINISHED -> "encerrada";
-		case BYE -> "folga";
-		};
-	}
-
-	/** A row of a slot, with the logo and the name of the robot in it. */
-	private HBox buildSlotRow(Match match, Slot slot) {
-		HBox row = new HBox();
-		row.getStyleClass().add("slot-row");
-		row.setAlignment(Pos.CENTER_LEFT);
-		row.setMinHeight(ROW_H);
-		row.setMaxHeight(ROW_H);
-
-		Long participant = slot.getParticipant();
-		if (participant == null) {
-			Label placeholder = new Label(slot.isResolved() ? "— folga —" : slot.describeSource());
-			placeholder.getStyleClass().add("placeholder");
-			row.getChildren().add(placeholder);
-			return row;
-		}
-
-		boolean decided = match.getStatus() == Status.FINISHED;
-		if (decided) {
-			row.getStyleClass().add(participant.equals(match.getWinner()) ? "winner" : "loser");
-		}
-
-		row.getChildren().addAll(this.logoBox(participant), this.nameBlock(this.opponents.get(participant)));
-		this.rowParticipants.put(row, participant);
-
-		if (decided) {
-			boolean won = participant.equals(match.getWinner());
-			Integer score = won ? match.getWinnerScore() : match.getLoserScore();
-			Label scoreLabel = new Label(score != null ? String.valueOf(score) : won ? "✔" : "");
-			scoreLabel.getStyleClass().add("score");
-			row.getChildren().add(scoreLabel);
-			this.scores.put(row, scoreLabel);
-		}
-		return row;
-	}
-
-	/** The box with the logo of a robot, empty when it has none */
-	private StackPane logoBox(Long participant) {
-		StackPane logoBox = new StackPane();
-		logoBox.getStyleClass().add("logo-box");
-		logoBox.setMinSize(56, 42);
-		logoBox.setMaxSize(56, 42);
-		ImageView logo = this.logo(participant, 56, 42);
-		if (logo != null) {
-			logoBox.getChildren().add(logo);
-		}
-		return logoBox;
-	}
-
-	/** The name and the team of a robot, shown as "?" and nothing when the opponent is unknown */
-	private VBox nameBlock(Opponent opponent) {
-		Label name = new Label(opponent == null ? "?" : opponent.getName());
-		name.getStyleClass().add("robot-name");
-		Label team = new Label(opponent == null ? "" : opponent.getTeam());
-		team.getStyleClass().add("team-name");
-		VBox names = new VBox(name, team);
-		names.setAlignment(Pos.CENTER_LEFT);
-		HBox.setHgrow(names, Priority.ALWAYS);
-		names.setMaxWidth(Double.MAX_VALUE);
-		return names;
-	}
-
 	/** The picture of an opponent scaled to the given size, or null when it has none. */
-	private ImageView logo(Long participant, double width, double height) {
+	ImageView logo(Long participant, double width, double height) {
 		Opponent opponent = this.opponents.get(participant);
 		if (opponent == null || opponent.getImage() == null) {
 			return null;
@@ -401,8 +196,14 @@ public class BracketViewer extends StackPane {
 		return view;
 	}
 
+	/** A card with the two slots of a match, its status and its code. */
+	VBox buildCard(Match match) {
+		return new BracketCards(this).buildCard(match);
+	}
+
 	/** The name and team of an opponent, or a question mark when it is unknown. */
-	private String nameOf(Long participant) {
+
+	String nameOf(Long participant) {
 		Opponent opponent = this.opponents.get(participant);
 		return opponent == null ? "?" : opponent.getName() + " (" + opponent.getTeam() + ")";
 	}
@@ -466,77 +267,17 @@ public class BracketViewer extends StackPane {
 		status.setText(this.statusText(match));
 	}
 
+	/** The status of a match, as the word shown in its card. */
+	String statusText(Match match) {
+		return new BracketCards(this).statusText(match);
+	}
+
 	/** The code of the match of a card. */
 	private String codeOf(VBox card) {
 		return this.cards.entrySet().stream().filter(event -> event.getValue() == card).map(Map.Entry::getKey).findFirst().orElseThrow();
 	}
 
 	// ----------------------------------------------------------------- camera
-
-	/** Installs the mouse and keyboard controls of the bracket. */
-	private void installControls() {
-		this.installWheel();
-		this.installDrag();
-		this.installKeys();
-	}
-
-	/** Ctrl + wheel zooms towards the mouse, the wheel alone moves */
-	private void installWheel() {
-		this.viewport.addEventFilter(ScrollEvent.SCROLL, event -> {
-			if (this.replay.skip()) {
-				event.consume();
-				return;
-			}
-			if (event.isControlDown()) {
-				if (event.getDeltaY() != 0) {
-					this.zoomAt(event.getX(), event.getY(), event.getDeltaY() > 0 ? 1.15 : 1 / 1.15);
-				}
-			} else {
-				this.moveTo(this.cameraX.get() - event.getDeltaX() / this.cameraZoom.get(), this.cameraY.get() - event.getDeltaY() / this.cameraZoom.get(), this.cameraZoom.get(), null);
-			}
-			event.consume();
-		});
-	}
-
-	/** Dragging with the mouse moves the camera */
-	private void installDrag() {
-		this.viewport.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
-			if (this.replay.skip()) {
-				event.consume();
-				return;
-			}
-			this.dragX = event.getX();
-			this.dragY = event.getY();
-		});
-		this.viewport.addEventFilter(MouseEvent.MOUSE_DRAGGED, event -> {
-			double zoom = this.cameraZoom.get();
-			this.moveTo(this.cameraX.get() - (event.getX() - this.dragX) / zoom, this.cameraY.get() - (event.getY() - this.dragY) / zoom, zoom, null);
-			this.dragX = event.getX();
-			this.dragY = event.getY();
-		});
-	}
-
-	/** The keys: plus and minus zoom, zero shows the overview, and the arrows move the camera */
-	private void installKeys() {
-		this.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-			// Any key ends the result animation, and still does its job
-			this.replay.skip();
-			double step = 160 / this.targetZoom;
-			switch (event.getCode()) {
-			case PLUS, EQUALS, ADD -> this.zoomAt(this.viewport.getWidth() / 2, this.viewport.getHeight() / 2, 1.3);
-			case MINUS, SUBTRACT -> this.zoomAt(this.viewport.getWidth() / 2, this.viewport.getHeight() / 2, 1 / 1.3);
-			case DIGIT0, NUMPAD0 -> this.moveCamera(this.overview(), Duration.millis(500));
-			case LEFT -> this.moveCamera(new double[] { this.targetX - step, this.targetY, this.targetZoom }, Duration.millis(200));
-			case RIGHT -> this.moveCamera(new double[] { this.targetX + step, this.targetY, this.targetZoom }, Duration.millis(200));
-			case UP -> this.moveCamera(new double[] { this.targetX, this.targetY - step, this.targetZoom }, Duration.millis(200));
-			case DOWN -> this.moveCamera(new double[] { this.targetX, this.targetY + step, this.targetZoom }, Duration.millis(200));
-			default -> {
-				return;
-			}
-			}
-			event.consume();
-		});
-	}
 
 	/**
 	 * Puts the camera on the content
@@ -637,7 +378,7 @@ public class BracketViewer extends StackPane {
 	}
 
 	/** Moves the camera to the position in the given time, stopping the move in progress. */
-	private void moveCamera(double[] position, Duration duration) {
+	void moveCamera(double[] position, Duration duration) {
 		if (this.cameraMove != null) {
 			this.cameraMove.stop();
 		}
@@ -667,7 +408,7 @@ public class BracketViewer extends StackPane {
 	/**
 	 * Smooth zoom keeping the point under (x, y) of the screen in place
 	 */
-	private void zoomAt(double posX, double posY, double factor) {
+	void zoomAt(double posX, double posY, double factor) {
 		double zoom = this.targetZoom;
 		// The point of the content under the mouse, where the camera is going
 		double pointX = this.targetX + (posX - this.viewport.getWidth() / 2) / zoom;

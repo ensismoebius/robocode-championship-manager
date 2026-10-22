@@ -11,8 +11,8 @@ import java.util.Map;
 import model.BattleMoment;
 import model.Opponent;
 import tournament.Bracket;
-import tournament.Bracket.Match;
-import tournament.Bracket.Status;
+import tournament.Match;
+import tournament.Status;
 import utils.database.Database;
 
 /** Robots, brackets and battle moments for the screens, built the way the championship builds them. */

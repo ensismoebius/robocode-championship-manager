@@ -18,8 +18,8 @@ import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.Test;
 
-import tournament.Bracket.Match;
-import tournament.Bracket.Status;
+import tournament.Match;
+import tournament.Status;
 
 class BracketTest {
 
@@ -27,15 +27,15 @@ class BracketTest {
 	void importanceFlagsSemifinalsAndFinals() {
 		Bracket bracket = new Bracket(ids(8), false);
 		for (Match m : bracket.getMatches()) {
-			Bracket.Importance expected = switch (bracket.roundName(m)) {
-			case "Semifinal" -> Bracket.Importance.SEMIFINAL;
-			case "Final" -> Bracket.Importance.FINAL;
-			default -> Bracket.Importance.REGULAR;
+			Importance expected = switch (bracket.roundName(m)) {
+			case "Semifinal" -> Importance.SEMIFINAL;
+			case "Final" -> Importance.FINAL;
+			default -> Importance.REGULAR;
 			};
 			assertEquals(expected, bracket.importance(m), m.getCode());
 		}
-		assertEquals(2, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Bracket.Importance.SEMIFINAL).count());
-		assertEquals(1, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Bracket.Importance.FINAL).count());
+		assertEquals(2, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Importance.SEMIFINAL).count());
+		assertEquals(1, bracket.getMatches().stream().filter(m -> bracket.importance(m) == Importance.FINAL).count());
 	}
 
 	@Test
@@ -43,9 +43,9 @@ class BracketTest {
 		Bracket bracket = new Bracket(ids(8), true);
 		for (Match m : bracket.getMatches()) {
 			boolean big = bracket.roundName(m).startsWith("Final") || bracket.roundName(m).startsWith("Grande");
-			assertEquals(big, bracket.importance(m) == Bracket.Importance.FINAL, bracket.roundName(m));
+			assertEquals(big, bracket.importance(m) == Importance.FINAL, bracket.roundName(m));
 		}
-		assertTrue(bracket.getMatches().stream().anyMatch(m -> bracket.importance(m) == Bracket.Importance.SEMIFINAL));
+		assertTrue(bracket.getMatches().stream().anyMatch(m -> bracket.importance(m) == Importance.SEMIFINAL));
 	}
 
 	private static List<Long> ids(int n) {

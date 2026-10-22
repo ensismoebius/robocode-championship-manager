@@ -1,5 +1,7 @@
 package widgets.scenes;
 
+import tournament.Importance;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,8 +79,8 @@ public class BattleArena3D extends StackPane {
 	/** The 3, 2, 1 before the fight, then the fight banner for a moment */
 	static final int COUNTDOWN_SECONDS = 3;
 	/** Each robot is presented alone before the battle, then the versus */
-	private static final double SHOWCASE_SECONDS = 7;
-	private static final double VERSUS_SECONDS = 2.6;
+	static final double SHOWCASE_SECONDS = 7;
+	static final double VERSUS_SECONDS = 2.6;
 	/** The action stops for a moment when a robot dies, then the replay */
 	static final double FREEZE_SECONDS = 1.3;
 	/** A hit this strong (power) makes a photo: the first one of each round */
@@ -90,37 +92,13 @@ public class BattleArena3D extends StackPane {
 	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
 	static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
-	enum ViewMode {
-		CINEMATIC("CINEMATOGRÁFICA", -30, 45), FREE("LIVRE", -38, 38), ISOMETRIC("ISOMÉTRICA", -35.26, 12), TOP_DOWN("VISTA DE CIMA", -89.5, 12);
-
-		final String label;
-		final double pitch;
-		final double fov;
-
-		/** A camera view: its label, the pitch of the camera and its field of view. */
-		ViewMode(String label, double pitch, double fov) {
-			this.label = label;
-			this.pitch = pitch;
-			this.fov = fov;
-		}
-	}
-
-	/** The shots of the cinematic camera */
-	enum Shot {
-		WIDE, CHASE, LOW_TRACK, CLOSE, CRANE, IMPACT, FATAL
-	}
-
-	enum Phase {
-		LOADING, SHOWCASE, FLYBY, INTRO, PLAYING, FREEZE, REPLAY, ROUND_END, FINISHED
-	}
-
 	private final List<Opponent> fighters;
 	Runnable onFinished;
 	final BattleAudio audio = new BattleAudio();
 	final Random random = new Random();
 
 	// 3D
-	private final Group world = new Group();
+	final Group world = new Group();
 	final Group arena = new Group();
 	final Group effects = new Group();
 	private final Group robotLayer = new Group();
@@ -144,8 +122,8 @@ public class BattleArena3D extends StackPane {
 	/** Shafts of light through the canopy (jungle), over everything but the fire */
 	final Group sunbeams = new Group();
 	/** The city of the neon arena, its lights and cars */
-	private final NeonArena neon = new NeonArena(this);
-	private final IceArena ice = new IceArena(this);
+	final NeonArena neon = new NeonArena(this);
+	final IceArena ice = new IceArena(this);
 	final ArenaFire fire = new ArenaFire(this);
 	final ArenaEffects fx = new ArenaEffects(this);
 	final ArenaHud hud = new ArenaHud(this);
@@ -217,7 +195,7 @@ public class BattleArena3D extends StackPane {
 	/** The stage of the championship, over the loading and the versus */
 	final Label stageLabel = new Label();
 	String stageName = "";
-	Bracket.Importance stageImportance = Bracket.Importance.REGULAR;
+	Importance stageImportance = Importance.REGULAR;
 	final Label speedLabel = new Label();
 	final Label viewLabel = new Label();
 	final HBox hudTop = new HBox();
@@ -298,10 +276,10 @@ public class BattleArena3D extends StackPane {
 	 * Warns which stage of the championship this battle is: a semifinal and a
 	 * final are highlighted. Call it before the battle starts.
 	 */
-	public void setStage(String name, Bracket.Importance importance) {
+	public void setStage(String name, Importance importance) {
 		this.stageName = name == null ? "" : name.toUpperCase();
-		this.stageImportance = importance == null ? Bracket.Importance.REGULAR : importance;
-		boolean big = this.stageImportance != Bracket.Importance.REGULAR;
+		this.stageImportance = importance == null ? Importance.REGULAR : importance;
+		boolean big = this.stageImportance != Importance.REGULAR;
 		this.stageLabel.setText(big ? "★ " + this.stageName + " ★" : this.stageName);
 		this.stageLabel.getStyleClass().removeAll("arena-stage", "arena-stage-big");
 		this.stageLabel.getStyleClass().add(big ? "arena-stage-big" : "arena-stage");
@@ -322,11 +300,11 @@ public class BattleArena3D extends StackPane {
 		this.audio.setMusicLevel(Configuration.getMusicVolume() / 100.0);
 
 		this.world.getChildren().addAll(this.arena, this.robotLayer, this.bulletLayer, this.effects, this.sunbeams, this.fireLayer, this.fence);
-		this.buildLights();
-		this.buildArena();
-		this.buildCamera();
-		this.subScene = this.buildSubScene();
-		this.buildOverlay();
+		new ArenaBuilder(this).buildLights();
+		new ArenaBuilder(this).buildArena();
+		new ArenaBuilder(this).buildCamera();
+		this.subScene = new ArenaBuilder(this).buildSubScene();
+		new ArenaBuilder(this).buildOverlay();
 
 		this.controls.installControls();
 		this.hud.showBanner("", null);
@@ -346,49 +324,6 @@ public class BattleArena3D extends StackPane {
 		});
 	}
 
-	/** The camera that looks at the arena, with its clip planes, part of the world */
-	private void buildCamera() {
-		this.camera.setNearClip(5);
-		this.camera.setFarClip(30000);
-		this.camera.getTransforms().setAll(this.cameraLook, this.cameraYaw, this.cameraPitch, this.cameraRoll, this.cameraDistance);
-		this.world.getChildren().add(this.camera);
-	}
-
-	/** The 3D scene that fills the window, filled with the sky of the arena */
-	private SubScene buildSubScene() {
-		SubScene scene = new SubScene(this.world, 100, 100, true, Configuration.isAntialiasing() ? SceneAntialiasing.BALANCED : SceneAntialiasing.DISABLED);
-		scene.setCamera(this.camera);
-		// A solid color: with a gradient the 3D frames are not cleared and leave
-		// trails
-		scene.setFill(this.style.sky);
-		if (this.style == ArenaStyle.VOLCANO) {
-			// The hottest lava bleeds light around it
-			scene.setEffect(new Bloom(0.6));
-		}
-		scene.widthProperty().bind(this.widthProperty());
-		scene.heightProperty().bind(this.heightProperty());
-		return scene;
-	}
-
-	/** The layers over the 3D scene: the balloons, the letterbox, the showcase, the HUD, the scanlines and the flash */
-	private void buildOverlay() {
-		this.balloons.setMouseTransparent(true);
-
-		Region scanlines = new Region();
-		scanlines.getStyleClass().add("scanlines");
-		scanlines.setMouseTransparent(true);
-
-		this.whiteFlash.setStyle("-fx-background-color: white;");
-		this.whiteFlash.setOpacity(0);
-		this.whiteFlash.setMouseTransparent(true);
-
-		this.getStyleClass().add("arena-3d");
-		this.showcaseLayer.setMouseTransparent(true);
-		this.showcaseLayer.setPickOnBounds(false);
-
-		this.getChildren().setAll(this.subScene, this.balloons, this.hud.buildLetterbox(), this.showcaseLayer, this.announcer.build(), this.hud.buildHud(), this.whiteFlash, scanlines);
-	}
-
 	/**
 	 * Starts showing the battle
 	 *
@@ -401,7 +336,7 @@ public class BattleArena3D extends StackPane {
 		this.fieldWidth = recording.getWidth();
 		this.fieldHeight = recording.getHeight();
 		this.arena.getChildren().clear();
-		this.buildArena();
+		new ArenaBuilder(this).buildArena();
 
 		for (BattleRecording.Robot robot : recording.getRobots()) {
 			RobotView view = new RobotView(this, robot, this.opponentOf(robot), this.robots.size());
@@ -430,44 +365,6 @@ public class BattleArena3D extends StackPane {
 	}
 
 	// ------------------------------------------------------------------ scene
-
-	/** Lights the arena: the ambient light, a key light and the glow of the fire. */
-	private void buildLights() {
-		AmbientLight ambient = new AmbientLight(this.style.ambient);
-		PointLight key = new PointLight(this.style.key);
-		key.getTransforms().add(new Translate(-300, -900, -500));
-		this.fireGlow.getScope().addAll(this.fireLayer, this.glowing);
-		this.world.getChildren().addAll(ambient, key, this.flashLight, this.fireGlow);
-	}
-
-	/**
-	 * The floor and the scenery of the style, and the force field
-	 */
-	private void buildArena() {
-		this.fenceSegments.clear();
-		this.fence.getChildren().clear();
-		this.glowing.getChildren().clear();
-		this.lava = null;
-		this.flows.clear();
-		double width = this.fieldWidth;
-		double height = this.fieldHeight;
-		switch (this.style) {
-		case NEON -> this.neon.build(width, height);
-		case VOLCANO -> this.volcano.build(width, height);
-		case ICE -> this.ice.build(width, height);
-		case JUNGLE -> this.jungle.build(width, height);
-		}
-		this.arena.getChildren().add(this.glowing);
-		this.forceField.buildFence(width, height);
-		this.critters = new Critters(this.style, width, height, this.random);
-		this.arena.getChildren().add(this.critters.root());
-		if (this.style == ArenaStyle.ICE && this.ice.seaRadius() > 0) {
-			double centreX = this.ice.seaX();
-			double centreZ = this.ice.seaZ();
-			double radius = this.ice.seaRadius();
-			this.critters.setWater((posX, posZ) -> Math.hypot(posX - centreX, posZ - centreZ) < IceArena.shore(Math.atan2(posZ - centreZ, posX - centreX), radius) * 0.97);
-		}
-	}
 
 	/** A mesh view with the given material, visible from both sides. */
 	MeshView meshView(TriangleMesh mesh, PhongMaterial material) {
@@ -528,11 +425,6 @@ public class BattleArena3D extends StackPane {
 
 	// ------------------------------------------------------------------- HUD
 
-	/** The CSS colour of a colour, as #rrggbb. */
-	static String toCss(Color color) {
-		return String.format("#%02x%02x%02x", (int) (color.getRed() * 255), (int) (color.getGreen() * 255), (int) (color.getBlue() * 255));
-	}
-
 	/** Switches to the next camera view. */
 	void cycleView() {
 		this.controls.setView(ViewMode.values()[(this.viewMode.ordinal() + 1) % ViewMode.values().length]);
@@ -548,89 +440,10 @@ public class BattleArena3D extends StackPane {
 
 	// ----------------------------------------------------------------- update
 
-	/** Advances the battle state machine by the time since the last frame. */
+	private final ArenaTicker ticker = new ArenaTicker(this);
+
 	private void update(double deltaTime) {
-		this.phaseTime += deltaTime;
-		this.advancePhase(deltaTime);
-
-		this.rounds.updateTension(deltaTime);
-		this.announcer.tick(deltaTime);
-		this.director.updateCamera(deltaTime);
-		this.clock += deltaTime * this.effectRate;
-		this.updateSurfaces();
-		this.updateAudio(deltaTime);
-		this.updateEffects(deltaTime);
-	}
-
-	/** What the current phase does this frame, and when its time is over */
-	private void advancePhase(double deltaTime) {
-		switch (this.phase) {
-		case LOADING -> {
-		}
-		case SHOWCASE -> {
-			if (this.versus) {
-				if (this.phaseTime > VERSUS_SECONDS) {
-					this.showcase.endShowcase();
-				}
-			} else {
-				this.showcase.turntable();
-				if (this.phaseTime > SHOWCASE_SECONDS) {
-					this.showcase.showcaseRobot(this.showcaseOrder + 1);
-				}
-			}
-		}
-		case FLYBY -> {
-			if (this.phaseTime > this.rounds.flyByHold() + FLYBY_SECONDS) {
-				this.rounds.endFlyBy();
-			}
-		}
-		case INTRO -> this.rounds.updateIntro();
-		case PLAYING -> this.rounds.updatePlaying(deltaTime);
-		case FREEZE -> {
-			if (this.phaseTime > FREEZE_SECONDS) {
-				this.showcase.startReplay();
-			}
-		}
-		case REPLAY -> this.rounds.updateReplay(deltaTime);
-		case ROUND_END -> this.rounds.updateRoundEnd();
-		case FINISHED -> {
-		}
-		}
-	}
-
-	/** The lava breathes and its flows slide */
-	private void updateSurfaces() {
-	if (this.lava != null) {
-		this.lava.setDiffuseColor(LAVA_DIM.interpolate(LAVA_FULL, 0.5 + 0.5 * Math.sin(this.clock * 2.1) * Math.sin(this.clock * 0.7 + 1)));
-	}
-	if (!this.flows.isEmpty()) {
-		this.lavaFlows.updateFlows();
-	}
-	}
-
-	/** The ears of the sound are the camera; each robot makes its machine sound */
-	private void updateAudio(double deltaTime) {
-	// The ears are the camera: the sounds come from the side of the screen they are on
-	this.audio.setListener(this.eye[0], this.eye[2], this.look[0] - this.eye[0], this.look[2] - this.eye[2]);
-	for (Map.Entry<Integer, RobotView> entry : this.robots.entrySet()) {
-		RobotView robotView = entry.getValue();
-		robotView.roll(deltaTime);
-		double[] atValue = robotView.position();
-		this.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, atValue[0], atValue[2]);
-	}
-	}
-
-	/** The fire, the sunbeams, the neon and the ice, the critters, the balloons and the photos */
-	private void updateEffects(double deltaTime) {
-	this.fire.update(deltaTime * this.effectRate);
-	this.jungle.updateSunbeams(deltaTime);
-	this.neon.update(deltaTime);
-	this.ice.update(deltaTime);
-	if (this.critters != null) {
-		this.critters.update(deltaTime);
-	}
-	this.director.placeBalloons();
-	this.photographer.flushPhotos(deltaTime);
+		this.ticker.update(deltaTime);
 	}
 
 	/**
@@ -645,105 +458,12 @@ public class BattleArena3D extends StackPane {
 		return this.recording.getRounds().get(this.round);
 	}
 
-	/**
-	 * Where a robot is drawn at a moment (in turns, with the fraction) and its
-	 * heading, as showTurn places it
-	 */
-	static double[] pose(List<Turn> turns, int robot, double time) {
-		int index = Math.max(0, Math.min((int) Math.floor(time), turns.size() - 1));
-		double fraction = Math.max(0, Math.min(1, time - index));
-		RobotState state = find(turns.get(index).robots(), robot, null);
-		if (state == null) {
-			return null;
-		}
-		RobotState after = find(turns.get(Math.min(index + 1, turns.size() - 1)).robots(), robot, state);
-		return new double[] { lerp(state.x(), after.x(), fraction), lerp(state.y(), after.y(), fraction), lerpAngle(state.bodyHeading(), after.bodyHeading(), fraction) };
-	}
-
-	/** The bullet with the given identifier in a turn, or null when there is none. */
-	static Bullet findBullet(Turn turn, int identifier) {
-		for (Bullet bullet : turn.bullets()) {
-			if (bullet.id() == identifier) {
-				return bullet;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * The whole flight of a bullet, from the muzzle of the gun to where it hits.
-	 *
-	 * @param born
-	 *            the turn (and fraction) when it left the shooter
-	 * @param duration
-	 *            turns until it arrives
-	 * @param hit
-	 *            the record of the hit, null if it flies until the records end
-	 */
-	/**
-	 * A photo of a key moment of the battle, as JPEG: a hit that hurts or a robot
-	 * destroyed
-	 *
-	 * @param round
-	 *            the round of the battle, from 1
-	 * @param destruction
-	 *            true when the subject was destroyed, false when it hit
-	 * @param subject
-	 *            the robot that fired the hit, or the robot destroyed
-	 * @param power
-	 *            the power of the hit, zero for a destruction
-	 * @param jpeg
-	 *            the picture of the 3D view
-	 */
-	public record BattlePhoto(int round, boolean destruction, Opponent subject, double power, byte[] jpeg) {
-	}
-
-	/** A photo waiting for its moment: the seconds left, then it is taken */
-	record PendingPhoto(double remaining, int round, boolean destruction, Opponent subject, double power) {
-	}
-
-	/** The state of the robot with the given index, or the fallback when it is not in the list. */
-	static RobotState find(List<RobotState> states, int index, RobotState fallback) {
-		for (RobotState state : states) {
-			if (state.index() == index) {
-				return state;
-			}
-		}
-		return fallback;
-	}
-
-	/**
-	 * A small picture of one color, for materials that shine by themselves
-	 */
-	static WritableImage solidMap(Color color) {
-		WritableImage map = new WritableImage(2, 2);
-		for (int posY = 0; posY < 2; posY++) {
-			for (int posX = 0; posX < 2; posX++) {
-				map.getPixelWriter().setColor(posX, posY, color);
-			}
-		}
-		return map;
-	}
-
 	/** Stops the music of the showcase, if it is playing. */
 	void stopShowcaseMusic() {
 		if (this.showcaseMusic != null) {
 			this.showcaseMusic.stop();
 			this.showcaseMusic = null;
 		}
-	}
-
-	/** Linear interpolation between two values. */
-	static double lerp(double first, double second, double time) {
-		return first + (second - first) * time;
-	}
-
-	/**
-	 * Interpolates angles (radians) the short way
-	 */
-	static double lerpAngle(double first, double second, double time) {
-		double difference = Math.IEEEremainder(second - first, Math.PI * 2);
-		return first + difference * time;
 	}
 
 	// ------------------------------------------------------------------ robot

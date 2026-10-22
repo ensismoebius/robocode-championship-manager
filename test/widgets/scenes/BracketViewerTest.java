@@ -17,7 +17,7 @@ import model.Opponent;
 import support.ChampionshipFixture;
 import support.FxSupport;
 import tournament.Bracket;
-import tournament.Bracket.Match;
+import tournament.Match;
 
 class BracketViewerTest {
 

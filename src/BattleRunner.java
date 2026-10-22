@@ -6,7 +6,7 @@ import javafx.application.ConditionalFeature;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import model.Opponent;
-import tournament.Bracket.Match;
+import tournament.Match;
 import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.BattleOutcome;

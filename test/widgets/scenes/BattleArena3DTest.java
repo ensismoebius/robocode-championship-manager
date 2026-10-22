@@ -58,17 +58,17 @@ class BattleArena3DTest {
 
 	@Test
 	void interpolationMovesFromOneValueToTheOther() {
-		assertEquals(0.0, BattleArena3D.lerp(0, 10, 0), 1e-9);
-		assertEquals(10.0, BattleArena3D.lerp(0, 10, 1), 1e-9);
-		assertEquals(5.0, BattleArena3D.lerp(0, 10, 0.5), 1e-9);
+		assertEquals(0.0, ArenaHelpers.lerp(0, 10, 0), 1e-9);
+		assertEquals(10.0, ArenaHelpers.lerp(0, 10, 1), 1e-9);
+		assertEquals(5.0, ArenaHelpers.lerp(0, 10, 0.5), 1e-9);
 		// The short way round: from almost a full turn to a little past zero
-		assertEquals(Math.PI * 2 + 0.1, BattleArena3D.lerpAngle(Math.PI * 2 - 0.1, 0.1, 1), 1e-9);
+		assertEquals(Math.PI * 2 + 0.1, ArenaHelpers.lerpAngle(Math.PI * 2 - 0.1, 0.1, 1), 1e-9);
 	}
 
 	@Test
 	void colorsBecomeCssText() {
-		assertEquals("#ff0000", BattleArena3D.toCss(Color.RED));
-		assertEquals("#000000", BattleArena3D.toCss(Color.BLACK));
+		assertEquals("#ff0000", ArenaHelpers.toCss(Color.RED));
+		assertEquals("#000000", ArenaHelpers.toCss(Color.BLACK));
 	}
 
 	@Test

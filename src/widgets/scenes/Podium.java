@@ -1,21 +1,21 @@
 package widgets.scenes;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static widgets.scenes.PodiumAnimations.slam;
+import static widgets.scenes.PodiumAnimations.drop;
+import static widgets.scenes.PodiumAnimations.zoomSpin;
+import static widgets.scenes.PodiumAnimations.rise;
+import static widgets.scenes.PodiumTrophy.trophy;
+
 import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.ParallelTransition;
-import javafx.animation.RotateTransition;
-import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
@@ -25,19 +25,12 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.Reflection;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
 import javafx.scene.shape.Polygon;
-import javafx.scene.shape.SVGPath;
 import javafx.util.Duration;
 import model.BattleMoment;
 import model.Opponent;
@@ -286,12 +279,12 @@ public class Podium extends StackPane {
 		Group trophy = trophy(GOLD);
 		StackPane trophyBox = this.trophyBox(trophy);
 
-		Node title = this.title("CAMPEÃO!", 0.09);
+		Node title = PodiumPieces.title(this, "CAMPEÃO!", 0.09);
 		DropShadow glow = new DropShadow(40, GOLD);
 		glow.setSpread(0.3);
 		title.setEffect(glow);
 
-		ImageView image = this.image(champion, 0.30, 0.5, true);
+		ImageView image = PodiumPieces.image(this, champion, 0.30, 0.5, true);
 		image.setEffect(new DropShadow(50, GOLD));
 
 		Label name = new Label(champion.getName().toUpperCase());
@@ -443,94 +436,6 @@ public class Podium extends StackPane {
 	// ---------------------------------------------------------------- pieces
 
 	/**
-	 * The robot picture, a fit of the height of the screen
-	 */
-	ImageView image(Opponent opponent, double heightFactor, double widthFactor, boolean reflection) {
-		ImageView view = new ImageView();
-		view.setSmooth(true);
-		view.setPreserveRatio(true);
-		view.fitHeightProperty().bind(this.heightProperty().multiply(heightFactor));
-		view.fitWidthProperty().bind(this.widthProperty().multiply(widthFactor));
-		if (reflection) {
-			view.setEffect(new Reflection(0, 0.3, 0.35, 0));
-		}
-		if (opponent != null && opponent.getImage() != null) {
-			view.setImage(new Image(new ByteArrayInputStream(opponent.getImage())));
-		}
-		return view;
-	}
-
-	/**
-	 * Big pixel letters. The font has no tilde on the A, so it is drawn over it.
-	 *
-	 * @param heightFactor
-	 *            the size of the letters, from the height of the screen
-	 */
-	Node title(String text, double heightFactor) {
-		HBox letters = new HBox();
-		letters.setAlignment(Pos.CENTER);
-		for (char column : text.toCharArray()) {
-			Label letter = new Label(String.valueOf(column == 'Ã' ? 'A' : column));
-			letter.getStyleClass().add("podium-title");
-			letter.styleProperty().bind(this.heightProperty().multiply(heightFactor).asString("-fx-font-size: %.0fpx;"));
-			if (column == 'Ã') {
-				Label tilde = new Label("~");
-				tilde.getStyleClass().add("podium-title");
-				tilde.styleProperty().bind(this.heightProperty().multiply(heightFactor * 0.8).asString("-fx-font-size: %.0fpx;"));
-				tilde.translateYProperty().bind(this.heightProperty().multiply(-heightFactor * 0.62));
-				tilde.setMouseTransparent(true);
-				StackPane both = new StackPane(letter, tilde);
-				both.setAlignment(Pos.CENTER);
-				letters.getChildren().add(both);
-			} else {
-				letters.getChildren().add(letter);
-			}
-		}
-		letters.setMouseTransparent(true);
-		return letters;
-	}
-
-	/**
-	 * A golden cup, with handles, a star and a base
-	 */
-	static Group trophy(Color color) {
-		Color light = color.interpolate(Color.WHITE, 0.55);
-		Color dark = color.interpolate(Color.BLACK, 0.45);
-		LinearGradient metal = new LinearGradient(0, 0, 1, 0, true, CycleMethod.NO_CYCLE, new Stop(0, dark), new Stop(0.3, light), new Stop(0.55, color), new Stop(1, dark));
-		SVGPath cup = new SVGPath();
-		cup.setContent("M20,0 L140,0 L140,45 C140,100 112,122 80,128 C48,122 20,100 20,45 Z");
-		SVGPath left = new SVGPath();
-		left.setContent("M22,14 C-14,12 -12,72 32,88 L38,76 C8,64 8,30 22,28 Z");
-		SVGPath right = new SVGPath();
-		right.setContent("M138,14 C174,12 172,72 128,88 L122,76 C152,64 152,30 138,28 Z");
-		SVGPath stem = new SVGPath();
-		stem.setContent("M68,126 L92,126 L96,160 L64,160 Z");
-		SVGPath base = new SVGPath();
-		base.setContent("M40,160 L120,160 L132,190 L28,190 Z");
-		for (SVGPath part : List.of(cup, left, right, stem, base)) {
-			part.setFill(metal);
-			part.setStroke(dark);
-			part.setStrokeWidth(2);
-		}
-		SVGPath shine = new SVGPath();
-		shine.setContent("M32,8 L46,8 L50,52 C52,84 66,104 80,112 C52,104 34,84 32,50 Z");
-		shine.setFill(Color.color(1, 1, 1, 0.55));
-		Polygon star = new Polygon();
-		double cxValue = 80;
-		double cyValue = 52;
-		for (int index = 0; index < 10; index++) {
-			double radius = index % 2 == 0 ? 24 : 10;
-			double angle = -Math.PI / 2 + Math.PI * index / 5;
-			star.getPoints().addAll(cxValue + Math.cos(angle) * radius, cyValue + Math.sin(angle) * radius);
-		}
-		star.setFill(Color.web("#fff6c0"));
-		star.setStroke(dark);
-		Group group = new Group(left, right, stem, base, cup, shine, star);
-		group.setEffect(new DropShadow(36, color));
-		return group;
-	}
-
-	/**
 	 * Stars that twinkle around the trophy
 	 */
 	void sparkles(Group trophy) {
@@ -554,79 +459,6 @@ public class Podium extends StackPane {
 	}
 
 	// ------------------------------------------------------------ animations
-
-	/**
-	 * Comes huge and slams onto the screen
-	 */
-	static Animation slam(Node node, double delay, double millis) {
-		node.setScaleX(7);
-		node.setScaleY(7);
-		ScaleTransition scale = new ScaleTransition(Duration.millis(millis), node);
-		scale.setToX(1);
-		scale.setToY(1);
-		scale.setInterpolator(Theme.OVERSHOOT);
-		return delayed(delay, fadeIn(node, millis * 0.4), scale);
-	}
-
-	/**
-	 * Falls from above and bounces
-	 */
-	static Animation drop(Node node, double delay, double millis) {
-		node.setTranslateY(-900);
-		TranslateTransition fall = new TranslateTransition(Duration.millis(millis), node);
-		fall.setToY(0);
-		fall.setInterpolator(BOUNCE);
-		return delayed(delay, fadeIn(node, 120), fall);
-	}
-
-	/**
-	 * Grows from nothing, turning
-	 */
-	static Animation zoomSpin(Node node, double delay, double millis) {
-		node.setScaleX(0);
-		node.setScaleY(0);
-		node.setRotate(-35);
-		ScaleTransition scale = new ScaleTransition(Duration.millis(millis), node);
-		scale.setToX(1);
-		scale.setToY(1);
-		scale.setInterpolator(Theme.OVERSHOOT);
-		RotateTransition turn = new RotateTransition(Duration.millis(millis), node);
-		turn.setToAngle(0);
-		turn.setInterpolator(Interpolator.EASE_OUT);
-		return delayed(delay, fadeIn(node, 150), scale, turn);
-	}
-
-	/** Shows the node in the given millis */
-	private static FadeTransition fadeIn(Node node, double millis) {
-		FadeTransition fade = new FadeTransition(Duration.millis(millis), node);
-		fade.setFromValue(0);
-		fade.setToValue(1);
-		return fade;
-	}
-
-	/** The animations at the same time, after the delay */
-	static Animation delayed(double delay, Animation fade, Animation... moves) {
-		List<Animation> all = new ArrayList<Animation>(List.of(moves));
-		all.add(fade);
-		ParallelTransition both = new ParallelTransition(all.toArray(new Animation[0]));
-		both.setDelay(Duration.millis(delay));
-		return both;
-	}
-	/**
-	 * Fades in going up a little
-	 */
-	static Animation rise(Node node, double delay) {
-		node.setTranslateY(40);
-		TranslateTransition translateTransition = new TranslateTransition(Duration.millis(450), node);
-		translateTransition.setToY(0);
-		translateTransition.setInterpolator(Interpolator.EASE_OUT);
-		FadeTransition fade = new FadeTransition(Duration.millis(450), node);
-		fade.setFromValue(0);
-		fade.setToValue(1);
-		ParallelTransition both = new ParallelTransition(translateTransition, fade);
-		both.setDelay(Duration.millis(delay));
-		return both;
-	}
 
 	/**
 	 * The screen trembles for a moment

@@ -15,7 +15,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.stage.Stage;
 import support.FxSupport;
-import tournament.Bracket.Importance;
+import tournament.Importance;
 
 /** The keys, the mouse and the wheel of the arena, while a battle plays on it. */
 class ArenaInteractionTest {
@@ -51,7 +51,7 @@ class ArenaInteractionTest {
 		wheel(arena, 10);
 		wheel(arena, -10);
 		ArenaSimulation.frames(arena, 40, 0.05);
-		assertEquals(BattleArena3D.ViewMode.FREE, FxSupport.run(() -> arena.viewMode));
+		assertEquals(ViewMode.FREE, FxSupport.run(() -> arena.viewMode));
 
 		key(arena, KeyCode.V, false);
 		key(arena, KeyCode.V, false);
@@ -79,13 +79,13 @@ class ArenaInteractionTest {
 		ArenaSimulation.frames(arena, 20, 0.05);
 
 		// Enter goes on from the phase the battle is in: the showcase, the replay, or the playing battle
-		for (BattleArena3D.Phase phase : List.of(BattleArena3D.Phase.SHOWCASE, BattleArena3D.Phase.REPLAY, BattleArena3D.Phase.PLAYING)) {
+		for (Phase phase : List.of(Phase.SHOWCASE, Phase.REPLAY, Phase.PLAYING)) {
 			FxSupport.runVoid(() -> arena.phase = phase);
 			key(arena, KeyCode.ENTER, false);
 			ArenaSimulation.frames(arena, 5, 0.05);
 		}
 		// The replay ends by Enter as well, when the battle is frozen on it
-		FxSupport.runVoid(() -> arena.phase = BattleArena3D.Phase.FREEZE);
+		FxSupport.runVoid(() -> arena.phase = Phase.FREEZE);
 		FxSupport.runVoid(() -> arena.controls.skip(false));
 
 		FxSupport.close(window);

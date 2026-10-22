@@ -4,8 +4,8 @@ import static widgets.scenes.BattleArena3D.PHOTO_DESTRUCTION_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_POWER;
 import static widgets.scenes.ArenaMaterials.energy;
-import static widgets.scenes.BattleArena3D.findBullet;
-import static widgets.scenes.BattleArena3D.pose;
+import static widgets.scenes.ArenaHelpers.findBullet;
+import static widgets.scenes.ArenaHelpers.pose;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -22,8 +22,8 @@ import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import utils.robocode.BattleRecording;
-import widgets.scenes.BattleArena3D.PendingPhoto;
-import widgets.scenes.BattleArena3D.Phase;
+import widgets.scenes.PendingPhoto;
+import widgets.scenes.Phase;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -160,7 +160,7 @@ final class ArenaBullets {
 		double side = 0;
 		double ahead = 0;
 		if (hit != null && hit.state() == BattleRecording.BULLET_HIT_VICTIM) {
-			RobotState victim = BattleArena3D.find(turns.get(path.end()).robots(), hit.victim(), null);
+			RobotState victim = ArenaHelpers.find(turns.get(path.end()).robots(), hit.victim(), null);
 			double[] pose = pose(turns, hit.victim(), when);
 			if (victim != null && pose != null) {
 				double oxValue = hit.x() - victim.x();
@@ -342,7 +342,7 @@ final class ArenaBullets {
 
 	/** What happens to one robot in a turn: it hits a wall or a robot, runs low on energy, or is destroyed */
 	private void robotEvents(RobotState state, Turn previous, int turnIndex) {
-		RobotState before = previous == null ? null : BattleArena3D.find(previous.robots(), state.index(), null);
+		RobotState before = previous == null ? null : ArenaHelpers.find(previous.robots(), state.index(), null);
 		RobotView view = host.robots.get(state.index());
 		if (view == null) {
 			return;
@@ -398,12 +398,12 @@ final class ArenaBullets {
 
 		Color hot = tint.interpolate(Color.WHITE, 0.75);
 		PhongMaterial coreMaterial = new PhongMaterial(hot);
-		coreMaterial.setSelfIlluminationMap(BattleArena3D.solidMap(hot));
+		coreMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(hot));
 		// The halo and the tail are see through and shine by themselves
 		PhongMaterial haloMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.28));
-		haloMaterial.setSelfIlluminationMap(BattleArena3D.solidMap(tint));
+		haloMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(tint));
 		PhongMaterial tailMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.4));
-		tailMaterial.setSelfIlluminationMap(BattleArena3D.solidMap(tint));
+		tailMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(tint));
 		Group shot = new Group(tail.view(tailMaterial), halo.view(haloMaterial), core.view(coreMaterial));
 		// Turned around the head, where the bullet is. Not with setRotate: it turns
 		// around the middle of the bolt, the long tail moves it there, and the head

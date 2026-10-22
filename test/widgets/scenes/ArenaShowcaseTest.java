@@ -12,7 +12,7 @@ import model.Author;
 import model.Opponent;
 import support.ChampionshipFixture;
 import support.FxSupport;
-import tournament.Bracket.Importance;
+import tournament.Importance;
 import utils.robocode.BattleRecording;
 
 class ArenaShowcaseTest {

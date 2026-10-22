@@ -1,5 +1,7 @@
 package widgets.scenes;
 
+import tournament.Importance;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -74,11 +76,11 @@ public final class ArenaSimulation {
 	 * @return true when the battle finished within the frames given
 	 */
 	static boolean battle(BattleArena3D arena, BattleRecording recording, int frames, double seconds) {
-		return battle(arena, recording, frames, seconds, "Final", Bracket.Importance.FINAL);
+		return battle(arena, recording, frames, seconds, "Final", Importance.FINAL);
 	}
 
 	/** Plays the recording as a stage of the championship, with its name and importance. */
-	static boolean battle(BattleArena3D arena, BattleRecording recording, int frames, double seconds, String stage, Bracket.Importance importance) {
+	static boolean battle(BattleArena3D arena, BattleRecording recording, int frames, double seconds, String stage, Importance importance) {
 		CountDownLatch finished = new CountDownLatch(1);
 		FxSupport.runVoid(() -> {
 			arena.setStage(stage, importance);

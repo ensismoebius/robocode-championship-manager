@@ -17,13 +17,13 @@ class ArenaCameraTest {
 		ArenaSimulation.battle(arena, ArenaSimulation.recording(ArenaSimulation.OUTPUT), 60, 0.05);
 
 		FxSupport.runVoid(() -> {
-			arena.viewMode = BattleArena3D.ViewMode.CINEMATIC;
-			arena.phase = BattleArena3D.Phase.PLAYING;
+			arena.viewMode = ViewMode.CINEMATIC;
+			arena.phase = Phase.PLAYING;
 			arena.shotTime = 2;
 			// A hit with a power that always cuts, to the first robot of the battle
 			arena.director.impactCut(arena.robots.keySet().iterator().next(), 10);
 		});
-		assertEquals(BattleArena3D.Shot.IMPACT, FxSupport.run(() -> arena.shot));
+		assertEquals(Shot.IMPACT, FxSupport.run(() -> arena.shot));
 
 		FxSupport.runVoid(() -> {
 			RobotView robot = arena.robots.values().iterator().next();
@@ -46,7 +46,7 @@ class ArenaCameraTest {
 		ArenaSimulation.battle(arena, ArenaSimulation.recording(ArenaSimulation.OUTPUT), 60, 0.05);
 
 		FxSupport.runVoid(() -> {
-			arena.viewMode = BattleArena3D.ViewMode.FREE;
+			arena.viewMode = ViewMode.FREE;
 			arena.yawSpeed = 100;
 		});
 		ArenaSimulation.frames(arena, 5, 0.05);
@@ -55,9 +55,9 @@ class ArenaCameraTest {
 			// Under tension the wide shot is replaced by the close one, every time
 			for (int pick = 0; pick < 200; pick++) {
 				arena.director.pickShot(pick % 2 == 0);
-				assertNotEquals(BattleArena3D.Shot.WIDE, arena.shot);
+				assertNotEquals(Shot.WIDE, arena.shot);
 			}
-			arena.phase = BattleArena3D.Phase.PLAYING;
+			arena.phase = Phase.PLAYING;
 			arena.director.placeBalloons();
 		});
 	}
