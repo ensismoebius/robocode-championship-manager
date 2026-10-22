@@ -375,6 +375,7 @@ Hold **`Alt`** on the start screen to see this list.
 | `I` | Start screen |
 | `Ctrl + G` | Draws a new championship |
 | `Ctrl + S` | Opens or closes registrations |
+| `Ctrl + E` | Opens the teams and robots: sees the battle cry, the people, the music and the source, and edits the texts |
 | `R` | Bracket (click a match to select it) |
 | `N` | Selects the next match (and flies to it) |
 | `B` | Versus screen of the selected match |

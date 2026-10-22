@@ -43,6 +43,7 @@ import widgets.scenes.BattleArena3D;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.Podium;
+import widgets.scenes.RobotsEditor;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
 import widgets.ArcadeBackground;
@@ -86,6 +87,7 @@ public class Main extends Application {
 	private static final double START_MUSIC_VOLUME = 0.15;
 	static final double BRACKET_MUSIC_VOLUME = 0.10;
 	private BattleViewer battleScene;
+	private RobotsEditor robotsScene;
 	ShowOponent opponentScene;
 	Podium podiumScene;
 	/** The screen is fading to the champion: the keys wait */
@@ -345,6 +347,28 @@ public class Main extends Application {
 	}
 
 	/**
+	 * Shows the robots editor: the organizer sees and changes the teams and the robots. Its texts are read again
+	 * by the championship when it is saved.
+	 */
+	void openRobotsEditor() {
+		if (this.battleRunning) {
+			this.showError("Aguarde a batalha terminar para editar os robôs.");
+			return;
+		}
+		this.resetAllScenes();
+		this.robotsScene = new RobotsEditor(this::reloadOpponents, () -> {
+			this.resetAllScenes();
+			this.showStartScreen();
+		});
+		this.show(this.robotsScene);
+	}
+
+	/** Reads the robots of the championship again, after they were changed. */
+	void reloadOpponents() {
+		flow.reloadOpponents();
+	}
+
+	/**
 	 * Saves the source code of every robot as temp/robochamp-export/team/RobotName.java
 	 */
 	void exportToFiles() {
@@ -385,6 +409,11 @@ public class Main extends Application {
 		if (this.battleScene != null)
 			this.battleScene.stop();
 		this.battleScene = null;
+
+		// Resets the robots editor
+		if (this.robotsScene != null)
+			this.robotsScene.stop();
+		this.robotsScene = null;
 
 		// Resets initial screen
 		this.startScene = null;

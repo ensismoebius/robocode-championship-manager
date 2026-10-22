@@ -34,6 +34,16 @@ final class ChampionshipFlow {
 		this.setChampionship(host.championship);
 	}
 
+	/**
+	 * Reads the championship again, so the robots of the bracket show the texts that were saved. Does nothing
+	 * when there is no championship.
+	 */
+	void reloadOpponents() {
+		if (host.championship != null) {
+			this.setChampionship(ChampionshipService.current());
+		}
+	}
+
 	/** Shows the given championship and its bracket, or nothing when it is null. */
 	void setChampionship(Championship championship) {
 		host.championship = championship;

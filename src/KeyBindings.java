@@ -1,3 +1,4 @@
+import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyEvent;
 import widgets.Sfx;
 import widgets.GameDialog;
@@ -29,6 +30,10 @@ final class KeyBindings {
 		// All events with control key
 		if (event.isControlDown()) {
 			this.handleControlKey(event);
+			return;
+		}
+		// While typing in a field the letters are text, not shortcuts
+		if (event.getTarget() instanceof TextInputControl) {
 			return;
 		}
 		// The trophies ceremony: the operator controls it
@@ -100,6 +105,8 @@ final class KeyBindings {
 		case S -> host.toggleRegistration();
 		// Draws a new championship
 		case G -> host.newChampionship();
+		// Sees and changes the teams and their robots
+		case E -> host.openRobotsEditor();
 		// Undo the last result
 		case Z -> host.undoLastResult();
 		// Ends the program, the window has no close button in full screen

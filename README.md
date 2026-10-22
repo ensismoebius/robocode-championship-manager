@@ -376,6 +376,7 @@ Segure **`Alt`** na tela inicial para ver esta lista.
 | `I` | Tela inicial |
 | `Ctrl + G` | Sorteia um novo campeonato |
 | `Ctrl + S` | Abre ou fecha as inscrições |
+| `Ctrl + E` | Abre as equipes e os robôs: vê o lema, as pessoas, a música e o código, e edita os textos |
 | `R` | Chaveamento (clique numa partida para selecioná-la) |
 | `N` | Seleciona a próxima partida (e voa até ela) |
 | `B` | Tela de versus da partida selecionada |
