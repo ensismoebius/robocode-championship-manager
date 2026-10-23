@@ -192,6 +192,13 @@ final class LowPoly {
 	 * A thin tube from a to b, like a segment of a lightning bolt
 	 */
 	void tube(double[] first, double[] second, double radius, int sides) {
+		this.tube(first, second, radius, radius, sides);
+	}
+
+	/**
+	 * A tube from a to b that gets thicker or thinner along the way, like a branch
+	 */
+	void tube(double[] first, double[] second, double startRadius, double endRadius, int sides) {
 		double[] direction = { second[0] - first[0], second[1] - first[1], second[2] - first[2] };
 		double length = Math.sqrt(direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2]);
 		if (length < 1e-6) {
@@ -210,12 +217,12 @@ final class LowPoly {
 		double[][] bottom = new double[sides][3];
 		double[][] top = new double[sides][3];
 		for (int index = 0; index < sides; index++) {
-			double cos = Math.cos(Math.PI * 2 * index / sides) * radius;
-			double sin = Math.sin(Math.PI * 2 * index / sides) * radius;
+			double cos = Math.cos(Math.PI * 2 * index / sides);
+			double sin = Math.sin(Math.PI * 2 * index / sides);
 			for (int deepIndex3 = 0; deepIndex3 < 3; deepIndex3++) {
 				double offset = uCoord[deepIndex3] * cos + vCoord[deepIndex3] * sin;
-				bottom[index][deepIndex3] = first[deepIndex3] + offset;
-				top[index][deepIndex3] = second[deepIndex3] + offset;
+				bottom[index][deepIndex3] = first[deepIndex3] + offset * startRadius;
+				top[index][deepIndex3] = second[deepIndex3] + offset * endRadius;
 			}
 		}
 		this.solid(bottom, top);

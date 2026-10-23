@@ -128,6 +128,7 @@ public class BattleArena3D extends StackPane {
 	final ArenaHud hud = new ArenaHud(this);
 	final VolcanoArena volcano = new VolcanoArena(this);
 	final JungleArena jungle = new JungleArena(this);
+	final EdenArena eden = new EdenArena(this);
 	final ArenaBullets shots = new ArenaBullets(this);
 	final ArenaCamera director = new ArenaCamera(this);
 	final ArenaShowcase showcase = new ArenaShowcase(this);

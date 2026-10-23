@@ -141,6 +141,7 @@ final class Critters {
 	private static Kind kind(ArenaStyle style, int index) {
 		return switch (style) {
 		case JUNGLE -> index % 3 == 2 ? Kind.BIRD : Kind.MONKEY;
+		case EDEN_SOLAR -> index % 2 == 0 ? Kind.BIRD : Kind.MONKEY;
 		case ICE -> Kind.PENGUIN;
 		case NEON -> Kind.BEETLE;
 		case VOLCANO -> index % 3 == 2 ? Kind.BAT : Kind.SALAMANDER;

@@ -96,6 +96,7 @@ final class ArenaTicker {
 	void updateEffects(double deltaTime) {
 	host.fire.update(deltaTime * host.effectRate);
 	host.jungle.updateSunbeams(deltaTime);
+	host.eden.update(deltaTime);
 	host.neon.update(deltaTime);
 	host.ice.update(deltaTime);
 	if (host.critters != null) {

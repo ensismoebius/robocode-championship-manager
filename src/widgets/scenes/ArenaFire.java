@@ -269,14 +269,14 @@ final class ArenaFire {
 	private void spawnAmbient(double deltaTime) {
 	// Embers rise from the lava, snow falls on the ice. Below a limit, so the
 	// fire of the robots is never left out.
-	double rate = host.style == ArenaStyle.VOLCANO ? 26 : host.style == ArenaStyle.ICE ? 95 : host.style == ArenaStyle.JUNGLE ? 16 : 0;
+	double rate = host.style == ArenaStyle.VOLCANO ? 26 : host.style == ArenaStyle.ICE ? 95 : host.style == ArenaStyle.JUNGLE ? 16 : host.style == ArenaStyle.EDEN_SOLAR ? 22 : 0;
 	this.ambientDebt += deltaTime * rate;
 	while (this.ambientDebt >= 1) {
 		this.ambientDebt--;
 		if (this.particles.size() > 550) {
 			continue;
 		}
-		if (host.style == ArenaStyle.JUNGLE) {
+		if (host.style == ArenaStyle.JUNGLE || host.style == ArenaStyle.EDEN_SOLAR) {
 			double posX = (host.random.nextDouble() - 0.5) * (host.fieldWidth + 700);
 			double posZ = (host.random.nextDouble() - 0.5) * (host.fieldHeight + 700);
 			this.spawn(ParticleKind.FIREFLY, posX, -8 - host.random.nextDouble() * 60, posZ, 0);

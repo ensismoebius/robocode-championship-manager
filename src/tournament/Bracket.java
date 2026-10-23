@@ -319,6 +319,11 @@ public class Bracket {
 		return this.getChampion() != null;
 	}
 
+	/** Tells whether the match decides the championship: the grand final, or the final of a bracket without repechage. */
+	public boolean isDecider(Match match) {
+		return match == this.decider;
+	}
+
 	/**
 	 * @return the champion or null if the championship is not over
 	 */

@@ -10,6 +10,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import model.Opponent;
 import tournament.Match;
 import tournament.Slot;
@@ -23,6 +24,10 @@ import static widgets.scenes.BracketViewer.CARD_H;
  * The cards of the matches: the two slots of each match, its status and its code
  */
 final class BracketCards {
+
+	/** The grand final is shown a little larger than the other cards, in gold */
+	private static final double GRAND_SCALE = 1.1;
+	private static final Color GRAND_GOLD = Color.web("#ffc933");
 
 	private final BracketViewer host;
 
@@ -46,7 +51,14 @@ final class BracketCards {
 		}
 		}
 
-		HBox header = this.statusHeader(match);
+		boolean grand = this.isGrandFinalFilled(match);
+		if (grand) {
+			card.getStyleClass().add("grand-final");
+			card.setScaleX(GRAND_SCALE);
+			card.setScaleY(GRAND_SCALE);
+			shine(card);
+		}
+		HBox header = this.statusHeader(match, grand);
 
 		HBox rowA = this.buildSlotRow(match, match.getA());
 		HBox rowB = this.buildSlotRow(match, match.getB());
@@ -64,9 +76,19 @@ final class BracketCards {
 		return card;
 	}
 
-	/** The header of a card: its code on the left and its status on the right */
-	private HBox statusHeader(Match match) {
-		Label code = new Label(match.getCode());
+	/** Tells whether the match is the one that decides the championship and both robots are already in it. */
+	private boolean isGrandFinalFilled(Match match) {
+		return host.bracket.isDecider(match) && match.getA().getParticipant() != null && match.getB().getParticipant() != null;
+	}
+
+	/** The golden glow of the grand final, kept when the card is selected and deselected. */
+	static void shine(VBox card) {
+		card.setEffect(Theme.glow(GRAND_GOLD, 34));
+	}
+
+	/** The header of a card: its code on the left and its status on the right, the title of the grand final instead of the code */
+	private HBox statusHeader(Match match, boolean grand) {
+		Label code = new Label(grand ? "★ GRANDE FINAL ★" : match.getCode());
 		code.getStyleClass().add("match-code");
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);

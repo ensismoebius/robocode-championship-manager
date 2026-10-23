@@ -83,6 +83,25 @@
 	-fx-border-width: 3;
 }
 
+.match-card.grand-final {
+	-fx-background-color: linear-gradient(to bottom, rgba(70, 52, 8, 0.96), rgba(26, 22, 14, 0.96));
+	-fx-border-color: linear-gradient(to bottom, #fff3b0, #ffc933 45%, #b8860b);
+	-fx-border-width: 3;
+}
+
+.match-card.grand-final .match-header {
+	-fx-background-color: linear-gradient(to right, #b8860b, #ffd95a 50%, #b8860b);
+}
+
+.match-card.grand-final .match-code,
+.match-card.grand-final .match-status {
+	-fx-text-fill: #2a1d00;
+}
+
+.match-card.grand-final .match-code {
+	-fx-font-size: 11px;
+}
+
 .match-card.bye {
 	-fx-opacity: 0.45;
 }

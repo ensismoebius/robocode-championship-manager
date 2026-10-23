@@ -81,7 +81,7 @@ final class ArenaFence {
 			PhongMaterial edge = material(FENCE_BASE);
 			PhongMaterial cell = material(FENCE_BASE);
 			plane.getChildren().add(HexPanel.band(span, along, AIM_HEIGHT, ring * RING_WIDTH, (ring + 1) * RING_WIDTH, edge, cell));
-			this.light(timeline, edge, cell, 1.0 - ring * 0.22, Duration.millis(ring * 55));
+			this.light(timeline, edge, cell, 1.0 - ring * 0.11, Duration.millis(ring * 45));
 		}
 		timeline.setOnFinished(event -> flash.stop());
 		flash.timeline = timeline;

@@ -39,6 +39,9 @@ final class ArenaBuilder {
 		if (host.style == ArenaStyle.VOLCANO) {
 			// The hottest lava bleeds light around it
 			scene.setEffect(new Bloom(0.6));
+		} else if (host.style == ArenaStyle.EDEN_SOLAR) {
+			// The warm lights of the stadium and the trees of life glow
+			scene.setEffect(new Bloom(0.82));
 		}
 		scene.widthProperty().bind(host.widthProperty());
 		scene.heightProperty().bind(host.heightProperty());
@@ -88,6 +91,7 @@ final class ArenaBuilder {
 		case VOLCANO -> host.volcano.build(width, height);
 		case ICE -> host.ice.build(width, height);
 		case JUNGLE -> host.jungle.build(width, height);
+		case EDEN_SOLAR -> host.eden.build(width, height);
 		}
 		host.arena.getChildren().add(host.glowing);
 		host.forceField.buildFence();

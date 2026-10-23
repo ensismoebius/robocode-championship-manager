@@ -259,6 +259,8 @@ public class BracketViewer extends StackPane {
 		if (selected) {
 			card.getStyleClass().add("selected");
 			Theme.pulseGlow(card, Theme.ACCENT);
+		} else if (card.getStyleClass().contains("grand-final")) {
+			BracketCards.shine(card);
 		} else {
 			card.setEffect(null);
 		}

@@ -48,7 +48,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 | 🗂️ **Teams and robots** | An organizer screen (`Ctrl + E`) lists the robots, shows everything each team sent (with the tank turning in 3D) and lets you edit any information, replace files, and add and delete robots. |
 | 🏆 **Automatic brackets** | Single or double elimination (with repechage), with any number of robots, and a single grand final. |
 | 🎮 **3D battles** | Robocode runs hidden; the battle is recorded and replayed in 3D with a fighting-game HUD, a cinematic camera and a slow-motion replay of the killing shot. |
-| 🌋 **Four arenas** | Neon city, volcanic forge, glacial tundra and tropical forest, each with its own critters, who run away when the battle heats up. |
+| 🌋 **Five arenas** | Neon city, volcanic forge, glacial tundra, tropical forest and Éden Solar, each with its own critters, who run away when the battle heats up. |
 | 🎵 **Music and sound** | Each team comes in with its own music; shots, explosions, tracks and turrets have their own sounds. |
 | 🥇 **Podium** | At the end the champion appears, then third, second and first place are revealed one by one, with bronze, silver and gold trophies. |
 | ↩️ **Undo** | Entered a wrong result? `Ctrl + Z` undoes the last one. |
@@ -71,6 +71,9 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins.</td>
 <td><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b>: dense jungle, rivers and waterfalls.</td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (Africa, 2187): an enclosed stadium with a great opening in its roof to a stormy sky, where the sun breaks through the clouds. The roof is a lattice full of amber lights, and a band of pale blue panels runs around the top. The stands, in two rings, are packed with a crowd from every continent, with flags in the breeze and warm light strips between the rings. The field is a round garden drawn with mandala hedges, flower beds and reflecting pools, ringed by a walkway with lamps. Plants and round trees rise up to the stands. At both ends, at the mouth of each corridor, a glowing baobab, the tree of life, stands. Birds and monkeys roam free. It is the arena of the grand finals.</td>
 </tr>
 </table>
 

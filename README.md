@@ -50,7 +50,7 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 | 🗂️ **Equipes e robôs** | Uma tela do organizador (`Ctrl + E`) lista os robôs, mostra tudo o que cada equipe enviou (com o tanque em 3D girando) e deixa editar qualquer informação, trocar arquivos, adicionar e excluir robôs. |
 | 🏆 **Chaveamento automático** | Eliminatória simples ou dupla (com repescagem), com qualquer número de robôs, e uma única grande final. |
 | 🎮 **Batalhas em 3D** | O Robocode roda escondido; a batalha é gravada e reproduzida em 3D com HUD de jogo de luta, câmera cinematográfica e replay em câmera lenta do golpe final. |
-| 🌋 **Quatro arenas** | Cidade neon, forja vulcânica, tundra glacial e floresta tropical, cada uma com seus bichos, que fogem quando a batalha esquenta. |
+| 🌋 **Cinco arenas** | Cidade neon, forja vulcânica, tundra glacial, floresta tropical e Éden Solar, cada uma com seus bichos, que fogem quando a batalha esquenta. |
 | 🎵 **Música e som** | Cada equipe entra com sua música; tiros, explosões, esteiras e torres têm som próprio. |
 | 🥇 **Pódio** | No fim, o campeão aparece e o terceiro, o segundo e o primeiro lugares são revelados um a um, com troféus de bronze, prata e ouro. |
 | ↩️ **Desfazer** | Errou um resultado? `Ctrl + Z` desfaz o último. |
@@ -71,6 +71,9 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins.</td>
 <td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada, rios e cachoeiras.</td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado com uma grande abertura no teto para um céu de tempestade, onde o sol rompe as nuvens. O teto é uma treliça cheia de luzes âmbar, e uma faixa de painéis azul-claros contorna o topo. As arquibancadas, em dois anéis, ficam lotadas com a plateia de todos os continentes, com bandeiras ao vento e faixas de luz quente entre os anéis. O campo é um jardim redondo desenhado com sebes em mandala, canteiros floridos e espelhos d'água, contornado por uma passarela com lampiões. Plantas e árvores redondas sobem até a arquibancada. Nas duas pontas, na boca de cada corredor, brilha um baobá, a árvore da vida. Pássaros e macacos circulam livres. É a arena das grandes finais.</td>
 </tr>
 </table>
 

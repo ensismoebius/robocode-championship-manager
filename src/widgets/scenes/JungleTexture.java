@@ -183,17 +183,9 @@ final class JungleTexture {
 		return top + (column + (delta - column) * fxValue - top) * fyValue;
 	}
 
-		/** A texture from a function of the x and y positions, over the pixels of the texture. */
-		private static Image make(DoubleBinaryOperator color) {
-		int[] pixels = new int[SIZE * SIZE];
-		for (int posY = 0; posY < SIZE; posY++) {
-			for (int posX = 0; posX < SIZE; posX++) {
-				pixels[posY * SIZE + posX] = 0xff000000 | (int) color.applyAsDouble((double) posX / SIZE * LavaTexture.PERIOD, (double) posY / SIZE * LavaTexture.PERIOD);
-			}
-		}
-		WritableImage image = new WritableImage(SIZE, SIZE);
-		image.getPixelWriter().setPixels(0, 0, SIZE, SIZE, PixelFormat.getIntArgbInstance(), pixels, 0, SIZE);
-		return image;
+	/** A texture from a function of the x and y positions, over the pixels of the texture. */
+	static Image make(DoubleBinaryOperator color) {
+		return TextureMath.image(SIZE, SIZE, (posX, posY) -> (int) color.applyAsDouble((double) posX / SIZE * LavaTexture.PERIOD, (double) posY / SIZE * LavaTexture.PERIOD));
 	}
 
 	}
