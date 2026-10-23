@@ -3,10 +3,13 @@ package widgets.scenes;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
+
+import javafx.scene.Node;
 
 import org.junit.jupiter.api.Test;
 
@@ -122,6 +125,28 @@ class CrittersTest {
 
 			assertNotNull(first);
 			assertEquals(3, now.length);
+		});
+	}
+
+	@Test
+	void theBirdsOfTheEdenPerchOnTheBaobabsAndFlyAroundThem() {
+		FxSupport.runVoid(() -> {
+			Critters critters = critters(ArenaStyle.EDEN_SOLAR, 7);
+			List<double[]> trees = List.of(new double[] { -1800, 0, 0 }, new double[] { 1800, 0, 0 });
+			critters.setRoosts(trees, List.of(List.of(new double[] { -1800, -560, 40 }), List.of(new double[] { 1800, -560, 40 })));
+			List<Node> birds = critters.root().getChildren();
+
+			walk(critters, 1);
+			long perched = birds.stream().filter(bird -> Math.abs(Math.abs(bird.getTranslateX()) - 1800) < 1e-9 && Math.abs(bird.getTranslateZ() - 40) < 1e-9).count();
+
+			// Some are perched, still, and the others are flying
+			assertTrue(perched >= 1 && perched < birds.size(), "perched: " + perched);
+
+			walk(critters, 400);
+			for (Node bird : birds) {
+				double nearest = Math.min(Math.hypot(bird.getTranslateX() + 1800, bird.getTranslateZ()), Math.hypot(bird.getTranslateX() - 1800, bird.getTranslateZ()));
+				assertTrue(nearest < 700, "a bird went off from the baobabs: " + nearest);
+			}
 		});
 	}
 }

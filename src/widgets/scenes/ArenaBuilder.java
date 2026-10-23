@@ -97,6 +97,10 @@ final class ArenaBuilder {
 		host.forceField.buildFence();
 		host.critters = new Critters(host.style, width, height, host.random);
 		host.arena.getChildren().add(host.critters.root());
+		if (host.style == ArenaStyle.EDEN_SOLAR) {
+			// The birds live on the baobabs: perched on them and flying around them
+			host.critters.setRoosts(host.eden.baobabs(), host.eden.perches());
+		}
 		if (host.style == ArenaStyle.ICE && host.ice.seaRadius() > 0) {
 			double centreX = host.ice.seaX();
 			double centreZ = host.ice.seaZ();

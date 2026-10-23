@@ -31,8 +31,6 @@ final class ArenaRounds {
 
 	/** Robocode's default speed, turns per second */
 	private static final double TPS = 30;
-	/** The fly by starts looking at a critter for this long before it goes on */
-	private static final double FLYBY_FOCUS_SECONDS = 2;
 	private static final double INTRO_SECONDS = COUNTDOWN_SECONDS + 1.1;
 	private static final double ROUND_END_SECONDS = 2.8;
 	/** The headline of a special battle, after the last round */
@@ -228,20 +226,36 @@ final class ArenaRounds {
 		System.arraycopy(host.eyeTarget, 0, this.flyEyeEnd, 0, 3);
 		System.arraycopy(host.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = host.fovTarget;
-		// The first look is at a critter, from outside the field: the fly by starts on it
-		host.flyFocusSource = host.critters == null ? null : host.critters.track(-0.8 * host.fieldWidth * this.flyMirrorX, -host.fieldHeight * this.flyMirrorZ);
-		host.flyFocus = host.flyFocusSource == null ? null : host.flyFocusSource.get();
-		// Starts at the first point of the path, no sliding to it
-		this.flyByPose(0);
+		// The fly by starts with its tour: the stops where the camera looks at something before the trip
+		host.flyTour.plan(host, this.flyMirrorX, this.flyMirrorZ);
+		// Starts at the first point, no sliding to it
+		if (host.flyTour.isEmpty()) {
+			this.flyByPose(0);
+		} else {
+			this.flyByTour(0);
+		}
 		System.arraycopy(host.eyeTarget, 0, host.eye, 0, 3);
 		System.arraycopy(host.lookTarget, 0, host.look, 0, 3);
 		host.fov = host.fovTarget;
 		host.hud.updateInfo();
 	}
 
-	/** How long the fly by stays on the critter before the trip: nothing if there is no critter */
+	/** How high above the ground the camera stays on the trip of the fly by, in units of the field */
+	private static final double FLYBY_CLEARANCE = 40;
+
+	/** How long the tour of the fly by lasts before the trip: nothing if it has no stop */
 	double flyByHold() {
-		return host.flyFocusSource == null ? 0 : FLYBY_FOCUS_SECONDS;
+		return host.flyTour.duration();
+	}
+
+	/** Puts the camera where the tour is at that time, easing to it so it glides from one stop to the next. */
+	void flyByTour(double time) {
+		host.flyTour.update(time);
+		System.arraycopy(host.flyTour.eye, 0, host.eyeTarget, 0, 3);
+		System.arraycopy(host.flyTour.look, 0, host.lookTarget, 0, 3);
+		host.fovTarget = host.flyTour.fov;
+		host.rollTarget = 0;
+		host.follow = 8;
 	}
 
 	/** Ends the flyby: hides the letterbox and starts the intro. */
@@ -261,19 +275,18 @@ final class ArenaRounds {
 		double mzValue = this.flyMirrorZ;
 		double[][] eyes = { { -0.8 * width * mxValue, -120, -1.0 * height * mzValue }, { -0.05 * width * mxValue, -50, -0.85 * height * mzValue }, { 0.85 * width * mxValue, -75, -0.1 * height * mzValue }, this.flyEyeEnd };
 		double[][] looks = { { 0.1 * width * mxValue, -40, 0.2 * height * mzValue }, { 0.25 * width * mxValue, -25, 0.1 * height * mzValue }, { -0.2 * width * mxValue, -20, 0 }, this.flyLookEnd };
-		if (host.flyFocus != null) {
-			// Starts looking at the critter, from its outer side, a little above it
-			double fxValue = host.flyFocus[0];
-			double fzValue = host.flyFocus[2];
-			double length = Math.max(1, Math.hypot(fxValue, fzValue));
-			eyes[0] = new double[] { fxValue + fxValue / length * 45, host.flyFocus[1] - 22, fzValue + fzValue / length * 45 };
-			looks[0] = host.flyFocus;
+		if (!host.flyTour.isEmpty()) {
+			// The trip starts where the last stop of the tour was
+			eyes[0] = host.flyTour.eye.clone();
+			looks[0] = host.flyTour.look.clone();
 		}
 		// Slow at the start and at the end, quick in the middle
 		double smooth = progress * progress * (3 - 2 * progress);
 		double uCoord = 0.3 * progress + 0.7 * smooth;
 		catmull(eyes, uCoord, host.eyeTarget);
 		catmull(looks, uCoord, host.lookTarget);
+		// The curve can dip under the ground between far apart points: the camera never goes below the garden
+		host.eyeTarget[1] = Math.min(host.eyeTarget[1], -FLYBY_CLEARANCE);
 		host.fovTarget = 62 + (this.flyFovEnd - 62) * smooth;
 		host.rollTarget = 3 * Math.sin(progress * Math.PI * 2) * (1 - smooth);
 		host.follow = 40;

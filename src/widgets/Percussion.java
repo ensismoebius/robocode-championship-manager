@@ -41,13 +41,36 @@ final class Percussion {
 
 	/** The hi-hat: very short noise, with the low frequencies removed. */
 	static double[] hat() {
-		double[] noise = Synth.noise(0.05, 6);
-		// High pass: noise minus its low pass
-		double[] low = Synth.lowpass(noise.clone(), 0.3);
+		return highPass(Synth.noise(0.05, 6), 0.3);
+	}
+
+	/** The noise minus its low pass: only the high frequencies are left. */
+	private static double[] highPass(double[] noise, double alpha) {
+		double[] low = Synth.lowpass(noise.clone(), alpha);
 		for (int index = 0; index < noise.length; index++) {
 			noise[index] -= low[index];
 		}
 		return noise;
+	}
+
+	/** A shekere, a gourd with a net of beads: noise with no lows, a little longer than a hat. */
+	static double[] shaker() {
+		return highPass(Synth.noise(0.09, 14), 0.2);
+	}
+
+	/** An agogo, a double iron bell: two tones that do not fit each other and ring. */
+	static double[] agogo() {
+		return Synth.mix(Synth.sine(1180, 0.22, 20), Synth.sine(1770, 0.16, 28), 0.7);
+	}
+
+	/** A conga played with the open hand: a short sweep with the ring of the skin. */
+	static double[] conga() {
+		return Synth.mix(Synth.sineSweep(240, 150, 0.26), Synth.lowpass(Synth.noise(0.03, 12), 0.3), 0.3);
+	}
+
+	/** A conga slap, the hand on the rim: sharp and dry. */
+	static double[] slap() {
+		return Synth.mix(highPass(Synth.noise(0.05, 40), 0.35), Synth.sine(420, 0.05, 50), 0.5);
 	}
 
 	/** A heartbeat: two low sweeps with a pause between them. */

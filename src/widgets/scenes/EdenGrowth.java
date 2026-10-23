@@ -127,8 +127,10 @@ final class EdenGrowth {
 			this.vine(stems, wild, top, 60 + wild.nextDouble() * 150);
 		}
 		for (int index = 0; index < 320; index++) {
-			double[] top = EdenStadium.point(wild.nextDouble() * Math.PI * 2, stadium.outerEdge() - 2.5, EdenStadium.roofBase() + 2);
-			this.vine(stems, wild, top, 20 + wild.nextDouble() * 60);
+			double angle = wild.nextDouble() * Math.PI * 2;
+			if (!stadium.screens().covers(angle)) {
+				this.vine(stems, wild, EdenStadium.point(angle, stadium.outerEdge() - 2.5, EdenStadium.roofBase() + 2), 20 + wild.nextDouble() * 60);
+			}
 		}
 		host.arena.getChildren().add(stems.view(material(Color.web("#2c5a26"))));
 	}

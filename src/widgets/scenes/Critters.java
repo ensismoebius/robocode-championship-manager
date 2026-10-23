@@ -1,6 +1,7 @@
 package widgets.scenes;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiPredicate;
@@ -27,6 +28,8 @@ final class Critters {
 
 	/** How big the critters are drawn: small next to the tanks */
 	static final double SCALE = 0.3;
+	/** The birds of the baobabs are drawn this much bigger, or they would be lost against such a big tree */
+	private static final double ROOST_SCALE = 2.5;
 	/** Where the ground is: the feet of the walkers touch it */
 	private static final double GROUND = 5;
 	private static final int COUNT = 9;
@@ -106,6 +109,28 @@ final class Critters {
 		return best == null ? null : () -> this.body(best);
 	}
 
+	/** Follows the critters nearest to the point, the nearest first: fewer if there are not so many. */
+	List<Supplier<double[]>> trackNear(double[] point, int count) {
+		return this.critters.stream().sorted(Comparator.comparingDouble(critter -> Math.hypot(critter.x - point[0], critter.z - point[2]))).limit(count).<Supplier<double[]>>map(critter -> () -> this.body(critter)).toList();
+	}
+
+	/**
+	 * Gives the birds baobabs to live around. Each tree has spots where birds perch: about half of its birds are
+	 * perched on them, the others circle around the tree, and now and then they change places.
+	 */
+	void setRoosts(List<double[]> trees, List<List<double[]>> spots) {
+		if (trees.isEmpty()) {
+			return;
+		}
+		for (int index = 0; index < this.critters.size(); index++) {
+			int tree = index % trees.size();
+			int turn = index / trees.size();
+			List<double[]> places = spots.get(tree);
+			double[] spot = turn % 2 == 0 && !places.isEmpty() ? places.get((turn * 7 + tree) % places.size()) : null;
+			this.critters.get(index).settle(trees.get(tree), spot, this.random.nextDouble() * Math.PI * 2);
+		}
+	}
+
 	/** The critter nearest to the given position, or null when there are none. */
 	private Critter closest(double posX, double posZ) {
 		Critter best = null;
@@ -122,7 +147,7 @@ final class Critters {
 
 	/** The position of the body of a critter, above its feet. */
 	private double[] body(Critter critter) {
-		return new double[] { critter.x, critter.y - 12 * SCALE, critter.z };
+		return new double[] { critter.x, critter.y - 12 * critter.size.getX(), critter.z };
 	}
 
 	/** The kinds of the arenas: a mix of walkers and flyers where there are flyers */
@@ -141,7 +166,7 @@ final class Critters {
 	private static Kind kind(ArenaStyle style, int index) {
 		return switch (style) {
 		case JUNGLE -> index % 3 == 2 ? Kind.BIRD : Kind.MONKEY;
-		case EDEN_SOLAR -> index % 2 == 0 ? Kind.BIRD : Kind.MONKEY;
+		case EDEN_SOLAR -> Kind.BIRD;
 		case ICE -> Kind.PENGUIN;
 		case NEON -> Kind.BEETLE;
 		case VOLCANO -> index % 3 == 2 ? Kind.BAT : Kind.SALAMANDER;
@@ -244,10 +269,12 @@ final class Critters {
 		private final Rotate turn = new Rotate(0, Rotate.Y_AXIS);
 		/** Leans the body forward around its middle, lying on the water to swim */
 		private final Rotate pose = new Rotate(0, 0, -12, 0, Rotate.X_AXIS);
+		/** How big the body is drawn */
+		private final Scale size = new Scale(SCALE, SCALE, SCALE);
 		/** 0 on land, 1 swimming, in between while getting in or out of the water */
 		private double swim;
 		private final List<Joint> joints = new ArrayList<>();
-		private final double altitude;
+		private double altitude;
 		private double x;
 		private double y;
 		private double z;
@@ -259,13 +286,20 @@ final class Critters {
 		private double threatX;
 		private double threatZ;
 		private double time;
+		/** The baobab a bird lives around, and the spot where it perches on it, null if none */
+		private double[] roost;
+		private double[] perch;
+		private boolean perched;
+		/** Seconds until a bird of a baobab changes between perched and flying; the angle of its next goal around the tree */
+		private double stay;
+		private double orbit;
 
 		/** Creates a critter of the given kind, with its model. */
 		Critter(Kind kind) {
 			this.kind = kind;
 			this.root.getTransforms().add(this.turn);
 			Group model = creature(kind, this.joints);
-			model.getTransforms().addAll(new Scale(SCALE, SCALE, SCALE), this.pose);
+			model.getTransforms().addAll(this.size, this.pose);
 			this.root.getChildren().add(model);
 			this.altitude = -120 - Critters.this.random.nextDouble() * 70;
 			double[] start = spawnPoint(kind.flies);
@@ -277,11 +311,55 @@ final class Critters {
 			this.targetZ = goal[1];
 		}
 
+		/** Gives the bird a baobab to live around: perched at the spot if there is one, or circling the tree. */
+		void settle(double[] tree, double[] spot, double angle) {
+			this.roost = tree;
+			this.perch = spot;
+			this.orbit = angle;
+			this.altitude = -380 - Critters.this.random.nextDouble() * 110;
+			this.size.setX(SCALE * ROOST_SCALE);
+			this.size.setY(SCALE * ROOST_SCALE);
+			this.size.setZ(SCALE * ROOST_SCALE);
+			this.perched = spot != null;
+			this.stay = 6 + Critters.this.random.nextDouble() * 20;
+			if (this.perched) {
+				this.x = spot[0];
+				this.y = spot[1];
+				this.z = spot[2];
+				this.heading = Math.atan2(this.x - tree[0], this.z - tree[2]);
+				this.fold();
+				this.place();
+			} else {
+				double[] start = this.circle(angle);
+				this.x = start[0];
+				this.z = start[1];
+				double[] goal = this.circleGoal();
+				this.targetX = goal[0];
+				this.targetZ = goal[1];
+			}
+		}
+
+		/** A point around the tree of the bird, at the angle: its x and z. */
+		private double[] circle(double angle) {
+			double radius = 150 + Critters.this.random.nextDouble() * 130;
+			return new double[] { this.roost[0] + Math.cos(angle) * radius, this.roost[2] + Math.sin(angle) * radius };
+		}
+
+		/** The next place to fly to around the tree: a little further along the circle. */
+		private double[] circleGoal() {
+			this.orbit += 0.7;
+			return this.circle(this.orbit);
+		}
+
 		/** Runs or flies away from a threat; the nearer it is, the more afraid */
 		void frighten(double posX, double posZ, double amount) {
 			this.threatX = posX;
 			this.threatZ = posZ;
 			this.fear = Math.min(1, Math.max(this.fear, amount * 1.5));
+			if (this.roost != null) {
+				// A bird of a baobab flies higher and leaves its perch, it has no other place to run to
+				return;
+			}
 			double[] goal = escape(this.kind.flies, this.x, this.z, posX, posZ);
 			this.targetX = goal[0];
 			this.targetZ = goal[1];
@@ -291,10 +369,15 @@ final class Critters {
 		void update(double deltaTime) {
 			this.time += deltaTime;
 			this.fear = Math.max(0, this.fear - deltaTime * 0.3);
+			if (this.perched) {
+				this.waitOnPerch(deltaTime);
+				return;
+			}
+			boolean landing = this.roost != null && this.readyToLand(deltaTime);
 			double deltaX = this.targetX - this.x;
 			double deltaZ = this.targetZ - this.z;
-			if (Math.hypot(deltaX, deltaZ) < 14) {
-				double[] goal = this.fear > 0.05 ? escape(this.kind.flies, this.x, this.z, this.threatX, this.threatZ) : wander(this.kind.flies, this.x, this.z);
+			if (Math.hypot(deltaX, deltaZ) < 14 && !landing) {
+				double[] goal = this.nextGoal();
 				this.targetX = goal[0];
 				this.targetZ = goal[1];
 				deltaX = this.targetX - this.x;
@@ -318,21 +401,85 @@ final class Critters {
 
 			// The legs swing with the stride, the wings flap quicker when afraid
 			double cycle = this.kind.flies ? this.time * 16 * (1 + this.fear) : this.time * speed * 0.22;
-			for (Joint joint : this.joints) {
-				// Swimming, the flippers stroke hard and the feet trail behind
-				double stroke = joint.rotate().getAxis() == Rotate.Z_AXIS ? 1 + 3 * this.swim : 1 - 0.8 * this.swim;
-				joint.rotate().setAngle(Math.toDegrees(stroke * joint.amplitude() * Math.sin(cycle + joint.phase())));
-			}
+			this.flap(cycle);
 			this.pose.setAngle(-62 * this.swim);
 			if (this.kind.flies) {
 				// Flyers climb away when afraid
-				this.y = this.altitude - this.fear * 70 + Math.sin(this.time * 0.9) * 10;
+				double height = this.altitude - this.fear * 70 + Math.sin(this.time * 0.9) * 10;
+				this.y = landing ? this.perch[1] + (height - this.perch[1]) * Math.min(1, Math.hypot(this.perch[0] - this.x, this.perch[2] - this.z) / 160) : height;
 			} else {
 				// Each step lifts the body, a fearful one jumps; a swimmer floats half under the water
 				double walking = GROUND - Math.abs(Math.sin(cycle)) * (1.2 + 5 * this.fear) * SCALE;
 				double floating = WATER + (8 + Math.sin(this.time * 3) * 0.6) * SCALE;
 				this.y = walking + (floating - walking) * this.swim;
 			}
+			if (landing && Math.hypot(this.perch[0] - this.x, this.perch[2] - this.z) < 4) {
+				this.alight();
+			}
+			this.place();
+		}
+
+		/** Where to go next: around the tree for a bird of a baobab, away from the threat when afraid, else anywhere. */
+		private double[] nextGoal() {
+			if (this.roost != null) {
+				return this.circleGoal();
+			}
+			return this.fear > 0.05 ? escape(this.kind.flies, this.x, this.z, this.threatX, this.threatZ) : wander(this.kind.flies, this.x, this.z);
+		}
+
+		/** Whether it is time for a bird to land on its perch; if it is, that is where it goes. */
+		private boolean readyToLand(double deltaTime) {
+			this.stay -= deltaTime;
+			if (this.perch == null || this.stay > 0 || this.fear > 0.05) {
+				return false;
+			}
+			this.targetX = this.perch[0];
+			this.targetZ = this.perch[2];
+			return true;
+		}
+
+		/** The bird lands: it stays there, wings folded, for a while. */
+		private void alight() {
+			this.perched = true;
+			this.stay = 8 + Critters.this.random.nextDouble() * 22;
+			this.x = this.perch[0];
+			this.y = this.perch[1];
+			this.z = this.perch[2];
+			this.heading = Math.atan2(this.x - this.roost[0], this.z - this.roost[2]);
+			this.fold();
+			this.place();
+		}
+
+		/** A perched bird stays still until it is time to fly, or until something frightens it. */
+		private void waitOnPerch(double deltaTime) {
+			this.stay -= deltaTime;
+			if (this.fear > 0.3 || this.stay <= 0) {
+				this.perched = false;
+				this.stay = 10 + Critters.this.random.nextDouble() * 8;
+				this.orbit = Math.atan2(this.z - this.roost[2], this.x - this.roost[0]);
+				double[] goal = this.circleGoal();
+				this.targetX = goal[0];
+				this.targetZ = goal[1];
+			}
+		}
+
+		/** The legs or the wings swing with the cycle; a swimmer strokes its flippers hard and trails its feet. */
+		private void flap(double cycle) {
+			for (Joint joint : this.joints) {
+				double stroke = joint.rotate().getAxis() == Rotate.Z_AXIS ? 1 + 3 * this.swim : 1 - 0.8 * this.swim;
+				joint.rotate().setAngle(Math.toDegrees(stroke * joint.amplitude() * Math.sin(cycle + joint.phase())));
+			}
+		}
+
+		/** The wings folded down along the body, as a perched bird has them, and the legs at rest. */
+		private void fold() {
+			for (Joint joint : this.joints) {
+				joint.rotate().setAngle(joint.rotate().getAxis() == Rotate.Z_AXIS ? Math.signum(joint.amplitude()) * 70 : 0);
+			}
+		}
+
+		/** Puts the body where the critter is, turned the way it heads. */
+		private void place() {
 			this.turn.setAngle(Math.toDegrees(this.heading));
 			this.root.setTranslateX(this.x);
 			this.root.setTranslateY(this.y);

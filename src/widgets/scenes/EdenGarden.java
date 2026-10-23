@@ -126,13 +126,18 @@ final class EdenGarden {
 		host.arena.getChildren().add(path.view(material(Color.web("#bdb7a6"))));
 	}
 
-	/** A point of the belt of plants between the walkway and the stands, which swell out into lobes, away from the paths. */
-	private double[] spot(Random wild, double inner, double outer) {
+	/**
+	 * A point of the belt of plants between the walkway and the stands, which swell out into lobes, away from the
+	 * paths. The belt reaches the stands wherever they are; with hug, the radii are those of the stands, so the point
+	 * stays at the same distance from them in the lobes as in the waists.
+	 */
+	private double[] spot(Random wild, double inner, double outer, boolean hug) {
 		double posX;
 		double posZ;
 		do {
 			double angle = wild.nextDouble() * Math.PI * 2;
-			double distance = inner + wild.nextDouble() * (outer * (1 + EdenStadium.swell(angle)) - inner);
+			double stretch = 1 + EdenStadium.swell(angle);
+			double distance = hug ? (inner + wild.nextDouble() * (outer - inner)) * stretch : inner + wild.nextDouble() * (outer * stretch - inner);
 			posX = Math.cos(angle) * distance;
 			posZ = Math.sin(angle) * distance;
 		} while (onTheWay(posX, posZ, 70));
@@ -151,8 +156,8 @@ final class EdenGarden {
 			ferns[index].getTexCoords().addAll(0, 0);
 			bushes[index] = new LowPoly();
 		}
-		for (int index = 0; index < 220; index++) {
-			double[] spot = this.spot(wild, inner, outer);
+		for (int index = 0; index < 420; index++) {
+			double[] spot = this.spot(wild, inner, outer, false);
 			host.jungle.fern(ferns[wild.nextInt(ferns.length)], spot[0], spot[1], wild);
 		}
 		this.bushes(bushes, wild, inner, outer);
@@ -173,8 +178,8 @@ final class EdenGarden {
 		for (int index = 0; index < blossoms.length; index++) {
 			flowers[index] = new LowPoly();
 		}
-		for (int index = 0; index < 170; index++) {
-			double[] spot = this.spot(wild, inner, outer);
+		for (int index = 0; index < 300; index++) {
+			double[] spot = this.spot(wild, inner, outer, false);
 			double size = 10 + wild.nextDouble() * 12;
 			double tall = 12 + wild.nextDouble() * 16;
 			bushes[wild.nextInt(bushes.length)].rock(spot[0], spot[1], 6, tall, size, size, 7, 0.55, 0.5, wild);
@@ -204,9 +209,9 @@ final class EdenGarden {
 			crowns[index] = new LowPoly();
 		}
 		LowPoly trunks = new LowPoly();
-		for (int index = 0; index < 46; index++) {
-			double[] spot = this.spot(wild, this.front - 95, this.front - 25);
-			if (Math.abs(spot[1]) < 230) {
+		for (int index = 0; index < 90; index++) {
+			double[] spot = this.spot(wild, this.front - 95, this.front - 25, true);
+			if (Math.abs(spot[1]) < 340) {
 				continue;
 			}
 			double trunk = 30 + wild.nextDouble() * 15;

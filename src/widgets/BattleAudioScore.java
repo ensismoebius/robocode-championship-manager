@@ -10,10 +10,12 @@ import static widgets.BattleAudio.PENTATONIC;
 final class BattleAudioScore {
 
 	private final BattleAudio host;
+	private final BattleAudioAfro afro;
 
 	/** Creates the score of the given battle audio. */
 	BattleAudioScore(BattleAudio host) {
 		this.host = host;
+		this.afro = new BattleAudioAfro(host);
 	}
 
 	/**
@@ -37,6 +39,7 @@ final class BattleAudioScore {
 		case EPIC -> this.epicStep(step, inBar, root, minor, tension);
 		case SYNTHWAVE -> this.synthwaveStep(step, inBar, root, minor, tension);
 		case WAR_DRUMS -> this.drumsStep(step, inBar, bar, root, tension);
+		case AFRO_FUTURE -> this.afro.step(step, inBar, bar, root, tension);
 		}
 	}
 
@@ -202,6 +205,16 @@ final class BattleAudioScore {
 		return pad + voices;
 	}
 
+	/** How open the low pass of the pad of a song is, for a tension: the darker songs keep it more closed. */
+	private static double padCutoff(Song song, double tension) {
+		return switch (song) {
+		case WAR_DRUMS -> 0.006 + 0.02 * tension;
+		case SYNTHWAVE -> 0.02 + 0.05 * tension;
+		case AFRO_FUTURE -> 0.016 + 0.055 * tension;
+		case EPIC -> 0.012 + 0.05 * tension;
+		};
+	}
+
 	/** The pad: three detuned saws through a low pass that opens with the tension, and the pump of synthwave with the kick */
 	double pad(Song current, int bar, double tension) {
 		// Pad: three detuned saws through a low pass that opens with the tension.
@@ -212,7 +225,7 @@ final class BattleAudioScore {
 		host.padPhase2 = (host.padPhase2 + host.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
 		host.padPhase3 = (host.padPhase3 + host.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
 		double raw = (host.padPhase1 * 2 - 1) + (host.padPhase2 * 2 - 1) * 0.7 + (host.padPhase3 * 2 - 1) * 0.5;
-		double cutoff = (current == Song.WAR_DRUMS ? 0.006 + 0.02 * tension : current == Song.SYNTHWAVE ? 0.02 + 0.05 * tension : 0.012 + 0.05 * tension) * (1 - 0.7 * host.slow);
+		double cutoff = padCutoff(current, tension) * (1 - 0.7 * host.slow);
 		host.padFilter += (raw - host.padFilter) * cutoff;
 		double pad = host.padFilter * (current == Song.WAR_DRUMS ? 0.1 : 0.32 - 0.1 * tension);
 		if (current == Song.SYNTHWAVE && tension > 0.2 && host.slow < 0.5) {

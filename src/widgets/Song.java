@@ -16,7 +16,9 @@ public enum Song {
 	/** E minor, i - VI - VII - v: pumping pad, bouncing bass, lead and toms */
 	SYNTHWAVE("Synthwave", new double[] { 82.41, 65.41, 73.42, 61.74 }, new boolean[] { true, false, false, true }, 108, 44),
 	/** D minor groove: a wood block clave, syncopated taikos, small drums, a plucked bass, a kalimba that calls and answers, war horns */
-	WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 104, 44);
+	WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 104, 44),
+	/** E minor, i - III - VII - iv: Africa and science fiction, an agogo bell and congas in a 3+3+3+3+4 pulse, a shekere, an mbira that calls and answers, a sequencer, a theremin and lasers */
+	AFRO_FUTURE("Afrofuturista", new double[] { 82.41, 98.0, 73.42, 110.0 }, new boolean[] { true, false, false, true }, 100, 36);
 
 	public final String label;
 	final double[] roots;

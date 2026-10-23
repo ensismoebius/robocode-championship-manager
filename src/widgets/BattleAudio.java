@@ -22,7 +22,7 @@ import javax.sound.sampled.SourceDataLine;
  *
  * The music follows the {@link #setIntensity(double) intensity} of the fight:
  * calm it is a dark pad, then come the drums, the bass, the melody and at last
- * an alarm, while the tempo grows. There are three {@link Song songs}. In slow
+ * an alarm, while the tempo grows. There are four {@link Song songs}. In slow
  * motion the music becomes a muffled heartbeat and the effects sound deep and
  * slow.
  *

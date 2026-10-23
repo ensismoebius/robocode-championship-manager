@@ -37,7 +37,7 @@ final class EdenStadium {
 	static final double CONCOURSE = 48;
 	private static final double DOOR_WALL = 61;
 	/** The top of the stadium: the band of panels and the roof, from its outer edge to the opening */
-	private static final double BAND = 77;
+	static final double BAND = 255;
 	private static final double ROOF_RISE = 135;
 	private static final double ROOF_DEPTH = 600;
 	private static final double[] UP = { 0, -1, 0 };
@@ -45,11 +45,18 @@ final class EdenStadium {
 
 	private final BattleArena3D host;
 	private final double front;
+	private final EdenScreens screens;
 
 	/** The stadium around the garden, its front wall at the given radius. */
 	EdenStadium(BattleArena3D host, double front) {
 		this.host = host;
 		this.front = front;
+		this.screens = new EdenScreens(host, this);
+	}
+
+	/** The great screens in the band at the top of the stands. */
+	EdenScreens screens() {
+		return this.screens;
 	}
 
 	/** Where the lower ring ends and the concourse begins. */
@@ -83,12 +90,13 @@ final class EdenStadium {
 	}
 
 	/**
-	 * How much the plan of the stadium swells out at the angle, as a share of the radius: eight lobes like the petals
-	 * of a flower with smaller waves between them, the same on both sides. It is never less than the round plan, so
-	 * the garden keeps its room, and it is the most at the corridors.
+	 * How much the plan of the stadium swells out at the angle, as a share of the radius: a body that flows like a
+	 * kidney, with two broad lobes ending in smaller ones, narrow waists at the sides and no straight stretch, the same
+	 * on both ends. It is never less than the round plan, so the garden keeps its room, and it is the most at the
+	 * corridors.
 	 */
 	static double swell(double angle) {
-		return 0.03 * (1 + Math.cos(8 * angle)) + 0.012 * (1 + Math.sin(18 * angle + 1));
+		return 1.25 * (0.10 * (1 + Math.cos(2 * angle - 0.4)) + 0.07 * (1 + Math.cos(4 * angle + 1.3)) + 0.035 * (1 + Math.sin(6 * angle + 0.2)) + 0.02 * (1 + Math.sin(10 * angle + 2)));
 	}
 
 	/** A point of the ring at the angle, radius and height, on the swollen plan. */
@@ -98,7 +106,7 @@ final class EdenStadium {
 	}
 
 	/** A point of the floor plan as its x and z, the same as the point of the ring but with no height. */
-	private static double[] flat(double angle, double radius) {
+	static double[] flat(double angle, double radius) {
 		double[] point = point(angle, radius, 0);
 		return new double[] { point[0], point[2] };
 	}
@@ -129,6 +137,7 @@ final class EdenStadium {
 		this.buildDoors();
 		this.buildCorridorWalls();
 		this.buildTop();
+		this.screens.build();
 		this.buildRoof();
 		new EdenGrowth(host, this).build(wild);
 	}
@@ -290,7 +299,7 @@ final class EdenStadium {
 	}
 
 	/** The height of the top of the upper ring. */
-	private static double topOfStands() {
+	static double topOfStands() {
 		return -(FRONT_HEIGHT + (ROWS - 1) * LOWER_RISE + DOOR_WALL + (ROWS - 1) * UPPER_RISE);
 	}
 
@@ -309,7 +318,7 @@ final class EdenStadium {
 		return roofBase() - ROOF_RISE;
 	}
 
-	/** The band at the top of the stands: a dark wall with pale blue panels that glow, as in the picture */
+	/** The band at the top of the stands: a dark wall with pale blue panels that glow, as in the picture, and the screens */
 	private void buildTop() {
 		SurfaceMesh band = new SurfaceMesh();
 		SurfaceMesh panels = new SurfaceMesh();
@@ -320,14 +329,14 @@ final class EdenStadium {
 			double second = angle(segment + 1);
 			double[] facing = inward((first + second) / 2);
 			band.quad(point(first, radius, bottom), point(second, radius, bottom), point(second, radius, bottom - BAND), point(first, radius, bottom - BAND), slice(segment, BAND), facing);
-			if (segment % 2 == 0) {
+			if (segment % 2 == 0 && !this.screens.covers(first)) {
 				double narrow = (second - first) * 0.12;
 				double third = angle(segment + 2);
 				panels.quad(point(first + narrow, radius - 0.6, bottom - 10), point(third - narrow, radius - 0.6, bottom - 10), point(third - narrow, radius - 0.6, bottom - BAND + 8), point(first + narrow, radius - 0.6, bottom - BAND + 8),
 						new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, facing);
 			}
 		}
-		host.arena.getChildren().addAll(band.view(earth("#6f8a5a")), panels.view(glowing("#a9d6f2")));
+		host.arena.getChildren().addAll(band.view(earth("#6f8a5a")), panels.view(glowing("#6fa3bd")));
 	}
 
 	/**

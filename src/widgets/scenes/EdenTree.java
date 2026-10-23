@@ -42,8 +42,8 @@ final class EdenTree {
 		this.host = host;
 	}
 
-	/** A tree on the x axis, at the position. */
-	void build(double posX, Random wild) {
+	/** A tree on the x axis, at the position; returns the spots on its crown where birds can perch. */
+	List<double[]> build(double posX, Random wild) {
 		this.platform(posX);
 		this.trunk(posX, wild);
 		LowPoly limbs = new LowPoly();
@@ -57,6 +57,18 @@ final class EdenTree {
 		}
 		host.arena.getChildren().add(limbs.view(material(Color.web("#8a5a3e"))));
 		this.crown(ends, wild);
+		List<double[]> perches = new ArrayList<>();
+		for (double[] end : ends) {
+			// Over the highest layer of leaves around the spot, so a bird is never hidden under a neighbor
+			double top = end[1];
+			for (double[] other : ends) {
+				if (Math.hypot(other[0] - end[0], other[2] - end[2]) < 90) {
+					top = Math.min(top, other[1]);
+				}
+			}
+			perches.add(new double[] { end[0], top - 40, end[2] });
+		}
+		return perches;
 	}
 
 	/** A flat ring around a point, from one height up to another, added to the shape. */

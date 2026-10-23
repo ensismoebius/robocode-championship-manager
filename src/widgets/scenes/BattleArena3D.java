@@ -223,10 +223,8 @@ public class BattleArena3D extends StackPane {
 	int lastTurnProcessed = -1;
 	/** Index in SPEEDS, starts with the configured one */
 	int speed;
-	/** The critter the fly by starts looking at, where it is when the fly by begins, or null */
-	double[] flyFocus;
-	/** Where the critter the fly by starts on is now, while the camera stays on it */
-	Supplier<double[]> flyFocusSource;
+	/** The stops of the fly by before its trip: where the camera stays for a while, looking at something */
+	final FlyTour flyTour = new FlyTour();
 	/** The animals that live around the field */
 	Critters critters;
 	boolean paused = false;

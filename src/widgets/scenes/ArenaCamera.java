@@ -218,11 +218,12 @@ final class ArenaCamera {
 		this.frameFighters(deltaTime, first, second);
 	}
 
-	/** The camera stays on the critter, following it, and then the trip begins */
+	/** The camera goes through the stops of the tour, and then the trip begins */
 	private void flyBy() {
 		double hold = host.rounds.flyByHold();
 		if (host.phaseTime < hold) {
-			host.flyFocus = host.flyFocusSource.get();
+			host.rounds.flyByTour(host.phaseTime);
+			return;
 		}
 		host.rounds.flyByPose(Math.max(0, Math.min(1, (host.phaseTime - hold) / FLYBY_SECONDS)));
 	}

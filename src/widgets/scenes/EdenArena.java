@@ -2,6 +2,8 @@ package widgets.scenes;
 
 import static widgets.scenes.ArenaMaterials.skyDome;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -20,8 +22,16 @@ final class EdenArena {
 	private static final double GARDEN_MARGIN = 260;
 	private static final double BELT = 340;
 
+	/** How far beyond the front wall of the stands, at the corridors, the baobabs stand */
+	private static final double TREE_OFFSET = 190;
+
 	private final BattleArena3D host;
 	private final EdenFlags flags;
+	private EdenScreens screens;
+	/** How far from the middle of the arena the baobabs are, along the x axis */
+	private double treeX;
+	/** The spots where birds can perch on each baobab, the one on the negative side first */
+	private final List<List<double[]>> perches = new ArrayList<>();
 
 	/** The Eden of the arena, drawn in the host scene. */
 	EdenArena(BattleArena3D host) {
@@ -29,9 +39,32 @@ final class EdenArena {
 		this.flags = new EdenFlags(host);
 	}
 
-	/** The breeze: the flags wave. */
+	/** Where the baobab at the end of the field on that side is, -1 or 1: on the ground. */
+	double[] baobab(int side) {
+		return new double[] { side * this.treeX, 0, 0 };
+	}
+
+	/** Where the two baobabs are, on the ground, the one on the negative side first. */
+	List<double[]> baobabs() {
+		return List.of(this.baobab(-1), this.baobab(1));
+	}
+
+	/** The spots where birds can perch on each of the baobabs, in the same order. */
+	List<List<double[]>> perches() {
+		return this.perches;
+	}
+
+	/** The breeze: the flags wave, and the screens show the battle. */
 	void update(double deltaTime) {
 		this.flags.update(deltaTime);
+		if (this.screens != null) {
+			this.screens.update(deltaTime);
+		}
+	}
+
+	/** The great screens of the stadium, once it is built. */
+	EdenScreens screens() {
+		return this.screens;
 	}
 
 	/** Builds the whole Eden around a field of the given size. */
@@ -43,11 +76,14 @@ final class EdenArena {
 		host.arena.getChildren().add(skyDome(EdenTexture.SKY));
 		new EdenGarden(host, garden, front).build(width, height, stadium.corridorEnd(), wild);
 		stadium.build(wild);
+		this.screens = stadium.screens();
 		this.flags.build(stadium.concourse() + EdenStadium.CONCOURSE / 2, EdenStadium.concourseHeight(), wild);
 		// The trees of life, at the mouths of the corridors, after the floor: their light adds to it
 		EdenTree tree = new EdenTree(host);
+		this.treeX = front * (1 + EdenStadium.swell(0)) + TREE_OFFSET;
+		this.perches.clear();
 		for (int side = -1; side <= 1; side += 2) {
-			tree.build(side * (front + 190), wild);
+			this.perches.add(tree.build(side * this.treeX, wild));
 		}
 	}
 }
