@@ -69,6 +69,7 @@ final class EdenGarden {
 			disc.triangle(center, left, right, new float[] { 0.5f, 0.5f, this.texCoord(left[0]), this.texCoord(left[2]), this.texCoord(right[0]), this.texCoord(right[2]) }, UP);
 		}
 		PhongMaterial garden = textured(EdenTexture.garden(this.radius, width, height), Color.gray(0.05));
+		garden.setSelfIlluminationMap(EdenTexture.gardenLights(this.radius, width, height));
 		host.arena.getChildren().add(disc.view(garden));
 	}
 
@@ -125,13 +126,13 @@ final class EdenGarden {
 		host.arena.getChildren().add(path.view(material(Color.web("#bdb7a6"))));
 	}
 
-	/** A point of the belt of plants between the walkway and the stands, away from the paths. */
+	/** A point of the belt of plants between the walkway and the stands, which swell out into lobes, away from the paths. */
 	private double[] spot(Random wild, double inner, double outer) {
 		double posX;
 		double posZ;
 		do {
 			double angle = wild.nextDouble() * Math.PI * 2;
-			double distance = inner + wild.nextDouble() * (outer - inner);
+			double distance = inner + wild.nextDouble() * (outer * (1 + EdenStadium.swell(angle)) - inner);
 			posX = Math.cos(angle) * distance;
 			posZ = Math.sin(angle) * distance;
 		} while (onTheWay(posX, posZ, 70));

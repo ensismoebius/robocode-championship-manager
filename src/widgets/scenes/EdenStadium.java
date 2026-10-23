@@ -3,6 +3,8 @@ package widgets.scenes;
 import static widgets.scenes.ArenaHelpers.solidMap;
 import static widgets.scenes.ArenaMaterials.material;
 
+import java.util.Random;
+
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 
@@ -55,6 +57,16 @@ final class EdenStadium {
 		return this.front + ROWS * ROW_DEPTH;
 	}
 
+	/** The radius of the stadium at the back of the corridors, along the x axis, on the swollen plan. */
+	double corridorEnd() {
+		return this.concourse() * (1 + swell(0));
+	}
+
+	/** The radius of the front wall of the stands, before the plan swells. */
+	double front() {
+		return this.front;
+	}
+
 	/** The height of the concourse floor, negative as up is. */
 	static double concourseHeight() {
 		return -(FRONT_HEIGHT + (ROWS - 1) * LOWER_RISE);
@@ -70,9 +82,40 @@ final class EdenStadium {
 		return Math.PI * 2 * segment / SEGMENTS;
 	}
 
-	/** A point of the ring at the angle, radius and height. */
-	private static double[] point(double angle, double radius, double height) {
-		return new double[] { radius * Math.cos(angle), height, radius * Math.sin(angle) };
+	/**
+	 * How much the plan of the stadium swells out at the angle, as a share of the radius: eight lobes like the petals
+	 * of a flower with smaller waves between them, the same on both sides. It is never less than the round plan, so
+	 * the garden keeps its room, and it is the most at the corridors.
+	 */
+	static double swell(double angle) {
+		return 0.03 * (1 + Math.cos(8 * angle)) + 0.012 * (1 + Math.sin(18 * angle + 1));
+	}
+
+	/** A point of the ring at the angle, radius and height, on the swollen plan. */
+	static double[] point(double angle, double radius, double height) {
+		double reach = radius * (1 + swell(angle));
+		return new double[] { reach * Math.cos(angle), height, reach * Math.sin(angle) };
+	}
+
+	/** A point of the floor plan as its x and z, the same as the point of the ring but with no height. */
+	private static double[] flat(double angle, double radius) {
+		double[] point = point(angle, radius, 0);
+		return new double[] { point[0], point[2] };
+	}
+
+	/** The picture of earth along a piece of a wall: it repeats every few pieces, so the moss does not look stamped. */
+	private static float[] slice(int segment, double tall) {
+		float first = segment * 0.106f;
+		float second = (segment + 1) * 0.106f;
+		float height = (float) (tall / 256);
+		return new float[] { first, 0, second, 0, second, height, first, height };
+	}
+
+	/** The earth of the walls and floors of the stands, overgrown with moss, in a tint. */
+	private static PhongMaterial earth(String tint) {
+		PhongMaterial material = ArenaMaterials.textured(EdenTexture.EARTH, Color.gray(0.03));
+		material.setDiffuseColor(Color.web(tint));
+		return material;
 	}
 
 	/** The direction toward the middle of the stadium, at the angle. */
@@ -80,13 +123,14 @@ final class EdenStadium {
 		return new double[] { -Math.cos(angle), 0, -Math.sin(angle) };
 	}
 
-	/** Builds the whole stadium. */
-	void build() {
+	/** Builds the whole stadium, and what grows on it. */
+	void build(Random wild) {
 		this.buildRings();
 		this.buildDoors();
 		this.buildCorridorWalls();
 		this.buildTop();
 		this.buildRoof();
+		new EdenGrowth(host, this).build(wild);
 	}
 
 	/** The two rings of stands: the crowd on the risers and treads, the aisles with their step lights */
@@ -120,7 +164,7 @@ final class EdenStadium {
 		}
 		PhongMaterial people = ArenaMaterials.textured(EdenTexture.CROWD, Color.gray(0.05));
 		people.setDiffuseColor(Color.gray(0.62));
-		host.arena.getChildren().addAll(crowd.view(people), concrete.view(material(Color.web("#3a3d40"))), stepLights.view(glowing("#ffb24a")));
+		host.arena.getChildren().addAll(crowd.view(people), concrete.view(earth("#b9a98f")), stepLights.view(glowing("#ffb24a")));
 	}
 
 	/** Where the crowd picture is along the ring, a little shifted on each row so the people do not line up. */
@@ -153,8 +197,8 @@ final class EdenStadium {
 		if (lights == null) {
 			return;
 		}
-		double middle = (angle(segment) + angle(segment + 1)) / 2;
-		lights.box(radius * Math.cos(middle), top - 1.2, radius * Math.sin(middle), 3, 2.4, 3);
+		double[] spot = point((angle(segment) + angle(segment + 1)) / 2, radius, top - 1.2);
+		lights.box(spot[0], spot[1], spot[2], 3, 2.4, 3);
 	}
 
 	/** The floor of the concourse between the rings, in one piece */
@@ -164,7 +208,7 @@ final class EdenStadium {
 		double height = concourseHeight();
 		double inner = this.concourse();
 		double outer = inner + CONCOURSE;
-		concrete.quad(point(first, inner, height), point(second, inner, height), point(second, outer, height), point(first, outer, height), new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, UP);
+		concrete.quad(point(first, inner, height), point(second, inner, height), point(second, outer, height), point(first, outer, height), slice(segment, 48), UP);
 	}
 
 	/**
@@ -181,7 +225,7 @@ final class EdenStadium {
 			double first = angle(segment);
 			double second = angle(segment + 1);
 			double middle = (first + second) / 2;
-			wall.quad(point(first, back, floor), point(second, back, floor), point(second, back, floor - DOOR_WALL), point(first, back, floor - DOOR_WALL), new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, inward(middle));
+			wall.quad(point(first, back, floor), point(second, back, floor), point(second, back, floor - DOOR_WALL), point(first, back, floor - DOOR_WALL), slice(segment, DOOR_WALL), inward(middle));
 			if (segment % 8 == 4) {
 				// A door two pieces wide
 				double narrow = (second - first) * 0.35;
@@ -204,13 +248,12 @@ final class EdenStadium {
 		}
 		PhongMaterial tunnel = new PhongMaterial(Color.BLACK);
 		tunnel.setSelfIlluminationMap(EdenTexture.TUNNEL);
-		host.arena.getChildren().addAll(wall.view(material(Color.web("#2a2c2f"))), doors.view(glowing("#d9782e")), tunnels.view(tunnel), strips.view(glowing("#ffb24a")));
+		host.arena.getChildren().addAll(wall.view(earth("#8f7f68")), doors.view(glowing("#d9782e")), tunnels.view(tunnel), strips.view(glowing("#ffb24a")));
 	}
 
 	/** A short strip of warm light along the edge of a ring, between two angles */
 	private void strip(LowPoly strips, double first, double second, double radius, double height) {
-		strips.frustum(new double[][] { { radius * Math.cos(first), radius * Math.sin(first) }, { (radius + 3) * Math.cos(first), (radius + 3) * Math.sin(first) },
-				{ (radius + 3) * Math.cos(second), (radius + 3) * Math.sin(second) }, { radius * Math.cos(second), radius * Math.sin(second) } }, height, height - 3, 1);
+		strips.frustum(new double[][] { flat(first, radius), flat(first, radius + 3), flat(second, radius + 3), flat(second, radius) }, height, height - 3, 1);
 	}
 
 	/**
@@ -238,17 +281,32 @@ final class EdenStadium {
 				walls.quad(point(first, radius, 6), point(second, radius, 6), point(second, radius, concourseHeight()), point(first, radius, concourseHeight()), new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, inward((first + second) / 2));
 			}
 		}
-		host.arena.getChildren().add(walls.view(material(Color.web("#2f3235"))));
+		host.arena.getChildren().add(walls.view(earth("#a39478")));
 	}
 
-	/** The radius of the outer edge of the roof, behind the last row of the upper ring. */
-	private double outerEdge() {
+	/** The radius of the outer edge of the roof, behind the last row of the upper ring, before the plan swells. */
+	double outerEdge() {
 		return this.concourse() + CONCOURSE + ROWS * ROW_DEPTH;
 	}
 
 	/** The height of the top of the upper ring. */
 	private static double topOfStands() {
 		return -(FRONT_HEIGHT + (ROWS - 1) * LOWER_RISE + DOOR_WALL + (ROWS - 1) * UPPER_RISE);
+	}
+
+	/** The height where the roof begins, over the band at the top of the stands. */
+	static double roofBase() {
+		return topOfStands() - BAND;
+	}
+
+	/** The radius of the opening of the roof, before the plan swells. */
+	double opening() {
+		return this.outerEdge() - ROOF_DEPTH;
+	}
+
+	/** The height of the edge of the opening of the roof. */
+	static double rim() {
+		return roofBase() - ROOF_RISE;
 	}
 
 	/** The band at the top of the stands: a dark wall with pale blue panels that glow, as in the picture */
@@ -261,7 +319,7 @@ final class EdenStadium {
 			double first = angle(segment);
 			double second = angle(segment + 1);
 			double[] facing = inward((first + second) / 2);
-			band.quad(point(first, radius, bottom), point(second, radius, bottom), point(second, radius, bottom - BAND), point(first, radius, bottom - BAND), new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, facing);
+			band.quad(point(first, radius, bottom), point(second, radius, bottom), point(second, radius, bottom - BAND), point(first, radius, bottom - BAND), slice(segment, BAND), facing);
 			if (segment % 2 == 0) {
 				double narrow = (second - first) * 0.12;
 				double third = angle(segment + 2);
@@ -269,7 +327,7 @@ final class EdenStadium {
 						new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, facing);
 			}
 		}
-		host.arena.getChildren().addAll(band.view(material(Color.web("#1c2228"))), panels.view(glowing("#a9d6f2")));
+		host.arena.getChildren().addAll(band.view(earth("#6f8a5a")), panels.view(glowing("#a9d6f2")));
 	}
 
 	/**
@@ -300,16 +358,21 @@ final class EdenStadium {
 		lattice.setSelfIlluminationMap(EdenTexture.ROOF_LIGHTS);
 		host.arena.getChildren().add(roof.view(lattice));
 
-		double opening = outer - ROOF_DEPTH;
-		double rim = base - ROOF_RISE;
+		double opening = this.opening();
+		double rim = rim();
 		LowPoly truss = new LowPoly();
-		truss.ring(opening - 6, opening + 10, rim + 6, rim - 8, 128);
+		int pieces = 128;
+		for (int piece = 0; piece < pieces; piece++) {
+			double first = Math.PI * 2 * piece / pieces;
+			double second = Math.PI * 2 * (piece + 1) / pieces;
+			truss.frustum(new double[][] { flat(first, opening - 6), flat(first, opening + 10), flat(second, opening + 10), flat(second, opening - 6) }, rim + 6, rim - 8, 1);
+		}
 		LowPoly lights = new LowPoly();
 		for (int index = 0; index < 96; index++) {
-			double angle = Math.PI * 2 * index / 96;
-			lights.box((opening - 7) * Math.cos(angle), rim + 7, (opening - 7) * Math.sin(angle), 6, 2, 6);
+			double[] spot = point(Math.PI * 2 * index / 96, opening - 7, rim + 7);
+			lights.box(spot[0], spot[1], spot[2], 6, 2, 6);
 		}
-		host.arena.getChildren().addAll(truss.view(material(Color.web("#6b7076"))), lights.view(glowing("#d8eef7")));
+		host.arena.getChildren().addAll(truss.view(material(Color.web("#6b5a44"))), lights.view(glowing("#d8eef7")));
 	}
 
 	/** How much the roof has risen at that share of the way from its outer edge to the opening. */

@@ -47,8 +47,9 @@ final class EdenFlags {
 			if (Math.abs(Math.sin(angle)) < 0.2) {
 				continue;
 			}
-			double posX = radius * Math.cos(angle);
-			double posZ = radius * Math.sin(angle);
+			double reach = radius * (1 + EdenStadium.swell(angle));
+			double posX = reach * Math.cos(angle);
+			double posZ = reach * Math.sin(angle);
 			poles.box(posX, floor - POLE / 2, posZ, 2.6, POLE, 2.6);
 			this.flags.add(new Flag(posX + 1.3, floor - POLE + 2, posZ, wild));
 		}

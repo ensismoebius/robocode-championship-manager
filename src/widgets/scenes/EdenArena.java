@@ -41,8 +41,8 @@ final class EdenArena {
 		double front = garden + BELT;
 		EdenStadium stadium = new EdenStadium(host, front);
 		host.arena.getChildren().add(skyDome(EdenTexture.SKY));
-		new EdenGarden(host, garden, front).build(width, height, stadium.concourse(), wild);
-		stadium.build();
+		new EdenGarden(host, garden, front).build(width, height, stadium.corridorEnd(), wild);
+		stadium.build(wild);
 		this.flags.build(stadium.concourse() + EdenStadium.CONCOURSE / 2, EdenStadium.concourseHeight(), wild);
 		// The trees of life, at the mouths of the corridors, after the floor: their light adds to it
 		EdenTree tree = new EdenTree(host);

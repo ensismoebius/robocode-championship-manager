@@ -6,7 +6,7 @@ import javafx.scene.image.Image;
  * This program is licensed under GPLv3 see the README file for more information
  *
  * The pictures of the Eden Solar arena, from noise: the stormy sky over the opening of the roof, the garden with
- * its hedges, paths and pools, the crowd of the stands, the lattice of lights under the roof, and the glows of
+ * its hedges, paths and pools and the African patterns of the floor of the field, the crowd of the stands, the lattice of lights under the roof, and the glows of
  * the tree of life. They are only made when the arena is used.
  *
  * @author André Furlan - ensismoebius@gmail.com
@@ -19,7 +19,7 @@ final class EdenTexture {
 	static final float RISER_SHARE = 1 / 3f;
 	private static final int CROWD_HEIGHT = 96;
 	private static final int SEAT = 8;
-	private static final int GARDEN_SIZE = 1024;
+	private static final int GARDEN_SIZE = 2048;
 
 	private static final int[] SHIRTS = { 0x9c3a36, 0xb8742e, 0xb89a38, 0x3a7d4f, 0x2f5f8e, 0x66468a, 0xb9b8ae, 0xa5502c, 0x2a7470, 0xa34670, 0x34404e, 0xbf8f3a };
 	private static final int[] SKINS = { 0xf0c8a0, 0xd8a06a, 0xc08048, 0x8d5524, 0x5e3a22, 0xe2ae74 };
@@ -31,6 +31,8 @@ final class EdenTexture {
 	/** The bark of the baobab: smooth, copper, with rings running around the trunk; and its rings glowing faintly */
 	static final Image BARK = TextureMath.image(256, 256, EdenTexture::barkPixel);
 	static final Image BARK_GLOW = TextureMath.image(256, 256, (posX, posY) -> TextureMath.mix(0x000000, 0x5a300c, groove(posX, posY)));
+	/** Rammed earth overgrown with moss: the walls and floors of the stadium, as if it had grown out of the ground */
+	static final Image EARTH = TextureMath.image(256, 256, EdenTexture::earthPixel);
 	/** The crowd: seat backs with the people in front of them on the riser, the seats seen from above on the tread */
 	static final Image CROWD = TextureMath.image(CROWD_WIDTH, CROWD_HEIGHT, EdenTexture::crowdPixel);
 	/** The underside of the roof: dark structure, ribs and beams, rows of small windows */
@@ -50,6 +52,7 @@ final class EdenTexture {
 
 	private static String gardenKey;
 	private static Image garden;
+	private static Image lights;
 
 	/** The pictures are static: this class is not instantiated. */
 	private EdenTexture() {
@@ -113,6 +116,14 @@ final class EdenTexture {
 		return TextureMath.mix(color, 0x3d2416, groove(posX, posY) * 0.85);
 	}
 
+	/** One pixel of the earth: grain in two browns, and moss where the patches are thick. The picture repeats. */
+	private static int earthPixel(int posX, int posY) {
+		double patch = LavaTexture.fbm(posX / 256.0 * 6, posY / 256.0 * 6, 4, 131);
+		double grain = LavaTexture.fbm(posX / 256.0 * 18, posY / 256.0 * 18, 2, 132);
+		int earth = TextureMath.mix(0x5a4430, 0x7c6347, grain);
+		return TextureMath.mix(earth, TextureMath.mix(0x2f4a22, 0x4f7a34, grain), smooth(0.52, 0.66, patch));
+	}
+
 	/** One pixel of the crowd: a seat every few units, a person in most of them */
 	private static int crowdPixel(int posX, int posY) {
 		int seat = posX / SEAT;
@@ -166,27 +177,50 @@ final class EdenTexture {
 	}
 
 	/**
-	 * The picture of the garden, a disc of the given radius around the field: the field is a lawn mowed in
-	 * squares with its chalk lines, the rest a garden of hedges, flower beds, gravel paths and pools. Made for
-	 * the size of the field, and kept while the size is the same.
+	 * The picture of the garden, a disc of the given radius around the field: the field has the African patterns
+	 * of {@link EdenFloor}, the rest is a garden of hedges, flower beds, gravel paths and pools. Made for the size
+	 * of the field, and kept while the size is the same.
 	 */
 	static synchronized Image garden(double radius, double width, double height) {
+		makeGarden(radius, width, height);
+		return garden;
+	}
+
+	/** The lights of the floor of the field (its traces and nodes), in the frame of the picture of the garden. */
+	static synchronized Image gardenLights(double radius, double width, double height) {
+		makeGarden(radius, width, height);
+		return lights;
+	}
+
+	/** Makes the picture of the garden and the one of its lights, unless they are already made for this size. */
+	private static void makeGarden(double radius, double width, double height) {
 		String key = radius + " " + width + " " + height;
 		if (!key.equals(gardenKey)) {
-			garden = TextureMath.image(GARDEN_SIZE, GARDEN_SIZE, (posX, posY) -> gardenPixel(((posX + 0.5) / GARDEN_SIZE * 2 - 1) * radius, ((posY + 0.5) / GARDEN_SIZE * 2 - 1) * radius, radius, width, height));
+			garden = TextureMath.image(GARDEN_SIZE, GARDEN_SIZE, (posX, posY) -> gardenPixel(onFloor(posX, radius), onFloor(posY, radius), radius, width, height));
+			lights = TextureMath.image(GARDEN_SIZE, GARDEN_SIZE, (posX, posY) -> lightPixel(onFloor(posX, radius), onFloor(posY, radius), width, height));
 			gardenKey = key;
 		}
-		return garden;
+	}
+
+	/** The place on the floor, from the middle of the field, of a pixel of the pictures of the garden. */
+	private static double onFloor(int pixel, double radius) {
+		return ((pixel + 0.5) / GARDEN_SIZE * 2 - 1) * radius;
+	}
+
+	/** The light of the garden at a point: only the field has any. */
+	private static int lightPixel(double posX, double posZ, double width, double height) {
+		boolean inside = Math.abs(posX) < width / 2 && Math.abs(posZ) < height / 2;
+		return inside ? EdenFloor.glow(posX, posZ, width, height) : 0;
 	}
 
 	/** The garden at a point of the floor, x and z from the middle of the field. */
 	private static int gardenPixel(double posX, double posZ, double radius, double width, double height) {
-		double grass = LavaTexture.fbm((posX / radius + 1) * 6, (posZ / radius + 1) * 6, 3, 111);
 		// How far outside the field the point is, 0 or less inside it
 		double outside = Math.max(Math.abs(posX) - width / 2, Math.abs(posZ) - height / 2);
 		if (outside <= 0) {
-			return fieldPixel(posX, posZ, width, height, grass, -outside);
+			return EdenFloor.color(posX, posZ, width, height);
 		}
+		double grass = LavaTexture.fbm((posX / radius + 1) * 6, (posZ / radius + 1) * 6, 3, 111);
 		double distance = Math.hypot(posX, posZ);
 		double angle = Math.atan2(posZ, posX);
 		int color = TextureMath.mix(0x1f4a1f, 0x30652b, grass * 1.4 - 0.2);
@@ -231,17 +265,5 @@ final class EdenTexture {
 			return TextureMath.mix(0x2f6a2a, 0x447f36, grass);
 		}
 		return lawn;
-	}
-
-	/** The field: mowed in squares of 100 units, a chalk line around it and a circle in the middle */
-	private static int fieldPixel(double posX, double posZ, double width, double height, double grass, double inside) {
-		int square = (int) Math.floor((posX + width / 2) / 100) + (int) Math.floor((posZ + height / 2) / 100);
-		int color = Math.floorMod(square, 2) == 0 ? 0x3d7a33 : 0x356f2e;
-		color = TextureMath.mix(color, 0x24561f, grass * 0.35);
-		double centre = Math.hypot(posX, posZ);
-		if (inside < 2.5 || Math.abs(centre - 90) < 1.6 || centre < 4) {
-			return TextureMath.mix(color, 0xd8d4c2, inside < 2.5 ? 0.85 : 0.5);
-		}
-		return color;
 	}
 }
