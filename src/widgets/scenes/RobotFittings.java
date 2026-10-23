@@ -106,7 +106,7 @@ final class RobotFittings {
 		}
 	}
 
-	/** The fume extractor and the muzzle ring of the gun, with its light: they stay on the gun, they never come off */
+	/** The fume extractor and the muzzle ring of the gun, with its light: they stay on the gun, they never come off, and they recoil with it */
 	static void addGunGear(RobotView view, Materials materials) {
 		LowPoly extractor = new LowPoly();
 		extractor.cylinderZ(0, -17.2, 1.95, 21, 27, 6);
@@ -114,7 +114,7 @@ final class RobotFittings {
 		muzzle.cylinderZ(0, -17.2, 1.8, 40, 43.6, 6);
 		LowPoly turretCyan = new LowPoly();
 		turretCyan.cylinderZ(0, -17.2, 2, 43.6, 44.1, 6);
-		view.turret.getChildren().addAll(extractor.view(materials.dark()), muzzle.view(materials.dark()), turretCyan.view(materials.cyan()));
+		view.gun.getChildren().addAll(extractor.view(materials.dark()), muzzle.view(materials.dark()), turretCyan.view(materials.cyan()));
 	}
 
 	/** The remote weapon station on the roof of the turret and the commander sight, which can come off */

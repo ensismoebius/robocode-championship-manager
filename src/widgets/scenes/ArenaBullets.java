@@ -287,6 +287,10 @@ final class ArenaBullets {
 		if (host.bulletsSeen.add(bullet.id())) {
 			host.audio.shotAt(bullet.power(), host.worldX(posX), host.worldZ(posY));
 			host.fx.muzzleFlash(host.worldX(posX), host.worldZ(posY), this.shooterColor(bullet));
+			RobotView shooter = host.robots.get(bullet.owner());
+			if (shooter != null) {
+				shooter.recoil(bullet.power());
+			}
 			this.startle(host.worldX(posX), host.worldZ(posY), 150, 0.4);
 		}
 	}

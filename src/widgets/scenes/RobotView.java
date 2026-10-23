@@ -43,6 +43,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import model.Opponent;
 import utils.robocode.BattleRecording;
@@ -64,6 +65,10 @@ final class RobotView {
 	final Group tank = new Group();
 	final Group body = new Group();
 	final Group turret = new Group();
+	/** The barrel with its fittings: it slides back along the turret when the gun fires */
+	final Group gun = new Group();
+	private final Translate recoilShift = new Translate();
+	Timeline recoiling;
 	final Group radar = new Group();
 	final Rotate bodyRotate = new Rotate(0, Rotate.Y_AXIS);
 	final Rotate gunRotate = new Rotate(0, Rotate.Y_AXIS);
@@ -214,7 +219,9 @@ final class RobotView {
 		barrel.cylinderZ(0, -17.2, 1.35, 12, 43, 6);
 		RobotFittings.addGunGear(this, materials);
 		RobotFittings.addRoofGear(this, materials);
-		this.turret.getChildren().addAll(shell.view(this.gunMaterial), barrel.view(materials.dark()));
+		this.gun.getTransforms().add(this.recoilShift);
+		this.gun.getChildren().add(barrel.view(materials.dark()));
+		this.turret.getChildren().addAll(shell.view(this.gunMaterial), this.gun);
 	}
 
 	/** The radar: a flat panel on a mast, turning over the roof */
@@ -440,6 +447,27 @@ final class RobotView {
 		host.fx.effect(this.rocking).play();
 	}
 
+	/**
+	 * The shot pushes the barrel back along the turret, the more the stronger the bullet, and a spring brings it
+	 * forward again. A new shot starts the recoil again.
+	 *
+	 * @param power
+	 *            of the bullet, 0.1 to 3
+	 */
+	void recoil(double power) {
+		if (this.dead) {
+			return;
+		}
+		if (this.recoiling != null) {
+			this.recoiling.stop();
+		}
+		double back = -(2.5 + power * 2);
+		this.recoiling = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(this.recoilShift.zProperty(), 0)),
+				new KeyFrame(Duration.millis(45), new KeyValue(this.recoilShift.zProperty(), back, Interpolator.EASE_OUT)),
+				new KeyFrame(Duration.millis(380), new KeyValue(this.recoilShift.zProperty(), 0, Interpolator.EASE_BOTH)));
+		host.fx.effect(this.recoiling).play();
+	}
+
 	/** Stops the rocking, the tank standing straight */
 	void settle() {
 		if (this.rocking != null) {
@@ -518,6 +546,10 @@ final class RobotView {
 	 * Back to a whole tank, for a new round
 	 */
 	void reset() {
+		if (this.recoiling != null) {
+			this.recoiling.stop();
+		}
+		this.recoilShift.setZ(0);
 		this.standAgain();
 		this.armor.restore();
 	}

@@ -267,7 +267,6 @@ final class ArenaHud {
 		for (HudPlayer player : host.hudPlayers) {
 			double energy = Math.max(0, energies.getOrDefault(player.index(), 0.0));
 			double width = HUD_BAR_WIDTH * Math.min(1, energy / 100);
-			double before = player.energy().getMaxWidth();
 			player.energy().setMaxWidth(width);
 			if (width >= player.lag().getMaxWidth()) {
 				// Healed, or a replay went back: the trail follows at once
@@ -276,14 +275,12 @@ final class ArenaHud {
 					drain.stop();
 				}
 				player.lag().setMaxWidth(width);
-			} else if (width < before) {
-				// The damage stays lit for a moment, then drains down to the new energy
-				Timeline old = this.lagDrains.get(player.index());
-				if (old != null) {
-					old.stop();
-				}
+			} else if (!this.lagDrains.containsKey(player.index())) {
+				// The damage stays lit for a moment, then drains down to the energy of that moment. While it drains
+				// the damage that goes on (a burning robot) is not waited for: the next drain takes what is left.
 				Timeline drain = new Timeline(new KeyFrame(Duration.seconds(0.45), new KeyValue(player.lag().maxWidthProperty(), player.lag().getMaxWidth())),
 						new KeyFrame(Duration.seconds(1.0), new KeyValue(player.lag().maxWidthProperty(), width, Interpolator.EASE_IN)));
+				drain.setOnFinished(event -> this.lagDrains.remove(player.index()));
 				this.lagDrains.put(player.index(), drain);
 				drain.play();
 			}

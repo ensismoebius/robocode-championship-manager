@@ -208,6 +208,31 @@ class RobotViewTest {
 	}
 
 	@Test
+	void theGunRecoilsWhenItFiresAndComesBack() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			double rest = robot.gun.localToParent(0, 0, 0).getZ();
+
+			robot.recoil(3);
+			robot.recoiling.pause();
+			robot.recoiling.jumpTo(Duration.millis(45));
+			double strong = rest - robot.gun.localToParent(0, 0, 0).getZ();
+			assertTrue(strong > 5, "the barrel slid back: " + strong);
+
+			robot.recoil(0.1);
+			robot.recoiling.pause();
+			robot.recoiling.jumpTo(Duration.millis(45));
+			assertTrue(rest - robot.gun.localToParent(0, 0, 0).getZ() < strong, "a weak shot kicks less");
+
+			robot.recoiling.jumpTo(Duration.millis(380));
+			assertEquals(rest, robot.gun.localToParent(0, 0, 0).getZ(), 1e-6);
+		});
+	}
+
+	@Test
 	void aDestroyedRobotDoesNotRock() {
 		BattleArena3D arena = playedArena();
 
