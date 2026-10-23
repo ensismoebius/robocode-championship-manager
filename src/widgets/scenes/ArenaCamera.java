@@ -10,6 +10,7 @@ import java.util.Map;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.layout.VBox;
 import widgets.scenes.Phase;
 import widgets.scenes.Shot;
 import widgets.scenes.ViewMode;
@@ -25,7 +26,16 @@ import widgets.scenes.ViewMode;
  */
 final class ArenaCamera {
 
+	/** How long a change of view takes to glide to its new place */
+	private static final double TRANSITION_SECONDS = 1.2;
+
 	private final BattleArena3D host;
+	/** Where the camera was when the change of view started, and how far along the change it is, from 0 to 1 */
+	private final double[] fromEye = new double[3];
+	private final double[] fromLook = new double[3];
+	private double fromFov;
+	private double fromRoll;
+	private double blend = 1;
 
 	/** Creates the camera director of the arena, which chooses and moves the camera shots. */
 	ArenaCamera(BattleArena3D host) {
@@ -34,15 +44,48 @@ final class ArenaCamera {
 
 	// ----------------------------------------------------------------- camera
 
+	/** Starts the change of the view: the camera glides from where it is now to the new view, in this many seconds. */
+	void startTransition() {
+		System.arraycopy(host.eye, 0, this.fromEye, 0, 3);
+		System.arraycopy(host.look, 0, this.fromLook, 0, 3);
+		this.fromFov = host.fov;
+		this.fromRoll = host.roll;
+		this.blend = 0;
+	}
+
 	/**
 	 * The camera jumps to the shot, like a cut in a movie
 	 */
 	void cut() {
+		this.blend = 1;
 		this.directShot(0);
 		System.arraycopy(host.eyeTarget, 0, host.eye, 0, 3);
 		System.arraycopy(host.lookTarget, 0, host.look, 0, 3);
 		host.fov = host.fovTarget;
 		host.roll = host.rollTarget;
+	}
+
+	/** Eases the camera toward its targets, a little more each step, the faster the follow. */
+	private void settle(double deltaTime) {
+		double ease = 1 - Math.exp(-host.follow * deltaTime);
+		for (int index = 0; index < 3; index++) {
+			host.eye[index] += (host.eyeTarget[index] - host.eye[index]) * ease;
+			host.look[index] += (host.lookTarget[index] - host.look[index]) * ease;
+		}
+		host.fov += (host.fovTarget - host.fov) * ease;
+		host.roll += (host.rollTarget - host.roll) * ease;
+	}
+
+	/** Moves the camera a step of the change of view: smoothstep from where it was to where its target is now. */
+	private void glide(double deltaTime) {
+		this.blend = Math.min(1, this.blend + deltaTime / TRANSITION_SECONDS);
+		double share = this.blend * this.blend * (3 - 2 * this.blend);
+		for (int index = 0; index < 3; index++) {
+			host.eye[index] = this.fromEye[index] + (host.eyeTarget[index] - this.fromEye[index]) * share;
+			host.look[index] = this.fromLook[index] + (host.lookTarget[index] - this.fromLook[index]) * share;
+		}
+		host.fov = this.fromFov + (host.fovTarget - this.fromFov) * share;
+		host.roll = this.fromRoll + (host.rollTarget - this.fromRoll) * share;
 	}
 
 	/**
@@ -111,13 +154,11 @@ final class ArenaCamera {
 			this.freeCamera(deltaTime);
 		}
 
-		double ease = 1 - Math.exp(-host.follow * deltaTime);
-		for (int index = 0; index < 3; index++) {
-			host.eye[index] += (host.eyeTarget[index] - host.eye[index]) * ease;
-			host.look[index] += (host.lookTarget[index] - host.look[index]) * ease;
+		if (this.blend < 1) {
+			this.glide(deltaTime);
+		} else {
+			this.settle(deltaTime);
 		}
-		host.fov += (host.fovTarget - host.fov) * ease;
-		host.roll += (host.rollTarget - host.roll) * ease;
 
 		// Shake of the explosions
 		host.shake = Math.min(40, host.shake) * Math.exp(-5 * deltaTime);
@@ -412,8 +453,25 @@ final class ArenaCamera {
 			view.balloon.setVisible(inside);
 			if (inside) {
 				view.balloon.autosize();
-				view.balloon.relocate(local.getX() - view.balloon.getWidth() / 2, local.getY() - view.balloon.getHeight());
+				this.relocateBalloon(view.balloon, local);
 			}
 		}
+	}
+
+	/** How far from its robot, on the screen, a balloon is when the view is from above */
+	private static final double BESIDE = 34;
+
+	/**
+	 * Puts the balloon over its robot, from the side and the front. From above that would hide the robot, so the balloon
+	 * goes beside it instead, toward the side of the screen with more room.
+	 */
+	private void relocateBalloon(VBox balloon, Point2D local) {
+		if (host.viewMode != ViewMode.TOP_DOWN) {
+			balloon.relocate(local.getX() - balloon.getWidth() / 2, local.getY() - balloon.getHeight());
+			return;
+		}
+		boolean right = local.getX() < host.getWidth() / 2;
+		double left = right ? local.getX() + BESIDE : local.getX() - BESIDE - balloon.getWidth();
+		balloon.relocate(left, local.getY() - BESIDE - balloon.getHeight());
 	}
 }

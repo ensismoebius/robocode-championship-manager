@@ -23,6 +23,8 @@ final class BattleAudioAfro {
 	private static final int[] BELL = { 0, 3, 6, 9, 12 };
 	private static final int[] LOW_CONGA = { 0, 6, 10 };
 	private static final int[] SLAPS = { 3, 7, 11, 14 };
+	/** The congas that fill the bar between the bass and the slaps, when the fight is warm */
+	private static final int[] FILL = { 2, 5, 8, 10, 13 };
 	/** The mbira: the 16ths where it plays, and the steps of the minor pentatonic it plays in the call and in the answer */
 	private static final int[] MBIRA_STEPS = { 0, 3, 6, 8, 11, 14 };
 	private static final int[] CALL = { 0, 2, 4, 3, 2, 1 };
@@ -81,15 +83,21 @@ final class BattleAudioAfro {
 		if (tension > 0.3 && (inBar == 0 || inBar == 10)) {
 			host.musicVoices.add(new Voice(host.taiko, 0.4 + 0.3 * tension, 1.5));
 		}
-		if (tension > 0.62 && inBar % 4 == 0) {
-			host.musicVoices.add(new Voice(host.kick, 0.5, 1));
+		if (tension > 0.2 && inBar % 4 == 0) {
+			host.musicVoices.add(new Voice(host.kick, 0.45 + 0.25 * tension, 1));
+		}
+		if (tension > 0.5 && (inBar == 6 || inBar == 14)) {
+			host.musicVoices.add(new Voice(host.kick, 0.3, 1.2));
+		}
+		if (tension > 0.25 && isOn(FILL, inBar)) {
+			host.musicVoices.add(new Voice(this.conga, 0.28, 1.3));
 		}
 	}
 
 	/** A deep sine on the root, twice a bar. */
 	private void subBass(int inBar, double root, double tension) {
-		if (tension > 0.18 && (inBar == 0 || inBar == 10)) {
-			host.musicVoices.add(new Voice(Synth.sine(root, 0.5, 4), 0.5, 1));
+		if (tension > 0.18 && (inBar == 0 || inBar == 8 || tension > 0.4 && inBar == 12)) {
+			host.musicVoices.add(new Voice(Synth.sine(root, 0.5, 4), 0.6, 1));
 		}
 	}
 
@@ -113,17 +121,17 @@ final class BattleAudioAfro {
 
 	/** The sequencer: a plucked line of 16ths in the bright scale, bouncing between the ears. */
 	private void sequencer(int inBar, double root, double tension) {
-		if (tension <= 0.3) {
+		if (tension <= 0.15) {
 			return;
 		}
 		double frequency = root * 4 * SKY[ARPEGGIO[inBar]] * (tension > 0.8 && inBar % 4 == 3 ? 2 : 1);
-		this.play(Synth.lowpass(Synth.saw(frequency, 0.16, 12), 0.22 + 0.3 * tension), 0.07 + 0.1 * tension, 1, inBar % 2 == 0);
+		this.play(Synth.lowpass(Synth.saw(frequency, 0.16, 12), 0.22 + 0.3 * tension), 0.09 + 0.12 * tension, 1, inBar % 2 == 0);
 	}
 
 	/** The sounds of the sky: the theremin, the lasers, the riser before the phrase turns over, and the talking drum. */
 	private void sky(int step, int inBar, int bar, double root, double tension) {
-		if (tension > 0.5 && inBar == 0 && bar % 2 == 0) {
-			host.musicVoices.add(new Voice(lead(root * 4 * SKY[bar == 0 ? 3 : 4], 1.9), 0.14, 1));
+		if (tension > 0.3 && inBar == 0) {
+			host.musicVoices.add(new Voice(lead(root * 4 * SKY[bar % 2 == 0 ? 3 : 4], 1.9), 0.2, 1));
 		}
 		if (tension > 0.72 && (inBar == 6 || inBar == 14)) {
 			host.musicVoices.add(new Voice(Synth.sweep(2400, 500, 0.16, true), 0.06, 1));

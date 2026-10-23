@@ -24,6 +24,7 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import model.Author;
 import model.Opponent;
+import tournament.Importance;
 import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
@@ -97,6 +98,8 @@ final class ArenaShowcase {
 		Opponent opponent = host.opponentOf(robot);
 		Node card = this.showcaseCard(robot, opponent, view.playerColor, order);
 		host.showcaseLayer.getChildren().setAll(card);
+		// The card of the robot is on the left of the screen: the name of the stage waits for the versus
+		this.showStage(false);
 		this.slideIn(card, order);
 
 		host.audio.whoosh();
@@ -138,6 +141,7 @@ final class ArenaShowcase {
 	 */
 	void startVersus() {
 		host.versus = true;
+		this.showStage(true);
 		host.phaseTime = 0;
 		host.showcaseLayer.getChildren().clear();
 		host.flashLight.setColor(Color.BLACK);
@@ -161,6 +165,13 @@ final class ArenaShowcase {
 		host.shot = Shot.WIDE;
 		host.shotTime = 0;
 		host.director.cut();
+	}
+
+	/** Shows the name of the stage in the middle of the screen, when it is a big one, or hides it. */
+	private void showStage(boolean show) {
+		boolean big = show && host.stageImportance != Importance.REGULAR && !host.stageName.isEmpty();
+		host.stageLabel.setVisible(big);
+		host.stageLabel.setManaged(big);
 	}
 
 	/** Ends the showcase: stops its music and clears its layer. */

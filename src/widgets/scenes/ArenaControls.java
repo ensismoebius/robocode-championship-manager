@@ -99,6 +99,7 @@ final class ArenaControls {
 
 	/** Changes the view of the camera; the free view starts from where the director was. */
 	void setView(ViewMode mode) {
+		host.director.startTransition();
 		if (mode == ViewMode.FREE && host.viewMode == ViewMode.CINEMATIC) {
 			// Starts from where the director was
 			host.targetYaw = host.yaw = Math.toDegrees(Math.atan2(host.look[0] - host.eye[0], host.look[2] - host.eye[2]));
@@ -111,7 +112,8 @@ final class ArenaControls {
 		};
 		host.yawSpeed = 0;
 		if (mode == ViewMode.CINEMATIC) {
-			host.director.pickShot(true);
+			// The shot is chosen without a cut: the camera glides to it
+			host.director.pickShot(false);
 		}
 		host.hud.updateInfo();
 	}
