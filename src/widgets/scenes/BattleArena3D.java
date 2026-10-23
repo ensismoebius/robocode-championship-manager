@@ -48,7 +48,6 @@ import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
 import widgets.scenes.ArenaHud.HudPlayer;
-import widgets.scenes.ArenaFence.FenceSegment;
 import static widgets.scenes.ArenaMaterials.distance2;
 import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.ArenaMaterials.material;
@@ -138,7 +137,6 @@ public class BattleArena3D extends StackPane {
 	final ArenaPhotos photographer = new ArenaPhotos(this);
 	final ArenaFence forceField = new ArenaFence(this);
 	/** Translucent panels of the cage, each one with its own material to flash */
-	final List<FenceSegment> fenceSegments = new ArrayList<FenceSegment>();
 	final SubScene subScene;
 	final PerspectiveCamera camera = new PerspectiveCamera(true);
 	final Translate cameraLook = new Translate();

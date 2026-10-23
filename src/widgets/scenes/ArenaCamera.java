@@ -322,11 +322,11 @@ final class ArenaCamera {
 		double hFovRad = 2.0 * Math.atan(Math.tan(vFovRad / 2.0) * aspect);
 
 		// Frame both combatants with generous margins so neither leaves the view nor feels cramped
-		double sphereRadius = separation * 0.5 + 80.0;
-		double fitDist = sphereRadius / Math.tan(hFovRad * 0.35);
+		double sphereRadius = separation * 0.5 + 60.0;
+		double fitDist = sphereRadius / Math.tan(hFovRad * 0.45);
 
 		// Well-balanced ringside distance: neither too zoomed out nor right in the robot treads
-		double targetDist = Math.max(420.0, fitDist);
+		double targetDist = Math.max(320.0, fitDist);
 		if (host.shot == Shot.IMPACT || host.hitTension > 0.15) {
 			targetDist *= 0.95;
 		}

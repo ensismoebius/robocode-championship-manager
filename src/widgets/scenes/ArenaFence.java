@@ -1,29 +1,40 @@
 package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.FENCE_BASE;
-import static widgets.scenes.ArenaMaterials.box;
 import static widgets.scenes.ArenaMaterials.material;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
+import javafx.scene.Group;
+import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The force field of the battle arena: the invisible panels around the field
- * that flash when a bullet crosses them.
+ * The force field of the battle arena: invisible until a bullet or a robot hits
+ * it, then the small hexagons around the place of the hit light up.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
 final class ArenaFence {
 
+	/** Rings of hexagons around the place of the hit: how many, and how wide each one is */
+	private static final int RINGS = 8;
+	private static final double RING_WIDTH = 18;
+	/** Height of the shots over the floor, where the field is struck */
+	private static final double AIM_HEIGHT = 17;
+	/** More flashes than this at once and the oldest ones go away at once */
+	private static final int MAX_FLASHES = 24;
+
 	private final BattleArena3D host;
+	private final List<Flash> flashes = new ArrayList<Flash>();
 
 	/** Creates the fence of the arena, drawn in the host scene. */
 	ArenaFence(BattleArena3D host) {
@@ -31,69 +42,15 @@ final class ArenaFence {
 	}
 
 	/**
-	 * Invisible panels around the field, they flash when hit
+	 * The field of the arena has nothing to show until it is hit: its hexagons are made where a shot hits it.
 	 */
-	void buildFence(double width, double height) {
-		// Force field panels: 100% transparent/invisible until hit
-		double wallHeight = 80;
-		for (int wall = 0; wall < 4; wall++) {
-			double span = wall <= 1 ? width : height;
-			int count = (int) Math.round(span / 100);
-			for (int index = 0; index < count; index++) {
-				double along = index * 100 + 50 - span / 2;
-				double normal = wall <= 1 ? height / 2 : width / 2;
-				PhongMaterial panelMaterial = material(FENCE_BASE);
-				Box panel = wall <= 1 ? box(98, wallHeight, 1.0, along, -wallHeight / 2, wall == 0 ? -normal : normal, panelMaterial)
-						: box(1.0, wallHeight, 98, wall == 2 ? -normal : normal, -wallHeight / 2, along, panelMaterial);
-				panel.setVisible(false);
-				host.fence.getChildren().add(panel);
-				host.fenceSegments.add(new FenceSegment(wall, index, panel, panelMaterial));
-			}
-		}
+	void buildFence() {
+		this.flashes.clear();
 	}
 
 	/**
-	 * One segment of the invisible force field. It only appears when struck.
-	 */
-	static class FenceSegment {
-		final int wall;
-		final int index;
-		final Box box;
-		final PhongMaterial material;
-		Timeline animation;
-
-		/** A segment of the fence: its wall, its index in the wall, its box and its material. */
-		FenceSegment(int wall, int index, Box box, PhongMaterial material) {
-			this.wall = wall;
-			this.index = index;
-			this.box = box;
-			this.material = material;
-		}
-
-		/** The wall of the segment. */
-		int wall() {
-			return wall;
-		}
-
-		/** The index of the segment in its wall. */
-		int index() {
-			return index;
-		}
-
-		/** The box of the segment. */
-		Box box() {
-			return box;
-		}
-
-		/** The material of the segment. */
-		PhongMaterial material() {
-			return material;
-		}
-	}
-
-	/**
-	 * The cage lights up where a robot or a bullet hit it, the glow spreads to
-	 * the neighboring panels like a shockwave
+	 * The force field lights up where a robot or a bullet hit it: the hexagons around the point, in rings that
+	 * light one after the other, going outwards like a shock wave, each ring weaker than the one before
 	 */
 	void flashFence(double posX, double posY) {
 		double width = host.fieldWidth;
@@ -103,97 +60,90 @@ final class ArenaFence {
 
 		double[] distances = { cyValue, height - cyValue, cxValue, width - cxValue };
 		int wall = 0;
-		for (int index2 = 1; index2 < distances.length; index2++) {
-			if (distances[index2] < distances[wall]) {
-				wall = index2;
+		for (int index = 1; index < distances.length; index++) {
+			if (distances[index] < distances[wall]) {
+				wall = index;
 			}
 		}
+		double span = wall <= 1 ? width : height;
+		double along = (wall <= 1 ? cxValue : cyValue) - span / 2;
 
-		double along = wall <= 1 ? cxValue : cyValue;
-		int count = (int) Math.round((wall <= 1 ? width : height) / 100);
-		int index = Math.max(0, Math.min(count - 1, (int) Math.floor(along / 100)));
+		Group plane = this.wallPlane(wall);
+		host.fence.getChildren().add(plane);
+		if (this.flashes.size() >= MAX_FLASHES) {
+			this.flashes.remove(0).stop();
+		}
+		Flash flash = new Flash(plane);
+		this.flashes.add(flash);
 
-		this.flashSegment(wall, index, 1.0, Duration.ZERO);
-		this.flashSegment(wall, index - 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index + 1, 0.6, Duration.millis(60));
-		this.flashSegment(wall, index - 2, 0.3, Duration.millis(120));
-		this.flashSegment(wall, index + 2, 0.3, Duration.millis(120));
+		Timeline timeline = new Timeline();
+		for (int ring = 0; ring < RINGS; ring++) {
+			PhongMaterial edge = material(FENCE_BASE);
+			PhongMaterial cell = material(FENCE_BASE);
+			plane.getChildren().add(HexPanel.band(span, along, AIM_HEIGHT, ring * RING_WIDTH, (ring + 1) * RING_WIDTH, edge, cell));
+			this.light(timeline, edge, cell, 1.0 - ring * 0.22, Duration.millis(ring * 55));
+		}
+		timeline.setOnFinished(event -> flash.stop());
+		flash.timeline = timeline;
+		timeline.play();
 	}
 
-	/** Flashes the fence segments of a wall at the given index, with the given intensity, after the delay. */
-	void flashSegment(int wall, int index, double intensity, Duration delay) {
-		for (FenceSegment segment : host.fenceSegments) {
-			if (segment.wall() != wall || segment.index() != index) {
-				continue;
-			}
-			this.flashShield(segment, intensity, delay);
-			if (intensity >= 0.8) {
-				this.pulseSegment(segment);
-			}
-			return;
+	/** The plane of a wall, where the hexagons of a hit on it are drawn: x runs along the wall, 0 at its middle */
+	private Group wallPlane(int wall) {
+		Group plane = new Group();
+		double normal = wall <= 1 ? host.fieldHeight / 2 : host.fieldWidth / 2;
+		if (wall <= 1) {
+			plane.setTranslateZ(wall == 0 ? -normal : normal);
+		} else {
+			plane.setTranslateX(wall == 2 ? -normal : normal);
+			plane.getTransforms().add(new Rotate(-90, Rotate.Y_AXIS));
 		}
+		return plane;
 	}
 
-	/** The force field of one fence segment lights up after the delay and fades out */
-	private void flashShield(FenceSegment segment, double intensity, Duration delay) {
-		if (segment.animation != null) {
-			segment.animation.stop();
-			segment.animation = null;
-		}
-
-		segment.box().setVisible(true);
-
-		// Electric force field energy flare: transparent translucent barrier
-		double peakAlpha = 0.20 + 0.08 * Math.min(1.0, intensity);
+	/** A ring of hexagons lights up after the delay and fades out: the edges clear, the cells barely there */
+	private void light(Timeline timeline, PhongMaterial edge, PhongMaterial cell, double intensity, Duration delay) {
 		Color tint = host.style.fence;
-		Color shieldBright = Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), peakAlpha);
-		Color shieldMid = Color.color(tint.getRed() * 0.6, tint.getGreen() * 0.8, tint.getBlue(), peakAlpha * 0.45);
-		Color shieldFade = Color.color(tint.getRed() * 0.4, tint.getGreen() * 0.8, tint.getBlue(), 0.0);
-
-		segment.material().setSpecularColor(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.20));
-
-		Timeline flash = new Timeline();
-		flash.getKeyFrames().addAll(
-				new KeyFrame(delay, new KeyValue(segment.material().diffuseColorProperty(), shieldBright)),
-				new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(segment.material().diffuseColorProperty(), shieldMid)),
-				new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(segment.material().diffuseColorProperty(), shieldFade)));
-		flash.setOnFinished(event -> {
-			segment.box().setVisible(false);
-			segment.material().setDiffuseColor(FENCE_BASE);
-			segment.material().setSpecularColor(Color.TRANSPARENT);
-			segment.animation = null;
-		});
-		segment.animation = flash;
-		flash.play();
+		double strength = 0.55 + 0.45 * Math.min(1.0, intensity);
+		timeline.getKeyFrames().addAll(
+				new KeyFrame(delay, new KeyValue(edge.diffuseColorProperty(), glow(tint, 1, 1, 1, 0.85 * strength)), new KeyValue(cell.diffuseColorProperty(), glow(tint, 1, 1, 1, 0.12 * strength))),
+				new KeyFrame(delay.add(Duration.millis(90)), new KeyValue(edge.diffuseColorProperty(), glow(tint, 0.6, 0.8, 1, 0.45 * strength))),
+				new KeyFrame(delay.add(Duration.millis(320)), new KeyValue(edge.diffuseColorProperty(), glow(tint, 0.4, 0.8, 1, 0)), new KeyValue(cell.diffuseColorProperty(), glow(tint, 1, 1, 1, 0))));
 	}
 
-	/** A strong hit makes the segment bulge a little */
-	private void pulseSegment(FenceSegment segment) {
-		ScaleTransition pulse = new ScaleTransition(Duration.millis(90), segment.box());
-		pulse.setFromX(1);
-		pulse.setToX(1.04);
-		pulse.setFromY(1);
-		pulse.setToY(1.04);
-		pulse.setFromZ(1);
-		pulse.setToZ(1.04);
-		pulse.setCycleCount(2);
-		pulse.setAutoReverse(true);
-		pulse.play();
+	/**
+	 * The tint of the force field at an opacity. JavaFX 3D blends with colors already multiplied by their opacity, so
+	 * a translucent color that is not premultiplied shines as if it were solid.
+	 */
+	private static Color glow(Color tint, double red, double green, double blue, double opacity) {
+		return Color.color(tint.getRed() * red * opacity, tint.getGreen() * green * opacity, tint.getBlue() * blue * opacity, opacity);
 	}
 
-	/** Back to the base look when a new round starts */
+	/** Back to nothing at all when a new round starts */
 	void resetFence() {
-		for (FenceSegment segment : host.fenceSegments) {
-			if (segment.animation != null) {
-				segment.animation.stop();
-				segment.animation = null;
+		for (Flash flash : new ArrayList<Flash>(this.flashes)) {
+			flash.stop();
+		}
+		this.flashes.clear();
+	}
+
+	/** The hexagons lit by one hit, and the animation that lights them. */
+	private final class Flash {
+		final Group plane;
+		Timeline timeline;
+
+		/** A flash on its plane of the wall. */
+		Flash(Group plane) {
+			this.plane = plane;
+		}
+
+		/** Ends the flash: the animation stops and its hexagons leave the scene. */
+		void stop() {
+			if (this.timeline != null) {
+				this.timeline.stop();
 			}
-			segment.box().setVisible(false);
-			segment.material().setDiffuseColor(FENCE_BASE);
-			segment.material().setSpecularColor(Color.TRANSPARENT);
-			segment.box().setScaleX(1);
-			segment.box().setScaleY(1);
-			segment.box().setScaleZ(1);
+			host.fence.getChildren().remove(this.plane);
+			ArenaFence.this.flashes.remove(this);
 		}
 	}
 }

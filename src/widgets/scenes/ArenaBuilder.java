@@ -77,7 +77,6 @@ final class ArenaBuilder {
 	 * The floor and the scenery of the style, and the force field
 	 */
 	void buildArena() {
-		host.fenceSegments.clear();
 		host.fence.getChildren().clear();
 		host.glowing.getChildren().clear();
 		host.lava = null;
@@ -91,7 +90,7 @@ final class ArenaBuilder {
 		case JUNGLE -> host.jungle.build(width, height);
 		}
 		host.arena.getChildren().add(host.glowing);
-		host.forceField.buildFence(width, height);
+		host.forceField.buildFence();
 		host.critters = new Critters(host.style, width, height, host.random);
 		host.arena.getChildren().add(host.critters.root());
 		if (host.style == ArenaStyle.ICE && host.ice.seaRadius() > 0) {
