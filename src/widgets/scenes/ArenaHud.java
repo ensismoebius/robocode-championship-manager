@@ -72,7 +72,9 @@ final class ArenaHud {
 		host.stageLabel.getStyleClass().add("arena-stage-big");
 		host.stageLabel.setVisible(false);
 		host.stageLabel.setManaged(false);
-		VBox center = new VBox(10, host.stageLabel, host.loading, host.banner, host.subBanner);
+		host.loadingBar.getStyleClass().add("arena-progress");
+		host.loadingBar.setPrefWidth(HUD_BAR_WIDTH);
+		VBox center = new VBox(10, host.stageLabel, host.loading, host.loadingBar, host.banner, host.subBanner);
 		center.setAlignment(Pos.CENTER);
 		center.setMouseTransparent(true);
 

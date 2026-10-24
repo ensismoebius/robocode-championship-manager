@@ -60,7 +60,7 @@ import robocode.control.snapshot.ITurnSnapshot;
  * #E round turns                          round ended
  * </pre>
  *
- * Compile it with: javac --release 11 -cp "robocodeDir/libs/*" BattleStarter.java
+ * Compile it with: javac --release 17 -cp "robocodeDir/libs/*" BattleStarter.java
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -83,6 +83,9 @@ public class BattleStarter {
 		Observer observer = new Observer(out, options.stream());
 		engine.addBattleListener(observer);
 		engine.setVisible(!options.stream());
+		if (options.stream()) {
+			muteSounds();
+		}
 
 		RobotSpecification[] selected = engine.getLocalRepository(String.join(",", options.robots()));
 		if (options.knockout()) {
@@ -95,6 +98,27 @@ public class BattleStarter {
 
 		out.flush();
 		System.exit(0);
+	}
+
+	/**
+	 * Without its window Robocode still plays its sounds (shots, hits, deaths) while it
+	 * simulates the battle, which is shown later in 3D: turns them off for this run only,
+	 * in memory, the settings of the user are not saved. Its classes are looked up, so a
+	 * Robocode without them just keeps its sounds.
+	 */
+	private static void muteSounds() {
+		try {
+			// The components live in the class loader of the engine, which is the one of this thread once it exists
+			ClassLoader engine = Thread.currentThread().getContextClassLoader();
+			Class<?> container = Class.forName("net.sf.robocode.core.Container", true, engine);
+			java.lang.reflect.Method component = container.getMethod("getComponent", Class.class);
+			Class<?> settings = Class.forName("net.sf.robocode.settings.ISettingsManager", true, engine);
+			settings.getMethod("setOptionsSoundEnableSound", boolean.class).invoke(component.invoke(null, settings), false);
+			Class<?> sounds = Class.forName("net.sf.robocode.sound.ISoundManager", true, engine);
+			sounds.getMethod("setEnableSound", boolean.class).invoke(component.invoke(null, sounds), false);
+		} catch (ReflectiveOperationException | LinkageError | RuntimeException failure) {
+			// The battle is the same, only louder
+		}
 	}
 
 	/** Reads the options of the command line: -p the Robocode folder, -r the rounds, -s streams, -k is a knockout, the rest are robots. */

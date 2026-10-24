@@ -151,6 +151,7 @@ final class RobotView {
 		this.buildRadar(materials, this.radarMaterial);
 		this.tank.getChildren().addAll(this.body, this.turret, this.radar);
 		this.tank.getTransforms().add(this.tilt);
+		this.liftTracks();
 		this.tilt.angleProperty().addListener((observable, oldAngle, newAngle) -> this.liftTracks());
 
 		// The pieces thrown by the blast stay here, beside the wreck
@@ -479,14 +480,18 @@ final class RobotView {
 
 	/**
 	 * The tilt turns the belts into the floor on the side that goes down, so the tank is raised by as much as
-	 * its lowest belt point goes below the place it has standing still
+	 * its lowest belt point goes below the place it has standing still. Standing still, the tracks rest on the floor at y 0:
+	 * the tank is lifted by the drop of its lowest track link, the chamfered ends of the belts.
 	 */
 	private void liftTracks() {
 		double rest = lowestBelt(0, this.tilt.getAxis());
 		double lowest = lowestBelt(Math.toRadians(this.tilt.getAngle()), this.tilt.getAxis());
 		// The y axis points down, so a belt in the floor has a larger y than at rest
-		this.tank.setTranslateY(Math.min(0, rest - lowest));
+		this.tank.setTranslateY(-TRACKS_DROP + Math.min(0, rest - lowest));
 	}
+
+	/** The lowest point of the track links stands this far under the belts, where the floor is */
+	static final double TRACKS_DROP = 0.6;
 
 	/** The largest y of the belts, the lowest point of them, after turning them round the axis */
 	private static double lowestBelt(double angle, Point3D axis) {

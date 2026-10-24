@@ -88,8 +88,19 @@ final class ArenaTicker {
 		RobotView robotView = entry.getValue();
 		robotView.roll(deltaTime);
 		double[] atValue = robotView.position();
-		host.audio.setMachine(entry.getKey(), robotView.treadSpeed, robotView.turretSpeed, atValue[0], atValue[2]);
+		host.audio.setMachine(entry.getKey(), this.heard(robotView.treadSpeed), this.heard(robotView.turretSpeed), atValue[0], atValue[2]);
 	}
+	}
+
+	/**
+	 * The machines are heard only while the battle goes on: the tanks turning on the
+	 * stage of the presentation, or put at their places for the start, make no sound
+	 */
+	double heard(double speed) {
+		return switch (host.phase) {
+		case PLAYING, FREEZE, REPLAY -> speed;
+		default -> 0;
+		};
 	}
 
 	/** The fire, the sunbeams, the neon and the ice, the critters, the balloons and the photos */

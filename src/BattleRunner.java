@@ -8,6 +8,7 @@ import javafx.concurrent.Task;
 import model.Opponent;
 import tournament.Match;
 import utils.configuration.Configuration;
+import utils.robocode.BattleControl.WinnerCriterion;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.BattleOutcome;
 import utils.robocode.BattleControl.BattleResult;
@@ -53,15 +54,7 @@ final class BattleRunner {
 		boolean in3D = Configuration.isBattleView3D() && Platform.isSupported(ConditionalFeature.SCENE3D);
 		BattleArena3D arena = this.openArena(match, fighters, in3D);
 
-		// Robocode runs in another process, waiting for it in the JavaFX thread
-		// would freeze the screen
-		Task<BattleOutcome> battle = new Task<BattleOutcome>() {
-			/** Runs the battle on Robocode in a background thread. */
-			@Override
-			protected BattleOutcome call() throws Exception {
-				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D);
-			}
-		};
+		Task<BattleOutcome> battle = this.battleTask(fighters, robocodePath, rounds, startScript, criterion, in3D, arena);
 		battle.setOnSucceeded(event -> this.onBattleSucceeded(battle.getValue(), match, fighters, arena));
 		battle.setOnFailed(event -> this.onBattleFailed(battle.getException(), arena));
 
@@ -69,6 +62,25 @@ final class BattleRunner {
 		Thread thread = new Thread(battle, "robocode-battle");
 		thread.setDaemon(true);
 		thread.start();
+	}
+
+	/**
+	 * The battle on Robocode, to run in a background thread: it runs in another
+	 * process, waiting for it in the JavaFX thread would freeze the screen. While it
+	 * runs, the loading of the arena shows how far it is.
+	 */
+	private Task<BattleOutcome> battleTask(List<Opponent> fighters, String robocodePath, int rounds, String startScript, WinnerCriterion criterion, boolean in3D, BattleArena3D arena) {
+		return new Task<BattleOutcome>() {
+			/** Runs the battle on Robocode in a background thread. */
+			@Override
+			protected BattleOutcome call() throws Exception {
+				return BattleControl.startBattle(fighters, robocodePath, rounds, startScript, criterion, in3D, progress -> {
+					if (arena != null) {
+						Platform.runLater(() -> arena.setLoadingProgress(progress));
+					}
+				});
+			}
+		};
 	}
 
 	/**

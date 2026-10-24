@@ -75,6 +75,20 @@ class BattleControlRunTest {
 	}
 
 	@Test
+	void aBattleTellsHowFarItIsWhileItRuns() throws Exception {
+		Path folder = folder("progress");
+		Path script = script("progress", "#F 800 600 1", "#N 0 sample.Walls", "#R 0", "#T 0 0|0 10 20 0 0 0 100 0;1 30 40 0 0 0 100 0|", "#T 0 1|0 10 20 0 0 0 100 0;1 30 40 0 0 0 50 0|",
+				"#T 0 2|0 10 20 0 0 0 100 0;1 30 40 0 0 0 0 3|", "1\tsample.Walls\t216", "2\tsample.SpinBot\t0");
+		List<Opponent> fighters = List.of(robot("sample", "Walls"), robot("sample", "SpinBot"));
+		List<Double> told = new java.util.ArrayList<Double>();
+
+		BattleControl.startBattle(fighters, folder.toString(), 1, script.toString(), WinnerCriterion.SCORE, true, told::add);
+
+		// From the start, half way, all of it, and all of it again when the battle ends; each one only when it grows
+		assertEquals(List.of(0.0, 0.5, 1.0, 1.0), told);
+	}
+
+	@Test
 	void aBattleThatDoesNotReportEveryRobotFails() throws Exception {
 		Path folder = folder("incomplete");
 		Path script = script("incomplete", "1\tsample.Walls\t216");

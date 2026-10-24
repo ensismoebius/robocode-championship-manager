@@ -29,6 +29,40 @@ class BattleArena3DTest {
 	}
 
 	@Test
+	void theMachinesAreSilentUntilTheFightStarts() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
+		ArenaTicker ticker = new ArenaTicker(arena);
+
+		FxSupport.runVoid(() -> {
+			for (Phase phase : Phase.values()) {
+				arena.phase = phase;
+				boolean fighting = phase == Phase.PLAYING || phase == Phase.FREEZE || phase == Phase.REPLAY;
+				assertEquals(fighting ? 50 : 0, ticker.heard(50), 1e-9, phase.name());
+			}
+		});
+	}
+
+	@Test
+	void theLoadingShowsHowFarTheBattleIsSimulated() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
+
+		FxSupport.runVoid(() -> {
+			arena.setLoadingProgress(0.376);
+			assertEquals(0.376, arena.loadingBar.getProgress(), 1e-9);
+			assertTrue(arena.loading.getText().endsWith("38%"), arena.loading.getText());
+			// Never out of the bar
+			arena.setLoadingProgress(7);
+			assertEquals(1, arena.loadingBar.getProgress(), 1e-9);
+
+			// The battle is shown: the loading and its bar are gone
+			arena.play(ArenaSimulation.recording(ArenaSimulation.OUTPUT), () -> {
+			});
+			assertFalse(arena.loading.isVisible());
+			assertFalse(arena.loadingBar.isVisible());
+		});
+	}
+
+	@Test
 	void onlySemifinalsAndFinalsAreWarned() {
 		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters());
 

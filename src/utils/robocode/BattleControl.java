@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.DoubleConsumer;
 
 import model.Opponent;
 
@@ -104,6 +105,19 @@ public class BattleControl {
 	 */
 	public static BattleOutcome startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion, boolean record)
 			throws IOException, InterruptedException {
+		return startBattle(opponents, robocodePath, rounds, startScriptPath, criterion, record, progress -> {
+		});
+	}
+
+	/**
+	 * Like the one above, and tells how far the battle is while it runs.
+	 *
+	 * @param onProgress
+	 *            called, from the thread that runs the battle, each time the progress grows by
+	 *            at least a hundredth, from 0 to 1, and with 1 when the battle is over
+	 */
+	public static BattleOutcome startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion, boolean record, DoubleConsumer onProgress)
+			throws IOException, InterruptedException {
 
 		Path robotsDir = Path.of(robocodePath, "robots");
 		if (!Files.isDirectory(robotsDir)) {
@@ -126,7 +140,7 @@ public class BattleControl {
 
 		installRobots(robotsDir, opponents, command);
 
-		List<String> output = runBattleProcess(command);
+		List<String> output = runBattleProcess(command, onProgress);
 
 		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
 		if (results.size() != opponents.size()) {
@@ -150,13 +164,15 @@ public class BattleControl {
 	}
 
 	/** Runs the battle command and returns the lines it printed; the turns, which start with #, are not echoed. */
-	private static List<String> runBattleProcess(List<String> command) throws IOException, InterruptedException {
+	private static List<String> runBattleProcess(List<String> command, DoubleConsumer onProgress) throws IOException, InterruptedException {
 		ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
 		// The script runs java: the one this program runs on, even without java in the PATH
 		builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
 		Process process = builder.start();
 
 		List<String> output = new ArrayList<String>();
+		BattleProgress progress = new BattleProgress();
+		double told = -1;
 		try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
 			String line;
 			while ((line = bufferedReader.readLine()) != null) {
@@ -165,9 +181,15 @@ public class BattleControl {
 					System.out.println(line);
 				}
 				output.add(line);
+				double now = progress.accept(line);
+				if (now - told >= 0.01) {
+					told = now;
+					onProgress.accept(now);
+				}
 			}
 		}
 		process.waitFor();
+		onProgress.accept(progress.finish());
 		return output;
 	}
 

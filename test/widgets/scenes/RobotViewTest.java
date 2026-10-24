@@ -11,6 +11,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import javafx.geometry.Point3D;
+import javafx.scene.shape.MeshView;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 import model.Opponent;
@@ -229,6 +230,32 @@ class RobotViewTest {
 
 			robot.recoiling.jumpTo(Duration.millis(380));
 			assertEquals(rest, robot.gun.localToParent(0, 0, 0).getZ(), 1e-6);
+		});
+	}
+
+	@Test
+	void theTracksStandOnTheFloorAtRest() {
+		BattleArena3D arena = playedArena();
+
+		FxSupport.runVoid(() -> {
+			RobotView robot = arena.robots.get(0);
+			robot.reset();
+			robot.place(100, 50, 0, 0, 0);
+			robot.setEnergy(RobotArmor.FULL_ENERGY);
+			robot.rocking = null;
+			robot.tilt.setAngle(0);
+
+			// The floor is at y 0 (the lowest point of the tracks must not go below it)
+			double lowest = Double.NEGATIVE_INFINITY;
+			for (MeshView[] belt : robot.treadLinks) {
+				for (MeshView link : belt) {
+					if (link != null) {
+						lowest = Math.max(lowest, link.localToScene(link.getBoundsInLocal()).getMaxY());
+					}
+				}
+			}
+
+			assertTrue(lowest <= 1e-6, "the tracks sink into the floor: " + lowest);
 		});
 	}
 

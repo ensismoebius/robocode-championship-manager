@@ -569,6 +569,25 @@
 	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.9), 22, 0.4, 0, 0);
 }
 
+.arena-progress {
+	-fx-accent: -rc-accent;
+	-fx-control-inner-background: rgba(255, 255, 255, 0.12);
+	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.7), 14, 0.3, 0, 0);
+}
+
+.arena-progress > .track {
+	-fx-background-color: rgba(255, 255, 255, 0.14);
+	-fx-background-radius: 0;
+	-fx-background-insets: 0;
+}
+
+.arena-progress > .bar {
+	-fx-background-color: -rc-accent;
+	-fx-background-radius: 0;
+	-fx-background-insets: 0;
+	-fx-padding: 8;
+}
+
 .arena-callout {
 	-fx-font-family: "Press Start 2P";
 	-fx-font-size: 30px;

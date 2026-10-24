@@ -20,6 +20,7 @@ import javafx.scene.PointLight;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.effect.Bloom;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -189,7 +190,9 @@ public class BattleArena3D extends StackPane {
 	final Pane balloons = new Pane();
 	final Label banner = new Label();
 	final Label subBanner = new Label();
-	final Label loading = new Label("PREPARANDO A BATALHA");
+	final Label loading = new Label(LOADING_TEXT);
+	/** How far the battle is simulated, while the loading is shown */
+	final ProgressBar loadingBar = new ProgressBar(0);
 	final Label roundLabel = new Label();
 	/** The stage of the championship, over the loading and the versus */
 	final Label stageLabel = new Label();
@@ -323,6 +326,19 @@ public class BattleArena3D extends StackPane {
 	}
 
 	/**
+	 * Shows how far the battle is simulated, in the loading: the bar and the percentage.
+	 * Call it from the JavaFX thread.
+	 *
+	 * @param progress
+	 *            from 0 to 1
+	 */
+	public void setLoadingProgress(double progress) {
+		double done = Math.max(0, Math.min(1, progress));
+		this.loadingBar.setProgress(done);
+		this.loading.setText(LOADING_TEXT + "  " + Math.round(done * 100) + "%");
+	}
+
+	/**
 	 * Starts showing the battle
 	 *
 	 * @param onFinished
@@ -345,6 +361,8 @@ public class BattleArena3D extends StackPane {
 		}
 		this.hud.buildHudPlayers();
 		this.loading.setVisible(false);
+		this.loadingBar.setVisible(false);
+		this.loadingBar.setManaged(false);
 
 		Map<Integer, String> names = new HashMap<Integer, String>();
 		for (BattleRecording.Robot robot : recording.getRobots()) {
@@ -372,6 +390,8 @@ public class BattleArena3D extends StackPane {
 		return view;
 	}
 
+	/** What the loading says while the battle is simulated */
+	static final String LOADING_TEXT = "PREPARANDO A BATALHA";
 	/** The lava breathes between these tints of its texture */
 	static final Color LAVA_DIM = Color.gray(0.72);
 	static final Color LAVA_FULL = Color.WHITE;
