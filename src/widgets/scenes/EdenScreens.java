@@ -1,6 +1,5 @@
 package widgets.scenes;
 
-import javafx.geometry.Point3D;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;

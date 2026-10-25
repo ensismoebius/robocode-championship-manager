@@ -7,8 +7,6 @@ import java.util.Random;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
-import javafx.scene.shape.CullFace;
-import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 
 /**

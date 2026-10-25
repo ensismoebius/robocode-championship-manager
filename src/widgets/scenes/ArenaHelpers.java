@@ -6,13 +6,6 @@ import javafx.scene.image.WritableImage;
 import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
-import static widgets.scenes.ArenaHelpers.find;
-import static widgets.scenes.ArenaHelpers.findBullet;
-import static widgets.scenes.ArenaHelpers.lerp;
-import static widgets.scenes.ArenaHelpers.lerpAngle;
-import static widgets.scenes.ArenaHelpers.pose;
-import static widgets.scenes.ArenaHelpers.solidMap;
-import static widgets.scenes.ArenaHelpers.toCss;
 
 /**
  * Small helpers of the arena: the colors and the pictures of the arena, the pose of a robot in a turn, and the interpolation of the camera

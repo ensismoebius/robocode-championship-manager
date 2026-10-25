@@ -9,8 +9,6 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
-import widgets.Song;
-
 class BattleAudioTest {
 
 	private static double rms(double[] samples) {

@@ -2,14 +2,9 @@ package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.COUNTDOWN_SECONDS;
 import static widgets.scenes.BattleArena3D.SPEEDS;
-import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.ArenaHelpers.find;
-import static widgets.scenes.ArenaMaterials.grow;
 import static widgets.scenes.ArenaHelpers.lerp;
 import static widgets.scenes.ArenaHelpers.lerpAngle;
-import widgets.scenes.Phase;
-import widgets.scenes.Shot;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

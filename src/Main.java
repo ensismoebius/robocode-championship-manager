@@ -1,45 +1,22 @@
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import jakarta.persistence.PersistenceException;
-import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.application.ConditionalFeature;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.scene.Parent;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import jetty.server.HttpServer;
 import model.Championship;
 import model.Opponent;
 import tournament.Bracket;
 import tournament.Match;
-import tournament.Status;
-import tournament.ChampionshipService;
 import utils.configuration.Configuration;
 import utils.database.Database;
-import utils.robocode.BattleControl;
-import utils.robocode.BattleControl.BattleOutcome;
-import utils.robocode.BattleControl.BattleResult;
-import utils.robocode.BattleRecording;
-import widgets.scenes.BattleArena3D;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.Podium;
@@ -476,11 +453,6 @@ public class Main extends Application {
 		return flow.playableSelectedMatch();
 	}
 
-	/** Saves the result of a match and shows the winner. */
-	private void recordResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
-		flow.recordResult(match, winnerId, winnerScore, loserScore);
-	}
-
 	/** Saves the result of a match; false when it could not be saved, and the error was shown. */
 	boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		return flow.saveResult(match, winnerId, winnerScore, loserScore);
@@ -501,11 +473,6 @@ public class Main extends Application {
 		flow.undoLastResult();
 	}
 
-	/** The name of an opponent for the messages, or a question mark when it is unknown. */
-	private String nameOf(Long identifier) {
-		return flow.nameOf(identifier);
-	}
-
 	/** Shows the robots of the selected match, one at a time. */
 	void showNextSelectedOpponent() {
 		ceremony.showNextSelectedOpponent();
@@ -514,11 +481,6 @@ public class Main extends Application {
 	/** Shows the champion, after the transition of a battle when there is one. */
 	void showChampion(boolean transition) {
 		ceremony.showChampion(transition);
-	}
-
-	/** Opens the podium of the championship. */
-	private void openPodium() {
-		ceremony.openPodium();
 	}
 
 	/** Shows the card of an opponent with the given title. */

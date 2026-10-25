@@ -2,8 +2,6 @@ package widgets.scenes;
 
 import tournament.Importance;
 
-import javafx.scene.layout.Priority;
-import widgets.Sfx;
 import widgets.Theme;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -12,7 +10,6 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import tournament.Bracket;
 
 /**
  * The header of the bracket: its title, the champion or the next match, and the notice of robots that are out

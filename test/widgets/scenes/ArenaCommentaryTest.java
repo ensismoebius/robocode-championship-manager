@@ -1,8 +1,6 @@
 package widgets.scenes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -10,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import javafx.scene.control.Label;
 import support.DialogFields;
 import support.FxSupport;
-import widgets.scenes.Phase;
 import widgets.scenes.BattleCommentary.Message;
 import widgets.scenes.BattleCommentary.Tone;
 

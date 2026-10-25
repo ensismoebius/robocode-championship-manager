@@ -12,7 +12,6 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 
 import static widgets.scenes.CritterModels.creature;
-import static widgets.scenes.CritterModels.joint;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

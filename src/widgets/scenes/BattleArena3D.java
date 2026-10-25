@@ -9,19 +9,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Supplier;
-
-
 import javafx.animation.AnimationTimer;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
-import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.effect.Bloom;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -34,14 +29,10 @@ import javafx.scene.transform.Translate;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.shape.CullFace;
-import javafx.scene.image.WritableImage;
 import model.Opponent;
-import tournament.Bracket;
 import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;
-import utils.robocode.BattleRecording.Bullet;
-import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import widgets.BattleAudio;
 import widgets.Song;
@@ -50,8 +41,6 @@ import widgets.Sound;
 import widgets.Theme;
 import widgets.scenes.ArenaHud.HudPlayer;
 import static widgets.scenes.ArenaMaterials.distance2;
-import static widgets.scenes.ArenaMaterials.energy;
-import static widgets.scenes.ArenaMaterials.material;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

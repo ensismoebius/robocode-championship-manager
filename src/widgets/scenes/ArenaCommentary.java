@@ -25,7 +25,6 @@ import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
 import static widgets.scenes.ArenaHelpers.toCss;
 import utils.robocode.BattleRecording;
 import widgets.Theme;
-import widgets.scenes.Phase;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

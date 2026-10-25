@@ -1,10 +1,5 @@
 package widgets.scenes;
 
-import static widgets.scenes.ArenaMaterials.argb;
-import widgets.scenes.BattlePhoto;
-import widgets.scenes.PendingPhoto;
-import widgets.scenes.Phase;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

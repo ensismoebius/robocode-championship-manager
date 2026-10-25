@@ -2,7 +2,6 @@ package widgets.scenes;
 
 import static widgets.scenes.BattleArena3D.PLAYER_COLORS;
 import static widgets.scenes.ArenaMaterials.argb;
-import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.ArenaMaterials.material;
 import static widgets.scenes.ArenaMaterials.paint;
 import static widgets.scenes.ArenaMaterials.repaint;

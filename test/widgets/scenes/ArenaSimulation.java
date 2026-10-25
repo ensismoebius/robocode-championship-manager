@@ -7,7 +7,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import model.Opponent;
-import tournament.Bracket;
 import utils.configuration.Configuration;
 import utils.robocode.BattleRecording;
 import support.FxSupport;

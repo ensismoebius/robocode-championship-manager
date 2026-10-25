@@ -3,9 +3,6 @@ package widgets.scenes;
 import static widgets.scenes.BattleArena3D.FREEZE_SECONDS;
 import static widgets.scenes.ArenaHelpers.findBullet;
 import static widgets.scenes.ArenaHelpers.toCss;
-import widgets.scenes.Phase;
-import widgets.scenes.Shot;
-
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;

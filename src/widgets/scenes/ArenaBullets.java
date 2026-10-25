@@ -3,7 +3,6 @@ package widgets.scenes;
 import static widgets.scenes.BattleArena3D.PHOTO_DESTRUCTION_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_DELAY;
 import static widgets.scenes.BattleArena3D.PHOTO_HIT_POWER;
-import static widgets.scenes.ArenaMaterials.energy;
 import static widgets.scenes.ArenaHelpers.findBullet;
 import static widgets.scenes.ArenaHelpers.pose;
 
@@ -22,8 +21,6 @@ import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
 import utils.robocode.BattleRecording.Turn;
 import utils.robocode.BattleRecording;
-import widgets.scenes.PendingPhoto;
-import widgets.scenes.Phase;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information

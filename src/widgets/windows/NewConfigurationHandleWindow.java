@@ -34,7 +34,6 @@ import utils.configuration.INewConfigurationHandle;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleControl.WinnerCriterion;
 import widgets.ArcadeBackground;
-import widgets.BattleAudio;
 import widgets.Song;
 import widgets.GameWindow;
 import widgets.scenes.ArenaStyle;

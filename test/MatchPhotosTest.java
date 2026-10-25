@@ -20,7 +20,6 @@ import model.Opponent;
 import support.ChampionshipFixture;
 import support.FxSupport;
 import support.TestConfiguration;
-import tournament.Bracket;
 import utils.configuration.Configuration;
 import utils.database.Database;
 import widgets.scenes.ArenaSimulation;

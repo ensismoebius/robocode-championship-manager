@@ -18,9 +18,6 @@ import java.util.stream.LongStream;
 
 import org.junit.jupiter.api.Test;
 
-import tournament.Match;
-import tournament.Status;
-
 class BracketTest {
 
 	@Test

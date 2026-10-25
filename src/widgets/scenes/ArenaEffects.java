@@ -1,7 +1,5 @@
 package widgets.scenes;
 
-import tournament.Status;
-
 import static widgets.scenes.ArenaMaterials.CRYSTAL;
 import static widgets.scenes.ArenaMaterials.bubble;
 import static widgets.scenes.ArenaMaterials.energy;

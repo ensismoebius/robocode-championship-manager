@@ -33,7 +33,6 @@ import tournament.OpponentService;
 import tournament.OpponentService.RobotData;
 import widgets.ArcadeBackground;
 import widgets.GameDialog;
-import widgets.GameWindow;
 import widgets.Sound;
 
 /**

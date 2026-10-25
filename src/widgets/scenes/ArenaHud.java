@@ -30,7 +30,6 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import model.Opponent;
-import tournament.Bracket;
 import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;

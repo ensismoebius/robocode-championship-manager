@@ -1,8 +1,5 @@
 package widgets.scenes;
 
-import javafx.scene.layout.Priority;
-import widgets.Sfx;
-import widgets.Theme;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;

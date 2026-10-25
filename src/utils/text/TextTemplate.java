@@ -117,7 +117,6 @@ public class TextTemplate {
 	}
 
 	/** Splits the items of a block into text and place holders. */
-	@SuppressWarnings("unchecked")
 	private List<Object> parseBlockElements(List<Object> itens) {
 
 		Pattern placeHoldersPattern = Pattern.compile("\\{(\\w+)\\}");

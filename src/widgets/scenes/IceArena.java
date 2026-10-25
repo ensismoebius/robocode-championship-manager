@@ -1,10 +1,6 @@
 package widgets.scenes;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import javafx.scene.Group;
-import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
