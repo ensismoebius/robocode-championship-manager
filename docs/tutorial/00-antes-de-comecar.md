@@ -11,10 +11,34 @@ Ao final você terá um programa que:
 - roda cada batalha do Robocode escondida, sem abrir a janela do Robocode, e grava tudo o que acontece, turno a turno;
 - reproduz essa gravação em 3D: tanques que se movem, tiros, explosões, barras de energia e um placar;
 - põe fogo e fumaça nos tanques que perderam metade da energia;
-- monta a chave do campeonato, com eliminatória e repescagem, e decide quem enfrenta quem;
-- mostra o campeão no fim.
+- sorteia a ordem dos robôs e monta a chave do campeonato, com eliminatória e repescagem, e decide quem enfrenta quem;
+- mostra a chave numa janela, joga as partidas uma a uma (cada uma com a batalha em 3D) e anuncia as semifinais e as finais;
+- guarda o campeonato num arquivo, deixa desfazer o último resultado e continua de onde parou quando é aberto de novo;
+- mostra o campeão e o pódio no fim.
 
-O programa completo deste repositório tem muito mais (cinco arenas, apresentadores, música, inscrições pela web, pódio). O tutorial constrói o esqueleto que faz tudo isso funcionar, e o último capítulo mostra onde cada pedaço vive no código completo.
+O programa completo deste repositório tem muito mais (cinco arenas, apresentadores, música, inscrições pela web, uma cerimônia de pódio em 3D). O tutorial constrói o esqueleto que faz tudo isso funcionar, e o último capítulo mostra onde cada pedaço vive no código completo.
+
+## Os capítulos
+
+| Capítulo | O que fica pronto |
+| --- | --- |
+| 1. A primeira janela | O projeto Maven e uma janela com o relógio que chama o `atualizar` a cada quadro. |
+| 2. O mundo em 3D | A cena 3D: câmera que gira com o mouse, luz, chão e cerca de vidro. |
+| 3. O tanque | O tanque, com casco, esteiras, torre, canhão e radar. |
+| 4. Falando com o Robocode | Uma batalha do Robocode rodando escondida, e a gravação dela em texto. |
+| 5. Rodando a batalha de dentro do programa | O programa inicia a batalha, lê a classificação e a gravação, e acompanha o progresso. |
+| 6. A batalha em movimento | O replay em 3D, com barra de progresso enquanto a batalha é simulada. |
+| 7. Tiros, explosões e destroços | Tiros em voo, explosões e os pedaços do tanque caindo no chão. |
+| 8. O placar | Nomes, barras de energia com rastro de dano, rodadas vencidas e o K.O. |
+| 9. Fumaça, brasas e faíscas | O sistema de partículas, e o robô machucado soltando fumaça. |
+| 10. A imagem da chama | A chama desenhada pixel a pixel, em seis versões animadas. |
+| 11. O corpo da chama | A chama presa ao robô, que se arrasta quando ele anda. |
+| 12. A chave do campeonato | A chave de eliminação simples, com folgas, e a simulação no terminal. |
+| 13. A repescagem | A segunda chance, a grande final, os nomes das rodadas, as colocações e o pódio. |
+| 14. A chave na tela | A chave numa janela: cartões, linhas e a próxima partida em destaque. |
+| 15. O campeonato completo | O programa inteiro: sorteio, batalhas, replays, desfazer e continuar de onde parou. |
+
+Os capítulos 12 e 13 não usam nem o JavaFX nem o Robocode: são lógica em Java puro, conferida com testes automáticos. Depois deles vêm os apêndices: o [A](90-apendice-java.md) reúne os recursos do Java usados e o [B](91-apendice-problemas.md) os problemas comuns.
 
 ## O que você precisa saber
 
@@ -25,7 +49,7 @@ Você precisa ter escrito alguns programas, em qualquer linguagem: saber o que s
 - **Matemática** é a do ensino médio: ângulos, seno e cosseno, e um pouco de interpolação, que será explicada no caso.
 - **Robocode** também não é pré-requisito. Você escreve um robô simples no capítulo 4.
 
-Cada capítulo termina com algo funcionando na tela. Dá para parar no fim de qualquer um deles e continuar depois.
+Cada capítulo termina com algo funcionando, que você vê na tela ou no terminal. Dá para parar no fim de qualquer um deles e continuar depois.
 
 ## Como o tutorial funciona
 
@@ -40,14 +64,16 @@ Todo capítulo segue a mesma ordem:
 
 ### Como os trechos de código aparecem
 
-O texto sempre diz o que fazer com o código que vem logo abaixo. São quatro situações:
+O texto sempre diz o que fazer com o código que vem logo abaixo. As situações são estas:
 
 | O texto diz | O que você faz |
 |---|---|
 | **Crie o arquivo** `caminho/Arquivo.java` | Crie o arquivo com exatamente esse conteúdo. |
 | **Acrescente ao final da classe** | Cole o código dentro da classe, depois do último método e antes da última chave `}` do arquivo. |
-| **No topo do arquivo, junto dos outros `import`** | Acrescente as linhas `import` ao grupo que já existe no início do arquivo. O editor costuma sugerir o `import` sozinho quando um nome fica vermelho. |
-| **Substitua o método** `nome` | Apague o método inteiro, da primeira linha da assinatura até a chave que o fecha, e cole o novo no lugar. |
+| **Acrescente os imports** (ou **o import**) | Acrescente as linhas `import` ao grupo que já existe no início do arquivo. O editor costuma sugerir o `import` sozinho quando um nome fica vermelho. |
+| **Acrescente a linha** (ou **as linhas**, **o campo**, **o método**), com "logo depois de" ou "antes de" um trecho | Cole o código no ponto que o texto diz, logo depois ou logo antes do trecho citado, que já existe no arquivo. O trecho citado serve só para você achar o lugar: não o apague. |
+| **Substitua o método** `nome` (ou **o construtor**, **a classe**) | Apague o método inteiro, da primeira linha da assinatura até a chave que o fecha, e cole o novo no lugar. Se o novo começa com um comentário `/** ... */`, apague também o comentário que ficava acima do antigo. |
+| **Acrescente**, dentro de `<dependencies>` ou `<plugins>` | Só no `pom.xml` (capítulo 5): cole o trecho dentro do elemento citado, depois do que já está lá. |
 
 Os caminhos são sempre relativos à pasta do projeto, `mini-campeonato`, que você cria mais adiante neste capítulo.
 
@@ -168,19 +194,21 @@ Agora veja uma batalha do jeito comum, para saber o que vamos automatizar. Na pa
 
 Crie uma pasta vazia chamada `mini-campeonato`, em qualquer lugar do computador. Tudo o que o tutorial manda criar vai dentro dela. Abra essa pasta no editor.
 
-No fim do tutorial ela terá esta forma (cada arquivo aparece no capítulo que o cria):
+No fim do tutorial ela terá esta forma (cada arquivo aparece no capítulo que o cria, e o capítulo 15 mostra a árvore completa, arquivo por arquivo):
 
 ```text
 mini-campeonato/
-├── pom.xml
-├── iniciador/
-│   └── IniciadorDeBatalha.java
+├── pom.xml                    (capítulo 1)
+├── robos/aluno/               o robô Vigia, que você escreve (capítulo 4)
+├── iniciador/                 o programa que roda a batalha escondida (capítulo 4)
+├── campeonato.txt             o campeonato guardado, criado pelo programa (capítulo 15)
 └── src/
     ├── main/java/campeonato/
-    │   ├── cena/          (tudo o que é 3D)
-    │   ├── robocode/      (conversa com o Robocode)
-    │   └── torneio/       (a chave do campeonato)
-    └── test/java/campeonato/
+    │   ├── cena/              tudo o que é 3D (capítulos 1 a 11)
+    │   ├── robocode/          a conversa com o Robocode (capítulos 5 e 8)
+    │   ├── torneio/           a chave e o campeonato, sem nada de tela (capítulos 12, 13 e 15)
+    │   └── tela/              as telas do campeonato (capítulos 14 e 15)
+    └── test/java/campeonato/  os testes, um pacote para cada um dos de cima
 ```
 
 ## Conferência
@@ -191,5 +219,7 @@ Antes de seguir, confirme:
 - `mvn -v` responde e usa o Java 21;
 - a pasta do Robocode tem `libs/robocode.jar` e `robots/sample/Walls.class`;
 - você sabe o caminho completo da pasta do Robocode.
+
+Uma observação sobre os comandos. Todo o código do tutorial e os comandos dos capítulos 1 a 15 foram executados, um por um, num computador com **Linux**. Os comandos de instalação deste capítulo (`apt`, `winget`, `brew`, `choco`, `scoop`) e os que são só do Windows (`set`, `dir`, `copy`) seguem a documentação das ferramentas e não foram executados na revisão. Se um deles falhar no seu sistema, o [Apêndice B](91-apendice-problemas.md) é o primeiro lugar a olhar.
 
 No próximo capítulo você cria o projeto e abre a primeira janela.

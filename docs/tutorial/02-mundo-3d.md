@@ -216,7 +216,7 @@ import javafx.scene.transform.Translate;
     }
 ```
 
-O sol está em `(-300, -900, -500)`: um pouco à esquerda, **muito acima** (`y` negativo!) e atrás da arena, do ponto de vista da câmera. `Color.gray(0.45)` é um cinza médio; quanto maior o número, mais clara a luz ambiente.
+O sol está em `(-300, -900, -500)`: um pouco à esquerda, **muito acima** (`y` negativo, já que o `y` cresce para baixo) e atrás da arena, do ponto de vista da câmera. `Color.gray(0.45)` é um cinza médio; quanto maior o número, mais clara a luz ambiente.
 
 <!-- compilar -->
 <!-- marco: 02-cubo -->

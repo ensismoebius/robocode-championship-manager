@@ -888,7 +888,7 @@ E os métodos que mostram os dados. **Acrescente as linhas** abaixo antes do com
 
 O relógio da `Queima` é um número que só cresce: a cada quadro ele soma o `delta`, e o rastro registra o lugar do robô naquele momento. Ele não é a hora do dia, nem o tempo da batalha, e não precisa ser: o `RastroDoRobo` só compara momentos entre si.
 
-<!-- compilar -->
+O projeto ainda não compila, pelo motivo do passo 6, e continua assim até o fim do passo 8.
 
 ## Passo 8 — Nascer, viver e ser desenhada
 
@@ -1376,7 +1376,7 @@ src/test/java/campeonato/cena/
 
 **Difícil**
 
-6. Faça um **vento constante**, que deita todas as chamas para o mesmo lado, até a de um robô parado. Dica: em `FitaDeChama.seguir`, some ao `ladoX`, antes do limite de inclinação, um número `VENTO_X × altura × subida × subida`, com `VENTO_X` em 0,3, para o vento crescer com o quadrado da subida, como o balanço. O teste `comORoboParadoAFitaFicaEmPe` vai falhar: o comportamento mudou de propósito, então mude o teste e escreva outro, que confira que, com o robô parado, a base fica no lugar e a ponta vai para o lado do vento.
+6. Faça um **vento constante**, que deita todas as chamas para o mesmo lado, até a de um robô parado. Dica: dê ao `FitaDeChama.seguir` um parâmetro a mais, `double vento` (a fração da altura em que a ponta é empurrada para o lado do `+x`), e some ao `ladoX`, antes do limite de inclinação, o número `vento × altura × subida × subida`, para o vento crescer com o quadrado da subida, como o balanço. O compilador aponta cada chamada que precisa do argumento novo. Nos testes antigos passe `0`, e eles continuam valendo, e na `posicionarChama` passe `0.3`. Escreva também um teste novo, que confira que, com o robô parado e `vento` igual a 0,3, a base fica no lugar e a ponta vai 0,3 vez a altura para o lado do vento.
 
 ## Perguntas para fixação
 

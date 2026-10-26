@@ -141,7 +141,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 /** A tela onde a batalha acontece. Por enquanto só mostra o relógio do programa. */
-public class Arena3D extends StackPane {
+public final class Arena3D extends StackPane {
 
     private final Label medidor = new Label();
 
@@ -155,7 +155,7 @@ public class Arena3D extends StackPane {
 }
 ```
 
-`StackPane` é um painel que empilha os filhos um sobre o outro. Mais tarde, a cena 3D ficará embaixo e o placar em cima, e o `StackPane` faz exatamente isso. `getChildren()` devolve a lista de filhos do painel, e `add` põe o `medidor` nela. O `setStyle` usa a linguagem CSS do JavaFX para pintar o fundo.
+O `extends StackPane` diz que a `Arena3D` **é** um `StackPane`: ela herda tudo o que um painel desse tipo sabe fazer, e acrescenta o que é dela. O `final` antes de `class` diz o contrário, que ninguém vai herdar da `Arena3D`, o que o compilador confere. `StackPane` é um painel que empilha os filhos um sobre o outro. Mais tarde, a cena 3D ficará embaixo e o placar em cima, e o `StackPane` faz exatamente isso. `getChildren()` devolve a lista de filhos do painel, e `add` põe o `medidor` nela. O `setStyle` usa a linguagem CSS do JavaFX para pintar o fundo.
 
 ## Passo 5 — O relógio do programa
 
