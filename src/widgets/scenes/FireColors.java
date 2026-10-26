@@ -56,28 +56,25 @@ final class FireColors {
 		return Color.color(color.getRed(), color.getGreen(), color.getBlue(), opacity);
 	}
 
-	/** The colour of a flame, cached by its life step and opacity level. */
+	/**
+	 * The colour of a flame, cached by its life step and opacity level. The colors
+	 * of the fire are in its picture: this only fades it, and cools the orange ones
+	 * toward red as they age. The blue ones keep their blue.
+	 */
 	static Color flameColor(boolean blue, int step, int level) {
 		int index = ((blue ? 1 : 0) * LIFE_STEPS + step) * OPACITY_LEVELS + level;
 		Color color = FLAME_COLORS[index];
 		if (color == null) {
 			double time = middle(step);
-			Color base;
-			if (blue) {
-				// A blue tongue: pale at the base, deep blue at the tip
-				base = time < 0.25 ? Color.web("#d6f1ff").interpolate(Color.web("#4aa8ff"), time / 0.25) : Color.web("#4aa8ff").interpolate(Color.web("#2a46ff"), (time - 0.25) / 0.75);
-			} else if (time < 0.14) {
-				// Every flame is blue where it is born
-				base = Color.web("#5aa9ff").interpolate(Color.web("#fff0b8"), time / 0.14);
-			} else if (time < 0.3) {
-				base = Color.web("#fff0b8").interpolate(Color.web("#ffb12a"), (time - 0.14) / 0.16);
-			} else {
-				base = Color.web("#ffb12a").interpolate(Color.web("#e8380d"), (time - 0.3) / 0.7);
-			}
-			color = FLAME_COLORS[index] = withOpacity(base, opacity(level));
+			Color base = blue ? Color.WHITE : Color.WHITE.interpolate(Color.web("#ff9a74"), Math.max(0, (time - 0.3) / 0.7));
+			// See through: many flames pile up on a burning robot, and it must not become a solid mass
+			color = FLAME_COLORS[index] = withOpacity(base, opacity(level) * FLAME_OPACITY);
 		}
 		return color;
 	}
+
+	/** The most opaque a flame gets */
+	static final double FLAME_OPACITY = 0.55;
 
 	/** The colour of a smoke particle, cached by its shade, life step and opacity level. */
 	static Color smokeColor(int shade, int step, int level) {

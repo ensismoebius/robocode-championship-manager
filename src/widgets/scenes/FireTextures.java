@@ -14,7 +14,23 @@ final class FireTextures {
 	/** A quad of size 1 facing -Z, shared by all the sprites */
 	static final TriangleMesh SPRITE = sprite();
 
-	static final Image FLAME_TEXTURE = flameTexture();
+	/** How many different flames there are, so the fire does not repeat itself */
+	static final int FLAME_VARIANTS = 4;
+
+	/** How many of the flames burn blue all the way */
+	static final int BLUE_VARIANTS = 2;
+
+	/** The frames of the animation of a flame, which a flame plays in its life */
+	static final int FLAME_FRAMES = 10;
+
+	/** How much later in the noise of the flame each frame is */
+	private static final double FRAME_TIME = 0.08;
+
+	/** The flames, drawn once: the frames of each variant; the last variants are the blue ones */
+	static final Image[][] FLAME_TEXTURES = flameFrames();
+
+	/** The spark, a small tongue of fire */
+	static final Image SPARK_TEXTURE = sparkTexture();
 
 	static final Image SMOKE_TEXTURE = smokeTexture();
 
@@ -45,11 +61,22 @@ final class FireTextures {
 		return mesh;
 	}
 
+	/** The flames of the robots: for each variant, the frames of its animation; the blue ones are the last variants */
+	private static Image[][] flameFrames() {
+		Image[][] flames = new Image[FLAME_VARIANTS + BLUE_VARIANTS][FLAME_FRAMES];
+		for (int variant = 0; variant < flames.length; variant++) {
+			for (int frame = 0; frame < FLAME_FRAMES; frame++) {
+				flames[variant][frame] = FlameShader.frame(31L * variant + 5, frame * FRAME_TIME, variant >= FLAME_VARIANTS);
+			}
+		}
+		return flames;
+	}
+
 	/**
-	 * A tongue of fire: white hot at the base, round at the bottom and pointed at
-	 * the top, soft borders
+	 * A small tongue of fire for the sparks: white hot at the base, round at the
+	 * bottom and pointed at the top, soft borders
 	 */
-	static Image flameTexture() {
+	static Image sparkTexture() {
 		int size = 64;
 		WritableImage image = new WritableImage(size, size);
 		for (int posY = 0; posY < size; posY++) {

@@ -6,9 +6,12 @@ import widgets.scenes.ArenaFire.Particle;
 import widgets.scenes.ArenaFire.ParticleKind;
 
 /**
- * The fire of a robot that is burning: the flames that go with it, and the smoke and sparks it leaves behind
+ * The fire of a robot that is burning: the flames, fixed to their spots of the robot, with their bodies trailing along its way, and the smoke, the embers and the sparks that stay where they are born
  */
 final class RobotFire {
+
+	/** The share of the bits that come off the fire that are embers, which rise, and not sparks, which fall */
+	private static final double EMBER_SHARE = 0.65;
 
 	/**
 	 * Below half of the energy the robot catches fire. The less energy, the more
@@ -22,12 +25,16 @@ final class RobotFire {
 		if (damage <= 0 || !view.root.isVisible()) {
 			view.flameDebt = view.smokeDebt = view.sparkDebt = 0;
 			view.lastX = Double.NaN;
+			view.trail.clear();
 			return;
 		}
-		// The flames go with the robot, the smoke stays behind as a trail
+		// The base of the flames goes with the robot, the smoke stays behind as a trail
 		double posX = view.root.getTranslateX();
 		double posZ = view.root.getTranslateZ();
 		trackSpeed(view, deltaTime, posX, posZ);
+		// Where the robot has been, for its flames to trail along
+		view.fireClock += deltaTime;
+		view.trail.record(view.fireClock, posX, posZ);
 		view.lastX = posX;
 		view.lastZ = posZ;
 
@@ -36,9 +43,9 @@ final class RobotFire {
 		double cos = Math.cos(heading);
 		double sin = Math.sin(heading);
 
-		view.flameDebt += deltaTime * (40 + 70 * damage);
+		view.flameDebt += deltaTime * (9 + 14 * damage);
 		view.smokeDebt += deltaTime * (5 + 16 * damage);
-		view.sparkDebt += deltaTime * (1.5 + 7 * damage);
+		view.sparkDebt += deltaTime * (3 + 10 * damage);
 		while (view.flameDebt >= 1 || view.smokeDebt >= 1 || view.sparkDebt >= 1) {
 			burnPart(view, posX, posZ, spots, damage, cos, sin);
 		}
@@ -59,7 +66,7 @@ final class RobotFire {
 		}
 	}
 
-	/** One piece of the fire: a flame that stays with the robot, or smoke or sparks that stay behind it */
+	/** One piece of the fire: a flame, smoke or a spark, born on a burning spot of the hull and left there */
 	private static void burnPart(RobotView view, double posX, double posZ, int spots, double damage, double cos, double sin) {
 		// A burning spot of the hull, turning with the body
 		double[] spot = BURN_SPOTS[view.host.random.nextInt(spots)];
@@ -69,7 +76,7 @@ final class RobotFire {
 		double wzValue = posZ - lxValue * sin + lzValue * cos;
 		if (view.flameDebt >= 1) {
 			view.flameDebt--;
-			// Anchored to the robot, its position is relative to it
+			// The base of a flame is fixed to its spot of the robot, so its position is relative to it; its body trails along the way of the robot
 			Particle flame = view.host.fire.spawn(ParticleKind.FLAME, wxValue - posX, spot[1], wzValue - posZ, damage);
 			flame.anchor = view;
 		} else if (view.smokeDebt >= 1) {
@@ -77,7 +84,13 @@ final class RobotFire {
 			view.host.fire.spawn(ParticleKind.SMOKE, wxValue, spot[1] - 6, wzValue, damage).inherit(view.speedX * 0.15, view.speedZ * 0.15);
 		} else {
 			view.sparkDebt--;
-			view.host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(view.speedX * 0.3, view.speedZ * 0.3);
+			if (view.host.random.nextDouble() < EMBER_SHARE) {
+				// An ember: it comes off the fire and rises on the hot air, drifting, and goes out
+				Particle ember = view.host.fire.spawn(ParticleKind.EMBER, wxValue, spot[1] - 6, wzValue, damage);
+				ember.life = 0.9 + view.host.random.nextDouble() * 0.9;
+			} else {
+				view.host.fire.spawn(ParticleKind.SPARK, wxValue, spot[1], wzValue, damage).inherit(view.speedX * 0.3, view.speedZ * 0.3);
+			}
 		}
 	}
 }

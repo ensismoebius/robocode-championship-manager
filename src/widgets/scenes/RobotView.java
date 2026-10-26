@@ -106,6 +106,9 @@ final class RobotView {
 	double lastZ;
 	double speedX;
 	double speedZ;
+	/** Where the robot has been in the last moments, and the clock of its fire, for the flames to trail along the way */
+	final RobotTrail trail = new RobotTrail();
+	double fireClock;
 	boolean dead = false;
 	double energy = 100;
 	/** The links of each tread, left side first */
