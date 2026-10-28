@@ -57,16 +57,15 @@ public final class ArenaSimulation {
 		return arena(fighters, Configuration.RANDOM);
 	}
 
-	/** Builds the arena of the fighters on the JavaFX thread, with the given style (a name of {@link ArenaStyle}). */
+	/** Builds the arena of the fighters on the JavaFX thread, with the given style (a name of {@link ArenaStyle}): the arena of the final is built for the final, as it is the only match that has it. */
 	static BattleArena3D arena(List<Opponent> fighters, String style) {
-		TestConfiguration.load(style, "/nowhere");
-		return FxSupport.run(() -> new BattleArena3D(fighters));
+		return arena(fighters, style, style.equals(ArenaStyle.FINALS.name()));
 	}
 
-	/** Builds the arena of a stage of the championship on the JavaFX thread, with the given style (a name of {@link ArenaStyle}). */
-	static BattleArena3D arena(List<Opponent> fighters, String style, Importance importance) {
+	/** Builds the arena of a match on the JavaFX thread, with the given style (a name of {@link ArenaStyle}), for the final of the championship or not. */
+	static BattleArena3D arena(List<Opponent> fighters, String style, boolean championshipFinal) {
 		TestConfiguration.load(style, "/nowhere");
-		return FxSupport.run(() -> new BattleArena3D(fighters, importance));
+		return FxSupport.run(() -> new BattleArena3D(fighters, championshipFinal));
 	}
 
 	/** Parses the turns of a battle. */

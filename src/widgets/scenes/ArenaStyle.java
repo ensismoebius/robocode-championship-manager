@@ -50,21 +50,26 @@ public enum ArenaStyle {
 		this.song = song;
 	}
 
-	/** The arena of the finals: the random arenas of the other matches never pick it, and a random final always does */
+	/** The arena of the final: no other match has it, not even when it is the configured arena, and a final without a fixed arena always has it */
 	public static final ArenaStyle FINALS = EDEN_SOLAR;
 
-	/** Random arenas do not repeat until all were used, except the arena of the finals, which is kept for the finals */
+	/** Random arenas do not repeat until all were used, except the arena of the final, which is kept for the final */
 	private static final Rotation<ArenaStyle> ROTATION = new Rotation<ArenaStyle>(Arrays.stream(values()).filter(style -> style != FINALS).toArray(ArenaStyle[]::new));
 
 	/**
-	 * The configured arena. When it is not an arena (like "RANDOM"), the arena of the finals for a final, and for any other
-	 * match the next of the rotation, which has all the arenas but the one of the finals.
+	 * The arena of a match. The configured arena is kept, except for the arena of the final, which is only for the final: in
+	 * any other match it is the same as a random arena. A random arena is the arena of the final for the final, and for any
+	 * other match the next of the rotation, which has all the arenas but the one of the final.
 	 */
 	public static ArenaStyle resolve(String configured, Random random, boolean finalMatch) {
 		try {
-			return ArenaStyle.valueOf(configured);
+			ArenaStyle style = ArenaStyle.valueOf(configured);
+			if (style != FINALS) {
+				return style;
+			}
 		} catch (IllegalArgumentException | NullPointerException nullPointerException) {
-			return finalMatch ? FINALS : ROTATION.next(random);
+			// Not an arena: random
 		}
+		return finalMatch ? FINALS : ROTATION.next(random);
 	}
 }

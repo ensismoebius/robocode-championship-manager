@@ -92,7 +92,7 @@ final class BattleRunner {
 		if (!in3D) {
 			return null;
 		}
-		BattleArena3D arena = new BattleArena3D(fighters, host.bracket.importance(match));
+		BattleArena3D arena = new BattleArena3D(fighters, host.bracket.isDecider(match));
 		arena.setStage(host.bracket.roundName(match), host.bracket.importance(match));
 		host.resetAllScenes();
 		host.show(arena);

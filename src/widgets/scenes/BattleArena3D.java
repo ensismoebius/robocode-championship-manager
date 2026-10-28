@@ -282,14 +282,14 @@ public class BattleArena3D extends StackPane {
 
 	/** Creates the arena of a regular battle between the fighters. */
 	public BattleArena3D(List<Opponent> fighters) {
-		this(fighters, Importance.REGULAR);
+		this(fighters, false);
 	}
 
-	/** Creates the arena of a battle between the fighters, in a stage of the championship: the arena of the finals is only for the finals. */
-	public BattleArena3D(List<Opponent> fighters, Importance importance) {
+	/** Creates the arena of a battle between the fighters. The arena of the final is only for the match that decides the championship. */
+	public BattleArena3D(List<Opponent> fighters, boolean championshipFinal) {
 		this.fighters = fighters;
 		this.speed = Math.max(0, java.util.Arrays.binarySearch(SPEEDS, Configuration.getBattleSpeed()));
-		this.style = ArenaStyle.resolve(Configuration.getArena(), this.random, importance == Importance.FINAL);
+		this.style = ArenaStyle.resolve(Configuration.getArena(), this.random, championshipFinal);
 		this.audio.setSong(Configuration.isArenaMusic() ? this.style.song : Song.resolve(Configuration.getBattleMusic(), this.random));
 		this.audio.setMusicLevel(Configuration.getMusicVolume() / 100.0);
 
