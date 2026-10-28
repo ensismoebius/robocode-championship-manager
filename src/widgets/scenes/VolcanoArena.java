@@ -208,7 +208,7 @@ final class VolcanoArena {
 		crust.setDiffuseMap(CRUST_TEXTURE);
 		crust.setSelfIlluminationMap(CRUST_TEXTURE);
 		crust.setSpecularColor(Color.BLACK);
-		double sea = 5000;
+		double sea = ArenaMaterials.GROUND_REACH;
 		host.lavaFlows.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
 	}
 

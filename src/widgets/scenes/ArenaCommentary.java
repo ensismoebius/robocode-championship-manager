@@ -1,6 +1,7 @@
 package widgets.scenes;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -52,6 +53,8 @@ final class ArenaCommentary {
 	 */
 	private static final double[] COMMENT_COOLDOWN = { 15, 15, 12, 12, 8, 8, 8 };
 	private static final double[] COMMENT_CHANCE = { 0, 0.5, 0.7, 0.7, 1, 1, 1 };
+	/** From this priority on a comment is always told: it is a moment of the game, and it is not balanced among the presenters */
+	private static final int ESSENTIAL = 4;
 	private static final double COMMENT_MAX_WAIT = 4;
 	/** Callouts shown at the same time on each side */
 	private static final int MAX_CALLOUTS = 3;
@@ -70,6 +73,8 @@ final class ArenaCommentary {
 	private double commentClock;
 	/** When a presenter showed up for the last time */
 	private double lastPresented = -1000;
+	/** Who was on the screen, so that the presenters share it */
+	private final PresenterBalance balance = new PresenterBalance();
 	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
 
 	/** A comment waiting its turn, with the time since it was queued. */
@@ -210,13 +215,15 @@ final class ArenaCommentary {
 	 * A more important comment cuts the current one, the others wait their turn
 	 */
 	private void queueComment(BattleCommentary.Message message) {
+		this.balance.offer(message.topic());
 		if (this.comment == null || message.priority() > this.comment.priority() && this.commentAge > 0.6) {
 			// If it is not time for it, it is dropped
 			this.showComment(message);
 			return;
 		}
 		this.commentQueue.add(new QueuedComment(message, this.commentClock));
-		this.commentQueue.sort((first, second) -> Integer.compare(second.message().priority(), first.message().priority()));
+		// The most important first and, among them, the presenter who was on the screen less
+		this.commentQueue.sort(Comparator.comparingInt((QueuedComment queued) -> -queued.message().priority()).thenComparingInt(queued -> this.balance.appearances(queued.message().topic())));
 		while (this.commentQueue.size() > 3) {
 			this.commentQueue.remove(this.commentQueue.size() - 1);
 		}
@@ -231,12 +238,17 @@ final class ArenaCommentary {
 	}
 
 	/**
-	 * Whether it is time for this comment, by its importance and the time since
-	 * the last one
+	 * Whether it is time for this comment, by its importance, the time since the
+	 * last one and, but for the moments of the game, whether its presenter was on
+	 * the screen more or less than the others
 	 */
 	private boolean commentAllowed(BattleCommentary.Message message) {
 		int level = Math.max(0, Math.min(COMMENT_COOLDOWN.length - 1, message.priority()));
-		return this.commentClock - this.lastPresented >= COMMENT_COOLDOWN[level] && host.random.nextDouble() < COMMENT_CHANCE[level];
+		double chance = COMMENT_CHANCE[level];
+		if (level < ESSENTIAL) {
+			chance = Math.min(1, chance * this.balance.factor(message.topic()));
+		}
+		return this.commentClock - this.lastPresented >= COMMENT_COOLDOWN[level] && host.random.nextDouble() < chance;
 	}
 
 	/**
@@ -249,6 +261,7 @@ final class ArenaCommentary {
 			return false;
 		}
 		this.lastPresented = this.commentClock;
+		this.balance.appeared(message.topic());
 		this.presenter.present(message.topic(), COMMENT_SECONDS + 0.4);
 		this.liveTag.setText("● " + message.topic().presenter.toUpperCase());
 		this.comment = message;

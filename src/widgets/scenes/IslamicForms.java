@@ -3,15 +3,18 @@ package widgets.scenes;
 import java.util.List;
 
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The forms of Islamic architecture, for the desert arena: the pointed arch, the dome on its drum with a spire over it, the
- * minaret with its balcony on corbels, the round tower and the merlons of a parapet. Every form is built into one of three
- * meshes: the stone, the tiles of turquoise and the gold.
+ * The forms of Islamic architecture, for the desert arena, in its futuristic city: the pointed arch, the dome on its drum
+ * with a spire over it, the minaret with its balcony on corbels, the round tower and the merlons of a parapet, with the same
+ * proportions as in the old cities but made of pearl white ceramic, domes of glass, spires of glowing gold, bands and halos
+ * of light, needles of light over the minarets and veils of light in the arches. Every form is built into one of five meshes:
+ * the ceramic, the glass, the gold, the light and the veil.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -24,9 +27,20 @@ final class IslamicForms {
 	/** How many rings a dome has: the more of them, the rounder it is */
 	private static final int RINGS = 7;
 
-	final LowPoly stone = new LowPoly();
-	final LowPoly tiles = new LowPoly();
+	/** The thickness of a thread of light: of a halo, and of a needle over a minaret */
+	private static final double THREAD = 1.4;
+	/** The halo is a ring of this many stretches */
+	private static final int HALO = 18;
+	/** How thick the veil of light is in an arch: less than any wall, so it stays inside it */
+	private static final double VEIL = 2;
+
+	final LowPoly ceramic = new LowPoly();
+	final LowPoly glass = new LowPoly();
 	final LowPoly gold = new LowPoly();
+	/** What shines by itself, in cyan */
+	final LowPoly light = new LowPoly();
+	/** What shines and lets the arena show through: the veils in the arches */
+	final LowPoly veil = new LowPoly();
 
 	/**
 	 * Half the width of a pointed arch at a height over its springline, and 0 over its tip. The arch is the equilateral one,
@@ -43,10 +57,26 @@ final class IslamicForms {
 		return Math.sqrt(4 * half * half - height * height) - half;
 	}
 
-	/** The meshes that have something in them, each with its material: sandstone, turquoise tiles and gold. */
+	/** The meshes that have something in them, each with its material: pearl ceramic, teal glass, glowing gold, light and the veil. */
 	List<MeshView> views() {
-		return List.of(this.stone.view(ArenaMaterials.textured(DesertTexture.SANDSTONE, Color.gray(0.05))), this.tiles.view(ArenaMaterials.material(Color.web("#2aa7a0"))), this.gold.view(ArenaMaterials.material(Color.web("#e0b040"))))
-				.stream().filter(view -> ((TriangleMesh) view.getMesh()).getFaces().size() > 0).toList();
+		PhongMaterial shine = new PhongMaterial(Color.BLACK);
+		shine.setSelfIlluminationMap(ArenaHelpers.solidMap(Color.web("#5ff0ff")));
+		return List.of(this.ceramic.view(ArenaMaterials.material(Color.web("#c9d7dd"))), this.glass.view(glowing("#2aa7a0", "#0d4f58")), this.gold.view(glowing("#e0b040", "#6a4a10")), this.light.view(shine),
+				this.veil.view(veilMaterial())).stream().filter(view -> ((TriangleMesh) view.getMesh()).getFaces().size() > 0).toList();
+	}
+
+	/** The material of the veils: cyan that shines by itself and lets a third of what is behind it through. */
+	private static PhongMaterial veilMaterial() {
+		PhongMaterial material = new PhongMaterial(Color.color(0.1, 0.75, 0.9, 0.4));
+		material.setSelfIlluminationMap(ArenaHelpers.solidMap(Color.web("#1d93a8")));
+		return material;
+	}
+
+	/** A shiny material of a colour that also shines a little by itself, so it never goes dark. */
+	private static PhongMaterial glowing(String colour, String shine) {
+		PhongMaterial material = ArenaMaterials.material(Color.web(colour));
+		material.setSelfIlluminationMap(ArenaHelpers.solidMap(Color.web(shine)));
+		return material;
 	}
 
 	/** A ring of points around a vertical axis, at a height */
@@ -86,23 +116,66 @@ final class IslamicForms {
 	void minaret(double posX, double posZ, double ground, double high, double radius) {
 		double balcony = ground - high * 0.7;
 		double cap = ground - high * 0.9;
-		this.stone.box(posX, ground - high * 0.06, posZ, radius * 2.8, high * 0.12, radius * 2.8);
-		this.stone.cylinderY(posX, posZ, radius, ground - high * 0.1, balcony, 12);
+		this.ceramic.box(posX, ground - high * 0.06, posZ, radius * 2.8, high * 0.12, radius * 2.8);
+		this.ceramic.cylinderY(posX, posZ, radius, ground - high * 0.1, balcony, 12);
 		for (int step = 0; step < 3; step++) {
-			this.stone.cylinderY(posX, posZ, radius * (1.15 + 0.2 * step), balcony - 4 * step, balcony - 4 * (step + 1), 12);
+			this.ceramic.cylinderY(posX, posZ, radius * (1.15 + 0.2 * step), balcony - 4 * step, balcony - 4 * (step + 1), 12);
 		}
-		this.stone.cylinderY(posX, posZ, radius * 1.7, balcony - 12, balcony - 18, 12);
-		this.stone.cylinderY(posX, posZ, radius * 0.8, balcony - 18, cap, 12);
-		this.dome(this.tiles, posX, posZ, cap, radius, high * 0.1, 10);
+		this.ceramic.cylinderY(posX, posZ, radius * 1.7, balcony - 12, balcony - 18, 12);
+		this.ceramic.cylinderY(posX, posZ, radius * 0.8, balcony - 18, cap, 12);
+		this.band(posX, posZ, radius * 1.04, ground - high * 0.3);
+		this.band(posX, posZ, radius * 1.74, balcony - 15);
+		this.band(posX, posZ, radius * 0.84, cap + high * 0.04);
+		this.dome(this.glass, posX, posZ, cap, radius, high * 0.1, 10);
 		this.spire(posX, posZ, cap - high * 0.095, high * 0.08, radius * 0.12);
+		this.halo(posX, posZ, balcony - high * 0.12, radius * 2.6);
+		this.needle(posX, posZ, cap - high * 0.175, high * 0.9);
 	}
 
-	/** A round tower: a shaft, a ring that juts out under its top, and a dome of tiles over it. */
+	/** A round tower: a shaft with a band of light, a ring that juts out under its top, and a dome of glass over it. */
 	void tower(double posX, double posZ, double ground, double high, double radius) {
-		this.stone.cylinderY(posX, posZ, radius, ground + 20, ground - high, 12);
-		this.stone.cylinderY(posX, posZ, radius * 1.18, ground - high, ground - high - 10, 12);
-		this.dome(this.tiles, posX, posZ, ground - high - 10, radius * 1.1, radius * 0.9, 12);
+		this.ceramic.cylinderY(posX, posZ, radius, ground + 20, ground - high, 12);
+		this.band(posX, posZ, radius * 1.03, ground - high * 0.5);
+		this.ceramic.cylinderY(posX, posZ, radius * 1.18, ground - high, ground - high - 10, 12);
+		this.dome(this.glass, posX, posZ, ground - high - 10, radius * 1.1, radius * 0.9, 12);
 		this.spire(posX, posZ, ground - high - 10 - radius * 0.86, radius * 0.7, radius * 0.1);
+	}
+
+	/** A thin band of light around a round shaft, a little wider than it, with its top at the height given */
+	void band(double posX, double posZ, double radius, double topY) {
+		this.light.cylinderY(posX, posZ, radius, topY, topY + 3, 12);
+	}
+
+	/** A halo: a ring of light as thin as a thread, floating in the air around an axis at the height given */
+	void halo(double posX, double posZ, double heightY, double radius) {
+		double[][] ring = ring(posX, posZ, heightY, radius, HALO);
+		for (int index = 0; index < HALO; index++) {
+			this.light.tube(ring[index], ring[(index + 1) % HALO], THREAD, THREAD, 4);
+		}
+	}
+
+	/** A needle of light that rises from a point into the sky, thinning as it goes */
+	void needle(double posX, double posZ, double baseY, double high) {
+		this.light.tube(new double[] { posX, baseY, posZ }, new double[] { posX, baseY - high, posZ }, THREAD, THREAD * 0.25, 4);
+	}
+
+	/**
+	 * A veil of light in the opening of an arch, along x or along z, as wide as the opening at every height and with the same
+	 * pointed top. It is made of slices like the wall around it, and lets the arena show through.
+	 */
+	void veil(double posX, double posZ, boolean alongX, double ground, double half, double springline) {
+		double tip = springline + Math.sqrt(3) * half;
+		for (int slice = 0; slice < SLICES; slice++) {
+			double low = tip * slice / SLICES;
+			double above = tip * (slice + 1) / SLICES;
+			double opening = archHalfWidth((low + above) / 2 - springline, half);
+			double centre = ground - (low + above) / 2;
+			if (alongX) {
+				this.veil.box(posX, centre, posZ, 2 * opening, above - low, VEIL);
+			} else {
+				this.veil.box(posX, centre, posZ, VEIL, above - low, 2 * opening);
+			}
+		}
 	}
 
 	/**
@@ -131,9 +204,9 @@ final class IslamicForms {
 	/** One block of a wall: its offset along the wall from the middle, its length, its height and its thickness. */
 	private void piece(double posX, double posZ, boolean alongX, double offset, double length, double centreY, double height, double thickness) {
 		if (alongX) {
-			this.stone.box(posX + offset, centreY, posZ, length, height, thickness);
+			this.ceramic.box(posX + offset, centreY, posZ, length, height, thickness);
 		} else {
-			this.stone.box(posX, centreY, posZ + offset, thickness, height, length);
+			this.ceramic.box(posX, centreY, posZ + offset, thickness, height, length);
 		}
 	}
 
@@ -141,9 +214,9 @@ final class IslamicForms {
 	void merlons(boolean alongX, double fixed, double from, double toValue, double topY, double thickness) {
 		for (double along = from + MERLON; along < toValue - MERLON / 2; along += 2 * MERLON) {
 			if (alongX) {
-				this.stone.box(along, topY - MERLON / 2, fixed, MERLON, MERLON, thickness);
+				this.ceramic.box(along, topY - MERLON / 2, fixed, MERLON, MERLON, thickness);
 			} else {
-				this.stone.box(fixed, topY - MERLON / 2, along, thickness, MERLON, MERLON);
+				this.ceramic.box(fixed, topY - MERLON / 2, along, thickness, MERLON, MERLON);
 			}
 		}
 	}

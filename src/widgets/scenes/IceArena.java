@@ -89,7 +89,7 @@ final class IceArena {
 
 	/** The ground around the field and the light seams under the plates */
 	private void floor(double width, double height) {
-		Box ground = new Box(width * 6, 2, height * 6);
+		Box ground = new Box(2 * ArenaMaterials.GROUND_REACH, 2, 2 * ArenaMaterials.GROUND_REACH);
 		ground.setMaterial(ArenaMaterials.material(Color.web("#8ea4b8")));
 		ground.setTranslateY(6);
 

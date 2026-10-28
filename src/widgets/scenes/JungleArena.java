@@ -161,7 +161,7 @@ final class JungleArena {
 		PhongMaterial moss = jungleMaterials.moss();
 		// Ground: moss everywhere, a bit darker far away (it is the same texture,
 		// bigger tiles)
-		double far = 5000;
+		double far = ArenaMaterials.GROUND_REACH;
 		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -far, 6, -far }, { far, 6, -far }, { far, 6, far }, { -far, 6, far } }, moss, 260));
 		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -width / 2 - 20, 0.2, -height / 2 - 20 }, { width / 2 + 20, 0.2, -height / 2 - 20 }, { width / 2 + 20, 0.2, height / 2 + 20 }, { -width / 2 - 20, 0.2, height / 2 + 20 } }, moss, 110));
 

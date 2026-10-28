@@ -87,7 +87,7 @@ final class NeonArena {
 	}
 	/** The floor: a dark slab with a panel texture, and the ground around it */
 	private void floor(double width, double height, Random random) {
-		Box ground = new Box(9000, 2, 9000);
+		Box ground = new Box(2 * ArenaMaterials.GROUND_REACH, 2, 2 * ArenaMaterials.GROUND_REACH);
 		ground.setMaterial(ArenaMaterials.material(Color.web("#07080f")));
 		ground.setTranslateY(6);
 		host.arena.getChildren().add(ground);

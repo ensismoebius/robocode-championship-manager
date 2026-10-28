@@ -31,11 +31,15 @@ final class ArenaMaterials {
 	private ArenaMaterials() {
 	}
 
+	/** The radius of the dome of the sky, and how far the ground goes: past the dome, so the ground never ends in view, whatever the height of the camera */
+	static final double SKY_RADIUS = 14000;
+	static final double GROUND_REACH = 15000;
+
 	/**
 	 * A dome around everything, seen from inside, that shines by itself
 	 */
 	static Sphere skyDome(Image picture) {
-		Sphere dome = new Sphere(14000, 48);
+		Sphere dome = new Sphere(SKY_RADIUS, 48);
 		dome.setCullFace(CullFace.FRONT);
 		PhongMaterial sky = new PhongMaterial(Color.BLACK);
 		sky.setSelfIlluminationMap(picture);

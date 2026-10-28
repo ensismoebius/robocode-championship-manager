@@ -8,9 +8,10 @@ import java.util.function.Supplier;
  * This program is licensed under GPLv3 see the README file for more information
  *
  * The tour at the start of the fly by: a list of stops where the camera stays for a while, each looking at
- * something, before the trip to where the battle begins. In most arenas there is one stop, on a critter. In the
- * Eden Solar arena the tour goes first to the baobab, a symbol of Africa, then to three critters, and ends with a
- * view over the whole region.
+ * something, before the trip to where the battle begins. In most arenas there are two stops: a sweep around the arena
+ * from above, and a critter. The desert goes first to its city, to a skyscraper and down an avenue. In the Eden Solar
+ * arena the tour goes first to the baobab, a symbol of Africa, then to three critters, and ends with a view over the
+ * whole region.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -29,6 +30,10 @@ final class FlyTour {
 	private static final double CRITTER_SECONDS = 2;
 	private static final double BAOBAB_SECONDS = 3;
 	private static final double OVERVIEW_SECONDS = 2.5;
+	private static final double PANORAMA_SECONDS = 4.5;
+	/** How far beyond the fence the sweep goes, and how far in the jungle, where the huge trees stand closer and the camera would be in their leaves */
+	private static final double PANORAMA_REACH = 1000;
+	private static final double JUNGLE_REACH = 250;
 	private static final int CRITTERS = 3;
 
 	private final List<Stop> stops = new ArrayList<>();
@@ -60,7 +65,18 @@ final class FlyTour {
 				}
 			}
 			this.stops.add(overview(mirrorX, mirrorZ));
-		} else if (host.critters != null) {
+		} else {
+			if (host.style == ArenaStyle.MIDDLE_EAST) {
+				this.stops.addAll(DesertTour.stops(host.desert.towers()));
+			}
+			this.stops.add(panorama(host.fieldWidth, host.fieldHeight, host.style == ArenaStyle.JUNGLE ? JUNGLE_REACH : PANORAMA_REACH, mirrorX, mirrorZ));
+			this.critterStop(host, mirrorX, mirrorZ);
+		}
+	}
+
+	/** The stop on a critter of the arena, when it has one. */
+	private void critterStop(BattleArena3D host, double mirrorX, double mirrorZ) {
+		if (host.critters != null) {
 			Supplier<double[]> source = host.critters.track(-0.8 * host.fieldWidth * mirrorX, -host.fieldHeight * mirrorZ);
 			if (source != null) {
 				this.stops.add(critter(source));
@@ -139,6 +155,21 @@ final class FlyTour {
 			look[0] = tree[0];
 			look[1] = -320;
 			look[2] = tree[2];
+		});
+	}
+
+	/** A stop that sweeps around the arena from above, from the corner it looks from, coming down slowly: the scenery beyond the fence goes by. */
+	private static Stop panorama(double width, double height, double reach, double mirrorX, double mirrorZ) {
+		double start = Math.atan2(-mirrorZ * height, -mirrorX * width);
+		double radius = Math.hypot(width, height) / 2 + reach;
+		return new Stop(PANORAMA_SECONDS, 64, (share, eye, look) -> {
+			double angle = start + (share - 0.5) * 1.3 * mirrorX * mirrorZ;
+			eye[0] = Math.cos(angle) * radius;
+			eye[1] = -950 + 350 * share;
+			eye[2] = Math.sin(angle) * radius;
+			look[0] = 0;
+			look[1] = -60;
+			look[2] = 0;
 		});
 	}
 

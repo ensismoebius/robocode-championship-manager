@@ -76,11 +76,11 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 <td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, com uma grande abertura no teto para um céu de tempestade onde o sol rompe as nuvens. A planta é sinuosa e orgânica, como um rim, com lobos e cinturas, e as paredes são de terra coberta de musgo. Nervuras de madeira sobem em arco sobre a plateia, como galhos, até o teto, de onde pendem trepadeiras, e sebes floridas contornam as arquibancadas, lotadas com gente de todos os continentes e bandeiras ao vento. O campo é um jardim redondo, e o piso onde os robôs lutam traz padrões da arte africana (faixas de triângulos e zigue-zague, losangos concêntricos e um sol no centro, nas cores da terra), cortados por linhas de luz e nós brilhantes, como as trilhas de um circuito. Nas duas pontas, na boca de cada corredor, brilha um baobá, a árvore da vida. As aves ficam pousadas nos baobás e voam em volta deles, e o sobrevoo que abre a luta passa por um baobá, por três aves e por uma visão geral da região antes de chegar ao campo. Em volta do estádio, no alto, uma fileira de telas enormes mostra a batalha ao vivo, filmada de cima por uma câmera de transmissão que acompanha os robôs. A arena tem música própria, afrofuturista: um sino agogô e conga em compasso africano, chocalho, mbira em chamada e resposta e um baixo profundo, com sequenciador, teremim e lasers que entram aos poucos conforme a luta esquenta. As melodias são afinadas como nos xilofones do Malawi e de Moçambique, na escala heptatônica equidistante (a oitava em sete passos iguais), e não nas doze notas do piano. É a arena das grandes finais: ela só aparece na grande final, a partida que decide o campeonato. Nas outras partidas nunca é usada, nem se for a arena escolhida na configuração (nesse caso as outras partidas sorteiam entre as demais arenas), e a final a usa quando a arena é sorteada ou é ela mesma. Se você fixar outra arena, a final usa a que você fixou.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: um pátio de azulejos de mosaico, com estrelas de oito pontas em turquesa e cobalto e um medalhão dourado no centro, cercado por um platô de areia, com oásis de palmeiras na borda das dunas. Além do platô, dunas sobem até o horizonte, com uma cidade ao modo islâmico: casas baixas de arenito, com janelas de arco ogival e treliça, frisos de azulejo, cúpulas turquesa sobre tambores e torres de vento; duas mesquitas, cada uma com sua grande cúpula, cúpulas menores nos cantos, um pórtico em arco e dois minaretes de balcão; e portões de muralha entre torres redondas e merlões. Nos cantos do pátio há lanternas octogonais com cúpula dourada. O céu é de pôr do sol e a areia é levada pelo vento. A música é própria, na escala árabe (o maqam hijaz): um alaúde dedilha a escala, um ney canta por cima e uma darbuka marca o maqsum, e as notas e as batidas se multiplicam conforme a luta esquenta.</td>
+<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: um pátio de azulejos zellij no padrão "estrela e cruz" da arte islâmica, com os filetes brilhando de leve: estrelas de oito pontas (a khatam) aninhadas em azul-cobalto, turquesa e amarelo-mel, com cruzes verde-esmeralda entre elas e filetes de gesso branco, emolduradas por uma borda de estrelas menores, cercado por um platô de areia, com oásis de palmeiras na borda das dunas, de tronco anelado e folhas em arco, que sobem e depois descem, facetadas em dois tons de verde, como nos jogos de plataforma dos anos 90. Além do platô, um anel de dunas fica rente à arena e, depois dele, o chão é plano e se estende até o horizonte como uma cidade futurista de arquitetura islâmica, em quarteirões entre ruas de calçadas e faixas de luz, com jardins de quatro canais ("charbagh"), de água brilhante, cruzados em uma fonte, com ciprestes e palmeiras, e praças de azulejos sob mesquitas, portões e arranha-céus: casas baixas de cerâmica branca perolada, com janelas de arco ogival e treliça contornadas de luz, frisos de azulejo com o mesmo padrão, cujos filetes brilham, cúpulas de vidro sobre tambores e torres de vento; duas mesquitas, cada uma com sua grande cúpula sob halos de luz, cúpulas menores nos cantos, um pórtico em arco fechado por um véu de luz e dois minaretes de balcão, coroados por agulhas de luz; e portões de muralha entre torres redondas e merlões. Ao fundo, arranha-céus inspirados na arquitetura árabe contemporânea: um tripé de alas em espiral como o Burj Khalifa, torres cilíndricas com pele de losangos luminosos como a mashrabiya (Torre de Doha, Al Bahar), uma torre de abertura parabólica com passarela como a Kingdom Centre de Riad, uma torre torcida e inclinada como a Capital Gate de Abu Dhabi e uma torre coroada por um arco ogival. Nos cantos do pátio há lanternas octogonais com cúpula dourada e um halo de luz. O céu é de pôr do sol e a areia é levada pelo vento. A música é própria, na escala árabe (o maqam hijaz): um alaúde dedilha a escala, um ney canta por cima e uma darbuka marca o maqsum, e as notas e as batidas se multiplicam conforme a luta esquenta.</td>
 </tr>
 </table>
 
-Antes do primeiro round, a câmera fica 2 segundos num dos bichos que vivem na arena e depois sobrevoa o campo, até onde a batalha começa.
+Antes do primeiro round, a câmera passeia pelo cenário: dá uma volta por cima da arena, fica 2 segundos num dos bichos que vivem nela e depois sobrevoa o campo, até onde a batalha começa. No deserto o passeio começa pela cidade: a câmera olha para cima, para um arranha-céu, e voa baixo por uma avenida até sair sobre as dunas, diante da arena.
 Eles nunca entram na área de batalha, mas se assustam com os tiros e as explosões.
 
 ![Uma salamandra da Forja Vulcânica](docs/images/bicho-vulcao.jpg)
@@ -93,7 +93,7 @@ Durante a batalha, **apresentadores** comentam o que acontece, e **bichos** vive
 
 ### Apresentadores
 
-Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer.
+Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer. Eles dividem a tela: quem já apareceu mais do que os outros fala menos, quem apareceu menos fala mais, e o mesmo apresentador não aparece duas vezes seguidas. Os grandes momentos (início e fim do round, nocaute, manchetes) sempre são ditos.
 
 | Foto | Apresentador | Comenta sobre | Como ele é |
 |---|---|---|---|
@@ -107,7 +107,7 @@ Cada tipo de acontecimento tem o seu apresentador. Quando algo importante aconte
 
 ### Bichos das arenas
 
-Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera fica 2 segundos num deles e depois segue o seu passeio pela arena.
+Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera dá uma volta por cima da arena, fica 2 segundos num deles e depois segue o seu passeio.
 
 | | | |
 |---|---|---|
@@ -311,7 +311,7 @@ aproxima a próxima batalha. Qualquer tecla ou clique pula a animação.
 
 ![Robô apresentado na arena](docs/images/apresentacao-3d.jpg)
 
-...depois os dois se encaram, a câmera sobrevoa a arena (parando 2 segundos em cada bicho que encontra pelo caminho) e cada round começa com uma contagem de 3 segundos.
+...depois os dois se encaram, a câmera passeia pela arena (uma volta por cima, 2 segundos num bicho e o sobrevoo até o campo; no deserto, antes disso, a cidade) e cada round começa com uma contagem de 3 segundos.
 
 ![Os dois robôs frente a frente](docs/images/versus-3d.jpg)
 

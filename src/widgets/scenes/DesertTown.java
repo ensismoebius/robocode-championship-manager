@@ -8,34 +8,33 @@ import javafx.scene.paint.PhongMaterial;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The town of the desert arena, built as the Islamic cities were: low houses of sandstone around their courtyards, with
- * flat roofs, parapets, a frieze of tiles under them and windows with pointed arches, some with a dome of tiles on a
- * drum and some with a wind tower; two mosques, each with its great dome, the domes of its corners, the portal with its
- * pointed arch and two minarets; and two gates in the wall of the town, between round towers. The mosques and the
- * gates stand on levelled ground, far beyond the courtyard. The windows glow at dusk.
+ * The town of the desert arena, built as the Islamic cities were but from the future: low houses of pearl white ceramic,
+ * with flat roofs, parapets edged in light, a frieze of glowing tiles under them and windows with pointed arches outlined
+ * in light, some with a dome of glass on a drum and some with a wind tower; two mosques, each with its great dome of glass
+ * under a halo of light, the domes of its corners, the portal with its pointed arch closed by a veil of light and two
+ * minarets topped by needles of light; and two gates in the wall of the town, between round towers, their arches also
+ * veiled. The mosques and the gates stand on levelled ground, far beyond the courtyard. The windows glow at dusk.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
 final class DesertTown {
 
-	/** How many houses the town has, at most: the ones that would stand on a monument are left out */
-	private static final int HOUSES = 46;
-	/** The sandstone repeats its picture every this many units, and the windows every this many */
+	/** The ceramic repeats its picture every this many units, and the windows every this many */
 	private static final double WALL = 150;
 	private static final double WINDOW = 120;
 	/** The windows stand this far out of the walls, so they never flicker into them */
 	private static final double OUT = 0.6;
 	/** The walls go this far under the ground, so a slope never leaves a gap under them */
 	private static final double SINK = 30;
-	/** The houses keep this far from the levelled ground of a monument */
-	private static final double ROOM = 90;
-	/** The frieze of tiles under the roof: how tall it is, and how far it juts out of the wall */
-	private static final double FRIEZE = 8;
+	/** The frieze of tiles under the roof, where the star and cross of the courtyard goes on in a small size: how tall it is, how far under the roof it starts, and how far it juts out of the wall */
+	private static final double FRIEZE = 16;
+	private static final double FRIEZE_TOP = 3;
 	private static final double JUT = 1.5;
 
 	private final BattleArena3D host;
 	private final SurfaceMesh walls = new SurfaceMesh();
 	private final SurfaceMesh windows = new SurfaceMesh();
+	private final SurfaceMesh friezes = new SurfaceMesh();
 	private final IslamicForms forms = new IslamicForms();
 
 	/** The town, drawn in the host scene. */
@@ -43,44 +42,30 @@ final class DesertTown {
 		this.host = host;
 	}
 
-	/** Builds the monuments on their sites and the houses on the dunes, far from the courtyard, and puts the meshes in the host scene. */
-	void build(double width, double depth, Random wild) {
+	/** Builds the monuments on their sites and the houses on the lots of the city, far from the courtyard, and puts the meshes in the host scene. */
+	void build(double width, double depth, Random wild, DesertCity city) {
 		double[][] sites = DesertDunes.SITES;
 		this.mosque(sites[0], 1.3, width, depth);
 		this.mosque(sites[1], 1, width, depth);
 		this.gate(sites[2], 1, width, depth);
 		this.gate(sites[3], 0.8, width, depth);
-		for (int index = 0; index < HOUSES; index++) {
-			double angle = wild.nextDouble() * Math.PI * 2;
-			double distance = 1000 + wild.nextDouble() * 1800;
-			double posX = Math.cos(angle) * distance;
-			double posZ = Math.sin(angle) * distance;
-			if (!onSite(posX, posZ)) {
-				this.house(posX, posZ, width, depth, wild);
-			}
+		for (double[] spot : city.houses(wild)) {
+			this.house(spot[0], spot[1], width, depth, wild);
 		}
-		PhongMaterial sandstone = ArenaMaterials.textured(DesertTexture.SANDSTONE, Color.gray(0.05));
-		PhongMaterial arches = ArenaMaterials.textured(DesertTexture.ARCHES, Color.gray(0.05));
+		PhongMaterial ceramic = ArenaMaterials.textured(DesertTexture.PANELS, Color.gray(0.4));
+		PhongMaterial arches = ArenaMaterials.textured(DesertTexture.ARCHES, Color.gray(0.4));
 		arches.setSelfIlluminationMap(DesertTexture.WINDOWS);
-		host.arena.getChildren().addAll(this.walls.view(sandstone), this.windows.view(arches));
+		PhongMaterial tiles = ArenaMaterials.textured(DesertTexture.MOSAIC, Color.gray(0.1));
+		tiles.setSelfIlluminationMap(DesertTexture.MOSAIC_LIGHT);
+		host.arena.getChildren().addAll(this.walls.view(ceramic), this.windows.view(arches), this.friezes.view(tiles));
 		host.arena.getChildren().addAll(this.forms.views());
-	}
-
-	/** Whether a point is on the levelled ground of a monument, or close to it */
-	private static boolean onSite(double posX, double posZ) {
-		for (double[] site : DesertDunes.SITES) {
-			if (Math.hypot(posX - site[0], posZ - site[1]) < site[2] + ROOM) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/** One house, its base on the dunes where it stands, with its roof and what is over it: a dome on a drum or a wind tower. */
 	private void house(double posX, double posZ, double width, double depth, Random wild) {
 		double wide = 80 + wild.nextDouble() * 70;
 		double deep = 80 + wild.nextDouble() * 70;
-		double high = 55 + wild.nextDouble() * wild.nextDouble() * 110;
+		double high = 70 + wild.nextDouble() * wild.nextDouble() * 230;
 		double ground = DesertDunes.PLAIN - DesertDunes.height(posX, posZ, width, depth);
 		this.block(posX, posZ, wide, deep, high, ground);
 		double top = ground - high;
@@ -93,18 +78,13 @@ final class DesertTown {
 		}
 	}
 
-	/** The four walls of a block of masonry, with their windows, its flat roof and the frieze of tiles under it. */
+	/** The four walls of a block of masonry, with their windows and the frieze of tiles under its flat roof, and the roof. */
 	private void block(double posX, double posZ, double wide, double deep, double high, double ground) {
 		double[][] corners = { { posX - wide / 2, posZ - deep / 2 }, { posX + wide / 2, posZ - deep / 2 }, { posX + wide / 2, posZ + deep / 2 }, { posX - wide / 2, posZ + deep / 2 } };
 		for (int side = 0; side < 4; side++) {
 			this.face(corners[side], corners[(side + 1) % 4], posX, posZ, ground, high);
 		}
 		this.roof(corners, ground - high);
-		double middle = ground - high + 4 + FRIEZE / 2;
-		this.forms.tiles.box(posX, middle, posZ - deep / 2, wide + 2 * JUT, FRIEZE, 2 * JUT);
-		this.forms.tiles.box(posX, middle, posZ + deep / 2, wide + 2 * JUT, FRIEZE, 2 * JUT);
-		this.forms.tiles.box(posX - wide / 2, middle, posZ, 2 * JUT, FRIEZE, deep);
-		this.forms.tiles.box(posX + wide / 2, middle, posZ, 2 * JUT, FRIEZE, deep);
 	}
 
 	/** One wall of a block, from its first corner to its second, with its windows a little out of it */
@@ -114,9 +94,12 @@ final class DesertTown {
 		double top = ground - high;
 		double foot = ground + SINK;
 		this.walls.quad(pointAt(first, foot, facing, 0), pointAt(second, foot, facing, 0), pointAt(second, top, facing, 0), pointAt(first, top, facing, 0), coords(length, high + SINK, WALL), facing);
-		// The windows fill the wall between a ledge above the ground and the frieze under the roof
+		// The frieze of tiles runs under the roof
+		double lower = top + FRIEZE_TOP + FRIEZE;
+		this.friezes.quad(pointAt(first, lower, facing, JUT), pointAt(second, lower, facing, JUT), pointAt(second, top + FRIEZE_TOP, facing, JUT), pointAt(first, top + FRIEZE_TOP, facing, JUT), coords(length, FRIEZE, FRIEZE), facing);
+		// The windows fill the wall between a ledge above the ground and the frieze
 		double bottom = ground - Math.min(40, high / 3);
-		double windowTop = top + 14;
+		double windowTop = lower + 4;
 		if (bottom > windowTop) {
 			this.windows.quad(pointAt(first, bottom, facing, OUT), pointAt(second, bottom, facing, OUT), pointAt(second, windowTop, facing, OUT), pointAt(first, windowTop, facing, OUT), coords(length, bottom - windowTop, WINDOW),
 					facing);
@@ -133,12 +116,16 @@ final class DesertTown {
 		this.walls.quad(points[0], points[1], points[2], points[3], new float[] { 0, 0, 1, 0, 1, 1, 0, 1 }, upward);
 	}
 
-	/** A plain parapet of stone along the edge of a roof */
+	/** A plain parapet of ceramic along the edge of a roof, with a line of light along its top */
 	private void parapet(double posX, double posZ, double wide, double deep, double top) {
-		this.forms.stone.box(posX, top - 4, posZ - deep / 2, wide, 8, 4);
-		this.forms.stone.box(posX, top - 4, posZ + deep / 2, wide, 8, 4);
-		this.forms.stone.box(posX - wide / 2, top - 4, posZ, 4, 8, deep);
-		this.forms.stone.box(posX + wide / 2, top - 4, posZ, 4, 8, deep);
+		this.forms.ceramic.box(posX, top - 4, posZ - deep / 2, wide, 8, 4);
+		this.forms.ceramic.box(posX, top - 4, posZ + deep / 2, wide, 8, 4);
+		this.forms.ceramic.box(posX - wide / 2, top - 4, posZ, 4, 8, deep);
+		this.forms.ceramic.box(posX + wide / 2, top - 4, posZ, 4, 8, deep);
+		this.forms.light.box(posX, top - 8.3, posZ - deep / 2, wide, 1.2, 4.6);
+		this.forms.light.box(posX, top - 8.3, posZ + deep / 2, wide, 1.2, 4.6);
+		this.forms.light.box(posX - wide / 2, top - 8.3, posZ, 4.6, 1.2, deep);
+		this.forms.light.box(posX + wide / 2, top - 8.3, posZ, 4.6, 1.2, deep);
 	}
 
 	/** Merlons along the parapet of a roof, with their tops at the height given */
@@ -149,17 +136,19 @@ final class DesertTown {
 		this.forms.merlons(false, posX + wide / 2, posZ - deep / 2, posZ + deep / 2, topY, 4);
 	}
 
-	/** A dome of tiles on a short drum over a roof, with its spire */
+	/** A dome of glass on a short drum over a roof, with a band of light around the drum and its spire */
 	private void houseDome(double posX, double posZ, double radius, double top) {
-		this.forms.stone.cylinderY(posX, posZ, radius * 0.9, top, top - 10, 10);
-		this.forms.dome(this.forms.tiles, posX, posZ, top - 10, radius, radius * 1.1, 10);
+		this.forms.ceramic.cylinderY(posX, posZ, radius * 0.9, top, top - 10, 10);
+		this.forms.light.cylinderY(posX, posZ, radius * 0.93, top - 5.5, top - 3, 10);
+		this.forms.dome(this.forms.glass, posX, posZ, top - 10, radius, radius * 1.1, 10);
 		this.forms.spire(posX, posZ, top - 10 - radius * 1.05, radius * 0.5, 1.6);
 	}
 
-	/** A wind tower over a roof, a tall shaft with its cap, to bring the breeze down into the house */
+	/** A wind tower over a roof, a tall shaft with a band of light under its cap, to bring the breeze down into the house */
 	private void windTower(double posX, double posZ, double top) {
-		this.forms.stone.box(posX, top - 50, posZ, 24, 100, 24);
-		this.forms.stone.box(posX, top - 102, posZ, 34, 6, 34);
+		this.forms.ceramic.box(posX, top - 50, posZ, 24, 100, 24);
+		this.forms.light.box(posX, top - 96, posZ, 25.5, 3, 25.5);
+		this.forms.ceramic.box(posX, top - 102, posZ, 34, 6, 34);
 	}
 
 	/**
@@ -176,21 +165,27 @@ final class DesertTown {
 		this.parapet(posX, posZ, wide, wide, top);
 		this.merlons(posX, posZ, wide, wide, top - 8);
 		double drum = 36 * scale;
-		this.forms.stone.cylinderY(posX, posZ, 66 * scale, top, top - drum, 8);
-		this.forms.dome(this.forms.tiles, posX, posZ, top - drum, 72 * scale, 84 * scale, 16);
+		this.forms.ceramic.cylinderY(posX, posZ, 66 * scale, top, top - drum, 8);
+		this.forms.light.cylinderY(posX, posZ, 68 * scale, top - drum + 10 * scale, top - drum + 10 * scale + 3, 8);
+		this.forms.dome(this.forms.glass, posX, posZ, top - drum, 72 * scale, 84 * scale, 16);
 		this.forms.spire(posX, posZ, top - drum - 80 * scale, 50 * scale, 3 * scale);
+		this.forms.halo(posX, posZ, top - drum - 84 * scale, 96 * scale);
+		this.forms.halo(posX, posZ, top - drum - 118 * scale, 62 * scale);
 		for (int sideX = -1; sideX <= 1; sideX += 2) {
 			for (int sideZ = -1; sideZ <= 1; sideZ += 2) {
 				double cornerX = posX + sideX * wide * 0.36;
 				double cornerZ = posZ + sideZ * wide * 0.36;
-				this.forms.dome(this.forms.tiles, cornerX, cornerZ, top, 20 * scale, 26 * scale, 10);
+				this.forms.dome(this.forms.glass, cornerX, cornerZ, top, 20 * scale, 26 * scale, 10);
 				this.forms.spire(cornerX, cornerZ, top - 25 * scale, 14 * scale, 1.4 * scale);
 			}
 		}
 		boolean frontOnX = Math.abs(posX) > Math.abs(posZ);
 		double toward = -Math.signum(frontOnX ? posX : posZ);
 		double portal = wide / 2 + 8 * scale;
-		this.forms.archway(frontOnX ? posX + toward * portal : posX, frontOnX ? posZ : posZ + toward * portal, !frontOnX, 96 * scale, 16 * scale, ground, 150 * scale, 24 * scale, 40 * scale);
+		double portalX = frontOnX ? posX + toward * portal : posX;
+		double portalZ = frontOnX ? posZ : posZ + toward * portal;
+		this.forms.archway(portalX, portalZ, !frontOnX, 96 * scale, 16 * scale, ground, 150 * scale, 24 * scale, 40 * scale);
+		this.forms.veil(portalX, portalZ, !frontOnX, ground, 24 * scale, 40 * scale);
 		double corner = wide / 2 + 4 * scale;
 		for (int side = -1; side <= 1; side += 2) {
 			this.forms.minaret(frontOnX ? posX + toward * corner : posX + side * corner, frontOnX ? posZ + side * corner : posZ + toward * corner, ground, 240 * scale, 11 * scale);
@@ -211,13 +206,14 @@ final class DesertTown {
 		double beyond = 120 * scale;
 		boolean alongX = Math.abs(posX) <= Math.abs(posZ);
 		this.forms.archway(posX, posZ, alongX, length, thick, ground, high, 30 * scale, 36 * scale);
+		this.forms.veil(posX, posZ, alongX, ground, 30 * scale, 36 * scale);
 		for (int side = -1; side <= 1; side += 2) {
 			double endX = alongX ? posX + side * length / 2 : posX;
 			double endZ = alongX ? posZ : posZ + side * length / 2;
 			this.forms.tower(endX, endZ, ground, 160 * scale, 34 * scale);
 			double wallX = alongX ? posX + side * (length / 2 + beyond / 2) : posX;
 			double wallZ = alongX ? posZ : posZ + side * (length / 2 + beyond / 2);
-			this.forms.stone.box(wallX, ground - high / 2 + SINK / 2, wallZ, alongX ? beyond : thick, high + SINK, alongX ? thick : beyond);
+			this.forms.ceramic.box(wallX, ground - high / 2 + SINK / 2, wallZ, alongX ? beyond : thick, high + SINK, alongX ? thick : beyond);
 		}
 		double reach = length / 2 + beyond;
 		if (alongX) {
@@ -228,7 +224,7 @@ final class DesertTown {
 	}
 
 	/** The way a wall faces: away from the middle of the block. */
-	private static double[] outward(double[] first, double[] second, double centreX, double centreZ) {
+	static double[] outward(double[] first, double[] second, double centreX, double centreZ) {
 		double normalX = -(second[1] - first[1]);
 		double normalZ = second[0] - first[0];
 		double middleX = (first[0] + second[0]) / 2 - centreX;
@@ -242,7 +238,7 @@ final class DesertTown {
 	}
 
 	/** A point of a wall at a height, moved out of the wall along its facing */
-	private static double[] pointAt(double[] point, double height, double[] facing, double out) {
+	static double[] pointAt(double[] point, double height, double[] facing, double out) {
 		return new double[] { point[0] + facing[0] * out, height, point[1] + facing[2] * out };
 	}
 

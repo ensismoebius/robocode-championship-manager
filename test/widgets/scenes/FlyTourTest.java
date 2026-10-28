@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import support.FxSupport;
 
-/** The tour at the start of the fly by: the baobab, three birds and the region in the Eden Solar, a critter elsewhere. */
+/** The tour at the start of the fly by: the baobab, three birds and the region in the Eden Solar, a sweep and a critter elsewhere, and the city first in the desert. */
 class FlyTourTest {
 
 	/** The tour of an arena of the style, as planned for a fly by that looks from the first side of both axes. */
@@ -52,10 +52,36 @@ class FlyTourTest {
 	}
 
 	@Test
-	void otherArenasStopOnOneCritterOnly() {
+	void otherArenasSweepAroundAndStopOnOneCritter() {
 		FlyTour tour = tourOf("JUNGLE");
 
 		assertFalse(tour.isEmpty());
-		assertEquals(2, tour.duration(), 1e-9);
+		assertEquals(4.5 + 2, tour.duration(), 1e-9);
+
+		// The sweep is from above, looking at the middle of the arena
+		FxSupport.runVoid(() -> tour.update(1));
+		assertTrue(tour.eye[1] < -500, "the sweep is from above");
+		assertEquals(0, tour.look[0], 1e-9);
+	}
+
+	@Test
+	void theDesertTourGoesToASkyscraperAndDownAnAvenueBeforeTheSweep() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters(), "MIDDLE_EAST");
+		FlyTour tour = arena.flyTour;
+		FxSupport.runVoid(() -> tour.plan(arena, 1, 1));
+
+		assertEquals(3 + 5 + 4.5 + 2, tour.duration(), 1e-9);
+
+		// First the camera looks up at the foot of a skyscraper, from above the palms
+		FxSupport.runVoid(() -> tour.update(1));
+		double[] seen = { tour.look[0], tour.look[2] };
+		assertTrue(arena.desert.towers().stream().anyMatch(tower -> tower[0] == seen[0] && tower[1] == seen[1]), "looks at a skyscraper");
+		assertTrue(tour.eye[1] < -300, "above the palms");
+
+		// Then it is low on a street, and by its end it is out beyond the dunes, high
+		FxSupport.runVoid(() -> tour.update(3 + 2.5));
+		assertTrue(tour.eye[1] > -150, "low in the avenue");
+		FxSupport.runVoid(() -> tour.update(3 + 5 - 1e-6));
+		assertTrue(DesertDunes.outside(tour.eye[0], tour.eye[2], arena.fieldWidth, arena.fieldHeight) > DesertDunes.END, "ends beyond the dunes");
 	}
 }
