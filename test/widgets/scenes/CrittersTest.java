@@ -129,6 +129,20 @@ class CrittersTest {
 	}
 
 	@Test
+	void theScorpionsOfTheDesertWalkAndTheFalconsFly() {
+		FxSupport.runVoid(() -> {
+			Critters critters = critters(ArenaStyle.MIDDLE_EAST, 4);
+			walk(critters, 300);
+
+			// A third of them are falcons, high in the air; the scorpions stay on the sand
+			long flying = critters.root().getChildren().stream().filter(node -> node.getTranslateY() < -50).count();
+			long walking = critters.root().getChildren().stream().filter(node -> node.getTranslateY() > -40).count();
+			assertEquals(3, flying);
+			assertEquals(6, walking);
+		});
+	}
+
+	@Test
 	void theBirdsOfTheEdenPerchOnTheBaobabsAndFlyAroundThem() {
 		FxSupport.runVoid(() -> {
 			Critters critters = critters(ArenaStyle.EDEN_SOLAR, 7);

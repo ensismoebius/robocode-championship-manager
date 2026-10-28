@@ -16,7 +16,7 @@ Ao final você terá um programa que:
 - guarda o campeonato num arquivo, deixa desfazer o último resultado e continua de onde parou quando é aberto de novo;
 - mostra o campeão e o pódio no fim.
 
-O programa completo deste repositório tem muito mais (cinco arenas, apresentadores, música, inscrições pela web, uma cerimônia de pódio em 3D). O tutorial constrói o esqueleto que faz tudo isso funcionar, e o último capítulo mostra onde cada pedaço vive no código completo.
+O programa completo deste repositório tem muito mais (seis arenas, apresentadores, música, inscrições pela web, uma cerimônia de pódio em 3D). O tutorial constrói o esqueleto que faz tudo isso funcionar, e o último capítulo mostra onde cada pedaço vive no código completo.
 
 ## Os capítulos
 

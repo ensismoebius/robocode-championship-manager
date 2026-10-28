@@ -92,6 +92,7 @@ final class ArenaBuilder {
 		case ICE -> host.ice.build(width, height);
 		case JUNGLE -> host.jungle.build(width, height);
 		case EDEN_SOLAR -> host.eden.build(width, height);
+		case MIDDLE_EAST -> host.desert.build(width, height);
 		}
 		host.arena.getChildren().add(host.glowing);
 		host.forceField.buildFence();

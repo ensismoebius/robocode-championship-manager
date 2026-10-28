@@ -17,6 +17,7 @@ import static widgets.scenes.FireColors.smokeColor;
 import static widgets.scenes.FireColors.emberColor;
 import static widgets.scenes.FireColors.sparkColor;
 import static widgets.scenes.FireColors.fireflyColor;
+import static widgets.scenes.FireColors.sandColor;
 import static widgets.scenes.FireColors.snowColor;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -54,7 +55,7 @@ final class ArenaFire {
 	}
 
 	enum ParticleKind {
-		FLAME, SMOKE, SPARK, EMBER, SNOW, FIREFLY
+		FLAME, SMOKE, SPARK, EMBER, SNOW, FIREFLY, SAND
 	}
 
 	/** How long the gas at the tip of a flame has been in the air, in seconds: the tip is where the robot was this long ago */
@@ -128,6 +129,7 @@ final class ArenaFire {
 		case EMBER -> this.startEmber(particle);
 		case FIREFLY -> this.startFirefly(particle);
 		case SNOW -> this.startSnow(particle);
+		case SAND -> this.startSand(particle);
 		case SPARK -> this.startSpark(particle);
 		}
 	}
@@ -193,6 +195,18 @@ final class ArenaFire {
 		particle.vx = 5 + host.random.nextDouble() * 5;
 		particle.vz = (host.random.nextDouble() - 0.5) * 6;
 		particle.vy = 36 + host.random.nextDouble() * 26;
+		particle.spinSpeed = 0;
+		particle.shade = host.random.nextDouble();
+		particle.material.setDiffuseMap(SOFT_TEXTURE);
+	}
+
+	/** A grain of sand, carried along by the wind across the arena, low over the sand */
+	private void startSand(Particle particle) {
+		particle.life = 7;
+		particle.size = 1.8 + host.random.nextDouble() * 1.6;
+		particle.vx = 110 + host.random.nextDouble() * 90;
+		particle.vz = (host.random.nextDouble() - 0.5) * 30;
+		particle.vy = (host.random.nextDouble() - 0.5) * 8;
 		particle.spinSpeed = 0;
 		particle.shade = host.random.nextDouble();
 		particle.material.setDiffuseMap(SOFT_TEXTURE);
@@ -296,7 +310,7 @@ final class ArenaFire {
 	private void spawnAmbient(double deltaTime) {
 	// Embers rise from the lava, snow falls on the ice. Below a limit, so the
 	// fire of the robots is never left out.
-	double rate = host.style == ArenaStyle.VOLCANO ? 26 : host.style == ArenaStyle.ICE ? 95 : host.style == ArenaStyle.JUNGLE ? 16 : host.style == ArenaStyle.EDEN_SOLAR ? 22 : 0;
+	double rate = host.style == ArenaStyle.VOLCANO ? 26 : host.style == ArenaStyle.ICE ? 95 : host.style == ArenaStyle.JUNGLE ? 16 : host.style == ArenaStyle.EDEN_SOLAR ? 22 : host.style == ArenaStyle.MIDDLE_EAST ? 34 : 0;
 	this.ambientDebt += deltaTime * rate;
 	while (this.ambientDebt >= 1) {
 		this.ambientDebt--;
@@ -307,6 +321,9 @@ final class ArenaFire {
 			double posX = (host.random.nextDouble() - 0.5) * (host.fieldWidth + 700);
 			double posZ = (host.random.nextDouble() - 0.5) * (host.fieldHeight + 700);
 			this.spawn(ParticleKind.FIREFLY, posX, -8 - host.random.nextDouble() * 60, posZ, 0);
+		} else if (host.style == ArenaStyle.MIDDLE_EAST) {
+			// The wind of the desert carries the sand from the west, across the field
+			this.spawn(ParticleKind.SAND, -(host.fieldWidth / 2 + 500) - host.random.nextDouble() * 200, -4 - host.random.nextDouble() * 90, (host.random.nextDouble() - 0.5) * (host.fieldHeight + 700), 0);
 		} else if (host.style == ArenaStyle.VOLCANO) {
 			this.spawn(ParticleKind.EMBER, (host.random.nextDouble() - 0.5) * (host.fieldWidth + 260), -2, (host.random.nextDouble() - 0.5) * (host.fieldHeight + 260), 0);
 		} else {
@@ -374,7 +391,7 @@ final class ArenaFire {
 
 	/** The motion of a particle: drag, gravity of its kind, and its sway */
 	private void moveParticle(Particle particle, double deltaTime) {
-		double drag = particle.kind == ParticleKind.EMBER || particle.kind == ParticleKind.SNOW ? 1 : Math.exp(-(particle.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * deltaTime);
+		double drag = particle.kind == ParticleKind.EMBER || particle.kind == ParticleKind.SNOW || particle.kind == ParticleKind.SAND ? 1 : Math.exp(-(particle.kind == ParticleKind.SMOKE ? 0.6 : 1.5) * deltaTime);
 		particle.vx *= drag;
 		particle.vz *= drag;
 		if (particle.kind == ParticleKind.SPARK) {
@@ -406,6 +423,7 @@ final class ArenaFire {
 		case EMBER -> this.emberLook(particle, time);
 		case FIREFLY -> this.fireflyLook(particle, time);
 		case SNOW -> this.snowLook(particle);
+		case SAND -> this.sandLook(particle);
 		default -> this.sparkLook(particle, time);
 		};
 	}
@@ -453,6 +471,12 @@ final class ArenaFire {
 	/** A flake of snow, which whitens as it falls */
 	private Look snowLook(Particle particle) {
 		return new Look(particle.size, particle.size, snowColor(level(Math.min(0.9, particle.age * 1.5))));
+	}
+
+	/** A grain of sand at its age: it shows where the wind is, and fades in and out of the air */
+	private Look sandLook(Particle particle) {
+		double fade = Math.min(1, particle.age * 2) * Math.min(1, (particle.life - particle.age) / 2);
+		return new Look(particle.size, particle.size, sandColor(level(0.6 * fade)));
 	}
 
 	/** A spark at its age: it shrinks as it goes out */

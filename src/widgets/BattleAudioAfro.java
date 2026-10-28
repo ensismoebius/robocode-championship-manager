@@ -1,6 +1,6 @@
 package widgets;
 
-import static widgets.BattleAudio.PENTATONIC;
+import static widgets.BattleAudio.isOn;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -9,15 +9,16 @@ import static widgets.BattleAudio.PENTATONIC;
  * Africa come the pulse of a bell in a bar of sixteen (3+3+3+3+4), the congas, the shekere, an mbira that calls and
  * answers over the chords, and a talking drum. From the future come a sequencer that bounces between the ears, a
  * theremin that glides over the phrases, lasers and a riser at the end of every four bars, over a pad. As the fight
- * heats up they come in one by one.
+ * heats up they come in one by one. The melodies are tuned as the xylophones of Malawi and Mozambique are, in the
+ * equidistant heptatonic scale: the octave in seven equal steps, and not in the twelve of the piano.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
 final class BattleAudioAfro {
 
-	/** The bright scale of the sequencer: a second, a fourth, a fifth and a sixth over the root, the sound of the future */
-	private static final double[] SKY = { 1, 1.125, 1.335, 1.498, 1.682, 2 };
-	/** What the sequencer plays on each 16th of a bar, as steps of {@link #SKY} */
+	/** The scale of the sequencer, the mbira and the theremin: the equidistant heptatonic scale, the octave in seven equal steps, as the xylophones and the panpipes of Malawi and Mozambique are tuned */
+	private static final double[] SCALE = BattleAudio.equalSteps(7);
+	/** What the sequencer plays on each 16th of a bar, as steps of {@link #SCALE} */
 	private static final int[] ARPEGGIO = { 0, 2, 4, 2, 3, 1, 4, 2, 0, 2, 5, 3, 4, 2, 1, 3 };
 	/** The strokes of the bell in a bar: 3+3+3+3+4 */
 	private static final int[] BELL = { 0, 3, 6, 9, 12 };
@@ -25,7 +26,7 @@ final class BattleAudioAfro {
 	private static final int[] SLAPS = { 3, 7, 11, 14 };
 	/** The congas that fill the bar between the bass and the slaps, when the fight is warm */
 	private static final int[] FILL = { 2, 5, 8, 10, 13 };
-	/** The mbira: the 16ths where it plays, and the steps of the minor pentatonic it plays in the call and in the answer */
+	/** The mbira: the 16ths where it plays, and the steps of the scale it plays in the call and in the answer */
 	private static final int[] MBIRA_STEPS = { 0, 3, 6, 8, 11, 14 };
 	private static final int[] CALL = { 0, 2, 4, 3, 2, 1 };
 	private static final int[] ANSWER = { 2, 4, 5, 4, 3, 2 };
@@ -50,19 +51,9 @@ final class BattleAudioAfro {
 		this.sky(step, inBar, bar, root, tension);
 	}
 
-	/** Whether the 16th of the bar is one of the steps. */
-	private static boolean isOn(int[] steps, int inBar) {
-		for (int step : steps) {
-			if (step == inBar) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 	/** A voice that plays from one side more than the other, so the sounds bounce between the ears. */
 	private void play(double[] sound, double gain, double rate, boolean left) {
-		host.musicVoices.add(new Voice(sound, gain, rate, left ? 1 : 0.55, left ? 0.55 : 1));
+		host.sided(sound, gain, rate, left);
 	}
 
 	/** The percussion: the bell, the shekere on every 16th, the congas and their slaps, a djembe bass, a soft kick at the top. */
@@ -110,7 +101,7 @@ final class BattleAudioAfro {
 			if (MBIRA_STEPS[index] != inBar) {
 				continue;
 			}
-			double frequency = root * 4 * PENTATONIC[(bar < 2 ? CALL : ANSWER)[index]];
+			double frequency = root * 4 * SCALE[(bar < 2 ? CALL : ANSWER)[index]];
 			double[] note = Synth.mix(Synth.sine(frequency, 0.5, 6), Synth.sine(frequency * 3.9, 0.18, 26), 0.45);
 			this.play(note, 0.2 + 0.1 * tension, 1, index % 2 == 0);
 			if (tension > 0.55) {
@@ -124,14 +115,14 @@ final class BattleAudioAfro {
 		if (tension <= 0.15) {
 			return;
 		}
-		double frequency = root * 4 * SKY[ARPEGGIO[inBar]] * (tension > 0.8 && inBar % 4 == 3 ? 2 : 1);
+		double frequency = root * 4 * SCALE[ARPEGGIO[inBar]] * (tension > 0.8 && inBar % 4 == 3 ? 2 : 1);
 		this.play(Synth.lowpass(Synth.saw(frequency, 0.16, 12), 0.22 + 0.3 * tension), 0.09 + 0.12 * tension, 1, inBar % 2 == 0);
 	}
 
 	/** The sounds of the sky: the theremin, the lasers, the riser before the phrase turns over, and the talking drum. */
 	private void sky(int step, int inBar, int bar, double root, double tension) {
 		if (tension > 0.3 && inBar == 0) {
-			host.musicVoices.add(new Voice(lead(root * 4 * SKY[bar % 2 == 0 ? 3 : 4], 1.9), 0.2, 1));
+			host.musicVoices.add(new Voice(lead(root * 4 * SCALE[bar % 2 == 0 ? 3 : 4], 1.9), 0.2, 1));
 		}
 		if (tension > 0.72 && (inBar == 6 || inBar == 14)) {
 			host.musicVoices.add(new Voice(Synth.sweep(2400, 500, 0.16, true), 0.06, 1));

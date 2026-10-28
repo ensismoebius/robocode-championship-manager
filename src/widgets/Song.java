@@ -18,7 +18,13 @@ public enum Song {
 	/** D minor groove: a wood block clave, syncopated taikos, small drums, a plucked bass, a kalimba that calls and answers, war horns */
 	WAR_DRUMS("Tambores de guerra", new double[] { 73.42, 73.42, 58.27, 65.41 }, new boolean[] { true, true, false, false }, 104, 44),
 	/** E minor, i - III - VII - iv: Africa and science fiction, an agogo bell and congas in a 3+3+3+3+4 pulse, a shekere, an mbira that calls and answers, a sequencer, a theremin and lasers */
-	AFRO_FUTURE("Afrofuturista", new double[] { 82.41, 98.0, 73.42, 110.0 }, new boolean[] { true, false, false, true }, 112, 48);
+	AFRO_FUTURE("Afrofuturista", new double[] { 82.41, 98.0, 73.42, 110.0 }, new boolean[] { true, false, false, true }, 112, 48),
+	/** D minor, i - VI - III - VII: an oud that plucks the maqam Hijaz, a ney that sings above it, a darbuka that keeps the maqsum, and a deep bass */
+	HIJAZ("Hijaz", new double[] { 73.42, 58.27, 87.31, 65.41 }, new boolean[] { true, false, false, false }, 96, 40),
+	/** G major, I - V - vi - IV: the Western scale and its chords, a marimba that sings a melody over a bass that walks between the root and the fifth, a strummed guitar and the kit of a band */
+	FOREST("Floresta", new double[] { 98.0, 73.42, 82.41, 65.41 }, new boolean[] { false, false, true, false }, 100, 44),
+	/** A, a bare drone and five notes in the range of a minor sixth: a frame drum, two throat singers that answer each other's breaths, and a voice that undulates and comes down */
+	TUNDRA("Tundra", new double[] { 110.0, 110.0, 110.0, 110.0 }, new boolean[] { true, true, true, true }, 84, 34);
 
 	public final String label;
 	final double[] roots;

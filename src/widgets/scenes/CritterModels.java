@@ -32,6 +32,7 @@ final class CritterModels {
 		case SALAMANDER -> salamander(body, joints);
 		case BIRD -> bird(body, joints);
 		case BAT -> bat(body, joints);
+		case SCORPION -> scorpion(body, joints);
 		}
 		return body;
 	}
@@ -119,6 +120,27 @@ final class CritterModels {
 			}
 		}
 	
+	}
+
+	/** The scorpion: a flat shell, two pincers in front, a tail curled over the back that ends in a sting, and the legs that move it */
+	static void scorpion(Group body, List<Joint> joints) {
+		PhongMaterial shell = paint(Color.web("#8c5a32"), 45);
+		PhongMaterial dark = paint(Color.web("#4a2c18"), 30);
+		PhongMaterial sting = paint(Color.web("#c2401e"), 60);
+		body.getChildren().addAll(part(new Box(10, 4, 10), shell, 0, -4, 3, 1, 1, 1), part(new Sphere(5, 8), shell, 0, -4.5, -7, 1, 0.7, 1.5));
+		for (int side = -1; side <= 1; side += 2) {
+			body.getChildren().addAll(part(new Box(2, 2, 8), shell, side * 7, -3.5, 6, 1, 1, 1), part(new Box(4, 2.5, 2.5), dark, side * 8.5, -3.5, 12, 1, 1, 1));
+			for (int row = 0; row < 4; row++) {
+				double posZ = 4 - row * 3.5;
+				body.getChildren().add(joint(joints, Rotate.Y_AXIS, side * 5, -2.5, posZ, box(7, 1, 1, dark, side * 3.5, 0, 0), 0.35, row * 1.3 + (side > 0 ? 0 : Math.PI)));
+			}
+		}
+		body.getChildren().addAll(eyes(2.5, -6, 6, 0.8));
+		// The tail: it stands up from the back and curls over, its sting at the tip
+		Group tail = new Group(curledTail(dark));
+		tail.setTranslateY(-4);
+		tail.setTranslateZ(-12);
+		body.getChildren().addAll(tail, part(new Sphere(1.6, 6), sting, -2, -24, -15, 1, 1, 1));
 	}
 
 	/** The bird: its shape, and the joints that move it */

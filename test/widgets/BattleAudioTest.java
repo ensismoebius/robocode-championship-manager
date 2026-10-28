@@ -33,6 +33,22 @@ class BattleAudioTest {
 	}
 
 	@Test
+	void theScalesOfTheRegionsHaveTheirNotes() {
+		// The African tuning of the xylophones: the octave in seven equal steps
+		double[] african = BattleAudio.equalSteps(7);
+		assertEquals(8, african.length);
+		assertEquals(1, african[0], 1e-12);
+		assertEquals(2, african[7], 1e-9);
+		for (int step = 1; step < african.length; step++) {
+			assertEquals(african[1], african[step] / african[step - 1], 1e-9);
+		}
+		// The pentatonic scales of the Far East, in equal temperament: a fifth is seven semitones over the root
+		double[] pentatonic = BattleAudio.ratios(0, 2, 4, 7, 9);
+		assertEquals(1, pentatonic[0], 1e-12);
+		assertEquals(1.4983, pentatonic[3], 1e-3);
+	}
+
+	@Test
 	void musicLevelScalesTheMusic() {
 		double full = rms(BattleAudio.render(Song.EPIC, 0.8, 3, 1));
 		double half = rms(BattleAudio.render(Song.EPIC, 0.8, 3, 0.5));

@@ -30,6 +30,7 @@ final class FireColors {
 	static final Color[] FIREFLY_COLORS = new Color[OPACITY_LEVELS];
 
 	static final Color[] SNOW_COLORS = new Color[OPACITY_LEVELS];
+	static final Color[] SAND_COLORS = new Color[OPACITY_LEVELS];
 
 	/** The index of the life step of a particle, from its life between zero and one. */
 	static int step(double time) {
@@ -118,6 +119,11 @@ final class FireColors {
 	/** The colour of a snowflake for the given opacity level. */
 	static Color snowColor(int level) {
 		return cachedColor(SNOW_COLORS, level, 0.94, 0.97, 1);
+	}
+
+	/** The colour of a grain of sand blown by the wind for the given opacity level. */
+	static Color sandColor(int level) {
+		return cachedColor(SAND_COLORS, level, 0.92, 0.78, 0.52);
 	}
 
 	/** The color of a level of opacity, made the first time it is needed */

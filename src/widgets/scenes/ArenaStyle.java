@@ -21,11 +21,13 @@ public enum ArenaStyle {
 	/** Basalt cracked by lava, a lava moat, volcanoes and embers */
 	VOLCANO("Forja Vulcânica", Color.web("#140605"), Color.color(0.5, 0.36, 0.32), Color.color(1.0, 0.72, 0.52), Color.color(1.0, 0.45, 0.10), Song.WAR_DRUMS),
 	/** Plates of ice, snow falling and ice crystals */
-	ICE("Tundra Glacial", Color.web("#0b1728"), Color.color(0.46, 0.5, 0.58), Color.color(0.85, 0.92, 1.0), Color.color(0.80, 0.95, 1.0), Song.EPIC),
+	ICE("Tundra Glacial", Color.web("#0b1728"), Color.color(0.46, 0.5, 0.58), Color.color(0.85, 0.92, 1.0), Color.color(0.80, 0.95, 1.0), Song.TUNDRA),
 	/** Mossy ground, rivers, huge trees, ferns, waterfalls, fireflies and mist */
-	JUNGLE("Floresta Tropical", Color.web("#08261f"), Color.color(0.40, 0.50, 0.38), Color.color(1.0, 0.93, 0.70), Color.color(0.45, 1.0, 0.55), Song.WAR_DRUMS),
+	JUNGLE("Floresta Tropical", Color.web("#08261f"), Color.color(0.40, 0.50, 0.38), Color.color(1.0, 0.93, 0.70), Color.color(0.45, 1.0, 0.55), Song.FOREST),
 	/** The Eden Solar (Africa, 2187): a stadium open to a stormy sky, a round garden, the crowd with its flags, warm lights and two trees of life */
-	EDEN_SOLAR("Éden Solar", Color.web("#1e2a33"), Color.color(0.34, 0.36, 0.40), Color.color(0.74, 0.74, 0.80), Color.color(1.0, 0.72, 0.32), Song.AFRO_FUTURE);
+	EDEN_SOLAR("Éden Solar", Color.web("#1e2a33"), Color.color(0.34, 0.36, 0.40), Color.color(0.74, 0.74, 0.80), Color.color(1.0, 0.72, 0.32), Song.AFRO_FUTURE),
+	/** The Middle East at sunset: a courtyard of mosaic tiles with eight-pointed stars, a plain of sand with palms, a town of mosques, minarets, domes and gates on the dunes, and lanterns at the corners */
+	MIDDLE_EAST("Areias do Oriente Médio", Color.web("#2b1d33"), Color.color(0.44, 0.36, 0.34), Color.color(1.0, 0.84, 0.62), Color.color(0.35, 0.90, 0.84), Song.HIJAZ);
 
 	public final String label;
 	/** The sky: a solid color, a gradient leaves trails in the 3D */

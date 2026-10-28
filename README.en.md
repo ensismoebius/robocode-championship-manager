@@ -48,8 +48,8 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 | 🗂️ **Teams and robots** | An organizer screen (`Ctrl + E`) lists the robots, shows everything each team sent (with the tank turning in 3D) and lets you edit any information, replace files, and add and delete robots. |
 | 🏆 **Automatic brackets** | Single or double elimination (with repechage), with any number of robots, and a single grand final. |
 | 🎮 **3D battles** | Robocode runs hidden; the battle is recorded and replayed in 3D with a fighting-game HUD, a cinematic camera and a slow-motion replay of the killing shot. |
-| 🌋 **Five arenas** | Neon city, volcanic forge, glacial tundra, tropical forest and Éden Solar, each with its own critters, who run away when the battle heats up. |
-| 🎵 **Music and sound** | Each team comes in with its own music; shots, explosions, tracks and turrets have their own sounds. |
+| 🌋 **Six arenas** | Neon city, volcanic forge, glacial tundra, tropical forest, Éden Solar and Middle East sands, each with its own critters, who run away when the battle heats up. |
+| 🎵 **Music and sound** | Each team comes in with its own music; shots, explosions, tracks and turrets have their own sounds. Each arena has its own soundtrack, played in the scale of the region it represents. |
 | 🥇 **Podium** | At the end the champion appears, then third, second and first place are revealed one by one, with bronze, silver and gold trophies. |
 | ↩️ **Undo** | Entered a wrong result? `Ctrl + Z` undoes the last one. |
 
@@ -65,15 +65,18 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings. Its soundtrack is a synthwave played in the scales of the Far East: the Japanese hirajoshi over the minor chords and the Chinese pentatonic over the major ones, with a koto plucking the phrase.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out. Its soundtrack is war drums: wood block claves, taikos and a kalimba in the minor pentatonic.</td>
 </tr>
 <tr>
-<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins.</td>
-<td><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b>: dense jungle, rivers and waterfalls.</td>
+<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins. Its soundtrack is inspired by Inuit singing, which has no scale of its own, only habits: a few notes in a narrow range, with minor seconds and major thirds, that undulate and come down over a frame drum, with two throat singers who answer each other's breaths.</td>
+<td><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b>: dense jungle, rivers and waterfalls. Its soundtrack uses the Western scale, in G major, with the chords I, V, vi and IV: a marimba sings the melody over a bass, a guitar and a drum kit.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (Africa, 2187): an enclosed stadium with a great opening in its roof to a stormy sky, where the sun breaks through the clouds. Its plan is sinuous and organic, like a kidney, with lobes and waists, and its walls are earth covered in moss. Ribs of wood arch over the crowd like branches up to the roof, which has vines hanging from it, and hedges in flower run along the stands, packed with people from every continent and flags in the breeze. The field is a round garden, and the floor where the robots fight has patterns from African art (bands of triangles and zigzags, diamonds inside diamonds and a sun in the middle, in the colors of the earth), crossed by lines of light and glowing nodes, like the traces of a circuit. At both ends, at the mouth of each corridor, a glowing baobab, the tree of life, stands. The birds perch on the baobabs and fly around them, and the fly-over that opens the fight goes by a baobab, three birds and a view over the whole region before reaching the field. Around the stadium, high up, a row of huge screens shows the battle live, filmed from above by a broadcast camera that follows the robots. The arena has its own, Afrofuturist music: an agogo bell and congas in an African meter, a shekere, a call-and-response mbira and a deep bass, with a sequencer, a theremin and lasers that join in as the fight heats up. It is the arena of the grand finals.</td>
+<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (Africa, 2187): an enclosed stadium with a great opening in its roof to a stormy sky, where the sun breaks through the clouds. Its plan is sinuous and organic, like a kidney, with lobes and waists, and its walls are earth covered in moss. Ribs of wood arch over the crowd like branches up to the roof, which has vines hanging from it, and hedges in flower run along the stands, packed with people from every continent and flags in the breeze. The field is a round garden, and the floor where the robots fight has patterns from African art (bands of triangles and zigzags, diamonds inside diamonds and a sun in the middle, in the colors of the earth), crossed by lines of light and glowing nodes, like the traces of a circuit. At both ends, at the mouth of each corridor, a glowing baobab, the tree of life, stands. The birds perch on the baobabs and fly around them, and the fly-over that opens the fight goes by a baobab, three birds and a view over the whole region before reaching the field. Around the stadium, high up, a row of huge screens shows the battle live, filmed from above by a broadcast camera that follows the robots. The arena has its own, Afrofuturist music: an agogo bell and congas in an African meter, a shekere, a call-and-response mbira and a deep bass, with a sequencer, a theremin and lasers that join in as the fight heats up. The melodies are tuned as the xylophones of Malawi and Mozambique are, in the equidistant heptatonic scale (the octave in seven equal steps), and not in the twelve notes of the piano. It is the arena of the grand finals.</td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Middle East Sands"><br><b>Middle East Sands</b>: a courtyard of mosaic tiles, with eight-pointed stars in turquoise and cobalt and a gold medallion in the middle, surrounded by a plain of sand, with oases of palm trees at the edge of the dunes. Beyond the plain, dunes rise to the horizon, with a town in the Islamic manner: low sandstone houses, with windows of pointed arches and lattices, friezes of tiles, turquoise domes on drums and wind towers; two mosques, each with its great dome, smaller domes on its corners, a portal with a pointed arch and two minarets with balconies; and gates in the town wall between round towers and merlons. At the corners of the courtyard stand eight-sided lanterns with golden domes. The sky is at sunset and the sand is carried by the wind. It has its own music, in the Arabic scale (the maqam hijaz): an oud plucks the scale, a ney sings above it and a darbuka keeps the maqsum, and the notes and the strokes multiply as the fight heats up.</td>
 </tr>
 </table>
 
@@ -110,6 +113,7 @@ Each arena has its own critters. They walk around the scenery, **never enter the
 |---|---|---|
 | <img src="docs/images/bicho-monkey.jpg" width="300" alt="Monkey"><br>**Monkey**<br><i>Tropical Forest</i><br>Among the trees and near the river. | <img src="docs/images/bicho-bird.jpg" width="300" alt="Bird"><br>**Bird**<br><i>Tropical Forest (one in every three critters)</i><br>Flies through the forest, mixed with the leaves. | <img src="docs/images/bicho-penguin.jpg" width="300" alt="Penguin"><br>**Penguin**<br><i>Glacial Tundra</i><br>Walks on the ice and swims in the water of the glacial sea. |
 | <img src="docs/images/bicho-beetle.jpg" width="300" alt="Beetle"><br>**Beetle**<br><i>Neon Grid</i><br>Runs along the edges of the grid, between the neon buildings. | <img src="docs/images/bicho-salamander.jpg" width="300" alt="Salamander"><br>**Salamander**<br><i>Volcanic Forge</i><br>Walks over the rocks and ash, near the lava. | <img src="docs/images/bicho-bat.jpg" width="300" alt="Bat"><br>**Bat**<br><i>Volcanic Forge (one in every three critters)</i><br>Flies around the arena, above the rocks. |
+| <img src="docs/images/bicho-scorpion.jpg" width="300" alt="Scorpion"><br>**Scorpion**<br><i>Middle East Sands (two in every three critters)</i><br>Walks over the sand around the courtyard, its tail curled over its back and the sting on top. | | |
 
 > [!NOTE]
 > The personality traits above are a reading of each character's style, based on the lines they say and how they look. They have no gameplay rules tied to those traits.
@@ -237,7 +241,7 @@ new port and the new database file is opened immediately.
 |---|---|
 | **Start screen** | Start screen title and subtitle (an empty subtitle is not shown), whether registrations are open, and the registration web server port (8080 by default). |
 | **Battle** | The kind of battle (by points or by knockout) and the number of rounds, display (3D in the manager or the classic Robocode window), starting speed and the round start text (`FIGHT!`). |
-| **Arena and sound** | Arena and music (random or fixed), "use the arena's own music", volume and anti-aliasing (turn it off if battles run slowly). |
+| **Arena and sound** | Arena and music (random or fixed; there are seven songs, and each arena has its own), "use the arena's own music", volume and anti-aliasing (turn it off if battles run slowly). |
 | **System** | The SQLite database file and the Robocode folder (the one that has the `robots` folder). |
 
 The configuration is stored in `~/robocodeChampManager.config` and the data in
@@ -492,7 +496,7 @@ The `.github/workflows/installers.yml` workflow builds the Linux, Windows and ma
 | `src/tournament` | The bracket rules (`Bracket`) and championship storage |
 | `src/jetty` | The web server and the registration pages |
 | `src/utils` | Utilities: configuration, database, battles... |
-| `src/widgets` | Controls, windows and scenes (the 3D arenas are in `widgets/scenes`) |
+| `src/widgets` | Controls, windows and scenes (the 3D arenas are in `widgets/scenes` and their music in `BattleAudio*.java`) |
 | `RobocodeStarter/` | Pre-compiled program that controls the Robocode battles (source in the `robocodebattlestarter` submodule) |
 | `test/` | Automated tests, run with `mvn test` |
 

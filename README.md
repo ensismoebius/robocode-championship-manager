@@ -50,8 +50,8 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 | 🗂️ **Equipes e robôs** | Uma tela do organizador (`Ctrl + E`) lista os robôs, mostra tudo o que cada equipe enviou (com o tanque em 3D girando) e deixa editar qualquer informação, trocar arquivos, adicionar e excluir robôs. |
 | 🏆 **Chaveamento automático** | Eliminatória simples ou dupla (com repescagem), com qualquer número de robôs, e uma única grande final. |
 | 🎮 **Batalhas em 3D** | O Robocode roda escondido; a batalha é gravada e reproduzida em 3D com HUD de jogo de luta, câmera cinematográfica e replay em câmera lenta do golpe final. |
-| 🌋 **Cinco arenas** | Cidade neon, forja vulcânica, tundra glacial, floresta tropical e Éden Solar, cada uma com seus bichos, que fogem quando a batalha esquenta. |
-| 🎵 **Música e som** | Cada equipe entra com sua música; tiros, explosões, esteiras e torres têm som próprio. |
+| 🌋 **Seis arenas** | Cidade neon, forja vulcânica, tundra glacial, floresta tropical, Éden Solar e areias do Oriente Médio, cada uma com seus bichos, que fogem quando a batalha esquenta. |
+| 🎵 **Música e som** | Cada equipe entra com sua música; tiros, explosões, esteiras e torres têm som próprio. Cada arena tem a sua trilha, tocada na escala da região que ela representa. |
 | 🥇 **Pódio** | No fim, o campeão aparece e o terceiro, o segundo e o primeiro lugares são revelados um a um, com troféus de bronze, prata e ouro. |
 | ↩️ **Desfazer** | Errou um resultado? `Ctrl + Z` desfaz o último. |
 
@@ -65,15 +65,18 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios. A trilha é um synthwave tocado nas escalas do Extremo Oriente: o hirajoshi japonês sobre os acordes menores e a pentatônica chinesa sobre os maiores, com um koto dedilhando a frase.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem. A trilha são tambores de guerra: claves de madeira, taikos e uma kalimba na pentatônica menor.</td>
 </tr>
 <tr>
-<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins.</td>
-<td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada, rios e cachoeiras.</td>
+<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins. A trilha se inspira no canto inuíte, que não tem uma escala própria, só hábitos: poucas notas numa faixa estreita, com segundas menores e terças maiores, que ondulam e descem sobre um tambor de moldura, com dois cantores de garganta que respondem à respiração um do outro.</td>
+<td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada, rios e cachoeiras. A trilha usa a escala ocidental, em sol maior, com os acordes I, V, vi e IV: uma marimba canta a melodia, sobre baixo, violão e bateria.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, com uma grande abertura no teto para um céu de tempestade onde o sol rompe as nuvens. A planta é sinuosa e orgânica, como um rim, com lobos e cinturas, e as paredes são de terra coberta de musgo. Nervuras de madeira sobem em arco sobre a plateia, como galhos, até o teto, de onde pendem trepadeiras, e sebes floridas contornam as arquibancadas, lotadas com gente de todos os continentes e bandeiras ao vento. O campo é um jardim redondo, e o piso onde os robôs lutam traz padrões da arte africana (faixas de triângulos e zigue-zague, losangos concêntricos e um sol no centro, nas cores da terra), cortados por linhas de luz e nós brilhantes, como as trilhas de um circuito. Nas duas pontas, na boca de cada corredor, brilha um baobá, a árvore da vida. As aves ficam pousadas nos baobás e voam em volta deles, e o sobrevoo que abre a luta passa por um baobá, por três aves e por uma visão geral da região antes de chegar ao campo. Em volta do estádio, no alto, uma fileira de telas enormes mostra a batalha ao vivo, filmada de cima por uma câmera de transmissão que acompanha os robôs. A arena tem música própria, afrofuturista: um sino agogô e conga em compasso africano, chocalho, mbira em chamada e resposta e um baixo profundo, com sequenciador, teremim e lasers que entram aos poucos conforme a luta esquenta. É a arena das grandes finais.</td>
+<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, com uma grande abertura no teto para um céu de tempestade onde o sol rompe as nuvens. A planta é sinuosa e orgânica, como um rim, com lobos e cinturas, e as paredes são de terra coberta de musgo. Nervuras de madeira sobem em arco sobre a plateia, como galhos, até o teto, de onde pendem trepadeiras, e sebes floridas contornam as arquibancadas, lotadas com gente de todos os continentes e bandeiras ao vento. O campo é um jardim redondo, e o piso onde os robôs lutam traz padrões da arte africana (faixas de triângulos e zigue-zague, losangos concêntricos e um sol no centro, nas cores da terra), cortados por linhas de luz e nós brilhantes, como as trilhas de um circuito. Nas duas pontas, na boca de cada corredor, brilha um baobá, a árvore da vida. As aves ficam pousadas nos baobás e voam em volta deles, e o sobrevoo que abre a luta passa por um baobá, por três aves e por uma visão geral da região antes de chegar ao campo. Em volta do estádio, no alto, uma fileira de telas enormes mostra a batalha ao vivo, filmada de cima por uma câmera de transmissão que acompanha os robôs. A arena tem música própria, afrofuturista: um sino agogô e conga em compasso africano, chocalho, mbira em chamada e resposta e um baixo profundo, com sequenciador, teremim e lasers que entram aos poucos conforme a luta esquenta. As melodias são afinadas como nos xilofones do Malawi e de Moçambique, na escala heptatônica equidistante (a oitava em sete passos iguais), e não nas doze notas do piano. É a arena das grandes finais.</td>
+</tr>
+<tr>
+<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: um pátio de azulejos de mosaico, com estrelas de oito pontas em turquesa e cobalto e um medalhão dourado no centro, cercado por um platô de areia, com oásis de palmeiras na borda das dunas. Além do platô, dunas sobem até o horizonte, com uma cidade ao modo islâmico: casas baixas de arenito, com janelas de arco ogival e treliça, frisos de azulejo, cúpulas turquesa sobre tambores e torres de vento; duas mesquitas, cada uma com sua grande cúpula, cúpulas menores nos cantos, um pórtico em arco e dois minaretes de balcão; e portões de muralha entre torres redondas e merlões. Nos cantos do pátio há lanternas octogonais com cúpula dourada. O céu é de pôr do sol e a areia é levada pelo vento. A música é própria, na escala árabe (o maqam hijaz): um alaúde dedilha a escala, um ney canta por cima e uma darbuka marca o maqsum, e as notas e as batidas se multiplicam conforme a luta esquenta.</td>
 </tr>
 </table>
 
@@ -110,6 +113,7 @@ Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área
 |---|---|---|
 | <img src="docs/images/bicho-monkey.jpg" width="300" alt="Macaco"><br>**Macaco**<br><i>Floresta Tropical</i><br>Entre as árvores e perto do rio. | <img src="docs/images/bicho-bird.jpg" width="300" alt="Pássaro"><br>**Pássaro**<br><i>Floresta Tropical (um a cada três bichos)</i><br>Voa pela mata e se mistura às folhas. | <img src="docs/images/bicho-penguin.jpg" width="300" alt="Pinguim"><br>**Pinguim**<br><i>Tundra Glacial</i><br>Anda pelo gelo e, na água do mar glacial, nada. |
 | <img src="docs/images/bicho-beetle.jpg" width="300" alt="Besouro"><br>**Besouro**<br><i>Grade Neon</i><br>Corre pelas bordas da grade, entre os prédios de neon. | <img src="docs/images/bicho-salamander.jpg" width="300" alt="Salamandra"><br>**Salamandra**<br><i>Forja Vulcânica</i><br>Anda pelas rochas e pela cinza, perto da lava. | <img src="docs/images/bicho-bat.jpg" width="300" alt="Morcego"><br>**Morcego**<br><i>Forja Vulcânica (um a cada três bichos)</i><br>Voa pela arena, acima das rochas. |
+| <img src="docs/images/bicho-scorpion.jpg" width="300" alt="Escorpião"><br>**Escorpião**<br><i>Areias do Oriente Médio (dois a cada três bichos)</i><br>Anda pela areia em volta do pátio, com a cauda curvada sobre as costas e o ferrão em cima. | | |
 
 > [!NOTE]
 > Os traços de personalidade descritos acima são uma leitura do estilo de cada personagem, feita a partir das falas que eles dizem e da aparência de cada um. Eles não têm regras de jogo ligadas a esses traços.
@@ -237,7 +241,7 @@ porta e o novo banco de dados é aberto na mesma hora.
 |---|---|
 | **Tela inicial** | Título e subtítulo da tela inicial (um subtítulo vazio não aparece), se as inscrições estão abertas e a porta do site de inscrições (8080 por padrão). |
 | **Batalha** | O tipo de batalha (por pontos ou por K.O.) e o número de partidas, exibição (3D no gerenciador ou a janela clássica do Robocode), velocidade inicial e o texto do início do round (`FIGHT!`). |
-| **Arena e som** | Arena e música (sorteadas ou fixas), "usar a mesma música da arena", volume e a suavização de bordas (desligue se a batalha ficar lenta). |
+| **Arena e som** | Arena e música (sorteadas ou fixas; são sete músicas, e cada arena tem a sua), "usar a mesma música da arena", volume e a suavização de bordas (desligue se a batalha ficar lenta). |
 | **Sistema** | O arquivo do banco SQLite e a pasta do Robocode (a que tem a pasta `robots`). |
 
 A configuração fica em `~/robocodeChampManager.config` e os dados em
@@ -492,7 +496,7 @@ O workflow `.github/workflows/installers.yml` gera os instaladores de Linux, Win
 | `src/tournament` | As regras do chaveamento (`Bracket`) e o armazenamento do campeonato |
 | `src/jetty` | O servidor web e as páginas de inscrição |
 | `src/utils` | Utilitários: configuração, banco de dados, batalhas... |
-| `src/widgets` | Controles, janelas e cenas do programa (as arenas 3D estão em `widgets/scenes`) |
+| `src/widgets` | Controles, janelas e cenas do programa (as arenas 3D estão em `widgets/scenes` e as músicas em `BattleAudio*.java`) |
 | `RobocodeStarter/` | Versão compilada do programa que controla as batalhas do Robocode (fonte no submódulo `robocodebattlestarter`) |
 | `test/` | Testes automáticos, rodados com `mvn test` |
 

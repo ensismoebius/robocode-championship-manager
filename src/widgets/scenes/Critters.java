@@ -151,7 +151,7 @@ final class Critters {
 
 	/** The kinds of the arenas: a mix of walkers and flyers where there are flyers */
 	enum Kind {
-		MONKEY(false), BIRD(true), PENGUIN(false), BEETLE(false), SALAMANDER(false), BAT(true);
+		MONKEY(false), BIRD(true), PENGUIN(false), BEETLE(false), SALAMANDER(false), BAT(true), SCORPION(false);
 
 		final boolean flies;
 
@@ -169,6 +169,7 @@ final class Critters {
 		case ICE -> Kind.PENGUIN;
 		case NEON -> Kind.BEETLE;
 		case VOLCANO -> index % 3 == 2 ? Kind.BAT : Kind.SALAMANDER;
+		case MIDDLE_EAST -> index % 3 == 2 ? Kind.BIRD : Kind.SCORPION;
 		};
 	}
 

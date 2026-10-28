@@ -22,7 +22,7 @@ import javax.sound.sampled.SourceDataLine;
  *
  * The music follows the {@link #setIntensity(double) intensity} of the fight:
  * calm it is a dark pad, then come the drums, the bass, the melody and at last
- * an alarm, while the tempo grows. There are four {@link Song songs}. In slow
+ * an alarm, while the tempo grows. There are several {@link Song songs}, each one in the scale of its arena. In slow
  * motion the music becomes a muffled heartbeat and the effects sound deep and
  * slow.
  *
@@ -379,6 +379,39 @@ public final class BattleAudio {
 	/** Queues a sound at the position where the next effect is placed. */
 	void sfx(double[] samples, double gain, double rate) {
 		this.incoming.add(new Voice(samples, gain, rate, this.placement[0], this.placement[1]));
+	}
+
+	/** Whether the 16th of the bar is one of the steps. */
+	static boolean isOn(int[] steps, int inBar) {
+		for (int step : steps) {
+			if (step == inBar) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/** Queues a sound of the music that plays from one side more than the other, so the music bounces between the ears. */
+	void sided(double[] sound, double gain, double rate, boolean left) {
+		this.musicVoices.add(new Voice(sound, gain, rate, left ? 1 : 0.55, left ? 0.55 : 1));
+	}
+
+	/** The frequency ratios over a root of the semitones given, in equal temperament. */
+	static double[] ratios(int... semitones) {
+		double[] ratios = new double[semitones.length];
+		for (int index = 0; index < ratios.length; index++) {
+			ratios[index] = Math.pow(2, semitones[index] / 12.0);
+		}
+		return ratios;
+	}
+
+	/** The octave cut in equal steps: the ratios from the root to the octave over it, one more than the steps. */
+	static double[] equalSteps(int steps) {
+		double[] ratios = new double[steps + 1];
+		for (int index = 0; index <= steps; index++) {
+			ratios[index] = Math.pow(2, (double) index / steps);
+		}
+		return ratios;
 	}
 
 	// -------------------------------------------------------------------- mixer

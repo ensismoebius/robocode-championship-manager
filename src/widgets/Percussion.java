@@ -24,6 +24,21 @@ final class Percussion {
 		return Synth.mix(Synth.sineSweep(260, 150, 0.16), Synth.lowpass(Synth.noise(0.08, 9), 0.4), 0.4);
 	}
 
+	/** The darbuka's deep stroke, in the middle of the skin: a short sweep down with a dull thud */
+	static double[] dum() {
+		return Synth.mix(Synth.sineSweep(170, 70, 0.22), Synth.lowpass(Synth.noise(0.04, 10), 0.2), 0.2);
+	}
+
+	/** The darbuka's bright stroke, with the fingers on the rim: a short click */
+	static double[] tek() {
+		return Synth.mix(Synth.sine(980, 0.05, 40), Synth.lowpass(Synth.noise(0.03, 30), 0.6), 0.5);
+	}
+
+	/** The frame drum of the Inuit, struck on its rim with a stick: a deep boom of the skin with a dry knock */
+	static double[] frameDrum() {
+		return Synth.mix(Synth.sineSweep(150, 88, 0.42), Synth.lowpass(Synth.noise(0.05, 11), 0.35), 0.4);
+	}
+
 	/** A wood block: a short, hollow click */
 	static double[] woodBlock() {
 		return Synth.mix(Synth.sine(1250, 0.07, 45), Synth.sine(2100, 0.04, 70), 0.4);

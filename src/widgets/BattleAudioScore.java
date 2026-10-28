@@ -9,13 +9,24 @@ import static widgets.BattleAudio.PENTATONIC;
  */
 final class BattleAudioScore {
 
+	/** The Japanese scale hirajoshi, 0 2 3 7 8 over the root, as a phrase that goes up and comes down */
+	private static final double[] HIRAJOSHI = BattleAudio.ratios(0, 2, 3, 7, 8, 7, 3, 2);
+	/** The Chinese pentatonic scale, 0 2 4 7 9 over the root, as a phrase that goes up and comes down */
+	private static final double[] CHINESE = BattleAudio.ratios(0, 2, 4, 7, 9, 7, 4, 2);
+
 	private final BattleAudio host;
 	private final BattleAudioAfro afro;
+	private final BattleAudioHijaz hijaz;
+	private final BattleAudioForest forest;
+	private final BattleAudioTundra tundra;
 
 	/** Creates the score of the given battle audio. */
 	BattleAudioScore(BattleAudio host) {
 		this.host = host;
 		this.afro = new BattleAudioAfro(host);
+		this.hijaz = new BattleAudioHijaz(host);
+		this.forest = new BattleAudioForest(host);
+		this.tundra = new BattleAudioTundra(host);
 	}
 
 	/**
@@ -40,6 +51,9 @@ final class BattleAudioScore {
 		case SYNTHWAVE -> this.synthwaveStep(step, inBar, root, minor, tension);
 		case WAR_DRUMS -> this.drumsStep(step, inBar, bar, root, tension);
 		case AFRO_FUTURE -> this.afro.step(step, inBar, bar, root, tension);
+		case HIJAZ -> this.hijaz.step(step, inBar, bar, root, tension);
+		case FOREST -> this.forest.step(inBar, bar, root, minor, tension);
+		case TUNDRA -> this.tundra.step(inBar, bar, tension);
 		}
 	}
 
@@ -75,7 +89,7 @@ final class BattleAudioScore {
 
 	/**
 	 * Synthwave: a bass bouncing in octaves every 16th, four on the floor,
-	 * backbeat, an arpeggiated lead and tom fills at the top
+	 * backbeat, a lead and a koto in the scales of the Far East, and tom fills at the top
 	 */
 	void synthwaveStep(int step, int inBar, double root, boolean minor, double tension) {
 		// Bass: 8ths when calm, 16ths bouncing in octaves when the fight heats up
@@ -94,18 +108,31 @@ final class BattleAudioScore {
 		if (tension > 0.3 && (inBar % 4 == 2 || tension > 0.7)) {
 			host.musicVoices.add(new Voice(host.hat, inBar % 4 == 2 ? 0.24 : 0.12, 1));
 		}
-		if (tension > 0.5 && inBar % 2 == 0) {
-			double[] chord = minor ? new double[] { 1, 1.189, 1.498, 2, 1.498, 1.189, 2, 2.378 } : new double[] { 1, 1.26, 1.498, 2, 1.498, 1.26, 2, 2.52 };
-			double frequency = root * 4 * chord[(inBar / 2) % chord.length] * (tension > 0.82 && inBar >= 8 ? 2 : 1);
-			double[] lead = Synth.lowpass(Synth.mix(Synth.saw(frequency, 0.2, 7), Synth.saw(frequency * 1.007, 0.2, 7), 0.8), 0.35);
-			host.musicVoices.add(new Voice(lead, 0.16, 1));
-		}
+		this.orientalLead(inBar, root, minor, tension);
 		if (tension > 0.75 && (step / 16) % 2 == 1 && inBar >= 12) {
 			// High, mid and low tom going down to the next bar
 			host.musicVoices.add(new Voice(host.toms[Math.max(0, inBar - 13)], 0.5, 1));
 		}
 		if (tension > 0.9 && inBar == 0) {
 			host.musicVoices.add(new Voice(Synth.sweep(root * 8, root * 12, 0.4, false), 0.1, 1));
+		}
+	}
+
+	/**
+	 * The lead of the synthwave, in the scales of the Far East: the Japanese hirajoshi over the minor chords and the Chinese
+	 * pentatonic over the major ones. A koto plucks the phrase from the start of the fight, and a synth lead plays it over
+	 * the koto when the fight is hot.
+	 */
+	void orientalLead(int inBar, double root, boolean minor, double tension) {
+		double[] phrase = minor ? HIRAJOSHI : CHINESE;
+		if (tension > 0.12 && inBar % 4 == 0) {
+			double frequency = root * 8 * phrase[(inBar / 2) % phrase.length];
+			host.sided(Synth.mix(Synth.sine(frequency, 0.6, 6), Synth.sine(frequency * 3, 0.3, 12), 0.3), 0.14 + 0.06 * tension, 1, inBar % 8 == 0);
+		}
+		if (tension > 0.5 && inBar % 2 == 0) {
+			double frequency = root * 4 * phrase[(inBar / 2) % phrase.length] * (tension > 0.82 && inBar >= 8 ? 2 : 1);
+			double[] lead = Synth.lowpass(Synth.mix(Synth.saw(frequency, 0.2, 7), Synth.saw(frequency * 1.007, 0.2, 7), 0.8), 0.35);
+			host.musicVoices.add(new Voice(lead, 0.16, 1));
 		}
 	}
 
@@ -211,7 +238,19 @@ final class BattleAudioScore {
 		case WAR_DRUMS -> 0.006 + 0.02 * tension;
 		case SYNTHWAVE -> 0.02 + 0.05 * tension;
 		case AFRO_FUTURE -> 0.016 + 0.055 * tension;
+		case HIJAZ -> 0.014 + 0.04 * tension;
+		case FOREST -> 0.02 + 0.05 * tension;
+		case TUNDRA -> 0.01 + 0.03 * tension;
 		case EPIC -> 0.012 + 0.05 * tension;
+		};
+	}
+
+	/** How loud the pad of a song is: the drums and the tundra keep it low, as a drone. */
+	private static double padGain(Song song, double tension) {
+		return switch (song) {
+		case WAR_DRUMS -> 0.1;
+		case TUNDRA -> 0.2;
+		default -> 0.32 - 0.1 * tension;
 		};
 	}
 
@@ -220,14 +259,14 @@ final class BattleAudioScore {
 		// Pad: three detuned saws through a low pass that opens with the tension.
 		// The drums have a drone instead: root, fifth and octave, darker.
 		host.padFrequency += (current.roots[bar] - host.padFrequency) * 0.0005;
-		double third = current == Song.WAR_DRUMS ? 1 : current.minor[bar] ? 1.189 : 1.26;
+		double third = current == Song.WAR_DRUMS || current == Song.TUNDRA ? 1 : current.minor[bar] ? 1.189 : 1.26;
 		host.padPhase1 = (host.padPhase1 + host.padFrequency / Synth.RATE) % 1;
 		host.padPhase2 = (host.padPhase2 + host.padFrequency * 1.004 * 1.498 / Synth.RATE) % 1;
 		host.padPhase3 = (host.padPhase3 + host.padFrequency * 0.997 * third * 2 / Synth.RATE) % 1;
 		double raw = (host.padPhase1 * 2 - 1) + (host.padPhase2 * 2 - 1) * 0.7 + (host.padPhase3 * 2 - 1) * 0.5;
 		double cutoff = padCutoff(current, tension) * (1 - 0.7 * host.slow);
 		host.padFilter += (raw - host.padFilter) * cutoff;
-		double pad = host.padFilter * (current == Song.WAR_DRUMS ? 0.1 : 0.32 - 0.1 * tension);
+		double pad = host.padFilter * padGain(current, tension);
 		if (current == Song.SYNTHWAVE && tension > 0.2 && host.slow < 0.5) {
 			// Pumps with the kick, the synthwave sound
 			double inBeat = host.beat - Math.floor(host.beat);
