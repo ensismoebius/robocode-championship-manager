@@ -63,6 +63,12 @@ public final class ArenaSimulation {
 		return FxSupport.run(() -> new BattleArena3D(fighters));
 	}
 
+	/** Builds the arena of a stage of the championship on the JavaFX thread, with the given style (a name of {@link ArenaStyle}). */
+	static BattleArena3D arena(List<Opponent> fighters, String style, Importance importance) {
+		TestConfiguration.load(style, "/nowhere");
+		return FxSupport.run(() -> new BattleArena3D(fighters, importance));
+	}
+
 	/** Parses the turns of a battle. */
 	public static BattleRecording recording(List<String> output) {
 		return BattleRecording.parse(output);

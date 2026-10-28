@@ -1,5 +1,6 @@
 package widgets.scenes;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import javafx.scene.paint.Color;
@@ -49,18 +50,21 @@ public enum ArenaStyle {
 		this.song = song;
 	}
 
-	/** Random arenas do not repeat until all were used */
-	private static final Rotation<ArenaStyle> ROTATION = new Rotation<ArenaStyle>(values());
+	/** The arena of the finals: the random arenas of the other matches never pick it, and a random final always does */
+	public static final ArenaStyle FINALS = EDEN_SOLAR;
+
+	/** Random arenas do not repeat until all were used, except the arena of the finals, which is kept for the finals */
+	private static final Rotation<ArenaStyle> ROTATION = new Rotation<ArenaStyle>(Arrays.stream(values()).filter(style -> style != FINALS).toArray(ArenaStyle[]::new));
 
 	/**
-	 * The configured arena, the next of the rotation if not an arena (like
-	 * "RANDOM")
+	 * The configured arena. When it is not an arena (like "RANDOM"), the arena of the finals for a final, and for any other
+	 * match the next of the rotation, which has all the arenas but the one of the finals.
 	 */
-	public static ArenaStyle resolve(String configured, Random random) {
+	public static ArenaStyle resolve(String configured, Random random, boolean finalMatch) {
 		try {
 			return ArenaStyle.valueOf(configured);
 		} catch (IllegalArgumentException | NullPointerException nullPointerException) {
-			return ROTATION.next(random);
+			return finalMatch ? FINALS : ROTATION.next(random);
 		}
 	}
 }
