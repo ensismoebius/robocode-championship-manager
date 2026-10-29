@@ -38,8 +38,11 @@ final class DesertTour {
 		if (chosen == null) {
 			return List.of();
 		}
-		// The avenue is the street beside the skyscraper on the side of the middle
+		// The avenue is the street beside the skyscraper on the side of the middle, or on the other side if that one is for pedestrians, with its trees and its benches
 		double street = chosen[0] > 0 ? chosen[0] - DesertCity.PITCH / 2 : chosen[0] + DesertCity.PITCH / 2;
+		if (DesertCity.pedestrian((int) Math.round(street / DesertCity.PITCH))) {
+			street = 2 * chosen[0] - street;
+		}
 		return List.of(tower(chosen), avenue(street, chosen[1]));
 	}
 

@@ -78,6 +78,10 @@ final class BattleRunner {
 					if (arena != null) {
 						Platform.runLater(() -> arena.setLoadingProgress(progress));
 					}
+				}, (name, body, gun, radar) -> {
+					if (arena != null) {
+						Platform.runLater(() -> arena.setRobotColors(name, body, gun, radar));
+					}
 				});
 			}
 		};

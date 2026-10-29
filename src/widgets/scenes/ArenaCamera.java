@@ -138,7 +138,7 @@ final class ArenaCamera {
 	/** Moves the camera to the shot of the moment, or lets it follow the free view. */
 	void updateCamera(double deltaTime) {
 		host.shotTime += deltaTime;
-		if (host.viewMode == ViewMode.CINEMATIC || host.phase == Phase.REPLAY || host.phase == Phase.FREEZE || host.phase == Phase.SHOWCASE || host.phase == Phase.FLYBY) {
+		if (host.viewMode == ViewMode.CINEMATIC || host.phase == Phase.REPLAY || host.phase == Phase.FREEZE || host.phase == Phase.SHOWCASE || host.phase == Phase.FLYBY || this.touring()) {
 			if (host.shotTime > host.shotDuration && host.phase == Phase.PLAYING) {
 				this.pickShot(false);
 			}
@@ -230,6 +230,10 @@ final class ArenaCamera {
 			this.flyBy();
 			return;
 		}
+		if (this.touring()) {
+			host.rounds.loadingTour(host.phaseTime);
+			return;
+		}
 		if (host.phase == Phase.SHOWCASE && !host.versus) {
 			host.showcase.showcaseShot(subject == null ? new double[] { 0, 0, 0 } : subject.position());
 			return;
@@ -250,6 +254,11 @@ final class ArenaCamera {
 		}
 
 		this.frameFighters(deltaTime, first, second);
+	}
+
+	/** Whether the battle is loading and the arena has a tour for the camera to go through meanwhile. */
+	private boolean touring() {
+		return host.phase == Phase.LOADING && !host.flyTour.isEmpty();
 	}
 
 	/** The camera goes through the stops of the tour, and then the trip begins */

@@ -124,8 +124,10 @@ final class ArenaControls {
 	 */
 	void skip(boolean all) {
 		if (host.phase == Phase.SHOWCASE) {
-			if (all || host.versus) {
-				host.showcase.endShowcase();
+			if (all) {
+				host.showcase.skipAll();
+			} else if (host.versus) {
+				host.showcase.endVersus();
 			} else {
 				host.showcase.showcaseRobot(host.showcaseOrder + 1);
 			}

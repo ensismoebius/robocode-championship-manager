@@ -89,7 +89,7 @@ final class DesertSkyline {
 				cap(this.forms, outline, ground - tierTop(height, tier, wing));
 			}
 		}
-		this.forms.dome(this.forms.glass, posX, posZ, coreTop, core, core * 1.4, 12);
+		this.forms.dome(this.forms.gold, posX, posZ, coreTop, core, core * 1.4, 12);
 		this.forms.spire(posX, posZ, coreTop - core * 1.3, height * 0.1, 3);
 		this.forms.needle(posX, posZ, coreTop - core * 1.3 - height * 0.1, height * 0.3);
 		this.forms.halo(posX, posZ, coreTop - core * 0.6, core * 2.4);
@@ -111,7 +111,7 @@ final class DesertSkyline {
 		cap(this.forms, outline, ground - height);
 		this.forms.ceramic.cylinderY(posX, posZ, radius * 1.1, ground + SINK, ground - 14, SIDES);
 		this.forms.band(posX, posZ, radius * 1.08, ground - height * 0.5);
-		this.forms.dome(this.forms.glass, posX, posZ, ground - height - 3, radius * 0.8, radius * 0.7, 12);
+		this.forms.dome(this.forms.gold, posX, posZ, ground - height - 3, radius * 0.8, radius * 0.7, 12);
 		this.forms.spire(posX, posZ, ground - height - 3 - radius * 0.66, radius * 0.9, 2);
 		this.forms.halo(posX, posZ, ground - height - radius * 0.9, radius * 1.8);
 	}

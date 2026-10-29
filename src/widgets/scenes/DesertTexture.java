@@ -87,6 +87,8 @@ final class DesertTexture {
 	static final Image ASPHALT = TextureMath.image(64, 64, (posX, posY) -> asphaltPixel(posX, posY));
 	/** The paving of a block of houses: stones of a pale sandstone in rows, with their joints */
 	static final Image PAVING = TextureMath.image(256, 256, DesertTexture::pavingPixel);
+	/** A pedestrian street: paving on both sides and a band of tile down the middle */
+	static final Image PROMENADE = TextureMath.image(128, 128, DesertTexture::promenadePixel);
 	/** A garden of a whole block, in the "four gardens" way: a path around it, two channels of water crossing at a pool, and in each of the four beds a star of a darker green */
 	static final Image GARDEN = TextureMath.image(256, 256, (posX, posY) -> gardenPixel(posX, posY, false));
 	/** The same garden: only the water shines */
@@ -267,6 +269,24 @@ final class DesertTexture {
 		}
 		int stone = Math.floorMod(((posX + (row % 2) * 16) / 32) * 73856093 ^ row * 19349663, 3);
 		return TextureMath.mix(stone == 0 ? 0xdccfb4 : 0xd2c4a6, 0xc4b594, LavaTexture.fbm(posX / 256.0 * LavaTexture.PERIOD * 2, posY / 256.0 * LavaTexture.PERIOD * 2, 2, 111));
+	}
+
+	/**
+	 * One pixel of a pedestrian street, 128 pixels across: stone paving on both sides, and down the middle a band of tile, between two
+	 * lines of cobalt, with a chain of diamonds in turquoise and honey, 32 pixels long each.
+	 */
+	private static int promenadePixel(int posX, int posY) {
+		if (posX < 38 || posX >= 90) {
+			return pavingPixel(posX, posY);
+		}
+		int local = posX - 38;
+		if (local < 3 || local >= 49) {
+			return COBALT;
+		}
+		double across = (local - 26) / 23.0;
+		double along = (posY % 32 - 16) / 16.0;
+		double reach = Math.abs(across) + Math.abs(along);
+		return reach < 0.35 ? HONEY : reach < 0.8 ? TURQUOISE : CREAM;
 	}
 
 	/**

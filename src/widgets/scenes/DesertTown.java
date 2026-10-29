@@ -140,7 +140,7 @@ final class DesertTown {
 	private void houseDome(double posX, double posZ, double radius, double top) {
 		this.forms.ceramic.cylinderY(posX, posZ, radius * 0.9, top, top - 10, 10);
 		this.forms.light.cylinderY(posX, posZ, radius * 0.93, top - 5.5, top - 3, 10);
-		this.forms.dome(this.forms.glass, posX, posZ, top - 10, radius, radius * 1.1, 10);
+		this.forms.dome(this.forms.gold, posX, posZ, top - 10, radius, radius * 1.1, 10);
 		this.forms.spire(posX, posZ, top - 10 - radius * 1.05, radius * 0.5, 1.6);
 	}
 
@@ -167,7 +167,7 @@ final class DesertTown {
 		double drum = 36 * scale;
 		this.forms.ceramic.cylinderY(posX, posZ, 66 * scale, top, top - drum, 8);
 		this.forms.light.cylinderY(posX, posZ, 68 * scale, top - drum + 10 * scale, top - drum + 10 * scale + 3, 8);
-		this.forms.dome(this.forms.glass, posX, posZ, top - drum, 72 * scale, 84 * scale, 16);
+		this.forms.dome(this.forms.gold, posX, posZ, top - drum, 72 * scale, 84 * scale, 16);
 		this.forms.spire(posX, posZ, top - drum - 80 * scale, 50 * scale, 3 * scale);
 		this.forms.halo(posX, posZ, top - drum - 84 * scale, 96 * scale);
 		this.forms.halo(posX, posZ, top - drum - 118 * scale, 62 * scale);
@@ -175,7 +175,7 @@ final class DesertTown {
 			for (int sideZ = -1; sideZ <= 1; sideZ += 2) {
 				double cornerX = posX + sideX * wide * 0.36;
 				double cornerZ = posZ + sideZ * wide * 0.36;
-				this.forms.dome(this.forms.glass, cornerX, cornerZ, top, 20 * scale, 26 * scale, 10);
+				this.forms.dome(this.forms.gold, cornerX, cornerZ, top, 20 * scale, 26 * scale, 10);
 				this.forms.spire(cornerX, cornerZ, top - 25 * scale, 14 * scale, 1.4 * scale);
 			}
 		}

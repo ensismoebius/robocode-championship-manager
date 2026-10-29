@@ -81,7 +81,7 @@ public class BattleArena3D extends StackPane {
 	static final Color[] PLAYER_COLORS = { Theme.PLAYER_1, Theme.PLAYER_2, Color.web("#5af08f"), Color.web("#c86bff"), Color.web("#ff9f1c") };
 	static final Color FENCE_BASE = Color.color(0, 0, 0, 0);
 
-	private final List<Opponent> fighters;
+	final List<Opponent> fighters;
 	Runnable onFinished;
 	final BattleAudio audio = new BattleAudio();
 	final Random random = new Random();
@@ -90,7 +90,7 @@ public class BattleArena3D extends StackPane {
 	final Group world = new Group();
 	final Group arena = new Group();
 	final Group effects = new Group();
-	private final Group robotLayer = new Group();
+	final Group robotLayer = new Group();
 	final Group bulletLayer = new Group();
 	/**
 	 * The cage panels. JavaFX does not sort translucent shapes: they are drawn in
@@ -304,9 +304,9 @@ public class BattleArena3D extends StackPane {
 
 		this.controls.installControls();
 		this.hud.showBanner("", null);
-		this.loading.getStyleClass().add("arena-banner");
-		this.loading.setStyle("-fx-font-size: 30px;");
-		Theme.blink(this.loading);
+		this.loading.getStyleClass().add("arena-loading");
+		this.rounds.beginLoading();
+		this.showcase.buildPreviews();
 
 		// Runs only while on the screen
 		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
@@ -316,8 +316,21 @@ public class BattleArena3D extends StackPane {
 				this.stopShowcaseMusic();
 			} else {
 				this.timer.start();
+				// The robots are presented while the battle is fought
+				this.showcase.startPreview();
 			}
 		});
+	}
+
+	/**
+	 * Tells the colors a robot has, as the battle fought in the background reports them, so its model, which is presented while the
+	 * battle loads, shows them as soon as they are known. Call it from the JavaFX thread.
+	 *
+	 * @param robotName
+	 *            as robocode reports it, like "team.Robot 1.0"
+	 */
+	public void setRobotColors(String robotName, int body, int gun, int radar) {
+		this.showcase.paint(robotName, body, gun, radar);
 	}
 
 	/**
@@ -340,20 +353,20 @@ public class BattleArena3D extends StackPane {
 	 *            called when the last round ends or is skipped
 	 */
 	public void play(BattleRecording recording, Runnable onFinished) {
+		// The arena built while the battle loaded stays, with its tour, when the field is of the size it was built for
+		boolean rebuild = this.recording != null || recording.getWidth() != this.fieldWidth || recording.getHeight() != this.fieldHeight;
 		this.recording = recording;
 		this.onFinished = onFinished;
 		this.fieldWidth = recording.getWidth();
 		this.fieldHeight = recording.getHeight();
-		this.arena.getChildren().clear();
-		new ArenaBuilder(this).buildArena();
-
-		for (BattleRecording.Robot robot : recording.getRobots()) {
-			RobotView view = new RobotView(this, robot, this.opponentOf(robot), this.robots.size());
-			this.robots.put(robot.getIndex(), view);
-			this.robotLayer.getChildren().add(view.root);
-			this.balloons.getChildren().add(view.balloon);
-			this.roundWins.put(robot.getIndex(), 0);
+		if (rebuild) {
+			this.arena.getChildren().clear();
+			new ArenaBuilder(this).buildArena();
+			this.rounds.planTour();
 		}
+		this.rounds.endLoading();
+
+		this.showcase.adopt(recording);
 		this.hud.buildHudPlayers();
 		this.loading.setVisible(false);
 		this.loadingBar.setVisible(false);
@@ -366,7 +379,7 @@ public class BattleArena3D extends StackPane {
 		this.commentary = new BattleCommentary(names, this.random);
 
 		this.audio.start();
-		this.showcase.startShowcase();
+		this.showcase.recorded();
 	}
 
 	/** The fighter that drives the given robot of the recording, or null when it is not one of them. */

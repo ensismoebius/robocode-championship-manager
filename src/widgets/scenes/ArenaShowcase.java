@@ -4,8 +4,10 @@ import static widgets.scenes.BattleArena3D.FREEZE_SECONDS;
 import static widgets.scenes.ArenaHelpers.findBullet;
 import static widgets.scenes.ArenaHelpers.toCss;
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import javafx.animation.Interpolator;
 import javafx.animation.TranslateTransition;
 import javafx.geometry.Insets;
@@ -46,12 +48,37 @@ final class ArenaShowcase {
 	private static final int REPLAY_AFTER = 10;
 	private int deadRobot = -1;
 	private int replayFrom;
+	/** The robots as they are presented before the battle is fought, with their models, and whether the presentation started */
+	private final ArenaPreview preview;
+	private boolean started;
 
 	private final BattleArena3D host;
 
 	/** Creates the showcase of the arena: the robots presented one by one, and the replay. */
 	ArenaShowcase(BattleArena3D host) {
 		this.host = host;
+		this.preview = new ArenaPreview(host);
+	}
+
+	/** The models of the robots of the battle, made before it is fought so they can be presented. */
+	void buildPreviews() {
+		this.preview.build();
+	}
+
+	/** The colors, body, gun and radar, of the model of the robot at the place given, as it is presented. */
+	int[] previewColors(int order) {
+		BattleRecording.Robot robot = this.preview.robots().get(order);
+		return new int[] { robot.getBodyColor(), robot.getGunColor(), robot.getRadarColor() };
+	}
+
+	/** The battle tells the colors of a robot while it is fought: the model that is presented takes them at once. */
+	void paint(String robotName, int body, int gun, int radar) {
+		this.preview.paint(robotName, body, gun, radar);
+	}
+
+	/** The battle is recorded: its robots are the models that were presented. */
+	void adopt(BattleRecording recording) {
+		this.preview.adopt(recording);
 	}
 
 	// --------------------------------------------------------------- showcase
@@ -61,11 +88,57 @@ final class ArenaShowcase {
 	 * the fighters of a fighting game, then both face each other
 	 */
 	void startShowcase() {
+		this.started = true;
 		host.phase = Phase.SHOWCASE;
 		host.hudTop.setVisible(false);
 		host.hud.showLetterbox(true, false);
+		host.audio.start();
 		host.audio.setMusicOn(false);
-		this.showcaseRobot(0);
+		this.startVersus();
+	}
+
+	/** Whether the sound effects of the presentation are heard: not while the battle is loading, only the music of the robots is. */
+	boolean effectsOn() {
+		return host.recording != null;
+	}
+
+	/** Whether the presentation of the robots has started. */
+	boolean started() {
+		return this.started;
+	}
+
+	/** The robots are presented as soon as the arena is on the screen, while the battle is fought. */
+	void startPreview() {
+		if (!this.started && host.recording == null) {
+			this.startShowcase();
+		}
+	}
+
+	/** The battle is recorded: the presentation starts, if it did not, and if the robots were all presented and the camera waited for it, the round begins. */
+	void recorded() {
+		if (!this.started) {
+			this.startShowcase();
+		} else if (host.phase == Phase.LOADING) {
+			this.finishShowcase();
+		}
+	}
+
+	/** All the robots were presented, and the battle is not recorded yet: the camera goes on with its tour, with nothing else on the screen, until it is. */
+	void waitForBattle() {
+		host.stopShowcaseMusic();
+		host.showcaseLayer.getChildren().clear();
+		host.flashLight.setColor(Color.BLACK);
+		for (RobotView view : host.robots.values()) {
+			view.root.setVisible(false);
+		}
+		host.hud.hideBanner();
+		host.stageLabel.setVisible(false);
+		host.stageLabel.setManaged(false);
+		host.hud.showLetterbox(false);
+		host.versus = false;
+		host.phase = Phase.LOADING;
+		host.phaseTime = 0;
+		host.rounds.startWaiting();
 	}
 
 	/**
@@ -74,9 +147,13 @@ final class ArenaShowcase {
 	 */
 	void showcaseRobot(int order) {
 		host.stopShowcaseMusic();
-		List<BattleRecording.Robot> list = host.recording.getRobots();
+		List<BattleRecording.Robot> list = host.recording == null ? this.preview.robots() : host.recording.getRobots();
 		if (order >= list.size()) {
-			this.startVersus();
+			if (host.recording == null) {
+				this.waitForBattle();
+			} else {
+				this.finishShowcase();
+			}
 			return;
 		}
 		host.showcaseOrder = order;
@@ -99,7 +176,9 @@ final class ArenaShowcase {
 		this.showStage(false);
 		this.slideIn(card, order);
 
-		host.audio.whoosh();
+		if (this.effectsOn()) {
+			host.audio.whoosh();
+		}
 		this.playMusic(opponent);
 		host.director.cut();
 	}
@@ -120,7 +199,11 @@ final class ArenaShowcase {
 		slide.setToX(0);
 		slide.setDelay(Duration.millis(700));
 		slide.setInterpolator(Interpolator.EASE_OUT);
-		slide.setOnFinished(event -> Sfx.slam());
+		slide.setOnFinished(event -> {
+			if (this.effectsOn()) {
+				Sfx.slam();
+			}
+		});
 		card.setTranslateX(slide.getFromX());
 		slide.play();
 	}
@@ -134,9 +217,12 @@ final class ArenaShowcase {
 	}
 
 	/**
-	 * Both robots where the battle starts, and the VS
+	 * Both robots face each other, and the VS, with the name of the stage and of the arena: it comes before the presentation of the
+	 * robots, and it does not wait for the battle to be recorded. Once it is, the robots are where it starts.
 	 */
 	void startVersus() {
+		host.phase = Phase.SHOWCASE;
+		host.hud.showLetterbox(true, false);
 		host.versus = true;
 		this.showStage(true);
 		host.phaseTime = 0;
@@ -145,11 +231,9 @@ final class ArenaShowcase {
 		for (RobotView view : host.robots.values()) {
 			view.root.setVisible(true);
 		}
-		host.turnPosition = 0;
-		host.lastTurnProcessed = -1;
-		host.rounds.showTurn(host.turns());
+		this.faceEachOther();
 
-		String names = String.join("  ×  ", host.recording.getRobots().stream().map(row -> host.robots.get(row.getIndex()).displayName.toUpperCase()).toList());
+		String names = String.join("  ×  ", new TreeMap<Integer, RobotView>(host.robots).values().stream().map(view -> view.displayName.toUpperCase()).toList());
 		host.hud.showBanner("VS", names + "\n\nARENA: " + host.style.label.toUpperCase());
 		String versusLine = "Frente a frente: " + names.replace("  ×  ", " contra ") + "!";
 		host.announcer.announce(switch (host.stageImportance) {
@@ -164,6 +248,36 @@ final class ArenaShowcase {
 		host.director.cut();
 	}
 
+	/** Puts the robots where they are at the start of the battle, or, before it is recorded, on each side of the arena, facing each other. */
+	private void faceEachOther() {
+		if (host.recording != null) {
+			host.turnPosition = 0;
+			host.lastTurnProcessed = -1;
+			host.rounds.showTurn(host.turns());
+			return;
+		}
+		for (Map.Entry<Integer, RobotView> entry : host.robots.entrySet()) {
+			double side = entry.getKey() % 2 == 0 ? -1 : 1;
+			entry.getValue().place(side * host.fieldWidth / 4, 0, -side * Math.PI / 2, -side * Math.PI / 2, 0);
+		}
+	}
+
+	/** The versus is over: the robots are presented, one by one. */
+	void endVersus() {
+		host.versus = false;
+		host.hud.hideBanner();
+		this.showcaseRobot(0);
+	}
+
+	/** The whole presentation is skipped: the round begins, or, if the battle is not recorded yet, the camera waits for it. */
+	void skipAll() {
+		if (host.recording == null) {
+			this.waitForBattle();
+		} else {
+			this.finishShowcase();
+		}
+	}
+
 	/** Shows the name of the stage in the middle of the screen, when it is a big one, or hides it. */
 	private void showStage(boolean show) {
 		boolean big = show && host.stageImportance != Importance.REGULAR && !host.stageName.isEmpty();
@@ -171,8 +285,8 @@ final class ArenaShowcase {
 		host.stageLabel.setManaged(big);
 	}
 
-	/** Ends the showcase: stops its music and clears its layer. */
-	void endShowcase() {
+	/** Ends the presentation, with the battle recorded: stops its music, clears its layer and begins the first round. */
+	private void finishShowcase() {
 		host.stopShowcaseMusic();
 		host.versus = false;
 		host.showcaseLayer.getChildren().clear();

@@ -118,6 +118,18 @@ public class BattleControl {
 	 */
 	public static BattleOutcome startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion, boolean record, DoubleConsumer onProgress)
 			throws IOException, InterruptedException {
+		return startBattle(opponents, robocodePath, rounds, startScriptPath, criterion, record, onProgress, (name, body, gun, radar) -> {
+		});
+	}
+
+	/**
+	 * Like the one above, and tells the colors of each robot as soon as the battle reports them.
+	 *
+	 * @param onColors
+	 *            called, from the thread that runs the battle, with the first colors of each robot
+	 */
+	public static BattleOutcome startBattle(List<Opponent> opponents, String robocodePath, int rounds, String startScriptPath, WinnerCriterion criterion, boolean record, DoubleConsumer onProgress,
+			BattleColors.Listener onColors) throws IOException, InterruptedException {
 
 		Path robotsDir = Path.of(robocodePath, "robots");
 		if (!Files.isDirectory(robotsDir)) {
@@ -140,7 +152,7 @@ public class BattleControl {
 
 		installRobots(robotsDir, opponents, command);
 
-		List<String> output = runBattleProcess(command, onProgress);
+		List<String> output = runBattleProcess(command, onProgress, new BattleColors(onColors));
 
 		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
 		if (results.size() != opponents.size()) {
@@ -164,7 +176,7 @@ public class BattleControl {
 	}
 
 	/** Runs the battle command and returns the lines it printed; the turns, which start with #, are not echoed. */
-	private static List<String> runBattleProcess(List<String> command, DoubleConsumer onProgress) throws IOException, InterruptedException {
+	private static List<String> runBattleProcess(List<String> command, DoubleConsumer onProgress, BattleColors colors) throws IOException, InterruptedException {
 		ProcessBuilder builder = new ProcessBuilder(command).redirectErrorStream(true);
 		// The script runs java: the one this program runs on, even without java in the PATH
 		builder.environment().put("JAVA_HOME", System.getProperty("java.home"));
@@ -181,6 +193,7 @@ public class BattleControl {
 					System.out.println(line);
 				}
 				output.add(line);
+				colors.accept(line);
 				double now = progress.accept(line);
 				if (now - told >= 0.01) {
 					told = now;

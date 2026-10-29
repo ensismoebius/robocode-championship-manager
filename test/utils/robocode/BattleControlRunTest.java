@@ -96,4 +96,18 @@ class BattleControlRunTest {
 
 		assertThrows(IOException.class, () -> BattleControl.startBattle(fighters, folder.toString(), 1, script.toString(), WinnerCriterion.SCORE, false));
 	}
+
+	@Test
+	void aBattleTellsTheColorsOfTheRobotsAsItReportsThem() throws Exception {
+		Path folder = folder("colors");
+		Path script = script("colors", "#F 800 600 1", "#N 0 sample.Walls 1.0", "#N 1 sample.SpinBot 1.0", "#C 0 -65536 -16711936 -16776961", "#C 1 -1 -2 -3", "#R 0", "#T 0 0|0 10 20 0 0 0 100 0;1 30 40 0 0 0 0 3|",
+				"1\tsample.Walls\t216", "2\tsample.SpinBot\t0");
+		List<Opponent> fighters = List.of(robot("sample", "Walls"), robot("sample", "SpinBot"));
+		List<String> told = new java.util.ArrayList<String>();
+
+		BattleControl.startBattle(fighters, folder.toString(), 1, script.toString(), WinnerCriterion.SCORE, true, progress -> {
+		}, (name, body, gun, radar) -> told.add(name + " " + body + " " + gun + " " + radar));
+
+		assertEquals(List.of("sample.Walls 1.0 -65536 -16711936 -16776961", "sample.SpinBot 1.0 -1 -2 -3"), told);
+	}
 }

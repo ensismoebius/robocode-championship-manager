@@ -45,7 +45,12 @@ public final class BattleRecording {
 
 		/** A robot with its name and its colors, to show its model outside a battle. */
 		public static Robot named(String name, int bodyColor, int gunColor, int radarColor) {
-			Robot robot = new Robot(0, name);
+			return named(0, name, bodyColor, gunColor, radarColor);
+		}
+
+		/** A robot with its index, name and colors, to present it before its battle has been fought. */
+		public static Robot named(int index, String name, int bodyColor, int gunColor, int radarColor) {
+			Robot robot = new Robot(index, name);
 			robot.bodyColor = bodyColor;
 			robot.gunColor = gunColor;
 			robot.radarColor = radarColor;
@@ -62,6 +67,11 @@ public final class BattleRecording {
 		 */
 		public String getName() {
 			return this.name;
+		}
+
+		/** Whether the battle reported the colors of this robot, so they are its own and not the default ones. */
+		public boolean isColored() {
+			return this.colored;
 		}
 
 		/** Returns the body color. */

@@ -42,7 +42,7 @@ final class ArenaTicker {
 		case SHOWCASE -> {
 			if (host.versus) {
 				if (host.phaseTime > VERSUS_SECONDS) {
-					host.showcase.endShowcase();
+					host.showcase.endVersus();
 				}
 			} else {
 				host.showcase.turntable();

@@ -199,4 +199,51 @@ class DesertArenaTest {
 		}
 		assertTrue(gardens > blocks / 10 && gardens < blocks / 2, "the gardens are " + gardens + " of " + blocks + " blocks");
 	}
+
+	@Test
+	void everyDomeIsGold() {
+		IslamicForms forms = new IslamicForms();
+		forms.minaret(0, 0, 0, 200, 8);
+		forms.tower(100, 0, 0, 120, 20);
+		forms.dome(forms.gold, 0, 100, 0, 30, 40, 12);
+
+		assertTrue(forms.gold.mesh.getFaces().size() > 0);
+		assertEquals(0, forms.glass.mesh.getFaces().size(), "no dome of glass");
+	}
+
+	@Test
+	void everyThirdStreetIsForPedestriansInBothDirectionsAndTheMiddleOnesAreNot() {
+		assertFalse(DesertCity.pedestrian(0));
+		assertTrue(DesertCity.pedestrian(1));
+		assertFalse(DesertCity.pedestrian(2));
+		assertFalse(DesertCity.pedestrian(3));
+		assertTrue(DesertCity.pedestrian(4));
+		assertTrue(DesertCity.pedestrian(-2));
+		assertFalse(DesertCity.pedestrian(-1));
+	}
+
+	@Test
+	void thePedestrianStreetsHaveTheirPlantsBenchesAndPeople() {
+		DesertCity city = new DesertCity(WIDTH, DEPTH);
+		IslamicForms forms = new IslamicForms();
+		DesertGreenery green = new DesertGreenery();
+		DesertWalks walks = new DesertWalks(city, forms, green);
+
+		walks.build();
+
+		assertFalse(walks.views().isEmpty(), "people on the streets");
+		// Bark, three kinds of tree, bougainvillea, oleander
+		assertTrue(green.views().size() >= 5, "trees and flowers along the streets");
+		assertTrue(forms.ceramic.mesh.getFaces().size() > 0, "benches, planters and bollards");
+	}
+
+	@Test
+	void theGreeneryHasTheTreesOfTheRegion() {
+		for (int kind = 0; kind < DesertGreenery.KINDS; kind++) {
+			DesertGreenery green = new DesertGreenery();
+			green.tree(kind, 0, 6, 0, new Random(1));
+			// The bark and the crown of the kind
+			assertEquals(2, green.views().size(), "kind " + kind);
+		}
+	}
 }

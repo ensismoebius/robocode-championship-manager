@@ -22,6 +22,10 @@ import javafx.scene.paint.PhongMaterial;
  */
 final class DesertCity {
 
+	/** The meshes of the floor, one for each of its pictures */
+	private record Floor(SurfaceMesh roads, SurfaceMesh crossings, SurfaceMesh walks, SurfaceMesh lots, SurfaceMesh gardens, SurfaceMesh plazas) {
+	}
+
 	/** What stands on a block of the city */
 	enum Kind {
 		LOT, GARDEN, PLAZA
@@ -34,6 +38,8 @@ final class DesertCity {
 	private static final int LINES = 12;
 	/** The floor of the city lies this far over the plain, so the dunes that rise from the plain cover it and it shows where they are gone */
 	private static final double LIFT = 1.5;
+	/** The height of the floor of the city */
+	static final double FLOOR = DesertDunes.PLAIN - LIFT;
 	/** The floor starts this far beyond the courtyard, under the swell of the dunes, and buildings are put only beyond the dunes, a little farther than their end */
 	private static final double START = DesertDunes.FLAT + 0.2 * (DesertDunes.END - DesertDunes.FLAT);
 	private static final double BUILT = DesertDunes.END + 220;
@@ -64,6 +70,16 @@ final class DesertCity {
 		this.width = width;
 		this.depth = depth;
 		this.towers = this.chooseTowers();
+	}
+
+	/** Whether the street of the line is for pedestrians only: every third street of the grid, in both directions. */
+	static boolean pedestrian(int line) {
+		return Math.floorMod(line, 3) == 1;
+	}
+
+	/** Whether a point is beyond the dunes, where things are built. */
+	boolean beyondDunes(double posX, double posZ) {
+		return DesertDunes.outside(posX, posZ, this.width, this.depth) >= BUILT;
 	}
 
 	/** The index of the block that contains a coordinate: the block between street i and street i + 1 has index i. */
@@ -148,22 +164,22 @@ final class DesertCity {
 
 	/** Builds the floor of the city, the gardens, the lamps and the towers of the horizon, and puts their meshes in the host scene. */
 	void build(BattleArena3D host) {
-		SurfaceMesh roads = new SurfaceMesh();
-		SurfaceMesh crossings = new SurfaceMesh();
-		SurfaceMesh lots = new SurfaceMesh();
-		SurfaceMesh gardens = new SurfaceMesh();
-		SurfaceMesh plazas = new SurfaceMesh();
+		Floor floor = new Floor(new SurfaceMesh(), new SurfaceMesh(), new SurfaceMesh(), new SurfaceMesh(), new SurfaceMesh(), new SurfaceMesh());
 		List<double[]> axis = axis();
 		for (double[] across : axis) {
 			for (double[] down : axis) {
 				double nearX = Math.max(across[0], Math.min(0, across[1]));
 				double nearZ = Math.max(down[0], Math.min(0, down[1]));
 				if (DesertDunes.outside(nearX, nearZ, this.width, this.depth) >= START) {
-					this.piece(across, down, roads, crossings, lots, gardens, plazas);
+					this.piece(across, down, floor);
 				}
 			}
 		}
-		this.gardens(host);
+		DesertGreenery green = new DesertGreenery();
+		DesertWalks walks = new DesertWalks(this, this.forms, green);
+		this.gardens(host, green);
+		this.lots(green, host);
+		walks.build();
 		this.lamps();
 		this.horizon();
 		PhongMaterial road = ArenaMaterials.textured(DesertTexture.ROAD, Color.gray(0.3));
@@ -172,9 +188,11 @@ final class DesertCity {
 		garden.setSelfIlluminationMap(DesertTexture.GARDEN_LIGHT);
 		PhongMaterial plaza = ArenaMaterials.textured(DesertTexture.MOSAIC, Color.gray(0.2));
 		plaza.setSelfIlluminationMap(DesertTexture.FLOOR_LIGHT);
-		host.arena.getChildren().addAll(roads.view(road), crossings.view(ArenaMaterials.textured(DesertTexture.ASPHALT, Color.gray(0.3))), lots.view(ArenaMaterials.textured(DesertTexture.PAVING, Color.gray(0.1))), gardens.view(garden),
-				plazas.view(plaza), this.horizon.view(DesertSkyline.skin()));
+		host.arena.getChildren().addAll(floor.roads().view(road), floor.crossings().view(ArenaMaterials.textured(DesertTexture.ASPHALT, Color.gray(0.3))), floor.walks().view(ArenaMaterials.textured(DesertTexture.PROMENADE, Color.gray(0.1))),
+				floor.lots().view(ArenaMaterials.textured(DesertTexture.PAVING, Color.gray(0.1))), floor.gardens().view(garden), floor.plazas().view(plaza), this.horizon.view(DesertSkyline.skin()));
 		host.arena.getChildren().addAll(this.forms.views());
+		host.arena.getChildren().addAll(green.views());
+		host.arena.getChildren().addAll(walks.views());
 	}
 
 	/** The pieces of one axis: a street, the block after it, the next street and so on, each as {from, to, 1 if it is a street, its index}. */
@@ -190,33 +208,41 @@ final class DesertCity {
 	}
 
 	/** One piece of the floor, where a piece of the x axis crosses a piece of the z axis: a crossing, a stretch of street or a block. */
-	private void piece(double[] across, double[] down, SurfaceMesh roads, SurfaceMesh crossings, SurfaceMesh lots, SurfaceMesh gardens, SurfaceMesh plazas) {
+	private void piece(double[] across, double[] down, Floor floor) {
 		boolean streetX = across[2] == 1;
 		boolean streetZ = down[2] == 1;
 		if (streetX && streetZ) {
-			lay(crossings, across, down, new float[] { 0, 0, 1, 0, 1, 1, 0, 1 });
+			// Two pedestrian streets cross on paving, any other crossing is asphalt
+			if (pedestrian((int) across[3]) && pedestrian((int) down[3])) {
+				paved(floor.lots(), across, down, PAVING);
+			} else {
+				lay(floor.crossings(), across, down, new float[] { 0, 0, 1, 0, 1, 1, 0, 1 });
+			}
 		} else if (streetX) {
 			float run = (float) ((down[1] - down[0]) / ROAD);
-			lay(roads, across, down, new float[] { 0, 0, 1, 0, 1, run, 0, run });
+			lay(pedestrian((int) across[3]) ? floor.walks() : floor.roads(), across, down, new float[] { 0, 0, 1, 0, 1, run, 0, run });
 		} else if (streetZ) {
 			float run = (float) ((across[1] - across[0]) / ROAD);
-			lay(roads, across, down, new float[] { 0, 0, 0, run, 1, run, 1, 0 });
+			lay(pedestrian((int) down[3]) ? floor.walks() : floor.roads(), across, down, new float[] { 0, 0, 0, run, 1, run, 1, 0 });
 		} else {
-			this.block(across, down, lots, gardens, plazas);
+			this.block(across, down, floor);
 		}
 	}
 
 	/** A block of the floor, with the picture of what stands on it. */
-	private void block(double[] across, double[] down, SurfaceMesh lots, SurfaceMesh gardens, SurfaceMesh plazas) {
+	private void block(double[] across, double[] down, Floor floor) {
 		Kind kind = this.kind((int) across[3], (int) down[3]);
 		if (kind == Kind.GARDEN) {
-			lay(gardens, across, down, new float[] { 0, 0, 1, 0, 1, 1, 0, 1 });
+			lay(floor.gardens(), across, down, new float[] { 0, 0, 1, 0, 1, 1, 0, 1 });
 		} else {
-			double tile = kind == Kind.PLAZA ? DesertArena.TILE : PAVING;
-			float[] coords = { (float) (across[0] / tile), (float) (down[0] / tile), (float) (across[1] / tile), (float) (down[0] / tile), (float) (across[1] / tile), (float) (down[1] / tile), (float) (across[0] / tile),
-					(float) (down[1] / tile) };
-			lay(kind == Kind.PLAZA ? plazas : lots, across, down, coords);
+			paved(kind == Kind.PLAZA ? floor.plazas() : floor.lots(), across, down, kind == Kind.PLAZA ? DesertArena.TILE : PAVING);
 		}
+	}
+
+	/** A rectangle of the floor with a picture that repeats every tile units, the same everywhere on the floor. */
+	private static void paved(SurfaceMesh mesh, double[] across, double[] down, double tile) {
+		float[] coords = { (float) (across[0] / tile), (float) (down[0] / tile), (float) (across[1] / tile), (float) (down[0] / tile), (float) (across[1] / tile), (float) (down[1] / tile), (float) (across[0] / tile), (float) (down[1] / tile) };
+		lay(mesh, across, down, coords);
 	}
 
 	/** A rectangle of the floor, from the x range and the z range of two pieces, facing up. */
@@ -226,7 +252,7 @@ final class DesertCity {
 	}
 
 	/** The fountain, the cypresses and the palms of every garden beyond the dunes, put in the host scene. */
-	private void gardens(BattleArena3D host) {
+	private void gardens(BattleArena3D host, DesertGreenery green) {
 		Random wild = new Random(3003);
 		LowPoly cypresses = new LowPoly();
 		DesertPalms palms = new DesertPalms(host);
@@ -236,6 +262,7 @@ final class DesertCity {
 				if (this.kind(column, row) == Kind.GARDEN && Math.hypot(middle[0], middle[1]) <= HOUSE_REACH + 200) {
 					this.fountain(middle[0], middle[1]);
 					this.cypresses(cypresses, middle, wild);
+					this.beds(green, middle, wild);
 					if (Math.hypot(middle[0], middle[1]) <= PALM_REACH) {
 						this.palms(palms, middle, wild);
 					}
@@ -244,6 +271,55 @@ final class DesertCity {
 		}
 		host.arena.getChildren().add(cypresses.view(ArenaMaterials.material(Color.web("#1d5b2e"))));
 		palms.show();
+	}
+
+	/** The plants of the beds of a garden: a tree in each, bougainvillea and oleander at the ends of the channels of water. */
+	private void beds(DesertGreenery green, double[] middle, Random wild) {
+		for (int bed = 0; bed < 4; bed++) {
+			double signX = bed % 2 * 2 - 1;
+			double signZ = bed / 2 * 2 - 1;
+			green.tree(bed % 2 == 0 ? 0 : 2, middle[0] + signX * 150, DesertDunes.PLAIN, middle[1] + signZ * 150, wild);
+			green.bougainvillea(middle[0] + signX * 45, DesertDunes.PLAIN, middle[1] + signZ * 185, wild);
+			green.oleander(middle[0] + signX * 185, DesertDunes.PLAIN, middle[1] + signZ * 45, wild);
+		}
+	}
+
+	/**
+	 * The plants of the lots: a tree at the end of each of the two paths that cross the lot between its houses, shrubs near its middle, a tree
+	 * in the middle of some lots, and a date palm at a corner of one lot in four.
+	 */
+	private void lots(DesertGreenery green, BattleArena3D host) {
+		Random wild = new Random(6006);
+		DesertPalms palms = new DesertPalms(host);
+		for (int column = -6; column < 6; column++) {
+			for (int row = -6; row < 6; row++) {
+				double[] middle = centre(column, row);
+				if (this.built(column, row) && this.kind(column, row) == Kind.LOT && Math.hypot(middle[0], middle[1]) <= PALM_REACH) {
+					this.lot(green, palms, middle, wild);
+				}
+			}
+		}
+		palms.show();
+	}
+
+	/** The plants of one lot. */
+	private void lot(DesertGreenery green, DesertPalms palms, double[] middle, Random wild) {
+		for (int path = 0; path < 4; path++) {
+			double dirX = path % 2 == 0 ? path - 1 : 0;
+			double dirZ = path % 2 == 1 ? path - 2 : 0;
+			green.tree(wild.nextInt(DesertGreenery.KINDS), middle[0] + dirX * 150, DesertDunes.PLAIN, middle[1] + dirZ * 150, wild);
+			if (path % 2 == 0) {
+				green.bougainvillea(middle[0] + dirX * 95, DesertDunes.PLAIN, middle[1] + dirZ * 95, wild);
+			} else {
+				green.oleander(middle[0] + dirX * 95, DesertDunes.PLAIN, middle[1] + dirZ * 95, wild);
+			}
+		}
+		if (wild.nextDouble() < 0.4) {
+			green.tree(1, middle[0], DesertDunes.PLAIN, middle[1], wild);
+		}
+		if (wild.nextInt(4) == 0) {
+			palms.plant(middle[0] + (wild.nextBoolean() ? 190 : -190), DesertDunes.PLAIN, middle[1] + (wild.nextBoolean() ? 190 : -190), wild);
+		}
 	}
 
 	/** The fountain in the middle of a garden: a short column with a lamp, and a jet of light over the pool. */

@@ -126,7 +126,7 @@ final class IslamicForms {
 		this.band(posX, posZ, radius * 1.04, ground - high * 0.3);
 		this.band(posX, posZ, radius * 1.74, balcony - 15);
 		this.band(posX, posZ, radius * 0.84, cap + high * 0.04);
-		this.dome(this.glass, posX, posZ, cap, radius, high * 0.1, 10);
+		this.dome(this.gold, posX, posZ, cap, radius, high * 0.1, 10);
 		this.spire(posX, posZ, cap - high * 0.095, high * 0.08, radius * 0.12);
 		this.halo(posX, posZ, balcony - high * 0.12, radius * 2.6);
 		this.needle(posX, posZ, cap - high * 0.175, high * 0.9);
@@ -137,7 +137,7 @@ final class IslamicForms {
 		this.ceramic.cylinderY(posX, posZ, radius, ground + 20, ground - high, 12);
 		this.band(posX, posZ, radius * 1.03, ground - high * 0.5);
 		this.ceramic.cylinderY(posX, posZ, radius * 1.18, ground - high, ground - high - 10, 12);
-		this.dome(this.glass, posX, posZ, ground - high - 10, radius * 1.1, radius * 0.9, 12);
+		this.dome(this.gold, posX, posZ, ground - high - 10, radius * 1.1, radius * 0.9, 12);
 		this.spire(posX, posZ, ground - high - 10 - radius * 0.86, radius * 0.7, radius * 0.1);
 	}
 

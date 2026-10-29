@@ -60,6 +60,9 @@ final class ArenaHud {
 
 	/** Width of the health bars */
 	private static final double HUD_BAR_WIDTH = 420;
+	/** The bar of the loading is small: a thin line */
+	private static final double LOADING_BAR_WIDTH = 120;
+	private static final double LOADING_BAR_HEIGHT = 4;
 
 	/** The damage trails draining, one per player */
 	private final Map<Integer, Timeline> lagDrains = new HashMap<>();
@@ -72,8 +75,9 @@ final class ArenaHud {
 		host.stageLabel.setVisible(false);
 		host.stageLabel.setManaged(false);
 		host.loadingBar.getStyleClass().add("arena-progress");
-		host.loadingBar.setPrefWidth(HUD_BAR_WIDTH);
-		VBox center = new VBox(10, host.stageLabel, host.loading, host.loadingBar, host.banner, host.subBanner);
+		host.loadingBar.setPrefWidth(LOADING_BAR_WIDTH);
+		host.loadingBar.setPrefHeight(LOADING_BAR_HEIGHT);
+		VBox center = new VBox(10, host.stageLabel, host.banner, host.subBanner);
 		center.setAlignment(Pos.CENTER);
 		center.setMouseTransparent(true);
 
@@ -92,7 +96,13 @@ final class ArenaHud {
 		bottom.setAlignment(Pos.CENTER_LEFT);
 		bottom.setPadding(new Insets(0, 24, 16, 24));
 
-		BorderPane hud = new BorderPane(center, host.hudTop, null, bottom, null);
+		// The loading is a small line in the corner, over the help, and it goes away with the loading
+		HBox loadingRow = new HBox(12, host.loading, host.loadingBar);
+		loadingRow.setAlignment(Pos.CENTER_LEFT);
+		loadingRow.setPadding(new Insets(0, 24, 0, 24));
+		loadingRow.visibleProperty().bind(host.loading.visibleProperty());
+		loadingRow.managedProperty().bind(loadingRow.visibleProperty());
+		BorderPane hud = new BorderPane(center, host.hudTop, null, new VBox(8, loadingRow, bottom), null);
 		hud.setPickOnBounds(false);
 		this.updateInfo();
 		return hud;

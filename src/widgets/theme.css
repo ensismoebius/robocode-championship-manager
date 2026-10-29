@@ -569,10 +569,15 @@
 	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.9), 22, 0.4, 0, 0);
 }
 
+.arena-loading {
+	-fx-font-family: "Press Start 2P";
+	-fx-font-size: 8px;
+	-fx-text-fill: rgba(255, 255, 255, 0.5);
+}
+
 .arena-progress {
 	-fx-accent: -rc-accent;
-	-fx-control-inner-background: rgba(255, 255, 255, 0.12);
-	-fx-effect: dropshadow(gaussian, rgba(255, 61, 110, 0.7), 14, 0.3, 0, 0);
+	-fx-opacity: 0.6;
 }
 
 .arena-progress > .track {
@@ -585,7 +590,7 @@
 	-fx-background-color: -rc-accent;
 	-fx-background-radius: 0;
 	-fx-background-insets: 0;
-	-fx-padding: 8;
+	-fx-padding: 2;
 }
 
 .arena-callout {

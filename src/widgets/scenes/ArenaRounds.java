@@ -44,6 +44,10 @@ final class ArenaRounds {
 	private double flyFovEnd;
 	private double flyMirrorX = 1;
 	private double flyMirrorZ = 1;
+	/** How long the tour played while the battle loaded */
+	private double tourClock;
+	/** Whether the camera was on the tour, waiting for the battle, when it was ready: the fly by goes on from where the camera is */
+	private boolean continuing;
 	/** The number of the countdown on the screen, 0 if none yet */
 	private int countdown;
 	private String roundTitle = "";
@@ -174,7 +178,9 @@ final class ArenaRounds {
 		host.shotTime = 0;
 		host.shotDuration = INTRO_SECONDS + 2.5;
 		host.shotSeed = host.random.nextDouble() * Math.PI * 2;
-		host.director.cut();
+		if (!(round == 0 && this.continuing)) {
+			host.director.cut();
+		}
 		if (round == 0) {
 			// Before the first battle the camera flies over the arena first
 			this.beginFlyBy();
@@ -201,13 +207,45 @@ final class ArenaRounds {
 		host.hud.updateInfo();
 	}
 
+	/** The arena is made: the sides the camera looks from on its tour are chosen, and the tour is planned. */
+	void beginLoading() {
+		this.flyMirrorX = host.random.nextBoolean() ? 1 : -1;
+		this.flyMirrorZ = host.random.nextBoolean() ? 1 : -1;
+		this.planTour();
+	}
+
+	/** The robots are presented and the battle is still not ready: the camera starts the tour, from its first stop, and goes on with it until it is. */
+	void startWaiting() {
+		this.continuing = false;
+		if (!host.flyTour.isEmpty()) {
+			this.tourAt(0, true);
+			System.arraycopy(host.eyeTarget, 0, host.eye, 0, 3);
+			System.arraycopy(host.lookTarget, 0, host.look, 0, 3);
+			host.fov = host.fovTarget;
+		}
+	}
+
+	/** Plans the tour of the arena as it is now, from the sides chosen. */
+	void planTour() {
+		host.flyTour.plan(host, this.flyMirrorX, this.flyMirrorZ);
+	}
+
+	/** The camera on the tour while the battle loads: when the tour ends the last stop gives way to the first, and it goes around again. */
+	void loadingTour(double time) {
+		this.tourAt(time, true);
+	}
+
+	/** The battle is ready: what the camera saw of the tour while it waited is not shown again by the fly by. */
+	void endLoading() {
+		this.continuing = host.phase == Phase.LOADING && host.showcase.started() && !host.flyTour.isEmpty();
+		this.tourClock = host.phaseTime;
+	}
+
 	/**
 	 * The camera flies over the arena, low and fast past the walls, and ends
 	 * where the battle starts
 	 */
 	void beginFlyBy() {
-		this.flyMirrorX = host.random.nextBoolean() ? 1 : -1;
-		this.flyMirrorZ = host.random.nextBoolean() ? 1 : -1;
 		host.phase = Phase.FLYBY;
 		host.phaseTime = 0;
 		host.hud.hideBanner();
@@ -221,31 +259,50 @@ final class ArenaRounds {
 		System.arraycopy(host.eyeTarget, 0, this.flyEyeEnd, 0, 3);
 		System.arraycopy(host.lookTarget, 0, this.flyLookEnd, 0, 3);
 		this.flyFovEnd = host.fovTarget;
-		// The fly by starts with its tour: the stops where the camera looks at something before the trip
-		host.flyTour.plan(host, this.flyMirrorX, this.flyMirrorZ);
-		// Starts at the first point, no sliding to it
 		if (host.flyTour.isEmpty()) {
 			this.flyByPose(0);
 		} else {
 			this.flyByTour(0);
 		}
-		System.arraycopy(host.eyeTarget, 0, host.eye, 0, 3);
-		System.arraycopy(host.lookTarget, 0, host.look, 0, 3);
-		host.fov = host.fovTarget;
+		// Starts at the first point, no sliding to it, unless the camera was touring: it goes on, with no cut
+		if (!this.continuing) {
+			System.arraycopy(host.eyeTarget, 0, host.eye, 0, 3);
+			System.arraycopy(host.lookTarget, 0, host.look, 0, 3);
+			host.fov = host.fovTarget;
+		}
 		host.hud.updateInfo();
 	}
 
 	/** How high above the ground the camera stays on the trip of the fly by, in units of the field */
 	private static final double FLYBY_CLEARANCE = 40;
 
-	/** How long the tour of the fly by lasts before the trip: nothing if it has no stop */
+	/**
+	 * How long the tour lasts in the fly by, before the trip: nothing if it has no stop. If the camera was touring while the
+	 * battle loaded, it goes on to the end of the pass it is on, where the last stop is, and then the trip begins.
+	 */
 	double flyByHold() {
-		return host.flyTour.duration();
+		if (host.flyTour.isEmpty()) {
+			return 0;
+		}
+		double length = host.flyTour.duration();
+		if (!this.continuing) {
+			return length;
+		}
+		return ((host.flyTour.passEnd() - this.tourClock) % length + length) % length;
+	}
+
+	/** Puts the camera where the tour is at that time of the fly by, which goes on from what the loading showed. */
+	void flyByTour(double time) {
+		if (this.continuing) {
+			this.tourAt(this.tourClock + time, true);
+		} else {
+			this.tourAt(time, false);
+		}
 	}
 
 	/** Puts the camera where the tour is at that time, easing to it so it glides from one stop to the next. */
-	void flyByTour(double time) {
-		host.flyTour.update(time);
+	private void tourAt(double time, boolean cyclic) {
+		host.flyTour.update(time, cyclic);
 		System.arraycopy(host.flyTour.eye, 0, host.eyeTarget, 0, 3);
 		System.arraycopy(host.flyTour.look, 0, host.lookTarget, 0, 3);
 		host.fovTarget = host.flyTour.fov;
