@@ -483,6 +483,8 @@ O Linux gera um pacote por distribuição (precisa de Docker); cada sistema gera
 | macOS | `packaging/build-installer.sh` | `dist/*.dmg` |
 | Windows (precisa do WiX Toolset 3) | `packaging\build-installer.ps1` | `dist\*.exe` |
 
+Em um Linux com Docker e o Windows do WinBoat ligado, `packaging/build-all-installers.sh` gera os pacotes de Linux e o `.exe` de uma vez (`linux` ou `windows` como argumento gera só um). O Windows é o único passo manual: o script escreve `windows-build.bat` em `~/.cache/robocode-champ-installers` e espera você abri-lo com dois cliques no Windows (**Shared** > `.cache`); ele baixa JDK 21, Maven e WiX 3 para `C:\rcm-tools` se faltarem, compila lá e devolve o `.exe` para `dist/`.
+
 O workflow `.github/workflows/installers.yml` gera os instaladores de Linux, Windows e macOS quando uma tag `v*` é enviada (ou manualmente), e os guarda como artefatos.
 
 > [!NOTE]

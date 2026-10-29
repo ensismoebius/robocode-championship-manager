@@ -483,6 +483,8 @@ Linux builds one package per distribution (needs Docker). Each system builds its
 | macOS | `packaging/build-installer.sh` | `dist/*.dmg` |
 | Windows (needs WiX Toolset 3) | `packaging\build-installer.ps1` | `dist\*.exe` |
 
+On a Linux with Docker and the Windows of WinBoat running, `packaging/build-all-installers.sh` builds the Linux packages and the `.exe` in one go (`linux` or `windows` as an argument builds just one). Windows is the only manual step: the script writes `windows-build.bat` in `~/.cache/robocode-champ-installers` and waits for you to open it with a double click in Windows (**Shared** > `.cache`); it downloads JDK 21, Maven and WiX 3 to `C:\rcm-tools` if they are missing, builds there and brings the `.exe` back to `dist/`.
+
 The `.github/workflows/installers.yml` workflow builds the Linux, Windows and macOS installers when a `v*` tag is pushed (or by hand), and keeps them as artifacts.
 
 > [!NOTE]
