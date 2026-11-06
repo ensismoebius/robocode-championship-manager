@@ -16,9 +16,9 @@ Automatically builds the ranks
 Simple to control with the keyboard!</description>
 
 	<properties>
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.release>23</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<javafx.version>21.0.12</javafx.version>
+		<javafx.version>23.0.2</javafx.version>
 		<jetty.version>12.1.14</jetty.version>
 		<hibernate.version>7.4.13.Final</hibernate.version>
 		<!-- JavaFX native libraries of the system being built, see the profiles below -->
