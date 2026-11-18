@@ -35,10 +35,10 @@
 				<p class="hint" id="teamWarcryHint">Obrigatório, com até 500 caracteres. <span id="teamWarcryCount">0/500</span></p>
 				<input type="text" id="teamWarcry" name="teamWarcry" value="{teamWarcry}" placeholder="Lema do time" maxlength="500" required="required" aria-describedby="teamWarcryHint">
 				<label for="teamMusic">Música tema do time</label>
-				<p class="hint" id="teamMusicHint">Arquivo .mp3 de no máximo 1 MB. Precisa ser um áudio que possa ser tocado.</p>
+				<p class="hint" id="teamMusicHint">Arquivo .mp3 que possa ser tocado. Se tiver mais de 1 MB, o sistema usa só os primeiros segundos.</p>
 				<input type="file" id="teamMusic" name="teamMusic" accept=".mp3,audio/mpeg" {fileRequired} aria-describedby="teamMusicHint">
 				<label for="teamLogo">Logotipo do time</label>
-				<p class="hint" id="teamLogoHint">Arquivo .gif, .jpg ou .png de no máximo 1 MB e 640 x 480 pixels.</p>
+				<p class="hint" id="teamLogoHint">Arquivo .gif, .jpg ou .png. Se tiver mais de 1 MB ou 640 x 480 pixels, o sistema reduz a imagem.</p>
 				<input type="file" id="teamLogo" name="teamLogo" accept=".gif,.jpg,.jpeg,.png,image/*" {fileRequired} aria-describedby="teamLogoHint">
 			</fieldset>
 
@@ -62,7 +62,7 @@
 				<legend>Dados do robô</legend>
 				<p class="info">{robotInfo}</p>
 				<label for="robotJarFile">Robô compilado: o arquivo .jar gerado pelo empacotador do Robocode</label>
-				<p class="hint" id="robotJarFileHint">Nome no formato time.NomeDoRobo_1.0.jar, como gerado pelo empacotador. O nome do time e o do robô são lidos desse nome: no time use apenas letras sem acento, números e _; no robô use letras sem acento, números, _ e pontos entre as partes. Até 100 caracteres em cada nome.</p>
+				<p class="hint" id="robotJarFileHint">O nome do time e o do robô são lidos de dentro do .jar: você não precisa informá-los.</p>
 				<input type="file" id="robotJarFile" name="robotJarFile" accept=".jar" {fileRequired} aria-describedby="robotJarFileHint">
 				<label for="robotJavaFile">Código fonte do robô: o arquivo .java</label>
 				<p class="hint" id="robotJavaFileHint">Arquivo .java com o código fonte do robô, de no máximo 1 MB.</p>
@@ -78,14 +78,11 @@
 			warcryMax: 500,
 			nameMax: 100,
 			fileMaxBytes: 1024 * 1024,
-			logoMaxWidth: 640,
-			logoMaxHeight: 480
+			// The music and the logo may be larger than that: the system makes them fit, up to this size
+			mediaMaxBytes: 8 * 1024 * 1024
 		};
 
 		const EMAIL = /^[^@\s]+@[^@\s]+$/;
-		const TEAM_NAME = /^[A-Za-z0-9_]+$/;
-		const ROBOT_NAME = /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$/;
-		const JAR_FILE_NAME = /^([^.]+)\.(.+?)_[0-9][0-9.]*\.jar$/;
 
 		const form = document.querySelector("form");
 		const errorBox = document.getElementById("formErrors");
@@ -94,7 +91,7 @@
 		const warcryCount = document.getElementById("teamWarcryCount");
 
 		/** Checks the presence, the extension, the size and the content of a file. Returns the error or an empty text. */
-		function checkFile(input, extensions, emptyMessage, missingMessage) {
+		function checkFile(input, extensions, emptyMessage, missingMessage, maxBytes = LIMITS.fileMaxBytes) {
 			const file = input.files[0];
 			if (!file) {
 				return input.required ? missingMessage : "";
@@ -105,8 +102,8 @@
 			if (file.size === 0) {
 				return emptyMessage;
 			}
-			if (file.size > LIMITS.fileMaxBytes) {
-				return "O arquivo tem mais de 1 MB. Envie um arquivo menor.";
+			if (file.size > maxBytes) {
+				return "O arquivo tem mais de " + maxBytes / 1024 / 1024 + " MB. Envie um arquivo menor.";
 			}
 			return "";
 		}
@@ -160,41 +157,20 @@
 				return EMAIL.test(mail) ? "" : "Informe um e-mail válido, no formato nome@dominio.";
 			},
 
-			"robotJarFile": input => {
-				const message = checkFile(input, [".jar"], "O arquivo .jar está vazio.", "Envie o arquivo .jar do robô.");
-				if (message || !input.files[0]) {
-					return message;
-				}
-				const match = JAR_FILE_NAME.exec(input.files[0].name);
-				if (!match) {
-					return "O nome do arquivo deve ser como time.NomeDoRobo_1.0.jar, gerado pelo empacotador do Robocode.";
-				}
-				if (match[1].length > LIMITS.nameMax || !TEAM_NAME.test(match[1])) {
-					return "O nome do time pode ter apenas letras sem acento, números e _, com até 100 caracteres.";
-				}
-				if (match[2].length > LIMITS.nameMax || !ROBOT_NAME.test(match[2])) {
-					return "O nome do robô pode ter apenas letras sem acento, números, _ e pontos entre as partes, com até 100 caracteres.";
-				}
-				return "";
-			},
+			"robotJarFile": input => checkFile(input, [".jar"], "O arquivo .jar está vazio.", "Envie o arquivo .jar do robô."),
 
 			"robotJavaFile": input => checkFile(input, [".java"], "O arquivo .java está vazio.", "Envie o arquivo .java do robô."),
 
-			"teamMusic": input => checkFile(input, [".mp3"], "A música está vazia.", "Envie a música do time."),
+			"teamMusic": input => checkFile(input, [".mp3"], "A música está vazia.", "Envie a música do time.", LIMITS.mediaMaxBytes),
 
 			"teamLogo": async input => {
-				const message = checkFile(input, [".gif", ".jpg", ".jpeg", ".png"], "O logotipo está vazio.", "Envie o logotipo do time.");
+				const message = checkFile(input, [".gif", ".jpg", ".jpeg", ".png"], "O logotipo está vazio.", "Envie o logotipo do time.", LIMITS.mediaMaxBytes);
 				if (message || !input.files[0]) {
 					return message;
 				}
+				// An image that is too large is scaled down by the system, so only an image that cannot be read is refused
 				const size = await imageSize(input.files[0]);
-				if (size === null) {
-					return "Arquivo de logotipo inválido! Use .gif, .jpg ou .png.";
-				}
-				if (size.width > LIMITS.logoMaxWidth || size.height > LIMITS.logoMaxHeight) {
-					return "O logotipo deve ter no máximo 640 x 480 pixels, mas tem " + size.width + " x " + size.height + " pixels.";
-				}
-				return "";
+				return size === null ? "Arquivo de logotipo inválido! Use .gif, .jpg ou .png." : "";
 			}
 		};
 

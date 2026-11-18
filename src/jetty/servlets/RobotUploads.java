@@ -14,6 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.Part;
 import model.Opponent;
+import utils.media.MediaFit;
 import widgets.Sound;
 
 /**
@@ -61,6 +62,27 @@ final class RobotUploads {
 		}
 		if (teamLogo == null && isNew) {
 			errors.add("Envie o logotipo do time!");
+		}
+	}
+
+	/** The logo scaled down, keeping its proportions, when it is larger than the registration accepts; as it is when it fits or is not an image. */
+	static Upload fitLogo(Upload teamLogo) {
+		return teamLogo == null ? null : new Upload(teamLogo.fileName(), MediaFit.logo(teamLogo.content(), MAX_FILE_SIZE, MAX_LOGO_WIDTH, MAX_LOGO_HEIGHT));
+	}
+
+	/** The music cut to its first seconds when it is larger than the registration accepts; as it is when it fits or is not an mp3. */
+	static Upload fitMusic(Upload teamMusic) {
+		return teamMusic == null ? null : new Upload(teamMusic.fileName(), MediaFit.music(teamMusic.content(), MAX_FILE_SIZE).data());
+	}
+
+	/** When a music was sent, the robot starts it from the beginning if the start it had is past the end of what was kept (the music may have been cut). */
+	static void restartIfPast(Opponent robot, Upload teamMusic) {
+		if (teamMusic == null) {
+			return;
+		}
+		double seconds = MediaFit.music(teamMusic.content(), MAX_FILE_SIZE).seconds();
+		if (seconds > 0 && robot.getMusicStart() >= seconds) {
+			robot.setMusicStart(0);
 		}
 	}
 

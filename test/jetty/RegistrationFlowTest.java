@@ -228,7 +228,7 @@ class RegistrationFlowTest {
 		assertTrue(page.contains("Já existe um robô chamado team1.MyBot"), page);
 
 		page = newRobotForm("bad", "MyBot.jar").post(newClient(), "new");
-		assertTrue(page.contains("não está no formato correto"), page);
+		assertTrue(page.contains("Não foi possível saber o time e o robô"), page);
 	}
 
 	@Test

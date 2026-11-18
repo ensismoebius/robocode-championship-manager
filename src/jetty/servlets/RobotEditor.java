@@ -16,6 +16,7 @@ import model.Opponent;
 import utils.configuration.Configuration;
 import utils.database.Database;
 import utils.text.TextTemplate;
+import utils.robocode.RobotJar;
 import utils.web.Html;
 import utils.web.PasswordHasher;
 import utils.web.ServletAuthenticator;
@@ -244,7 +245,6 @@ public class RobotEditor extends HttpServlet {
 	 * @return the validation errors, empty if everything is fine
 	 */
 	private List<String> fillOpponent(HttpServletRequest req, Opponent robot) throws IOException, ServletException {
-
 		List<String> errors = new ArrayList<String>();
 		boolean isNew = robot.getId() == 0;
 
@@ -256,11 +256,11 @@ public class RobotEditor extends HttpServlet {
 		String[] arrName = req.getParameterValues("name[]");
 		String[] arrEmail = req.getParameterValues("email[]");
 		String[] arrRegistration = req.getParameterValues("registration[]");
-
 		Upload robotJar = RobotUploads.read(req, "robotJarFile");
 		Upload robotJava = RobotUploads.read(req, "robotJavaFile");
-		Upload teamMusic = RobotUploads.read(req, "teamMusic");
-		Upload teamLogo = RobotUploads.read(req, "teamLogo");
+		// A music or a logo that is too large is made to fit, not refused
+		Upload teamMusic = RobotUploads.fitMusic(RobotUploads.read(req, "teamMusic"));
+		Upload teamLogo = RobotUploads.fitLogo(RobotUploads.read(req, "teamLogo"));
 
 		Names names = this.checkUploads(errors, isNew, robot, robotJar, robotJava, teamMusic, teamLogo);
 
@@ -279,6 +279,7 @@ public class RobotEditor extends HttpServlet {
 		// Nothing is wrong, fill the robot!!
 		fillIdentity(robot, names, authorsForm, login, password, keepPassword);
 		RobotUploads.copyUploads(robot, robotJar, robotJava, teamMusic, teamLogo);
+		RobotUploads.restartIfPast(robot, teamMusic);
 
 		return errors;
 	}
@@ -297,7 +298,7 @@ public class RobotEditor extends HttpServlet {
 	}
 
 	/**
-	 * @return the names in the .jar file name, or null if there is no valid .jar
+	 * @return the names the .jar holds (or, if it does not say, the ones in its file name), or null if there is no valid .jar
 	 *         (the robot keeps its names then)
 	 */
 	private Names checkJar(List<String> errors, Upload robotJar, Opponent robot) {
@@ -308,12 +309,18 @@ public class RobotEditor extends HttpServlet {
 			errors.add("Arquivo .jar inválido!");
 		}
 
-		Matcher matcher = JAR_FILE_NAME.matcher(robotJar.fileName());
-		if (!matcher.matches()) {
-			errors.add("O nome do arquivo .jar não está no formato correto! Use o empacotador do robocode para gerá-lo!");
-			return null;
+		// The team and the robot are the ones the .jar holds; a .jar that does not say has them in its file name, as the packager writes it
+		String[] fromJar = RobotJar.names(robotJar.content());
+		String[] parts = fromJar;
+		if (parts == null) {
+			Matcher matcher = JAR_FILE_NAME.matcher(robotJar.fileName());
+			if (!matcher.matches()) {
+				errors.add("Não foi possível saber o time e o robô deste .jar! Use o empacotador do robocode para gerá-lo!");
+				return null;
+			}
+			parts = new String[] { matcher.group(1), matcher.group(2) };
 		}
-		Names names = new Names(matcher.group(1), matcher.group(2));
+		Names names = new Names(parts[0], parts[1]);
 
 		// The team and robot names must have only numbers and/or alphabetical chars
 		if (!TEAM_NAME.matcher(names.team()).matches()) {
@@ -321,6 +328,10 @@ public class RobotEditor extends HttpServlet {
 		}
 		if (!ROBOT_NAME.matcher(names.robot()).matches() || names.robot().length() > MAX_NAME_LENGTH) {
 			errors.add("O nome do robô pode ter APENAS caracteres alfabéticos e numéricos!");
+		}
+		String mismatch = fromJar == null ? RobotJar.mismatch(robotJar.content(), names.team(), names.robot()) : null;
+		if (mismatch != null) {
+			errors.add(mismatch);
 		}
 		if (errors.isEmpty() && this.robotNameTaken(names.team(), names.robot(), robot.getId())) {
 			errors.add("Já existe um robô chamado " + names.team() + "." + names.robot() + ", escolha outro nome.");

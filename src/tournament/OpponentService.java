@@ -17,6 +17,8 @@ import model.Author;
 import model.Championship;
 import model.Opponent;
 import utils.database.Database;
+import utils.media.MediaFit;
+import utils.robocode.RobotJar;
 import utils.web.PasswordHasher;
 import widgets.Sound;
 
@@ -75,21 +77,24 @@ public final class OpponentService {
 	 * @throws IllegalArgumentException
 	 *             with the message to show when something is wrong
 	 */
-	public static Opponent save(long opponentId, RobotData data) {
+	public static Opponent save(long opponentId, RobotData sent) {
 		boolean isNew = opponentId == 0;
+		RobotData data = named(sent);
 		checkIdentity(data, isNew);
 		checkAuthors(data.authors());
-		checkFiles(data, isNew);
+		// The logo and the music that are too large are made to fit, not refused
+		RobotData fitted = fitted(data);
+		checkFiles(fitted, isNew);
 
 		return Database.inTransaction(entityManager -> {
 			Opponent robot = isNew ? new Opponent() : entityManager.find(Opponent.class, opponentId);
 			if (robot == null) {
 				throw new IllegalArgumentException("Robô não encontrado, talvez ele tenha sido removido");
 			}
-			checkTaken(entityManager, opponentId, data);
+			checkTaken(entityManager, opponentId, fitted);
 
-			List<Author> authors = authorsOf(robot, data);
-			fill(robot, data);
+			List<Author> authors = authorsOf(robot, fitted);
+			fill(robot, fitted);
 			robot.getAuthors().clear();
 			robot.getAuthors().addAll(authors);
 
@@ -122,6 +127,43 @@ public final class OpponentService {
 			entityManager.remove(robot);
 			return null;
 		});
+	}
+
+	/**
+	 * The data with the logo scaled down and the music cut to its first seconds, when they are larger than the registration accepts. A start
+	 * of the music that fell after the end of the part that was kept goes back to the beginning.
+	 */
+	private static RobotData fitted(RobotData data) {
+		byte[] image = data.image() == null ? null : fitLogo(data.image());
+		byte[] music = data.music();
+		double start = data.musicStart();
+		if (music != null) {
+			MediaFit.Music fit = fitMusic(music);
+			music = fit.data();
+			if (fit.cut() && start >= fit.seconds()) {
+				start = 0;
+			}
+		}
+		return new RobotData(data.team(), data.name(), data.login(), data.password(), data.battleCry(), start, data.sourceCode(), image, music, data.jar(), data.authors());
+	}
+
+	/** The data with the team and the robot the .jar holds, when one was sent and it says them: they are not for the user to type. */
+	private static RobotData named(RobotData data) {
+		String[] names = data.jar() == null ? null : RobotJar.names(data.jar());
+		if (names == null) {
+			return data;
+		}
+		return new RobotData(names[0], names[1], data.login(), data.password(), data.battleCry(), data.musicStart(), data.sourceCode(), data.image(), data.music(), data.jar(), data.authors());
+	}
+
+	/** The logo scaled down, keeping its proportions, until it has at most 640 x 480 pixels and 1 MB; as it is when it already fits. */
+	public static byte[] fitLogo(byte[] image) {
+		return MediaFit.logo(image, MAX_FILE_SIZE, MAX_LOGO_WIDTH, MAX_LOGO_HEIGHT);
+	}
+
+	/** The music cut to its first seconds, until it has at most 1 MB; as it is when it already fits. */
+	public static MediaFit.Music fitMusic(byte[] music) {
+		return MediaFit.music(music, MAX_FILE_SIZE);
 	}
 
 	/**
@@ -227,6 +269,12 @@ public final class OpponentService {
 		}
 		if (data.jar() != null && (data.jar().length == 0 || data.jar().length > MAX_JAR_SIZE)) {
 			throw new IllegalArgumentException("O arquivo .jar está vazio ou tem mais de " + MAX_JAR_SIZE / 1024 / 1024 + " MB");
+		}
+		if (data.jar() != null) {
+			String mismatch = RobotJar.mismatch(data.jar(), data.team().trim(), data.name().trim());
+			if (mismatch != null) {
+				throw new IllegalArgumentException(mismatch);
+			}
 		}
 		if (data.music() != null) {
 			checkMusic(data.music());

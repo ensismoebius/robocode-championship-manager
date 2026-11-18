@@ -73,6 +73,71 @@ class OpponentServiceTest {
 		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, withoutFiles));
 	}
 
+	private static byte[] noise(int width, int height) throws IOException {
+		java.util.Random random = new java.util.Random(3);
+		BufferedImage picture = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		for (int posY = 0; posY < height; posY++) {
+			for (int posX = 0; posX < width; posX++) {
+				picture.setRGB(posX, posY, random.nextInt());
+			}
+		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ImageIO.write(picture, "png", out);
+		return out.toByteArray();
+	}
+
+	@Test
+	void aLogoAndASongLargerThanTheLimitAreFitInsteadOfRefused() throws IOException {
+		ByteArrayOutputStream song = new ByteArrayOutputStream();
+		for (int copy = 0; copy < 140; copy++) {
+			song.write(tone());
+		}
+		byte[] bigSong = song.toByteArray();
+		byte[] bigLogo = noise(1400, 1000);
+		assertTrue(bigSong.length > 1024 * 1024 && bigLogo.length > 1024 * 1024);
+		RobotData base = robot("alpha", "Corners", "alpha-login");
+
+		Opponent saved = OpponentService.save(0, new RobotData(base.team(), base.name(), base.login(), base.password(), base.battleCry(), 3000, base.sourceCode(), bigLogo, bigSong, base.jar(), base.authors()));
+
+		Opponent read = OpponentService.all().stream().filter(robot -> robot.getId() == saved.getId()).findFirst().orElseThrow();
+		assertTrue(read.getMusic().length <= 1024 * 1024);
+		assertTrue(read.getMusic().length > bigSong.length / 1000);
+		assertTrue(read.getImage().length <= 1024 * 1024);
+		BufferedImage logo = ImageIO.read(new java.io.ByteArrayInputStream(read.getImage()));
+		assertTrue(logo.getWidth() <= 640 && logo.getHeight() <= 480);
+		// The start of the song was past what is kept, so it plays from the beginning
+		assertEquals(0, read.getMusicStart());
+	}
+
+	@Test
+	void theTeamAndTheRobotAreTheOnesTheJarHoldsWhateverWasTyped() throws IOException {
+		RobotData base = robot("alpha", "Corners", "alpha-login");
+
+		Opponent saved = OpponentService.save(0, new RobotData("x", "q", base.login(), base.password(), base.battleCry(), 0, base.sourceCode(), base.image(), base.music(),
+				utils.robocode.RobotJarTest.jarOf("charlie.Walls"), base.authors()));
+
+		assertEquals("charlie.Walls", saved.getFullName());
+		assertEquals("charlie.Walls", OpponentService.all().get(0).getFullName());
+	}
+
+	@Test
+	void aJarThatHoldsManyRobotsKeepsTheNamesAndIsCheckedAgainstThem() throws IOException {
+		RobotData base = robot("alpha", "Corners", "alpha-login");
+		java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+		try (java.util.zip.ZipOutputStream zip = new java.util.zip.ZipOutputStream(bytes)) {
+			for (String robot : List.of("one.A", "one.B")) {
+				zip.putNextEntry(new java.util.zip.ZipEntry(robot.replace('.', '/') + ".properties"));
+				zip.write(("robot.classname=" + robot).getBytes());
+				zip.closeEntry();
+			}
+		}
+
+		IllegalArgumentException refused = assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData("x", "q", base.login(), base.password(), base.battleCry(), 0,
+				base.sourceCode(), base.image(), base.music(), bytes.toByteArray(), base.authors())));
+
+		assertTrue(refused.getMessage().contains("one.A"), refused.getMessage());
+	}
+
 	@Test
 	void theNameOfTheRobotAndTheLoginBelongToASingleTeam() throws IOException {
 		OpponentService.save(0, robot("alpha", "Corners", "alpha-login"));
@@ -117,7 +182,6 @@ class OpponentServiceTest {
 		RobotData base = robot("alpha", "Corners", "alpha-login");
 		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData("al pha", base.name(), base.login(), base.password(), base.battleCry(), 0, base.sourceCode(), base.image(), base.music(), base.jar(), base.authors())));
 		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData(base.team(), base.name(), base.login(), base.password(), "", 0, base.sourceCode(), base.image(), base.music(), base.jar(), base.authors())));
-		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData(base.team(), base.name(), base.login(), base.password(), base.battleCry(), 0, base.sourceCode(), png(641, 100), base.music(), base.jar(), base.authors())));
 		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData(base.team(), base.name(), base.login(), base.password(), base.battleCry(), 0, base.sourceCode(), base.image(), new byte[] { 1, 2 }, base.jar(), base.authors())));
 		assertThrows(IllegalArgumentException.class, () -> OpponentService.save(0, new RobotData(base.team(), base.name(), base.login(), base.password(), base.battleCry(), 0, base.sourceCode(), base.image(), base.music(), base.jar(),
 				List.of(new AuthorData(0, "Ada", "12a", "ada@time.org")))));

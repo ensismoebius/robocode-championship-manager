@@ -52,4 +52,19 @@ final class RobotFiles {
 		Matcher matcher = JAR_FILE_NAME.matcher(jarName);
 		return matcher.matches() ? new String[] { matcher.group(1), matcher.group(2) } : null;
 	}
+
+	/** The team and the robot of a .jar: the ones it holds, or else the ones in the name of its file; null when neither says. */
+	static String[] namesOf(String jarName, byte[] jar) {
+		String[] held = utils.robocode.RobotJar.names(jar);
+		return held != null ? held : namesOf(jarName);
+	}
+
+	/** Whether the start typed for a music is past the end of a music that lasts the given seconds; a start that is not a number is not. */
+	static boolean startPast(String typed, double seconds) {
+		try {
+			return Double.parseDouble(typed.trim().replace(',', '.')) >= seconds;
+		} catch (NumberFormatException notNumber) {
+			return false;
+		}
+	}
 }

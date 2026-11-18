@@ -31,6 +31,7 @@ import model.Author;
 import model.Opponent;
 import tournament.OpponentService;
 import tournament.OpponentService.RobotData;
+import utils.media.MediaFit;
 import widgets.ArcadeBackground;
 import widgets.GameDialog;
 import widgets.Sound;
@@ -150,8 +151,11 @@ public class RobotsEditor extends StackPane {
 			this.sourceInfo.setText(after.isEmpty() ? "Sem código fonte" : after.lines().count() + " linhas");
 			this.markDirty();
 		});
-		this.team.setPromptText("Time");
-		this.name.setPromptText("Robô");
+		// The team and the robot are the ones of the .jar: they are shown, not typed
+		this.team.setPromptText("Time (vem do .jar)");
+		this.name.setPromptText("Robô (vem do .jar)");
+		this.team.setEditable(false);
+		this.name.setEditable(false);
 		this.login.setPromptText("Login");
 		this.musicStart.setPrefColumnCount(4);
 
@@ -373,7 +377,7 @@ public class RobotsEditor extends StackPane {
 		}
 		this.robots.getSelectionModel().clearSelection();
 		this.show(new Opponent());
-		this.team.requestFocus();
+		this.login.requestFocus();
 	}
 
 	/** Remembers that the form has changes that were not saved. */
@@ -387,9 +391,14 @@ public class RobotsEditor extends StackPane {
 
 	/** Chooses a new logo, shown at once. */
 	private void pickLogo() {
-		File file = RobotFiles.pick("Logotipo do time (até 640 x 480 pixels e 1 MB)", "Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif");
-		byte[] bytes = RobotFiles.read(file, this.error);
-		if (bytes != null) {
+		File file = RobotFiles.pick("Logotipo do time (reduzido se passar de 640 x 480 pixels ou 1 MB)", "Imagens", "*.png", "*.jpg", "*.jpeg", "*.gif");
+		byte[] read = RobotFiles.read(file, this.error);
+		if (read != null) {
+			// Too large: scaled down, keeping its proportions
+			byte[] bytes = OpponentService.fitLogo(read);
+			if (bytes != read) {
+				GameDialog.toast("Imagem reduzida para caber no limite (" + bytes.length / 1024 + " KB)");
+			}
 			this.pendingImage = bytes;
 			this.logo.setImage(new Image(new ByteArrayInputStream(bytes)));
 			this.markDirty();
@@ -398,27 +407,35 @@ public class RobotsEditor extends StackPane {
 
 	/** Chooses a new music, which can be played at once. */
 	private void pickMusic() {
-		File file = RobotFiles.pick("Música tema do time (.mp3 até 1 MB)", "Música mp3", "*.mp3");
-		byte[] bytes = RobotFiles.read(file, this.error);
-		if (bytes != null) {
+		File file = RobotFiles.pick("Música tema do time (.mp3; se passar de 1 MB, só os primeiros segundos)", "Música mp3", "*.mp3");
+		byte[] read = RobotFiles.read(file, this.error);
+		if (read != null) {
+			// Too large: cut to its first seconds
+			MediaFit.Music fit = OpponentService.fitMusic(read);
+			byte[] bytes = fit.data();
 			this.stopMusic();
 			this.pendingMusic = bytes;
 			this.music = Sound.fromBytes(bytes, file.getName());
 			this.musicButton.setDisable(this.music == null);
-			this.musicInfo.setText("Nova: " + file.getName() + " (" + bytes.length / 1024 + " KB)");
+			this.musicInfo.setText("Nova: " + file.getName() + " (" + bytes.length / 1024 + " KB" + (fit.cut() ? ", só os primeiros " + (int) fit.seconds() + " s" : "") + ")");
+			if (fit.cut() && RobotFiles.startPast(this.musicStart.getText(), fit.seconds())) {
+				this.musicStart.setText("0");
+			}
 			this.markDirty();
 		}
 	}
 
-	/** Chooses a new .jar. When its name is the one of the packager, the team and the robot take its names. */
+	/** Chooses a new .jar. The team and the robot take the names the .jar holds (or, if it does not say, the ones in its file name). */
 	private void pickJar() {
 		File file = RobotFiles.pick("Robô compilado (.jar do empacotador do Robocode)", "Arquivo jar", "*.jar");
 		byte[] bytes = RobotFiles.read(file, this.error);
 		if (bytes != null) {
 			this.pendingJar = bytes;
 			this.jarInfo.setText("Novo: " + file.getName() + " (" + bytes.length / 1024 + " KB)");
-			String[] names = RobotFiles.namesOf(file.getName());
-			if (names != null) {
+			String[] names = RobotFiles.namesOf(file.getName(), bytes);
+			if (names == null) {
+				this.error.setText("Não foi possível saber o time e o robô deste .jar: use o empacotador do Robocode para gerá-lo");
+			} else {
 				this.team.setText(names[0]);
 				this.name.setText(names[1]);
 			}

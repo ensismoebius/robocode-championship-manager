@@ -121,11 +121,11 @@ class RobotFormValidationTest {
 	}
 
 	@Test
-	void theJarMustHaveContentAndTheRightName() throws Exception {
+	void theJarMustHaveContentAndSayWhichRobotItHolds() throws Exception {
 		assertTrue(robot("novo", "Vamos", "time.Bot_1.0.jar", new byte[0], java(), music(), png(64, 48), new String[] { "Ana" }, new String[] { "ana@example.com" })
 				.post(client(), url("new")).contains("Arquivo .jar inválido!"));
 		assertTrue(robot("novo", "Vamos", "Bot.jar", new byte[] { 1 }, java(), music(), png(64, 48), new String[] { "Ana" }, new String[] { "ana@example.com" })
-				.post(client(), url("new")).contains("não está no formato correto"));
+				.post(client(), url("new")).contains("Não foi possível saber o time e o robô"));
 	}
 
 	@Test
@@ -158,15 +158,55 @@ class RobotFormValidationTest {
 	}
 
 	@Test
-	void theLogoMustBeAnImageOfTheRightSize() throws Exception {
+	void aLogoAndASongThatAreTooBigAreFitByTheSystem() throws Exception {
+		java.util.Random random = new java.util.Random(5);
+		BufferedImage picture = new BufferedImage(1400, 1000, BufferedImage.TYPE_INT_RGB);
+		for (int posY = 0; posY < picture.getHeight(); posY++) {
+			for (int posX = 0; posX < picture.getWidth(); posX++) {
+				picture.setRGB(posX, posY, random.nextInt());
+			}
+		}
+		ByteArrayOutputStream bigLogo = new ByteArrayOutputStream();
+		ImageIO.write(picture, "png", bigLogo);
+		ByteArrayOutputStream bigSong = new ByteArrayOutputStream();
+		for (int copy = 0; copy < 140; copy++) {
+			bigSong.write(music());
+		}
+		assertTrue(bigLogo.size() > 1024 * 1024 && bigSong.size() > 1024 * 1024);
+
+		HttpClient session = MultipartForm.session();
+		String page = robot("grande", "Vamos", "grande.Bot_1.0.jar", new byte[] { 1 }, java(), bigSong.toByteArray(), bigLogo.toByteArray(), new String[] { "Ana" }, new String[] { "ana@example.com" })
+				.post(session, url("new"));
+
+		assertTrue(page.contains("Robô salvo com sucesso"), page);
+		Opponent saved = Database.read(em -> em.createQuery("select o from Opponent o where o.name = 'Bot'", Opponent.class).getResultList().stream().filter(o -> o.getTeam().equals("grande")).findFirst().orElseThrow());
+		assertTrue(saved.getMusic().length <= 1024 * 1024);
+		assertTrue(saved.getImage().length <= 1024 * 1024);
+		BufferedImage fitted = ImageIO.read(new java.io.ByteArrayInputStream(saved.getImage()));
+		assertTrue(fitted.getWidth() <= 640 && fitted.getHeight() <= 480);
+		// The other tests count the robots saved
+		tournament.OpponentService.delete(saved.getId());
+	}
+
+	@Test
+	void theTeamAndTheRobotAreReadFromInsideTheJarWhateverItsFileIsNamed() throws Exception {
+		HttpClient session = MultipartForm.session();
+		String page = robot("nome", "Vamos", "qualquer coisa.jar", utils.robocode.RobotJarTest.jarOf("charlie.Walls"), java(), music(), png(64, 48), new String[] { "Ana" }, new String[] { "ana@example.com" })
+				.post(session, url("new"));
+
+		assertTrue(page.contains("Robô salvo com sucesso"), page);
+		Opponent saved = Database.read(em -> em.createQuery("select o from Opponent o where o.team = 'charlie'", Opponent.class).getSingleResult());
+		assertEquals("charlie.Walls", saved.getFullName());
+		// The other tests count the robots saved
+		tournament.OpponentService.delete(saved.getId());
+	}
+
+	@Test
+	void theLogoMustBeAnImageAndNotJustBytes() throws Exception {
 		assertTrue(robot("novo", "Vamos", "time.Bot_1.0.jar", new byte[] { 1 }, java(), music(), new byte[0], new String[] { "Ana" }, new String[] { "ana@example.com" })
 				.post(client(), url("new")).contains("Arquivo de logotipo inválido!"));
 		assertTrue(robot("novo", "Vamos", "time.Bot_1.0.jar", new byte[] { 1 }, java(), music(), new byte[1024 * 1024 + 1], new String[] { "Ana" }, new String[] { "ana@example.com" })
 				.post(client(), url("new")).contains("Arquivo de logotipo muito grande!"));
-		assertTrue(robot("novo", "Vamos", "time.Bot_1.0.jar", new byte[] { 1 }, java(), music(), png(700, 100), new String[] { "Ana" }, new String[] { "ana@example.com" })
-				.post(client(), url("new")).contains("A largura do logotipo é maior que 640 pixels!"));
-		assertTrue(robot("novo", "Vamos", "time.Bot_1.0.jar", new byte[] { 1 }, java(), music(), png(100, 500), new String[] { "Ana" }, new String[] { "ana@example.com" })
-				.post(client(), url("new")).contains("A altura do logotipo é maior que 480 pixels!"));
 	}
 
 	@Test

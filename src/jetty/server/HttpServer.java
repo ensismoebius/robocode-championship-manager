@@ -23,7 +23,7 @@ public class HttpServer {
 	/**
 	 * Biggest accepted upload, the four files of the robot editor together
 	 */
-	private static final long MAX_REQUEST_SIZE = 10L * 1024 * 1024;
+	private static final long MAX_REQUEST_SIZE = 32L * 1024 * 1024;
 
 	private final Server server;
 
