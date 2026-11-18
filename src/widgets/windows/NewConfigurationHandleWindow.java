@@ -232,7 +232,7 @@ public class NewConfigurationHandleWindow implements INewConfigurationHandle {
 				if (rounds < 1) {
 					battleRule.setText("");
 				} else if (knockout) {
-					battleRule.setText("Melhor de " + rounds + ": vence quem ganhar " + BattleControl.roundsToWin(rounds) + " partidas, e a batalha termina assim que alguém chegar lá. Se as vitórias empatarem, inclusive em duplo K.O., decidem os pontos.");
+					battleRule.setText("Melhor de " + rounds + ": vence quem ganhar " + BattleControl.roundsToWin(rounds) + " partidas, e a batalha termina assim que alguém chegar lá. Os pontos não contam. Um duplo K.O. não dá vitória a ninguém e a partida é refeita.");
 				} else {
 					battleRule.setText(rounds + (rounds == 1 ? " partida" : " partidas") + ": vence quem somar mais pontos. Se empatar nos pontos, decide quem ganhou mais partidas.");
 				}
