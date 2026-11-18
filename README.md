@@ -74,7 +74,7 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 <td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada, rios e cachoeiras. A trilha usa a escala ocidental, em sol maior, com os acordes I, V, vi e IV: uma marimba canta a melodia, sobre baixo, violão e bateria.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, de planta sinuosa como um rim e paredes de terra com musgo, aberto no teto para um céu de tempestade onde o sol rompe as nuvens. Nervuras de madeira em arco, trepadeiras e arquibancadas lotadas, com gente de todos os continentes, cercam um campo de jardim redondo, com piso de padrões da arte africana cortado por linhas de luz. Um baobá brilha em cada ponta, com aves pousadas e voando em volta, e telas gigantes mostram a luta ao vivo. A trilha é afrofuturista, na escala heptatônica equidistante dos xilofones de Malawi e Moçambique. É a arena das grandes finais: só aparece na grande final, mesmo que seja a escolhida na configuração; se você fixar outra arena, a final usa a que você fixou.</td>
+<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, de planta sinuosa como um rim e paredes de terra com musgo, aberto no teto para um céu de tempestade onde o sol rompe as nuvens. Nervuras de madeira em arco, trepadeiras e arquibancadas lotadas, com gente de todos os continentes, cercam um campo de jardim redondo, com piso de padrões da arte africana cortado por linhas de luz. Um baobá brilha em cada ponta, com aves pousadas e voando em volta, e telas gigantes mostram a luta ao vivo. Por fora, uma cidade solarpunk africana: arranha-céus de vidro com jardins suspensos, torres-baobá, terraços verdes, domos solares e avenidas de kente. A trilha é afrofuturista, na escala heptatônica equidistante dos xilofones de Malawi e Moçambique. É a arena das grandes finais: só aparece na grande final, mesmo que seja a escolhida na configuração; se você fixar outra arena, a final usa a que você fixou.</td>
 </tr>
 <tr>
 <td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: um pátio de azulejos zellij no padrão "estrela e cruz" da arte islâmica, cercado por um platô de areia, oásis de palmeiras e um anel de dunas. Além dele, o chão se estende até o horizonte como uma cidade futurista de arquitetura islâmica: ruas de carros e ruas só de pedestres, jardins de quatro canais ("charbagh") com árvores da região (ghaf, acácia-guarda-chuva e sidr), casas de cerâmica perolada com arcos ogivais e janelas contornadas de luz, mesquitas e portões de cúpulas douradas, e arranha-céus inspirados na arquitetura árabe contemporânea (Burj Khalifa, Torre de Doha, Kingdom Centre, Capital Gate). O céu é de pôr do sol. A música é na escala árabe (o maqam hijaz): alaúde, ney e darbuka.</td>
@@ -377,8 +377,8 @@ e `M` abrem o pódio de novo.
 - **Dados de login**: um login e uma senha que toda a equipe pode usar.
 - **Dados do time**:
   - o **lema**, o grito de guerra que aparece nas apresentações e no pódio;
-  - a **música tema**, um `.mp3` de até 1 MB que toca quando o robô entra na arena;
-  - o **logotipo**, um `.gif`, `.jpg` ou `.png` de até 640 x 480 pixels e 1 MB.
+  - a **música tema**, um `.mp3` de até 1 MB que toca quando o robô entra na arena (se for maior, o sistema usa só os primeiros segundos, até caber);
+  - o **logotipo**, um `.gif`, `.jpg` ou `.png` de até 640 x 480 pixels e 1 MB (se for maior, o sistema reduz a imagem, mantendo a proporção, até caber).
 - **Quem desenvolveu**: nome, **RM** (registro de matrícula, só números, até 20 dígitos) e
   e-mail de pelo menos uma pessoa. Use **+ Adicionar pessoa** para as outras.
 - **Dados do robô**:

@@ -1,5 +1,6 @@
 package widgets.scenes;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -28,6 +29,24 @@ class EdenScreensTest {
 			// The ribs of the roof grow halfway between two screens
 			assertFalse(screens.covers(EdenStadium.angle(center + EdenScreens.EVERY / 2)), "a rib would be in front of the screen");
 		}
+	}
+
+	@Test
+	void eachScreenTakesItsPiecesAndNoOthers() {
+		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters(), "EDEN_SOLAR");
+		EdenScreens screens = arena.eden.screens();
+
+		int taken = 0;
+		for (int piece = 0; piece < EdenStadium.SEGMENTS; piece++) {
+			taken += screens.occupies(piece) ? 1 : 0;
+		}
+		int expected = 0;
+		for (int center = 0; center < EdenStadium.SEGMENTS; center += EdenScreens.EVERY) {
+			expected += screens.width(center);
+			assertTrue(screens.occupies(center));
+			assertFalse(screens.occupies(center + EdenScreens.EVERY / 2));
+		}
+		assertEquals(expected, taken);
 	}
 
 	@Test

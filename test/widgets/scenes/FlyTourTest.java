@@ -21,13 +21,13 @@ class FlyTourTest {
 	}
 
 	@Test
-	void theEdenTourGoesToTheBaobabThreeBirdsAndTheRegion() {
+	void theEdenTourGoesToTheBaobabThreeBirdsTheCityAndTheRegion() {
 		BattleArena3D arena = ArenaSimulation.arena(ArenaSimulation.fighters(), "EDEN_SOLAR");
 		FlyTour tour = arena.flyTour;
 		FxSupport.runVoid(() -> tour.plan(arena, 1, 1));
 
-		// Three seconds on the baobab, two on each of three birds, two and a half on the whole region, and longer where the crossfades need it
-		assertTrue(tour.duration() >= 3 + 3 * 2 + 2.5);
+		// Three seconds on the baobab, two on each of three birds, the great baobab tower and the avenue of the city, two and a half on the whole region, and longer where the crossfades need it
+		assertTrue(tour.duration() >= 3 + 3 * 2 + EdenTour.TOWER_SECONDS + EdenTour.AVENUE_SECONDS + 2.5);
 
 		double[] baobab = arena.eden.baobab(1);
 		FxSupport.runVoid(() -> tour.update(1));

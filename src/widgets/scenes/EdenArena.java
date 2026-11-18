@@ -12,11 +12,11 @@ import java.util.Random;
  * The Eden Solar arena, Africa, 2187: a great stadium with an opening in its roof to a stormy sky, a round garden
  * in the middle where the robots fight, lush plants and round trees up to the stands, the stands full of people
  * from every continent with their flags, warm lights everywhere, and a glowing tree of life at the mouth of each
- * of the two corridors.
+ * of the two corridors. Outside, a solarpunk African city: see {@link EdenCity}.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
-final class EdenArena {
+final class EdenArena implements FlyTour.Clearance {
 
 	/** How far the garden goes beyond the corners of the field, and the stands beyond the garden */
 	private static final double GARDEN_MARGIN = 260;
@@ -24,12 +24,19 @@ final class EdenArena {
 
 	/** How far beyond the front wall of the stands, at the corridors, the baobabs stand */
 	private static final double TREE_OFFSET = 190;
+	/** How much room the camera keeps over the roof, and around the wall, when it flies out of the stadium or into it */
+	private static final double ROOF_ROOM = 90;
 
 	private final BattleArena3D host;
 	private final EdenFlags flags;
+	private final EdenAir air;
+	private EdenCity city;
 	private EdenScreens screens;
 	/** How far from the middle of the arena the baobabs are, along the x axis */
 	private double treeX;
+	/** The outer wall of the stadium and the edge of the opening of its roof, as radii before the plan swells */
+	private double wall;
+	private double opening;
 	/** The spots where birds can perch on each baobab, the one on the negative side first */
 	private final List<List<double[]>> perches = new ArrayList<>();
 
@@ -37,6 +44,17 @@ final class EdenArena {
 	EdenArena(BattleArena3D host) {
 		this.host = host;
 		this.flags = new EdenFlags(host);
+		this.air = new EdenAir(host);
+	}
+
+	/** The city around the stadium, once it is built. */
+	EdenCity city() {
+		return this.city;
+	}
+
+	/** The airships over the city. */
+	EdenAir air() {
+		return this.air;
 	}
 
 	/** Where the baobab at the end of the field on that side is, -1 or 1: on the ground. */
@@ -57,9 +75,32 @@ final class EdenArena {
 	/** The breeze: the flags wave, and the screens show the battle. */
 	void update(double deltaTime) {
 		this.flags.update(deltaTime);
+		this.air.update(deltaTime);
 		if (this.screens != null) {
 			this.screens.update(deltaTime);
 		}
+	}
+
+	/**
+	 * The lowest the camera may be over the spot, for a tour: over the city, and, when the way goes in or out of the stadium, over its
+	 * roof and its wall, from the edge of the opening to the cornice outside.
+	 */
+	@Override
+	public double floor(double posX, double posZ, boolean crossing) {
+		double lowest = this.city == null ? Double.POSITIVE_INFINITY : this.city.clearance(posX, posZ);
+		if (crossing) {
+			double plan = Math.hypot(posX, posZ) / (1 + EdenStadium.swell(Math.atan2(posZ, posX)));
+			if (plan > this.opening - ROOF_ROOM && plan < this.wall + ROOF_ROOM) {
+				lowest = Math.min(lowest, EdenStadium.rim() - ROOF_ROOM);
+			}
+		}
+		return lowest;
+	}
+
+	/** Whether the spot is inside the outer wall of the stadium. */
+	@Override
+	public boolean inside(double posX, double posZ) {
+		return Math.hypot(posX, posZ) < this.wall * (1 + EdenStadium.swell(Math.atan2(posZ, posX)));
 	}
 
 	/** The great screens of the stadium, once it is built. */
@@ -77,6 +118,13 @@ final class EdenArena {
 		new EdenGarden(host, garden, front).build(width, height, stadium.corridorEnd(), wild);
 		stadium.build(wild);
 		this.screens = stadium.screens();
+		this.wall = stadium.outerEdge();
+		this.opening = stadium.opening();
+		// The outside of the stadium and the city around it, with its airships
+		new EdenFacade(host, stadium.outerEdge()).build();
+		this.city = new EdenCity(host, stadium.outerEdge());
+		this.city.build(wild);
+		this.air.build(wild);
 		this.flags.build(stadium.concourse() + EdenStadium.CONCOURSE / 2, EdenStadium.concourseHeight(), wild);
 		// The trees of life, at the mouths of the corridors, after the floor: their light adds to it
 		EdenTree tree = new EdenTree(host);

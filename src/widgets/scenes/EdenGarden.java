@@ -40,10 +40,11 @@ final class EdenGarden {
 
 	/** Builds the floor, the lawn, the walkway, the hedge, the paths and the plants. */
 	void build(double width, double height, double corridor, Random wild) {
-		PhongMaterial soil = textured(JungleTexture.MOSS, Color.gray(0.05));
-		soil.setDiffuseColor(Color.web("#8aa57a"));
-		double far = 6000;
-		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -far, 6, -far }, { far, 6, -far }, { far, 6, far }, { -far, 6, far } }, soil, 300));
+		PhongMaterial soil = textured(EdenCityTexture.GROUND, Color.gray(0.05));
+		soil.setSelfIlluminationMap(EdenCityTexture.GROUND_LIGHT);
+		// Grass all the way to the sky, past the city, so the ground never ends in view
+		double far = ArenaMaterials.GROUND_REACH;
+		host.arena.getChildren().add(host.tiledQuad(new double[][] { { -far, 6, -far }, { far, 6, -far }, { far, 6, far }, { -far, 6, far } }, soil, 640));
 		this.lawn(width, height);
 		this.walkway();
 		this.hedge();

@@ -48,16 +48,7 @@ final class DesertTour {
 
 	/** The camera beyond the skyscraper, looking up at it, circling a little. */
 	private static FlyTour.Stop tower(double[] tower) {
-		double outward = Math.atan2(tower[1], tower[0]);
-		return new FlyTour.Stop(TOWER_SECONDS, 60, (share, eye, look) -> {
-			double angle = outward + (share - 0.5) * 0.7;
-			eye[0] = tower[0] + Math.cos(angle) * TOWER_DISTANCE;
-			eye[1] = -340 - 120 * share;
-			eye[2] = tower[1] + Math.sin(angle) * TOWER_DISTANCE;
-			look[0] = tower[0];
-			look[1] = -380;
-			look[2] = tower[1];
-		});
+		return FlyTour.circling(TOWER_SECONDS, 60, tower, TOWER_DISTANCE, 0.7, -340, -120, -380);
 	}
 
 	/** The flight down the street at the given x, from beyond the skyscraper at the given z toward the arena, rising at the end to see over the dunes. */

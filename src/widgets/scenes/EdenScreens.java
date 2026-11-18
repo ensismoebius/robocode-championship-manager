@@ -88,6 +88,14 @@ final class EdenScreens {
 		return Math.abs(piece - center) < this.width(center) / 2.0 + 0.5;
 	}
 
+	/** Whether the piece of the ring is one of the pieces a screen takes, so nothing is put in front of it. */
+	boolean occupies(int piece) {
+		int center = Math.round((float) piece / EVERY) * EVERY;
+		int offset = piece - center;
+		int pieces = this.width(Math.floorMod(center, EdenStadium.SEGMENTS));
+		return offset >= -pieces / 2 && offset < pieces - pieces / 2;
+	}
+
 	/** The picture before the first one of the broadcast: a dim grid with scan lines. */
 	private static Image standby() {
 		return TextureMath.image(64, 36, (posX, posY) -> {

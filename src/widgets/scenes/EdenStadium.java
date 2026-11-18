@@ -329,7 +329,8 @@ final class EdenStadium {
 			double second = angle(segment + 1);
 			double[] facing = inward((first + second) / 2);
 			band.quad(point(first, radius, bottom), point(second, radius, bottom), point(second, radius, bottom - BAND), point(first, radius, bottom - BAND), slice(segment, BAND), facing);
-			if (segment % 2 == 0 && !this.screens.covers(first)) {
+			// A panel is two pieces wide: it must not hang over the edge of a screen
+			if (segment % 2 == 0 && !this.screens.occupies(segment) && !this.screens.occupies(segment + 1)) {
 				double narrow = (second - first) * 0.12;
 				double third = angle(segment + 2);
 				panels.quad(point(first + narrow, radius - 0.6, bottom - 10), point(third - narrow, radius - 0.6, bottom - 10), point(third - narrow, radius - 0.6, bottom - BAND + 8), point(first + narrow, radius - 0.6, bottom - BAND + 8),
