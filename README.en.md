@@ -441,9 +441,10 @@ tutorials above.
     the points are tied, whoever won more rounds wins.
   - **By knockout, best of N rounds:** whoever wins most of the rounds takes the battle, and it
     ends as soon as someone gets there. For example, in a best of 5, three wins are enough; if
-    each one wins 2, the fifth round breaks the tie. A round in which both robots are destroyed
-    together (a double knockout) gives a win to nobody: if that leaves the wins tied at the end,
-    the points decide.
+    each one wins 2, the fifth round breaks the tie. Here points do not count: the score of the
+    match is the number of rounds won. A round in which both robots are destroyed together (a
+    double knockout) gives no points and no win to anybody and is run again (if that happens more
+    than 10 times and the battle ends level, you declare the winner with `1` or `2`).
   - The two kinds can disagree: a robot may win more rounds with fewer points. The ranking
     Robocode reports itself is not used, because it can be wrong (it is computed before the last
     round counts).

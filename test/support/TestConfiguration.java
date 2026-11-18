@@ -19,6 +19,9 @@ public final class TestConfiguration {
 	/** The database of the tests, kept under target so the project stays clean. */
 	public static final String DATABASE_FILE = "target/test-db/robochamp.db";
 
+	/** How the winner of a battle is chosen in the loaded configuration: SCORE or RANK (knockout). A test that changes it puts it back. */
+	public static String winnerCriterion = "SCORE";
+
 	private TestConfiguration() {
 	}
 
@@ -53,7 +56,7 @@ public final class TestConfiguration {
 		p.setProperty(INewConfigurationHandle.REGISTRATION_ENABLED, "true");
 		p.setProperty(INewConfigurationHandle.ROBOCODE_ROUNDS, "1");
 		p.setProperty(INewConfigurationHandle.WEBSERVER_PORT, String.valueOf(port));
-		p.setProperty(INewConfigurationHandle.WINNER_CRITERION, "SCORE");
+		p.setProperty(INewConfigurationHandle.WINNER_CRITERION, winnerCriterion);
 		p.setProperty(INewConfigurationHandle.TITLE, "Campeonato");
 		p.setProperty(INewConfigurationHandle.SUBTITLE, "Testes");
 		p.setProperty(INewConfigurationHandle.BATTLE_VIEW, "3D");

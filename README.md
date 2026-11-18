@@ -441,9 +441,10 @@ nos seus tutoriais.
     pontos. Se empatar nos pontos, vence quem ganhou mais partidas.
   - **Por K.O., melhor de N partidas:** vence quem ganhar a maioria das partidas, e a batalha
     termina assim que alguém chegar lá. Por exemplo, na melhor de 5, quem ganhar 3 já leva; se
-    cada um ganhar 2, a quinta partida desempata. Uma partida em que os dois robôs são
-    destruídos juntos (duplo K.O.) não dá vitória a ninguém: se isso deixar as vitórias
-    empatadas no fim, decidem os pontos.
+    cada um ganhar 2, a quinta partida desempata. Aqui os pontos não contam: o placar da
+    partida é o número de partidas vencidas. Uma partida em que os dois robôs são destruídos
+    juntos (duplo K.O.) não dá ponto nem vitória a ninguém e é refeita (se isso se repetir mais
+    de 10 vezes e a batalha terminar empatada, você declara o vencedor com `1` ou `2`).
   - Os dois tipos podem discordar: um robô pode vencer mais partidas com menos pontos. A
     colocação que o próprio Robocode informa não é usada, porque pode estar errada (é calculada
     antes da última partida contar).

@@ -89,12 +89,13 @@ class BattleControlTest {
 	}
 
 	@Test
-	void tiesAreBrokenByTheOtherCriterion() {
+	void pointsBreakTiesOnlyInABattleByPoints() {
 		Opponent a = opponent("alpha", "A");
 		Opponent b = opponent("bravo", "B");
 
+		// In a knockout the points do not count, not even to break a tie
 		List<String> sameRank = List.of("1\talpha.A\t100", "1\tbravo.B\t200");
-		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(sameRank, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
+		assertEquals(List.of(a, b), ranked(BattleControl.parseRanking(sameRank, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
 
 		List<String> sameScore = List.of("2\talpha.A\t100", "1\tbravo.B\t100");
 		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(sameScore, List.of(a, b), BattleControl.WinnerCriterion.SCORE)));
@@ -125,13 +126,15 @@ class BattleControlTest {
 	}
 
 	@Test
-	void knockoutWithTheRoundsTiedIsDecidedByPoints() {
+	void knockoutWithTheRoundsTiedIsNotDecidedByPoints() {
 		Opponent a = opponent("alpha", "A");
 		Opponent b = opponent("bravo", "B");
 
-		// Best of 5 that ended 2 x 2 with a double knockout in the last round: nobody won 3
+		// A knockout that ended level: the points do not break the tie, the rank of robocode does
 		List<String> tied = List.of("1\talpha.A\t810\t2", "2\tbravo.B\t905\t2");
-		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(tied, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
+		assertEquals(List.of(a, b), ranked(BattleControl.parseRanking(tied, List.of(a, b), BattleControl.WinnerCriterion.RANK)));
+		// By points, on the other hand, they decide
+		assertEquals(List.of(b, a), ranked(BattleControl.parseRanking(tied, List.of(a, b), BattleControl.WinnerCriterion.SCORE)));
 	}
 
 	@Test

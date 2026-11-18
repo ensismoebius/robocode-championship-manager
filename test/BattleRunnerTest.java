@@ -219,4 +219,45 @@ class BattleRunnerTest {
 
 		assertFalse(host.battleRunning);
 	}
+
+	/** Runs the code with the configuration of a knockout, where points do not count, and puts the points back. */
+	private static void inAKnockout(Runnable code) {
+		TestConfiguration.winnerCriterion = "RANK";
+		TestConfiguration.load(Configuration.RANDOM, "/nowhere");
+		try {
+			code.run();
+		} finally {
+			TestConfiguration.winnerCriterion = "SCORE";
+			TestConfiguration.load(Configuration.RANDOM, "/nowhere");
+		}
+	}
+
+	@Test
+	void aKnockoutSavesTheRoundsWonAndNotThePoints() throws IOException {
+		Match next = drawChampionship();
+		List<Opponent> players = fightersOf(next);
+		BattleOutcome outcome = new BattleOutcome(List.of(new BattleResult(players.get(0), 1, 100, 3), new BattleResult(players.get(1), 2, 4000, 1)), BattleRecording.parse(List.of()));
+		host.battleRunning = true;
+
+		inAKnockout(() -> FxSupport.runVoid(() -> runner.onBattleSucceeded(outcome, next, players, null)));
+
+		var results = FxSupport.run(() -> host.championship.getResults());
+		assertEquals(3, results.get(results.size() - 1).getWinnerScore());
+		assertEquals(1, results.get(results.size() - 1).getLoserScore());
+	}
+
+	@Test
+	void aKnockoutThatEndedLevelHasNoWinnerToSave() throws IOException {
+		Match next = drawChampionship();
+		List<Opponent> players = fightersOf(next);
+		BattleOutcome outcome = new BattleOutcome(List.of(new BattleResult(players.get(0), 1, 100, 2), new BattleResult(players.get(1), 2, 90, 2)), BattleRecording.parse(List.of()));
+		int before = FxSupport.run(() -> host.championship.getResults().size());
+		host.battleRunning = true;
+		FxSupport.onNextDialog(dialog -> button(dialog, "OK").fire());
+
+		inAKnockout(() -> FxSupport.runVoid(() -> runner.onBattleSucceeded(outcome, next, players, null)));
+
+		assertEquals(before, FxSupport.run(() -> host.championship.getResults().size()));
+		assertFalse(host.battleRunning);
+	}
 }

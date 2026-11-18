@@ -40,10 +40,9 @@ import robocode.control.snapshot.ITurnSnapshot;
  *
  * With -k the battle is a knockout, the best of the rounds: it is run one round
  * at a time, the one who wins most of the rounds (rounds / 2 + 1) wins it and the
- * battle ends there. The winner of a round is the only robot alive at its end, a
- * double knockout has none. The scores of the rounds are added. If nobody
- * reaches that many (a double knockout, for instance), all the rounds are run and
- * the scores tell who is ahead.
+ * battle ends there. The winner of a round is the only robot alive at its end. A
+ * double knockout has none: nobody scores and the round is run again. Points do
+ * not count in a knockout, only the rounds won.
  *
  * With -s the robocode window is not shown and every turn is printed (lines
  * starting with #) so the championship manager can show the battle in 3D:
@@ -65,6 +64,9 @@ import robocode.control.snapshot.ITurnSnapshot;
  * @author André Furlan - ensismoebius@gmail.com
  */
 public class BattleStarter {
+
+	/** How many rounds of a knockout may be run again, after a double knockout, before the battle gives up. */
+	private static final int MAX_REDOS = 10;
 
 	/** The options of the command line: the Robocode folder, the rounds, the streaming, the knockout and the robots. */
 	private record Options(String robocodePath, int rounds, boolean stream, boolean knockout, List<String> robots) {
@@ -153,41 +155,70 @@ public class BattleStarter {
 		return new Options(robocodePath, rounds, stream, knockout, robots);
 	}
 
+	/** What a knockout keeps while it runs: the rounds won, the points and the names of the robots. */
+	private static final class Tally {
+
+		private final Map<String, Integer> wins = new LinkedHashMap<String, Integer>();
+		private final Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
+		private final Map<String, String> names = new LinkedHashMap<String, String>();
+
+		/** Counts the results of a round: no winner, no points, the round does not count. */
+		void count(BattleResults[] results, String winner) {
+			for (BattleResults result : results) {
+				String key = key(result.getTeamLeaderName());
+				this.names.put(key, result.getTeamLeaderName());
+				this.wins.putIfAbsent(key, 0);
+				this.scores.merge(key, winner == null ? 0 : result.getScore(), Integer::sum);
+			}
+		}
+
+		/** Gives a round to the robot, and tells how many it has won. */
+		int win(String key) {
+			return this.wins.merge(key, 1, Integer::sum);
+		}
+
+		/** Prints the results like a battle does, the one with most rounds won first: the points do not count. */
+		void print(PrintStream out) {
+			List<String> sorted = new ArrayList<String>(this.names.keySet());
+			sorted.sort((first, second) -> Integer.compare(this.wins.get(second), this.wins.get(first)));
+			for (int index = 0; index < sorted.size(); index++) {
+				String key = sorted.get(index);
+				out.println((index + 1) + "\t" + this.names.get(key) + "\t" + this.scores.get(key) + "\t" + this.wins.get(key));
+			}
+			out.flush();
+		}
+	}
+
 	/**
-	 * A knockout: the rounds are run one by one until a robot has won most of them.
-	 * Prints the results like a battle does, with the rounds won counted here.
+	 * A knockout: the rounds are run one by one until a robot has won most of them. Points are not considered: the
+	 * rounds won decide. A round without a winner (a double knockout) gives no points to anyone and is run again,
+	 * up to MAX_REDOS times in a battle. Prints the results like a battle does, with the rounds won counted here.
 	 */
 	private static void runKnockout(RobocodeEngine engine, Observer observer, RobotSpecification[] selected, int rounds, PrintStream out) {
 		int target = rounds / 2 + 1;
-		Map<String, Integer> wins = new LinkedHashMap<String, Integer>();
-		Map<String, Integer> scores = new LinkedHashMap<String, Integer>();
-		Map<String, String> names = new LinkedHashMap<String, String>();
+		Tally tally = new Tally();
 		observer.knockout(rounds);
-		for (int played = 0; played < rounds; played++) {
-			observer.nextRound(played);
+		int attempt = 0;
+		int redone = 0;
+		int played = 0;
+		while (played < rounds) {
+			// The rounds are numbered by attempt, so the redone round has a number of its own in the recording
+			observer.nextRound(attempt++);
 			engine.runBattle(new BattleSpecification(1, new BattlefieldSpecification(800, 600), selected), true);
-			for (BattleResults result : observer.results()) {
-				String key = key(result.getTeamLeaderName());
-				scores.merge(key, result.getScore(), Integer::sum);
-				names.put(key, result.getTeamLeaderName());
-				wins.putIfAbsent(key, 0);
-			}
 			String winner = observer.roundWinner();
-			if (winner != null) {
-				int total = wins.merge(winner, 1, Integer::sum);
-				if (total >= target) {
+			tally.count(observer.results(), winner);
+			if (winner == null) {
+				if (++redone > MAX_REDOS) {
+					break;
+				}
+			} else {
+				played++;
+				if (tally.win(winner) >= target) {
 					break;
 				}
 			}
 		}
-		// Most rounds won first, the score breaks the ties
-		List<String> sorted = new ArrayList<String>(names.keySet());
-		sorted.sort((first, second) -> wins.get(first).equals(wins.get(second)) ? Integer.compare(scores.get(second), scores.get(first)) : Integer.compare(wins.get(second), wins.get(first)));
-		for (int index = 0; index < sorted.size(); index++) {
-			String key = sorted.get(index);
-			out.println((index + 1) + "\t" + names.get(key) + "\t" + scores.get(key) + "\t" + wins.get(key));
-		}
-		out.flush();
+		tally.print(out);
 	}
 
 	/** The name of a robot without the version, the "*" or the number of the instance */

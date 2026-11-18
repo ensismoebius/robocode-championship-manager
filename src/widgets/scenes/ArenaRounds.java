@@ -197,13 +197,14 @@ final class ArenaRounds {
 		host.phaseTime = 0;
 		this.fightShown = false;
 		this.countdown = 0;
-		this.roundTitle = "ROUND " + (host.round + 1);
+		this.roundTitle = "ROUND " + this.roundNumber();
 		boolean decisive = host.round + 1 == host.recording.getRounds().size() && host.round > 0;
-		this.roundSubtitle = decisive ? "ROUND DECISIVO" : null;
+		boolean redone = this.isRedone();
+		this.roundSubtitle = redone ? "ROUND REFEITO" : decisive ? "ROUND DECISIVO" : null;
 		host.hud.showBanner(this.roundTitle, this.roundSubtitle);
 		host.audio.roundCall();
 		host.audio.setMusicOn(true);
-		host.announcer.announce(decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + (host.round + 1) + "! Preparem os motores!", 5);
+		host.announcer.announce(redone ? "Vamos refazer o round! Preparem os motores!" : decisive ? "Round decisivo! Quem vencer leva a batalha!" : "Round " + this.roundNumber() + "! Preparem os motores!", 5);
 		host.hud.updateInfo();
 	}
 
@@ -361,6 +362,33 @@ final class ArenaRounds {
 		}
 	}
 
+	/** Whether the round ended with a single robot alive: a double knockout has no winner. */
+	private static boolean hasWinner(List<Turn> turns) {
+		return turns.get(turns.size() - 1).robots().stream().filter(row -> !row.isDead()).count() == 1;
+	}
+
+	/** Whether the round before this one was a double knockout, which was run again in a knockout. */
+	private boolean isRedone() {
+		return host.round > 0 && Configuration.getWinnerCriterion().isKnockout() && !hasWinner(host.recording.getRounds().get(host.round - 1));
+	}
+
+	/**
+	 * The number of the round as the players count it: in a knockout a double knockout does not count, the round is
+	 * run again with the same number.
+	 */
+	int roundNumber() {
+		int number = 1;
+		if (Configuration.getWinnerCriterion().isKnockout()) {
+			for (int index = 0; index < host.round; index++) {
+				if (hasWinner(host.recording.getRounds().get(index))) {
+					number++;
+				}
+			}
+			return number;
+		}
+		return host.round + 1;
+	}
+
 	/** Ends a round: the phase goes to the end of the round, and its turns are the ones given. */
 	void endRound(List<Turn> turns) {
 		host.phase = Phase.ROUND_END;
@@ -385,6 +413,9 @@ final class ArenaRounds {
 			host.shotDuration = ROUND_END_SECONDS + 1;
 			host.shotSide = host.random.nextBoolean() ? 1 : -1;
 			host.closeDistance = 110;
+		} else if (alive.isEmpty() && Configuration.getWinnerCriterion().isKnockout()) {
+			host.hud.showBanner("DUPLO K.O.!", "Ninguém pontua: o round será refeito");
+			host.announcer.announce("Duplo K.O.! Ninguém pontua, o round será refeito!", 5);
 		} else {
 			host.hud.showBanner("FIM DO ROUND", null);
 		}

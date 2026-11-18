@@ -39,13 +39,13 @@ public class BattleControl {
 	}
 
 	/**
-	 * The two kinds of battle. The one with more rounds won may have fewer points.
+	 * The two kinds of battle. The one with more rounds won may have fewer points: in a knockout points do not count.
 	 */
 	public enum WinnerCriterion {
 		/**
-		 * By knockout, the best of the rounds: rounds won, total score breaks ties.
-		 * The battle ends as soon as a robot has won most of the rounds. A round
-		 * with a double knockout has no winner.
+		 * By knockout, the best of the rounds: only the rounds won count, the points
+		 * do not. The battle ends as soon as a robot has won most of the rounds. A
+		 * round with a double knockout has no winner: nobody scores and it is run again.
 		 */
 		RANK,
 		/** By points: all the rounds are fought, total score decides, rounds won break ties */
@@ -56,13 +56,13 @@ public class BattleControl {
 			return this == RANK;
 		}
 
-		/** The order of the results of a battle: by the rounds won when they are known, otherwise by the rank that Robocode reports. */
+		/** The order of the results of a battle: by the rounds won when they are known, otherwise by the rank that Robocode reports. The points only count in a battle by points. */
 		Comparator<BattleResult> comparator() {
 			// The rank robocode reports may be computed before the last round
 			// counts, so the rounds won are used when known
 			Comparator<BattleResult> byRounds = (first, second) -> first.roundsWon() >= 0 && second.roundsWon() >= 0 ? Integer.compare(second.roundsWon(), first.roundsWon()) : Integer.compare(first.rank(), second.rank());
 			Comparator<BattleResult> byScore = Comparator.comparingInt(BattleResult::score).reversed();
-			return this == RANK ? byRounds.thenComparing(byScore) : byScore.thenComparing(byRounds);
+			return this == RANK ? byRounds : byScore.thenComparing(byRounds);
 		}
 	}
 

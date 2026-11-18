@@ -125,9 +125,23 @@ final class BattleRunner {
 		List<BattleResult> ranking = outcome.ranking();
 		BattleRecording recording = outcome.recording();
 		long winner = ranking.get(0).opponent().getId();
+		boolean knockout = Configuration.getWinnerCriterion().isKnockout();
+
+		// Rounds won are known: a knockout that ended level (too many double knockouts) has no winner
+		if (knockout && ranking.get(0).roundsWon() >= 0 && ranking.get(0).roundsWon() == ranking.get(1).roundsWon()) {
+			host.battleRunning = false;
+			host.showError("A batalha terminou empatada em rounds (houve duplos K.O. demais).\n\nInforme o vencedor com as teclas 1 ou 2.");
+			if (arena != null && GameWindow.getScreen() == arena) {
+				host.showBattle();
+			}
+			return;
+		}
+		// In a knockout the score of the match is the rounds won, the points do not count
+		Integer winnerScore = knockout && ranking.get(0).roundsWon() >= 0 ? ranking.get(0).roundsWon() : (Integer) ranking.get(0).score();
+		Integer loserScore = knockout && ranking.get(1).roundsWon() >= 0 ? ranking.get(1).roundsWon() : (Integer) ranking.get(1).score();
 
 		// Saved at once, then shown when the replay ends
-		if (!host.saveResult(match, winner, ranking.get(0).score(), ranking.get(1).score())) {
+		if (!host.saveResult(match, winner, winnerScore, loserScore)) {
 			host.battleRunning = false;
 			return;
 		}
