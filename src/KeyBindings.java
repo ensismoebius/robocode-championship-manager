@@ -107,6 +107,8 @@ final class KeyBindings {
 		case G -> host.newChampionship();
 		// Sees and changes the teams and their robots
 		case E -> host.openRobotsEditor();
+		// Reports, archives, backs up or erases the data
+		case D -> host.openData();
 		// Undo the last result
 		case Z -> host.undoLastResult();
 		// Ends the program, the window has no close button in full screen

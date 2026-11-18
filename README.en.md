@@ -51,6 +51,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 | 🌋 **Six arenas** | Neon city, volcanic forge, glacial tundra, tropical forest, Éden Solar and Middle East sands, each with its own critters, who run away when the battle heats up. |
 | 🎵 **Music and sound** | Each team comes in with its own music; shots, explosions, tracks and turrets have their own sounds. Each arena has its own soundtrack, played in the scale of the region it represents. |
 | 🥇 **Podium** | At the end the champion appears, then third, second and first place are revealed one by one, with bronze, silver and gold trophies. |
+| 🗄️ **Reports, archive and backup** | `Ctrl + D` writes the report of the championship (a page and a table of matches), archives the championship and the robots in a `.zip`, backs up the database, restores a backup or an archive and erases the data (always after an automatic backup). The files go to `reports`, `archives` and `backups`, next to the database file. |
 | ↩️ **Undo** | Entered a wrong result? `Ctrl + Z` undoes the last one. |
 
 Everything runs full screen, with menus and dialogs in the style of an arcade game.
@@ -414,6 +415,7 @@ Hold **`Alt`** on the start screen to see this list.
 | `B` | Versus screen of the selected match |
 | `S` | Runs the selected match and records the winner |
 | `1` / `2` | Declares the first / second robot the winner |
+| `Ctrl + D` | Data: report, archive, backup, restore or erasing of the championship and the robots |
 | `Ctrl + Z` | Undoes the last result |
 | `M` | Shows the robots of the match (at the end, the champion) |
 | `X` | Exports the robots' source code to `<temp folder>/robochamp-export` |

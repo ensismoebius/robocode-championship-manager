@@ -48,6 +48,7 @@ public class StartScreen extends StackPane {
 			{ "^Z", "Desfaz o último resultado" }, //
 			{ "^S", "Abre/fecha as inscrições" }, //
 			{ "^E", "Equipes e robôs" }, //
+			{ "^D", "Relatório, backup e restauração" }, //
 			{ "X", "Exporta o código fonte" }, //
 			{ "C", "Configurações" }, //
 			{ "^Q", "Sair" }, //

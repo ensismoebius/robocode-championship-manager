@@ -53,6 +53,7 @@ inscrições pela web, chaveamento automático, batalhas em 3D e cerimônia de p
 | 🌋 **Seis arenas** | Cidade neon, forja vulcânica, tundra glacial, floresta tropical, Éden Solar e areias do Oriente Médio, cada uma com seus bichos, que fogem quando a batalha esquenta. |
 | 🎵 **Música e som** | Cada equipe entra com sua música; tiros, explosões, esteiras e torres têm som próprio. Cada arena tem a sua trilha, tocada na escala da região que ela representa. |
 | 🥇 **Pódio** | No fim, o campeão aparece e o terceiro, o segundo e o primeiro lugares são revelados um a um, com troféus de bronze, prata e ouro. |
+| 🗄️ **Relatório, arquivo e backup** | `Ctrl + D` gera o relatório do campeonato (uma página e uma tabela de partidas), arquiva o campeonato e os robôs em um `.zip`, faz backup do banco, restaura um backup ou um arquivo e apaga os dados (sempre depois de um backup automático). Os arquivos vão para `reports`, `archives` e `backups`, ao lado do arquivo do banco. |
 | ↩️ **Desfazer** | Errou um resultado? `Ctrl + Z` desfaz o último. |
 
 Tudo roda em tela cheia, com menus e diálogos no estilo de um jogo de fliperama.
@@ -414,6 +415,7 @@ Segure **`Alt`** na tela inicial para ver esta lista.
 | `B` | Tela de versus da partida selecionada |
 | `S` | Roda a partida selecionada e grava o vencedor |
 | `1` / `2` | Declara o primeiro / segundo robô vencedor |
+| `Ctrl + D` | Dados: relatório, arquivo, backup, restauração ou exclusão do campeonato e dos robôs |
 | `Ctrl + Z` | Desfaz o último resultado |
 | `M` | Mostra os robôs da partida (no fim, o campeão) |
 | `X` | Exporta o código fonte dos robôs para `<pasta temporária>/robochamp-export` |

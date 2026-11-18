@@ -72,6 +72,8 @@ class ArenaCommentaryTest {
 
 		FxSupport.runVoid(() -> {
 			arena.phase = Phase.PLAYING;
+			// The line the presenter says as the round begins is over
+			arena.announcer.tick(20);
 			// Priority 6 is always told, and no comment is told before the last one ends
 			arena.announcer.say(List.of(comment("Primeiro comentário", 6)));
 			arena.announcer.say(List.of(comment("Segundo comentário", 6)));
@@ -114,6 +116,8 @@ class ArenaCommentaryTest {
 		BattleArena3D arena = playingArena();
 
 		FxSupport.runVoid(() -> {
+			// The line the presenter says as the round begins is over
+			arena.announcer.tick(20);
 			arena.announcer.say(List.of(comment("Em cena", 6)));
 			// Four more while the first one is on: they wait, the queue keeps the three most important
 			arena.announcer.say(List.of(comment("Fila 1", 3), comment("Fila 2", 4), comment("Fila 3", 5), comment("Fila 4", 1)));

@@ -92,6 +92,7 @@ public class Main extends Application {
 	boolean battleRunning = false;
 	private final KeyBindings keys = new KeyBindings(this);
 	private final ChampionshipFlow flow = new ChampionshipFlow(this);
+	final DataFlow data = new DataFlow(this);
 	private final Ceremony ceremony = new Ceremony(this);
 	/** Follows the configuration while the program runs, see stop */
 	private final Runnable configurationListener = this::applyConfiguration;
@@ -340,6 +341,11 @@ public class Main extends Application {
 		this.show(this.robotsScene);
 	}
 
+	/** Shows the panel to report, archive, back up and erase the data. */
+	void openData() {
+		this.data.open();
+	}
+
 	/** Reads the robots of the championship again, after they were changed. */
 	void reloadOpponents() {
 		flow.reloadOpponents();
@@ -429,7 +435,7 @@ public class Main extends Application {
 	}
 
 	/** Loads the current championship and keeps the selected match when it can still be played. */
-	private void loadChampionship() {
+	void loadChampionship() {
 		flow.loadChampionship();
 	}
 
