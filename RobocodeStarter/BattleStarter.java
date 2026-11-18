@@ -68,6 +68,9 @@ public class BattleStarter {
 	/** How many rounds of a knockout may be run again, after a double knockout, before the battle gives up. */
 	private static final int MAX_REDOS = 10;
 
+	/** The line the starter prints when Robocode could not load some robots; the names follow. */
+	static final String MISSING = "ROBOS_NAO_ENCONTRADOS: ";
+
 	/** The options of the command line: the Robocode folder, the rounds, the streaming, the knockout and the robots. */
 	private record Options(String robocodePath, int rounds, boolean stream, boolean knockout, List<String> robots) {
 	}
@@ -90,6 +93,14 @@ public class BattleStarter {
 		}
 
 		RobotSpecification[] selected = engine.getLocalRepository(String.join(",", options.robots()));
+		List<String> missing = missingRobots(options.robots(), selected);
+		if (!missing.isEmpty()) {
+			// Robocode only skips the robots it cannot load (a jar that is not a robot, a class with another name) and then fails with no hint
+			out.println(MISSING + String.join(", ", missing));
+			out.flush();
+			engine.close();
+			System.exit(2);
+		}
 		if (options.knockout()) {
 			runKnockout(engine, observer, selected, options.rounds(), out);
 		} else {
@@ -100,6 +111,21 @@ public class BattleStarter {
 
 		out.flush();
 		System.exit(0);
+	}
+
+	/** The robots asked for that Robocode did not find: its names have the version after the class, so the match is by the start. */
+	private static List<String> missingRobots(List<String> asked, RobotSpecification[] found) {
+		List<String> missing = new ArrayList<String>();
+		for (String name : asked) {
+			boolean present = false;
+			for (RobotSpecification specification : found) {
+				present |= specification.getName().equals(name) || specification.getName().startsWith(name + " ") || specification.getName().startsWith(name + "*");
+			}
+			if (!present) {
+				missing.add(name);
+			}
+		}
+		return missing;
 	}
 
 	/**

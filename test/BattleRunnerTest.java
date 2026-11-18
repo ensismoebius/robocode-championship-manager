@@ -161,10 +161,11 @@ class BattleRunnerTest {
 		List<Opponent> players = fightersOf(next);
 		BattleOutcome outcome = new BattleOutcome(List.of(new BattleResult(players.get(0), 1, 100, 2), new BattleResult(players.get(1), 2, 40, 1)), BattleRecording.parse(List.of()));
 		host.battleRunning = true;
+		int before = FxSupport.run(() -> host.championship.getResults().size());
 
 		FxSupport.runVoid(() -> runner.onBattleSucceeded(outcome, next, players, null));
 
-		assertEquals(1, FxSupport.run(() -> host.championship.getResults().size()));
+		assertEquals(before + 1, FxSupport.run(() -> host.championship.getResults().size()));
 		assertFalse(FxSupport.run(() -> host.battleRunning));
 		assertInstanceOf(ShowOponent.class, FxSupport.run(() -> GameWindow.getScreen()));
 	}
@@ -176,11 +177,12 @@ class BattleRunnerTest {
 		BattleArena3D arena = FxSupport.run(() -> runner.openArena(next, players, true));
 		BattleOutcome outcome = new BattleOutcome(List.of(new BattleResult(players.get(0), 1, 100, 2), new BattleResult(players.get(1), 2, 40, 1)), ArenaSimulation.recording(ArenaSimulation.OUTPUT));
 		host.battleRunning = true;
+		int before = FxSupport.run(() -> host.championship.getResults().size());
 
 		FxSupport.runVoid(() -> runner.onBattleSucceeded(outcome, next, players, arena));
 
 		// The result is saved at once and shown when the replay of the arena ends
-		assertEquals(1, FxSupport.run(() -> host.championship.getResults().size()));
+		assertEquals(before + 1, FxSupport.run(() -> host.championship.getResults().size()));
 		for (long waited = 0; waited < 90000 && !(FxSupport.run(() -> GameWindow.getScreen()) instanceof ShowOponent); waited += 100) {
 			FxSupport.sleep(100);
 		}

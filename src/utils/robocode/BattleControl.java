@@ -154,6 +154,13 @@ public class BattleControl {
 
 		List<String> output = runBattleProcess(command, onProgress, new BattleColors(onColors));
 
+		for (String line : output) {
+			if (line.startsWith("ROBOS_NAO_ENCONTRADOS: ")) {
+				String reasons = String.join("\n", output.stream().filter(text -> text.startsWith("Got an error with")).distinct().toList());
+				throw new IOException("O Robocode não conseguiu carregar estes robôs: " + line.substring(line.indexOf(':') + 2) + (reasons.isEmpty() ? "" : "\n\n" + reasons)
+						+ "\n\nO .jar pode não ser de um robô, ou o robô pode não rodar nesta versão do Java/Robocode (robôs antigos às vezes não rodam).");
+			}
+		}
 		List<BattleResult> results = BattleControl.parseRanking(output, opponents, criterion);
 		if (results.size() != opponents.size()) {
 			throw new IOException("A batalha não retornou o resultado esperado:\n" + String.join("\n", output.stream().filter(length -> !length.startsWith("#")).toList()));

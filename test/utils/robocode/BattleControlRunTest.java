@@ -89,6 +89,18 @@ class BattleControlRunTest {
 	}
 
 	@Test
+	void robotsThatRobocodeCouldNotLoadAreNamedInTheError() throws Exception {
+		Path folder = folder("missing");
+		Path script = script("missing", "Got an error with sample.Walls: java.lang.ClassNotFoundException: sample.Walls", "ROBOS_NAO_ENCONTRADOS: sample.Walls, sample.SpinBot");
+		List<Opponent> fighters = List.of(robot("sample", "Walls"), robot("sample", "SpinBot"));
+
+		IOException failure = assertThrows(IOException.class, () -> BattleControl.startBattle(fighters, folder.toString(), 1, script.toString(), WinnerCriterion.SCORE, false));
+
+		assertTrue(failure.getMessage().contains("sample.Walls, sample.SpinBot"), failure.getMessage());
+		assertTrue(failure.getMessage().contains("ClassNotFoundException"), failure.getMessage());
+	}
+
+	@Test
 	void aBattleThatDoesNotReportEveryRobotFails() throws Exception {
 		Path folder = folder("incomplete");
 		Path script = script("incomplete", "1\tsample.Walls\t216");
