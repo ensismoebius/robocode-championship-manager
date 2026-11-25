@@ -34,6 +34,7 @@ import javafx.scene.shape.Polygon;
 import javafx.util.Duration;
 import model.BattleMoment;
 import model.Opponent;
+import widgets.KeyHints;
 import widgets.ArcadeBackground;
 import widgets.Celebration;
 import widgets.Sfx;
@@ -143,6 +144,7 @@ public class Podium extends StackPane {
 		this.hint.styleProperty().bind(this.heightProperty().multiply(0.03).asString("-fx-font-size: %.0fpx;"));
 		StackPane.setAlignment(this.hint, Pos.BOTTOM_CENTER);
 		StackPane.setMargin(this.hint, new Insets(0, 0, 24, 0));
+		KeyHints.only(this.hint);
 		Theme.blink(this.hint);
 		this.setFocusTraversable(true);
 		this.musicVolume.addListener((observable, before, now) -> {

@@ -33,6 +33,7 @@ import model.Opponent;
 import utils.configuration.Configuration;
 import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;
+import widgets.KeyHints;
 import widgets.Theme;
 
 /**
@@ -90,6 +91,7 @@ final class ArenaHud {
 		host.viewLabel.getStyleClass().add("arena-info");
 		Label help = new Label("V: CÂMERA • ESPAÇO: PAUSA • ← →: VELOCIDADE • ENTER: PULAR • ARRASTE: GIRAR • RODA: ZOOM");
 		help.getStyleClass().add("arena-help");
+		KeyHints.only(help);
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
 		HBox bottom = new HBox(18, help, spacer, host.viewLabel, host.speedLabel);

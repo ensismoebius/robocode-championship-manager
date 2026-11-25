@@ -2,6 +2,7 @@ package widgets.scenes;
 
 import tournament.Importance;
 
+import widgets.KeyHints;
 import widgets.Theme;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -52,6 +53,7 @@ final class BracketHeader {
 		Label help = new Label(
 				"Clique em uma partida para selecioná-la • B: tela versus • S: inicia a batalha • 1/2: declara o vencedor • Ctrl+Z: desfaz o último resultado • Ctrl+roda ou +/-: zoom • arraste, roda ou setas: move • 0: visão geral");
 		help.getStyleClass().add("help");
+		KeyHints.only(help);
 		header.getChildren().add(help);
 
 		return header;

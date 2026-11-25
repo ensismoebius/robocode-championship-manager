@@ -40,6 +40,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import model.Opponent;
+import widgets.KeyHints;
 import widgets.ArcadeBackground;
 import widgets.Sfx;
 import widgets.Sound;
@@ -128,6 +129,7 @@ public class BattleViewer extends StackPane {
 		after.getStyleClass().add("press-start");
 		HBox prompt = new HBox(16, before, key, after);
 		prompt.setAlignment(Pos.CENTER);
+		KeyHints.only(prompt);
 		Theme.blink(prompt);
 
 		this.layout.setTop(header);

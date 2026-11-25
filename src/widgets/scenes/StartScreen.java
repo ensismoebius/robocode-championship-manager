@@ -24,6 +24,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import utils.configuration.Configuration;
 import utils.network.Network;
+import widgets.KeyHints;
 import widgets.ArcadeBackground;
 import widgets.GameDialog;
 import widgets.Theme;
@@ -145,6 +146,7 @@ public class StartScreen extends StackPane {
 		pressAfter.getStyleClass().add("press-start");
 		HBox pressStart = new HBox(16, pressBefore, key, pressAfter);
 		pressStart.setAlignment(Pos.CENTER);
+		KeyHints.only(pressStart);
 		Theme.blink(pressStart);
 
 		VBox titleBlock = new VBox(14, this.title, this.subtitle, new Region(), pressStart);

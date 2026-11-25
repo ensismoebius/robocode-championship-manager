@@ -23,6 +23,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import model.Author;
 import model.Opponent;
+import widgets.KeyHints;
 import widgets.ArcadeBackground;
 import widgets.Confetti;
 import widgets.OnScreen;
@@ -175,6 +176,7 @@ public class ShowOponent extends StackPane {
 		prompt.setMouseTransparent(true);
 		StackPane.setAlignment(prompt, Pos.BOTTOM_CENTER);
 		StackPane.setMargin(prompt, new Insets(0, 0, 36, 0));
+		KeyHints.only(prompt);
 		Theme.blink(prompt);
 		return prompt;
 	}
