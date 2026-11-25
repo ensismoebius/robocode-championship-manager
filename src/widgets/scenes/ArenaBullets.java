@@ -16,6 +16,7 @@ import javafx.scene.Group;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import utils.robocode.BattleRecording.Bullet;
 import utils.robocode.BattleRecording.RobotState;
@@ -219,6 +220,10 @@ final class ArenaBullets {
 		double height = this.heightOf(flight, distance, progress);
 		this.muzzle(bullet, flight, distance);
 		this.placeBullet(bullet, flying, posX, posY, flight.ux(), flight.uy(), height);
+		// The bolt comes out of the barrel: its tail is never behind the muzzle
+		Group shot = host.bullets.get(bullet.id());
+		double flown = Math.max(0, distance - MUZZLE) + 4;
+		((Scale) shot.getTransforms().get(1)).setZ(Math.max(0.05, Math.min(1, flown / boltLength(bullet.power()))));
 	}
 
 	/** The shot, when the bolt is still at the muzzle: the sound and the flash come out of the gun */
@@ -384,37 +389,63 @@ final class ArenaBullets {
 	}
 
 	/**
-	 * A plasma bolt: a bright spindle of facets, a halo around it and a long tail
-	 * behind, in the color of the robot that fired it. It points to +Z and is
+	 * A bolt is always as thin, whatever its power: the power shows in how long it is and in how much it glows. Its length for no
+	 * power and for each unit of power, and the radius of its white core
+	 */
+	private static final double BOLT_LENGTH = 15;
+	private static final double BOLT_LENGTH_POWER = 15;
+	private static final double CORE_RADIUS = 0.3;
+
+	/** How long the bolt of a shot of that power is. */
+	static double boltLength(double power) {
+		return BOLT_LENGTH + BOLT_LENGTH_POWER * power;
+	}
+
+	/** How strong a shot of that power is, from 0 (the weakest, 0.1) to 1 (the strongest, 3): how much its bolt glows. */
+	static double strength(double power) {
+		return Math.max(0, Math.min(1, (power - 0.1) / 2.9));
+	}
+
+	/**
+	 * A blaster bolt, a shot of a plasma cannon: a long, thin rod of light with rounded ends, its core white hot, wrapped in layers
+	 * of glow that grow wider and fainter, in the color of the robot that fired it. A strong shot is longer and its glow is denser
+	 * and brighter; a weak one is short and its glow is faint. Its head is the bullet and it trails behind, pointing to +Z, and is
 	 * turned to where it goes.
 	 */
 	Group newBullet(Bullet bullet) {
 		Color tint = this.shooterColor(bullet);
-		double row = 2.2 + bullet.power() * 0.7;
-		LowPoly core = new LowPoly();
-		core.spindle(0, 0, 0, row, row * 3.4, row * 2.2, 6);
-		LowPoly halo = new LowPoly();
-		halo.spindle(0, 0, 0, row * 1.9, row * 3.8, row * 2.8, 6);
-		LowPoly tail = new LowPoly();
-		tail.spindle(0, 0, -row * 2, row * 0.9, 0, row * 12, 6);
-
-		Color hot = tint.interpolate(Color.WHITE, 0.75);
-		PhongMaterial coreMaterial = new PhongMaterial(hot);
-		coreMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(hot));
-		// The halo and the tail are see through and shine by themselves
-		PhongMaterial haloMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.28));
-		haloMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(tint));
-		PhongMaterial tailMaterial = new PhongMaterial(Color.color(tint.getRed(), tint.getGreen(), tint.getBlue(), 0.4));
-		tailMaterial.setSelfIlluminationMap(ArenaHelpers.solidMap(tint));
-		Group shot = new Group(tail.view(tailMaterial), halo.view(haloMaterial), core.view(coreMaterial));
-		// Turned around the head, where the bullet is. Not with setRotate: it turns
-		// around the middle of the bolt, the long tail moves it there, and the head
-		// would be drawn up to 40 units away from the bullet, to the side of the
-		// robot it hits.
-		shot.getTransforms().add(new Rotate(0, Rotate.Y_AXIS));
+		double radius = CORE_RADIUS;
+		double length = boltLength(bullet.power());
+		double strength = strength(bullet.power());
+		// The core is drawn first, so the glow is seen over it
+		Group shot = new Group(rod(radius, length).view(light(Color.WHITE, 1)), rod(radius * 2, length * 1.01).view(light(tint.interpolate(Color.WHITE, 0.15 + 0.3 * strength), 0.4 + 0.4 * strength)),
+				rod(radius * 3.4, length * 1.03).view(light(tint, 0.12 + 0.28 * strength)), rod(radius * 5.2, length * 1.05).view(light(tint, 0.04 + 0.12 * strength)));
+		// Turned around the head, where the bullet is, then made as long as the way it has flown: it comes out of the barrel. Not
+		// with setRotate: it turns around the middle of the bolt, and the head would be drawn far from the bullet.
+		shot.getTransforms().addAll(new Rotate(0, Rotate.Y_AXIS), new Scale(1, 1, 0.05));
 		shot.setTranslateY(BARREL_HEIGHT);
 		host.bulletLayer.getChildren().add(shot);
 		return shot;
+	}
+
+	/**
+	 * A material that is only light, of the color, as see through as the opacity: no light of the scene shades it and nothing shines
+	 * on it, so the bolt has no faces, it glows.
+	 */
+	private static PhongMaterial light(Color color, double opacity) {
+		PhongMaterial material = new PhongMaterial(Color.color(0, 0, 0, opacity));
+		material.setSpecularColor(Color.BLACK);
+		material.setSelfIlluminationMap(ArenaHelpers.solidMap(color));
+		return material;
+	}
+
+	/** A rod along z, from its head at 0 back to the length, as thick as the radius, with its ends rounded. */
+	private static LowPoly rod(double radius, double length) {
+		LowPoly rod = new LowPoly();
+		rod.tube(new double[] { 0, 0, -radius }, new double[] { 0, 0, -length + radius }, radius, 12);
+		rod.spindle(0, 0, -radius, radius, radius * 0.7, 0.01, 12);
+		rod.spindle(0, 0, -length + radius, radius, 0.01, radius * 0.7, 12);
+		return rod;
 	}
 
 	/** Removes every bullet from the arena. */

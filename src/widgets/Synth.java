@@ -92,6 +92,29 @@ final class Synth {
 		return samples;
 	}
 
+	/**
+	 * A blaster: a sine whose pitch falls from one frequency to another, very fast at first and then slower, the way a struck wire
+	 * sounds, driven into a soft clip so it has the bite of an electric twang, with a quick attack and a decay over the seconds
+	 *
+	 * @param settle
+	 *            how many seconds the fall takes to come most of the way down
+	 * @param drive
+	 *            how hard the wave is clipped: 1 is almost a sine, more is grittier
+	 */
+	static double[] chirp(double from, double toValue, double seconds, double settle, double drive) {
+		double[] samples = new double[(int) (RATE * seconds)];
+		double phase = 0;
+		double norm = Math.tanh(drive);
+		for (int index = 0; index < samples.length; index++) {
+			double time = index / RATE;
+			double frequency = toValue + (from - toValue) * Math.exp(-time / settle);
+			phase += frequency / RATE;
+			double fade = Math.exp(-3.2 * time / seconds) * Math.min(1, index / (RATE * 0.0015)) * Math.min(1, (samples.length - index) / (RATE * 0.01));
+			samples[index] = Math.tanh(drive * Math.sin(2 * Math.PI * phase)) / norm * fade;
+		}
+		return samples;
+	}
+
 	/** Sine gliding down exponentially, the body of kicks and explosions */
 	static double[] sineSweep(double from, double toValue, double seconds) {
 		double[] samples = new double[(int) (RATE * seconds)];

@@ -20,18 +20,18 @@ final class BattleAudioEffects {
 	}
 
 	/**
-	 * A cannon shot, heavier with more power (0.1 to 3). It is higher the faster
-	 * the bullet goes (see {@link #shotPitch(double)}) and lower the slower: the
-	 * same sound played faster or slower.
+	 * A shot of a plasma cannon, the blaster of the films: a twang that falls fast from high to low, two of them a little apart so
+	 * they beat like a struck steel wire, a snap at the start and, the more power, the deeper thump of the plasma. It is higher the
+	 * faster the bolt goes (see {@link #shotPitch(double)}) and lower and longer the slower, the heavy ones: the same sound played
+	 * faster or slower.
 	 */
 	public void shot(double power) {
 		double weight = Math.max(0, Math.min(1, (power - 0.1) / 2.9));
-		double[] crack = Synth.mix(Synth.lowpass(Synth.noise(0.09, 3), 0.45), Synth.sweep(1500, 200, 0.12, true), 0.7);
-		double[] thump = Synth.sineSweep(100, 45, 0.22);
-		// The bullet whistling out of the barrel
-		double[] whistle = Synth.sineSweep(900, 500, 0.14);
-		double[] sound = Synth.mix(Synth.mix(crack, thump, 0.45 + 0.4 * weight), whistle, 0.25);
-		host.sfx(sound, 0.45 + 0.4 * weight, shotPitch(power) * host.vary());
+		double[] twang = Synth.mix(Synth.chirp(2600, 210, 0.34, 0.055, 2.2), Synth.chirp(2950, 240, 0.3, 0.05, 1.6), 0.55);
+		double[] snap = Synth.lowpass(Synth.noise(0.035, 60), 0.8);
+		double[] thump = Synth.sineSweep(160, 60, 0.2);
+		double[] sound = Synth.mix(Synth.mix(twang, snap, 0.35), thump, 0.15 + 0.5 * weight);
+		host.sfx(sound, 0.4 + 0.35 * weight, shotPitch(power) * host.vary());
 	}
 
 	/**
