@@ -103,15 +103,51 @@ During a battle, **presenters** comment on what is happening, and **critters** l
 
 Each kind of event has its own presenter. When something important happens, the presenter comes up from the bottom of the screen to comment, and goes down when there is nothing more to say. They share the screen equally: over the championship **all of them appear the same number of times** (they never differ by more than one appearance). When the presenter of the subject was already on more than one of the others, one of those who were on less speaks instead; and the same presenter does not appear twice in a row. The count is kept with the championship, from one battle to the next, even if the program is closed. The big moments (start and end of a round, knockouts, headlines) are always told.
 
-| Photo | Presenter | Comments on | Personality |
-|---|---|---|---|
-| <img src="docs/images/apresentador-kayode.png" height="220" alt="Kayodê"> | **Kayodê** | Start and end of the round, knockouts and the final headlines (such as *VIRADA HISTÓRICA!*, "historic comeback") | The master of ceremonies: lively, with a microphone in hand and a taste for big moments. |
-| <img src="docs/images/apresentador-bene.png" height="220" alt="Benê"> | **Benê** | Numbers and achievements: accuracy, *PERFECT!*, landslide wins | The experienced analyst: calm, with a headset and a tablet, speaks in data. |
-| <img src="docs/images/apresentador-zuri.png" height="220" alt="Zuri"> | **Zuri** | Walls and collisions, such as "ran into the force field!" | The referee: in a striped shirt, points out when someone hits a wall and lets nothing slide. |
-| <img src="docs/images/apresentador-dandara.png" height="220" alt="Dandara"> | **Dandara** | Hits, critical damage and combos (such as "Maximum power!" and "Relentless streak!") | The confident fighter: direct and intense, celebrates every clean hit. |
-| <img src="docs/images/apresentador-luana.png" height="220" alt="Luana"> | **Luana** | Long shots, bullets that cancel each other and misses (such as "Recalibrate that aim!") | The cheerful aiming expert: relaxed, with a rocket-patched jacket and a peace sign. |
-| <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
-| <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
+<table>
+<tr><th></th><th>Presenter</th><th>Comments on</th><th>Personality</th></tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-kayode.png" height="240" alt="Kayodê"></td>
+<td valign="top"><b>Kayodê</b><br>Communicator and social scientist</td>
+<td valign="top">Start and end of the round, knockouts and the final headlines (such as <i>VIRADA HISTÓRICA!</i>, "historic comeback")</td>
+<td valign="top">The master of ceremonies: young and charismatic, with a microphone in hand and a bow tie. With a degree in communications and social sciences, he wins over the audience and builds anticipation before every battle. He studies mass psychology.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-bene.png" height="240" alt="Benê"></td>
+<td valign="top"><b>Benê</b><br>Professor and mathematician</td>
+<td valign="top">Numbers and achievements: accuracy, <i>PERFECT!</i>, landslide wins</td>
+<td valign="top">The veteran analyst: calm, with a headset and a tablet. A respected professor and mathematician, he is the oldest on the team and speaks in data. The measurement and statistics systems were built under his guidance, and his stories help the younger ones.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-zuri.png" height="240" alt="Zuri"></td>
+<td valign="top"><b>Zuri</b><br>World public policy</td>
+<td valign="top">Walls and collisions, such as "ran into the force field!"</td>
+<td valign="top">The referee: in a striped shirt, points out when someone hits a wall and lets nothing slide. A guest of honor, she is also chiefly responsible for the African Federation's peace policy; her analytical, generalist view makes her a great judge.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-dandara.png" height="240" alt="Dandara"></td>
+<td valign="top"><b>Dandara</b><br>Master of intelligent systems</td>
+<td valign="top">Hits, critical damage and combos (such as "Maximum power!" and "Relentless streak!")</td>
+<td valign="top">The confident fighter: direct and intense, celebrates every clean hit. With a master's in computational and intelligent systems, she tutors the new teams and has taken Robocode's artificial intelligence techniques to every continent.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-luana.png" height="240" alt="Luana"></td>
+<td valign="top"><b>Luana</b><br>Extreme sports athlete</td>
+<td valign="top">Long shots, bullets that cancel each other and misses (such as "Recalibrate that aim!")</td>
+<td valign="top">The extreme sports athlete: relaxed, in a rocket-patched jacket and a peace sign. Passionate about high-speed racing and acrobatics with self-gliding wings, she highlights the moments where exactness and precision count. She hosts a weekly extreme sports show.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-caio.png" height="240" alt="Caio"></td>
+<td valign="top"><b>Caio</b><br>Artist and broadcast director</td>
+<td valign="top">Who is ahead, comebacks and long silences (such as "Twist!")</td>
+<td valign="top">The artist of the broadcast: laid-back, with headphones and a hoodie. With a degree in music and film, he handles the visual identity, the promotion and the broadcast to billions of spectators, and is preparing a museum of every battle since the first.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-nala.png" height="240" alt="Nala"></td>
+<td valign="top"><b>Nala</b><br>Robotics engineer</td>
+<td valign="top">Fire, danger and double knockouts (such as "Red alert!")</td>
+<td valign="top">The attentive engineer: in overalls with a wrench, warns when a robot is hanging by a thread. With a degree in robotics and industrial processes, she inspects the building of the robots and the fights, and created the energy cannons that equip the arenas.</td>
+</tr>
+</table>
 
 Who each one is, from Kayodê to Nala, is in [docs/STORY.md](docs/STORY.md#8-the-characters-of-robocode).
 

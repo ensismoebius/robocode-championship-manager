@@ -103,15 +103,51 @@ Durante a batalha, **apresentadores** comentam o que acontece, e **bichos** vive
 
 Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer. Eles dividem a tela por igual: ao longo do campeonato, **todos aparecem o mesmo número de vezes** (a diferença entre eles nunca passa de uma aparição). Quando o apresentador do assunto já apareceu mais do que algum colega, quem fala é um dos que apareceram menos; e o mesmo apresentador não aparece duas vezes seguidas. A contagem fica guardada com o campeonato, de uma batalha para a outra, mesmo que o programa seja fechado. Os grandes momentos (início e fim do round, nocaute, manchetes) sempre são ditos.
 
-| Foto | Apresentador | Comenta sobre | Como ele é |
-|---|---|---|---|
-| <img src="docs/images/apresentador-kayode.png" height="220" alt="Kayodê"> | **Kayodê** | Início e fim do round, nocaute e as manchetes do final (como *VIRADA HISTÓRICA!*) | O mestre de cerimônias: animado, com microfone na mão e gosto por momentos grandes. |
-| <img src="docs/images/apresentador-bene.png" height="220" alt="Benê"> | **Benê** | Números e conquistas: precisão, *PERFECT!*, vitórias esmagadoras | O analista experiente: calmo, de headset e tablet na mão, fala com dados. |
-| <img src="docs/images/apresentador-zuri.png" height="220" alt="Zuri"> | **Zuri** | Paredes e colisões, como *"deu de cara com o campo de força!"* | A juíza da luta: de camisa listrada, aponta quando alguém bate na parede e não deixa passar nada. |
-| <img src="docs/images/apresentador-dandara.png" height="220" alt="Dandara"> | **Dandara** | Golpes, dano crítico e combos (como *"Potência máxima!"* e *"Sequência implacável!"*) | A lutadora confiante: direta e intensa, comemora cada pancada certeira. |
-| <img src="docs/images/apresentador-luana.png" height="220" alt="Luana"> | **Luana** | Tiros longos, tiros que se anulam e erros de mira (como *"calibra essa mira!"*) | A animada das manhas da pontaria: descontraída, com jaqueta de foguetes e sinal de paz. |
-| <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
-| <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
+<table>
+<tr><th></th><th>Apresentador</th><th>Comenta sobre</th><th>Como ele é</th></tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-kayode.png" height="240" alt="Kayodê"></td>
+<td valign="top"><b>Kayodê</b><br>Comunicador e cientista social</td>
+<td valign="top">Início e fim do round, nocaute e as manchetes do final (como <i>VIRADA HISTÓRICA!</i>)</td>
+<td valign="top">O mestre de cerimônias: jovem e carismático, de microfone na mão e gravata-borboleta. Formado em comunicações e ciências sociais, conquista a simpatia do público e cria expectativa antes de cada batalha. Estuda psicologia de massas.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-bene.png" height="240" alt="Benê"></td>
+<td valign="top"><b>Benê</b><br>Professor e matemático</td>
+<td valign="top">Números e conquistas: precisão, <i>PERFECT!</i>, vitórias esmagadoras</td>
+<td valign="top">O analista veterano: calmo, de headset e tablet na mão. Professor e matemático respeitado, é o mais velho da equipe e fala com dados. Foi sob a sua tutela que os sistemas de medição e estatística foram construídos, e as suas histórias ajudam os mais jovens.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-zuri.png" height="240" alt="Zuri"></td>
+<td valign="top"><b>Zuri</b><br>Política pública mundial</td>
+<td valign="top">Paredes e colisões, como <i>"deu de cara com o campo de força!"</i></td>
+<td valign="top">A juíza da luta: de camisa listrada, aponta quando alguém bate na parede e não deixa passar nada. Convidada de honra, é também a principal responsável pela política de paz da Federação Africana; a visão analítica e generalista a faz uma ótima juíza.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-dandara.png" height="240" alt="Dandara"></td>
+<td valign="top"><b>Dandara</b><br>Mestra em sistemas inteligentes</td>
+<td valign="top">Golpes, dano crítico e combos (como <i>"Potência máxima!"</i> e <i>"Sequência implacável!"</i>)</td>
+<td valign="top">A lutadora confiante: direta e intensa, comemora cada pancada certeira. Mestra em sistemas computacionais e inteligentes, é tutora das novas equipes e já levou as técnicas de inteligência artificial do Robocode a todos os continentes.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-luana.png" height="240" alt="Luana"></td>
+<td valign="top"><b>Luana</b><br>Esportista radical</td>
+<td valign="top">Tiros longos, tiros que se anulam e erros de mira (como <i>"calibra essa mira!"</i>)</td>
+<td valign="top">A esportista radical: descontraída, de jaqueta de foguetes e sinal de paz. Apaixonada por corridas de alta velocidade e acrobacias com asas autoplanáveis, destaca os momentos em que exatidão e precisão contam. Apresenta um programa de esportes radicais toda semana.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-caio.png" height="240" alt="Caio"></td>
+<td valign="top"><b>Caio</b><br>Artista e diretor da transmissão</td>
+<td valign="top">Quem está na frente, reviravoltas e silêncios longos (como <i>"Reviravolta!"</i>)</td>
+<td valign="top">O artista da transmissão: tranquilo, de fone e moletom. Formado em música e cinema, cuida da identidade visual, da divulgação e da transmissão para bilhões de espectadores, e prepara um museu com todas as batalhas desde a primeira.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="docs/images/apresentador-nala.png" height="240" alt="Nala"></td>
+<td valign="top"><b>Nala</b><br>Engenheira de robótica</td>
+<td valign="top">Fogo, perigo e nocaute duplo (como <i>"Alerta vermelho!"</i>)</td>
+<td valign="top">A engenheira atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. Formada em robótica e processos industriais, fiscaliza a construção dos robôs e as lutas, e criou os canhões de energia que equipam as arenas.</td>
+</tr>
+</table>
 
 A vida de cada um, de Kayodê a Nala, está em [docs/HISTORIA.md](docs/HISTORIA.md#8-os-personagens-do-robocode).
 
