@@ -187,12 +187,12 @@ Abra a [página de downloads](https://github.com/ensismoebius/robocode-champions
 
 | Seu computador | Arquivo para baixar |
 |---|---|
-| Windows | `RobocodeChampManager-5.0.exe` |
-| Mac com chip Apple (M1, M2, M3, M4…) | `RobocodeChampManager-5.dmg` |
-| Ubuntu 24.04 | `robocodechampmanager_5_ubuntu24.04_amd64.deb` |
-| Debian 13 | `robocodechampmanager_5_debian13_amd64.deb` |
-| Fedora | `robocodechampmanager-5-1.x86_64.rpm` |
-| Arch Linux | `robocodechampmanager-5-1-x86_64.pkg.tar.zst` |
+| Windows | [`RobocodeChampManager-5.0.exe`](https://github.com/ensismoebius/robocode-championship-manager/releases/tag/v5) (na versão 5) |
+| Mac com chip Apple (M1, M2, M3, M4…) | [`RobocodeChampManager-5.dmg`](https://github.com/ensismoebius/robocode-championship-manager/releases/tag/v5) (na versão 5) |
+| Ubuntu 24.04 | `robocodechampmanager_6_ubuntu24.04_amd64.deb` |
+| Debian 13 | `robocodechampmanager_6_debian13_amd64.deb` |
+| Fedora | `robocodechampmanager-6-1.x86_64.rpm` |
+| Arch Linux | `robocodechampmanager-6-1-x86_64.pkg.tar.zst` |
 
 > [!NOTE]
 > Não sabe o seu Mac? Clique na maçã no canto da tela → **Sobre este Mac**. Se aparecer **Chip Apple** seguido de M1, M2, M3 ou M4, use o `.dmg`. Macs com processador **Intel** não são suportados por este instalador.
@@ -217,7 +217,7 @@ Abra a [página de downloads](https://github.com/ensismoebius/robocode-champions
 - **Pelo terminal:** abra o terminal, vá até a pasta onde o arquivo foi baixado e instale:
   ```bash
   cd ~/Downloads
-  sudo apt install ./robocodechampmanager_5_ubuntu24.04_amd64.deb
+  sudo apt install ./robocodechampmanager_6_ubuntu24.04_amd64.deb
   ```
   (no Debian, use o arquivo `…debian13…`)
 
@@ -226,7 +226,7 @@ Abra a [página de downloads](https://github.com/ensismoebius/robocode-champions
 - Dê **dois cliques** no arquivo `.rpm` e clique em **Instalar**, ou, no terminal:
   ```bash
   cd ~/Downloads
-  sudo dnf install ./robocodechampmanager-5-1.x86_64.rpm
+  sudo dnf install ./robocodechampmanager-6-1.x86_64.rpm
   ```
 
 **Arch Linux**
@@ -234,7 +234,7 @@ Abra a [página de downloads](https://github.com/ensismoebius/robocode-champions
 - No terminal:
   ```bash
   cd ~/Downloads
-  sudo pacman -U ./robocodechampmanager-5-1-x86_64.pkg.tar.zst
+  sudo pacman -U ./robocodechampmanager-6-1-x86_64.pkg.tar.zst
   ```
 
 No Linux, o programa é instalado em `/opt/robocodechampmanager`. Se ele não aparecer no menu de aplicativos, abra-o pelo terminal com `/opt/robocodechampmanager/bin/RobocodeChampManager`.
@@ -524,7 +524,7 @@ ou, sem o script:
 
 ```bash
 mvn package                                  # compila e roda os testes
-java -jar target/RobocodeChampManager-5-all.jar
+java -jar target/RobocodeChampManager-6-all.jar
 # ou
 mvn javafx:run
 ```

@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>RobocodeChampManager</groupId>
 	<artifactId>RobocodeChampManager</artifactId>
-	<version>5</version>
+	<version>6</version>
 	<name>Robocode Championship Manager</name>
 	<url>https://sourceforge.net/projects/robocode-championship-manager/</url>
 	<description>if you want to promote a robocode championship but do not have the right tools for this, that is the solution.
