@@ -67,7 +67,7 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 <table>
 <tr>
 <td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios. A trilha é um synthwave tocado nas escalas do Extremo Oriente: o hirajoshi japonês sobre os acordes menores e a pentatônica chinesa sobre os maiores, com um koto dedilhando a frase.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem. A trilha são tambores de guerra: claves de madeira, taikos e uma kalimba na pentatônica menor.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: lava, basalto e vulcões sob um céu noturno de cinzas, com a fumaça iluminada de vermelho pela lava e fagulhas no ar. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem. A trilha são tambores de guerra: claves de madeira, taikos e uma kalimba na pentatônica menor.</td>
 </tr>
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins. A trilha se inspira no canto inuíte, que não tem uma escala própria, só hábitos: poucas notas numa faixa estreita, com segundas menores e terças maiores, que ondulam e descem sobre um tambor de moldura, com dois cantores de garganta que respondem à respiração um do outro.</td>

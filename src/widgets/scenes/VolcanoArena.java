@@ -20,7 +20,8 @@ import javafx.scene.shape.TriangleMesh;
  * This program is licensed under GPLv3 see the README file for more information
  *
  * The volcano arena: the field of gray basalt plates over the lava sea, the moat
- * and the rivers of lava, and the volcanoes around the field. The lava flows
+ * and the rivers of lava, the volcanoes around the field, and a sky of ash lit
+ * red by the lava. The lava flows
  * themselves are shared with the jungle rivers and are drawn by the
  * {@link BattleArena3D}.
  *
@@ -29,6 +30,15 @@ import javafx.scene.shape.TriangleMesh;
 final class VolcanoArena {
 
 	private final BattleArena3D host;
+	/** The embers in the air, in layers that rise each at its own pace and fade in and out, so they never jump back in sight */
+	private final List<MeshView> emberLayers = new ArrayList<>();
+	private final List<PhongMaterial> emberLights = new ArrayList<>();
+	private double[] emberPhases = new double[0];
+	/** How many layers of embers, how many in each, how high a layer rises before it fades away and in how many seconds */
+	private static final int EMBER_LAYERS = 10;
+	private static final int EMBERS = 70;
+	private static final double EMBER_RISE = 260;
+	private static final double EMBER_SECONDS = 40;
 
 	/** Creates the volcano of the arena, drawn in the host scene. */
 	VolcanoArena(BattleArena3D host) {
@@ -46,18 +56,60 @@ final class VolcanoArena {
 
 
 	/**
-	 * Basalt plates (Voronoi cells) with glowing lava in the cracks, a moat of
-	 * lava around it and
-	 * volcanoes on the horizon
+	 * The sky of ash, basalt plates (Voronoi cells) with glowing lava in the
+	 * cracks, a moat of lava around it and volcanoes on the horizon
 	 */
 	void build(double width, double height) {
 		Random rocks = new Random(17);
+		host.arena.getChildren().add(ArenaMaterials.skyDome(VolcanoTexture.SKY));
 		this.volcanoGround(width, height);
 		this.basaltPlates(width, height, rocks);
 		this.moat(width, height);
 		this.rivers(width, height, rocks);
 		this.lavaSea();
 		this.volcanoes(rocks);
+		this.embers(width, height, rocks);
+	}
+
+	/**
+	 * Embers in the air around the field, specks of fire that float up from the lava: small and sharp near, smaller far away, none
+	 * over the field. In layers, each of its own color, that rise slowly and fade in and out by turns.
+	 */
+	private void embers(double width, double height, Random rocks) {
+		this.emberLayers.clear();
+		this.emberLights.clear();
+		this.emberPhases = new double[EMBER_LAYERS];
+		double clear = Math.hypot(width, height) / 2 + 120;
+		String[] colors = { "#ff7a24", "#ff9a3a", "#ffd27a", "#ff5a1a" };
+		for (int layer = 0; layer < EMBER_LAYERS; layer++) {
+			LowPoly specks = new LowPoly();
+			for (int ember = 0; ember < EMBERS; ember++) {
+				double angle = rocks.nextDouble() * Math.PI * 2;
+				double distance = clear + Math.pow(rocks.nextDouble(), 1.5) * 4800;
+				double size = 1.6 + distance * 0.0011;
+				specks.box(Math.cos(angle) * distance, -(20 + rocks.nextDouble() * 650), Math.sin(angle) * distance, size, size, size);
+			}
+			PhongMaterial light = new PhongMaterial(Color.color(0, 0, 0, 0));
+			light.setSpecularColor(Color.BLACK);
+			light.setSelfIlluminationMap(ArenaHelpers.solidMap(Color.web(colors[layer % colors.length])));
+			MeshView view = specks.view(light);
+			this.emberLayers.add(view);
+			this.emberLights.add(light);
+			this.emberPhases[layer] = (double) layer / EMBER_LAYERS;
+			host.arena.getChildren().add(view);
+		}
+		this.update(0);
+	}
+
+	/** The embers rise, each layer fading in as it starts and out as it ends, and starting again from below, unseen. */
+	void update(double deltaTime) {
+		for (int layer = 0; layer < this.emberLayers.size(); layer++) {
+			// The time can step back, when the replay goes back: the phase stays between 0 and 1
+			double phase = ((this.emberPhases[layer] + deltaTime / EMBER_SECONDS) % 1 + 1) % 1;
+			this.emberPhases[layer] = phase;
+			this.emberLayers.get(layer).setTranslateY(-phase * EMBER_RISE);
+			this.emberLights.get(layer).setDiffuseColor(Color.color(0, 0, 0, Math.max(0, Math.min(1, Math.sin(Math.PI * phase)))));
+		}
 	}
 
 	/** A plateau of rock in a sea of lava, with the lava under the field */

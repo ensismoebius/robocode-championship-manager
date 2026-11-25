@@ -67,7 +67,7 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 <table>
 <tr>
 <td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings. Its soundtrack is a synthwave played in the scales of the Far East: the Japanese hirajoshi over the minor chords and the Chinese pentatonic over the major ones, with a koto plucking the phrase.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out. Its soundtrack is war drums: wood block claves, taikos and a kalimba in the minor pentatonic.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: lava, basalt and volcanoes under a night sky of ash, its smoke lit red by the lava and embers in the air. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out. Its soundtrack is war drums: wood block claves, taikos and a kalimba in the minor pentatonic.</td>
 </tr>
 <tr>
 <td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins. Its soundtrack is inspired by Inuit singing, which has no scale of its own, only habits: a few notes in a narrow range, with minor seconds and major thirds, that undulate and come down over a frame drum, with two throat singers who answer each other's breaths.</td>
