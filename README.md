@@ -187,8 +187,8 @@ Abra a [página de downloads](https://github.com/ensismoebius/robocode-champions
 
 | Seu computador | Arquivo para baixar |
 |---|---|
-| Windows | [`RobocodeChampManager-5.0.exe`](https://github.com/ensismoebius/robocode-championship-manager/releases/tag/v5) (na versão 5) |
-| Mac com chip Apple (M1, M2, M3, M4…) | [`RobocodeChampManager-5.dmg`](https://github.com/ensismoebius/robocode-championship-manager/releases/tag/v5) (na versão 5) |
+| Windows | `RobocodeChampManager-6.0.exe` |
+| Mac com chip Apple (M1, M2, M3, M4…) | `RobocodeChampManager-6.dmg` |
 | Ubuntu 24.04 | `robocodechampmanager_6_ubuntu24.04_amd64.deb` |
 | Debian 13 | `robocodechampmanager_6_debian13_amd64.deb` |
 | Fedora | `robocodechampmanager-6-1.x86_64.rpm` |
