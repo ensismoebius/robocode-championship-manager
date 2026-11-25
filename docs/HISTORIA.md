@@ -2,9 +2,9 @@
 
 ## A história de um mundo que escolheu competir para não se destruir
 
-> [English version](STORY.md) · [Voltar ao README](../README.md)
+> [English version](STORY.md)
 
-Esta é a história de fundo do **Robocode Championship Manager**: o mundo em que as batalhas acontecem, quem são os apresentadores e por que cada arena fica onde fica.
+*Esta é a história do mundo que saiu das guerras e aprendeu a competir sem destruir: como a paz chegou, como nasceu o Robocode, quem conta as suas batalhas e onde elas acontecem.*
 
 ## Sumário
 
@@ -156,13 +156,13 @@ Entre as figuras que participam das transmissões estão:
 | <img src="images/apresentador-caio.png" height="220" alt="Caio"> | **Caio**<br><i>Acompanha a liderança das partidas, as reviravoltas e o desenvolvimento geral dos confrontos.</i><br><br>Caio é o artista responsável pela identidade visual, pela divulgação e pela transmissão das batalhas na fundação. Formado em música e cinema, gerencia toda a transmissão das partidas e garante que cada detalhe chegue aos bilhões de espectadores ao redor do mundo. O seu projeto atual é um museu histórico com todas as batalhas de Robocode desde a primeira, com estreia prevista para daqui a seis meses, pela neurovisão. |
 | <img src="images/apresentador-nala.png" height="220" alt="Nala"> | **Nala**<br><i>Comenta situações envolvendo fogo, perigo e acontecimentos de grande intensidade, incluindo nocautes duplos.</i><br><br>Nala é a engenheira da equipe, formada em robótica e processos industriais. Na fundação, acompanha e fiscaliza a construção dos robôs e fiscaliza as batalhas, para que as lutas sejam justas. Em seu trabalho de pós-graduação, foi a responsável pela criação dos canhões de energia que hoje equipam os robôs nas arenas. Essa tecnologia tornou as batalhas ainda mais amigáveis ao meio ambiente e menos perigosas para o público em geral. |
 
-Esses personagens dão identidade às transmissões e ajudam a construir uma linguagem própria para o espetáculo. No programa, eles aparecem o mesmo número de vezes ao longo de cada campeonato.
+Esses personagens dão identidade às transmissões e ajudam a construir uma linguagem própria para o espetáculo. Em cada campeonato, todos eles têm a sua vez diante das câmeras, o mesmo número de vezes.
 
 ## 9. As arenas do Robocode
 
 Para receber as competições, foram desenvolvidas **seis arenas** distribuídas por diferentes regiões do planeta.
 
-Cada arena possui características ambientais e visuais próprias, representando diferentes relações entre tecnologia, natureza e civilização. Cada uma também segue, no cenário e na música, o que é típico da região em que fica.
+Cada arena possui características ambientais e visuais próprias, representando diferentes relações entre tecnologia, natureza e civilização. Cada uma também segue, na paisagem, na arquitetura e na música, o que é típico da região em que fica.
 
 As arenas não são apenas espaços físicos para os confrontos. Elas também representam diferentes perspectivas sobre o mundo que surgiu depois de 2150.
 
@@ -183,7 +183,7 @@ Localizada na América Latina, a Floresta Tropical representa a recuperação do
 
 A arena está inserida em um ambiente de vegetação densa, árvores monumentais, rios, cachoeiras que despencam de paredões de rocha úmida e uma grande diversidade de animais.
 
-O cenário representa a importância da preservação da biodiversidade e a possibilidade de reconstruir ambientes naturais que anteriormente sofreram com a degradação ambiental.
+O lugar representa a importância da preservação da biodiversidade e a possibilidade de reconstruir ambientes naturais que anteriormente sofreram com a degradação ambiental.
 
 Entre os animais associados ao ambiente estão macacos e pássaros.
 
@@ -199,9 +199,9 @@ Localizada no extremo norte, na Rússia, a Tundra Glacial apresenta um ambiente 
 
 A arena possui formações de cristais de gelo, superfícies congeladas e paisagens que remetem à imensidão dos ambientes polares.
 
-A aurora boreal acrescenta uma dimensão visual característica ao cenário.
+A aurora boreal acrescenta um brilho característico à paisagem.
 
-O ambiente também abriga animais adaptados às condições polares, incluindo os pinguins presentes na representação visual da arena.
+O ambiente também abriga animais adaptados às condições polares, incluindo os pinguins que caminham pelo gelo.
 
 A Tundra Glacial representa a diversidade dos ambientes naturais e a capacidade humana de construir espaços de competição em regiões ambientalmente extremas.
 
@@ -211,7 +211,7 @@ A Tundra Glacial representa a diversidade dos ambientes naturais e a capacidade 
 
 Localizada na Ásia, a Grade Neon representa a relação entre desenvolvimento tecnológico, urbanização e inovação. Depois dos movimentos de unificação dos povos asiáticos, Japão e China se tornaram uma única região, e a arena fica numa metrópole dela.
 
-Seu cenário é formado por uma cidade futurista, com estruturas arquitetônicas avançadas, iluminação neon, estradas e carros de luz entre os prédios, e elementos tecnológicos integrados ao ambiente urbano. Os besouros correm pelas bordas da grade.
+O lugar é formado por uma cidade futurista, com estruturas arquitetônicas avançadas, iluminação neon, estradas e carros de luz entre os prédios, e elementos tecnológicos integrados ao ambiente urbano. Os besouros correm pelas bordas da grade.
 
 A arena representa uma sociedade na qual a tecnologia atingiu níveis elevados de desenvolvimento, mas na qual a competição continua sendo uma expressão importante da cultura humana.
 
@@ -223,11 +223,11 @@ A Grade Neon simboliza a criatividade tecnológica e a capacidade de transformar
 
 Localizada no Havaí, a Forja Vulcânica apresenta um ambiente geológico marcado pela atividade vulcânica. Depois das lutas pela independência do arquipélago, o povo havaiano passou a extrair energia geotérmica dos vulcões com tecnologia própria: a "forja vulcânica".
 
-A arena possui formações de basalto, lagos e rios de lava, penhascos, cavernas com fungos que brilham e vulcões que compõem um cenário de grande intensidade visual.
+A arena possui formações de basalto, lagos e rios de lava, penhascos, cavernas com fungos que brilham e vulcões que compõem uma paisagem de grande intensidade.
 
 O ambiente representa a convivência da humanidade com as forças naturais do planeta.
 
-A presença de salamandras e morcegos integra a fauna representada nesse cenário. Como nas demais arenas, os animais permanecem protegidos dos confrontos.
+A presença de salamandras e morcegos integra a fauna desse lugar. Como nas demais arenas, os animais permanecem protegidos dos confrontos.
 
 A Forja Vulcânica simboliza transformação, resistência e a capacidade de desenvolver tecnologia mesmo diante de ambientes naturais extremos.
 
@@ -269,7 +269,7 @@ A grande final do Robocode representa o momento mais importante de cada campeona
 
 Depois de disputas realizadas em diferentes arenas e entre equipes de diversos países e continentes, os competidores finalistas chegam ao Éden Solar.
 
-O ambiente da final contrasta com os cenários anteriores.
+O ambiente da final contrasta com os lugares anteriores.
 
 Na Floresta Tropical, a natureza representa a recuperação dos ecossistemas. Na Tundra Glacial, a humanidade demonstra sua capacidade de conviver com ambientes extremos. Na Grade Neon, a tecnologia representa a inovação urbana. Na Forja Vulcânica, as forças naturais simbolizam transformação e resistência. Nas Areias do Oriente Médio, o conhecimento antigo floresce na paz.
 

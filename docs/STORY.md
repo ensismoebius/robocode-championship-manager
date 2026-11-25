@@ -2,9 +2,9 @@
 
 ## The story of a world that chose to compete so as not to destroy itself
 
-> [Versão em português](HISTORIA.md) · [Back to the README](../README.en.md)
+> [Versão em português](HISTORIA.md)
 
-This is the backstory of the **Robocode Championship Manager**: the world where the battles take place, who the presenters are, and why each arena is where it is.
+*This is the story of the world that came out of its wars and learned to compete without destroying: how peace arrived, how Robocode was born, who tells its battles and where they take place.*
 
 ## Contents
 
@@ -156,13 +156,13 @@ Among the figures in the broadcasts are:
 | <img src="images/apresentador-caio.png" height="220" alt="Caio"> | **Caio**<br><i>Follows who is in the lead, the comebacks and the overall course of the fights.</i><br><br>Caio is the artist in charge of the visual identity, the promotion and the broadcast of the battles at the foundation. With a degree in music and film, he manages the whole broadcast of the matches and makes sure every detail reaches the billions of spectators around the world. His current project is a history museum with every Robocode battle since the first, due to open in six months, on neurovision. |
 | <img src="images/apresentador-nala.png" height="220" alt="Nala"> | **Nala**<br><i>Comments on fire, danger and high-intensity moments, including double knockouts.</i><br><br>Nala is the engineer of the team, with a degree in robotics and industrial processes. At the foundation she follows and inspects the building of the robots and inspects the battles, so that the fights are fair. In her postgraduate work she was responsible for creating the energy cannons that now equip the robots in the arenas. This technology made the battles even friendlier to the environment and less dangerous for the general public. |
 
-These characters give the broadcasts an identity and help build a language of their own for the show. In the program, they appear the same number of times over each championship.
+These characters give the broadcasts an identity and help build a language of their own for the show. In every championship, each of them gets their turn in front of the cameras, the same number of times.
 
 ## 9. The arenas of Robocode
 
 To host the competitions, **six arenas** were built in different regions of the planet.
 
-Each arena has its own environmental and visual traits, standing for a different relation between technology, nature and civilization. Each one also follows, in its scenery and its music, what is typical of its region.
+Each arena has its own environmental and visual traits, standing for a different relation between technology, nature and civilization. Each one also follows, in its landscape, its architecture and its music, what is typical of its region.
 
 The arenas are not just physical spaces for the fights. They also stand for different views of the world that appeared after 2150.
 
@@ -183,7 +183,7 @@ In Latin America, the Tropical Forest stands for the recovery of the planet's gr
 
 The arena sits in dense vegetation, monumental trees, rivers, waterfalls that fall from walls of damp rock, and a great diversity of animals.
 
-The scenery stands for the importance of preserving biodiversity and the possibility of rebuilding natural environments that had suffered from degradation.
+The place stands for the importance of preserving biodiversity and the possibility of rebuilding natural environments that had suffered from degradation.
 
 The animals of this environment are monkeys and birds.
 
@@ -199,9 +199,9 @@ In the far north, in Russia, the Glacial Tundra is a world of ice, snow and low 
 
 The arena has ice crystal formations, frozen surfaces and landscapes that recall the vastness of polar environments.
 
-The aurora borealis adds a visual signature to the scene.
+The aurora borealis adds a signature glow to the landscape.
 
-The environment also shelters animals adapted to polar conditions, including the penguins in the arena's visual representation.
+The environment also shelters animals adapted to polar conditions, including the penguins that walk on the ice.
 
 The Glacial Tundra stands for the diversity of natural environments and the human ability to build competition spaces in extreme regions.
 
@@ -211,7 +211,7 @@ The Glacial Tundra stands for the diversity of natural environments and the huma
 
 In Asia, the Neon Grid stands for the relation between technological development, urbanization and innovation. After the movements to unify the Asian peoples, Japan and China became a single region, and the arena sits in one of its metropolises.
 
-Its scenery is a futuristic city, with advanced architecture, neon lighting, roads and light cars among the buildings, and technology built into the urban setting. Beetles run along the edges of the grid.
+The place is a futuristic city, with advanced architecture, neon lighting, roads and light cars among the buildings, and technology built into the urban setting. Beetles run along the edges of the grid.
 
 The arena stands for a society where technology has reached very high levels, but where competition is still an important expression of human culture.
 
@@ -223,11 +223,11 @@ The Neon Grid symbolizes technological creativity and the ability to turn the ur
 
 In Hawaii, the Volcanic Forge is a geological setting shaped by volcanic activity. After the struggles for the islands' independence, the Hawaiian people began to draw geothermal energy from the volcanoes with technology of their own: the "volcanic forge".
 
-The arena has basalt formations, lava lakes and rivers, cliffs, caves with glowing fungi, and volcanoes that make a scene of great visual intensity.
+The arena has basalt formations, lava lakes and rivers, cliffs, caves with glowing fungi, and volcanoes that make a landscape of great intensity.
 
 The environment stands for humanity living with the forces of the planet.
 
-Salamanders and bats are the fauna of this setting. As in the other arenas, the animals stay protected from the fights.
+Salamanders and bats are the fauna of this place. As in the other arenas, the animals stay protected from the fights.
 
 The Volcanic Forge symbolizes transformation, resilience and the ability to develop technology even in extreme natural environments.
 
