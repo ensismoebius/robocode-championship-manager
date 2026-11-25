@@ -113,7 +113,7 @@ Each kind of event has its own presenter. When something important happens, the 
 | <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
 | <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
 
-Who each one is, from Kayodê to Nala, is in [docs/STORY.md](docs/STORY.md#biographies).
+Who each one is, from Kayodê to Nala, is in [docs/STORY.md](docs/STORY.md#8-the-characters-of-robocode).
 
 ### Arena critters
 

@@ -113,7 +113,7 @@ Cada tipo de acontecimento tem o seu apresentador. Quando algo importante aconte
 | <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
 | <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
 
-A vida de cada um, de Kayodê a Nala, está em [docs/HISTORIA.md](docs/HISTORIA.md#biografias).
+A vida de cada um, de Kayodê a Nala, está em [docs/HISTORIA.md](docs/HISTORIA.md#8-os-personagens-do-robocode).
 
 ### Bichos das arenas
 
