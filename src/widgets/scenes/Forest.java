@@ -205,6 +205,11 @@ final class Forest {
 		}
 	}
 
+	/** A clump of leaves by itself, with no tree under it: the crowns of a forest seen from above, packed together. */
+	void clump(double posX, double posY, double posZ, double radius, Random random) {
+		this.blob(new double[] { posX, posY, posZ }, radius, random);
+	}
+
 	/**
 	 * A clump of leaves: a flattened lumpy sphere
 	 */

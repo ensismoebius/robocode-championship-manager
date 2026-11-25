@@ -20,9 +20,9 @@ import javafx.scene.shape.TriangleMesh;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The jungle arena: the mossy ground between the rivers, the waterfalls, the
- * rocks, the ferns and the huge trees, the walls of mountains around the field
- * and the shafts of light through the canopy.
+ * The jungle arena: the mossy ground between the rivers, the waterfalls that fall
+ * from the forested highlands at both ends (see {@link JungleCliffs}), the rocks,
+ * the ferns and the huge trees, and the shafts of light through the canopy.
  *
  * @author André Furlan - ensismoebius@gmail.com
  */
@@ -39,10 +39,19 @@ final class JungleArena {
 	private static final double BEAM_ALPHA = 0.07;
 
 	private final BattleArena3D host;
+	/** The highlands at both ends, where the waterfalls come from */
+	private JungleCliffs cliffs;
+	/** Where the pool at the foot of each waterfall is, {x, z}: no tree stands in front of the fall */
+	private final List<double[]> pools = new ArrayList<>();
 
 	/** Creates the jungle of the arena, drawn in the host scene. */
 	JungleArena(BattleArena3D host) {
 		this.host = host;
+	}
+
+	/** The highlands at both ends, once the jungle is built. */
+	JungleCliffs cliffs() {
+		return this.cliffs;
 	}
 
 	/**
@@ -150,6 +159,8 @@ final class JungleArena {
 		double riverWidth = 96;
 		this.jungleGround(width, height, jungleMaterials);
 		this.jungleRivers(width, height, jungleMaterials, riverZ, riverWidth);
+		this.cliffs = new JungleCliffs(host, riverZ, riverWidth);
+		this.pools.clear();
 		this.jungleWaterfalls(width, height, wild, jungleMaterials, riverZ, riverWidth);
 		this.jungleRocks(width, height, wild, jungleMaterials);
 		this.jungleFerns(width, height, wild, riverZ, riverWidth);
@@ -186,25 +197,66 @@ final class JungleArena {
 		host.lavaFlows.river(3000, -3000, 1, riverZ, 2.3, riverWidth, 0.16, water, 120);
 	}
 
-	/** Waterfalls far at both ends, falling from a cliff to a pool */
+	/**
+	 * Waterfalls far at both ends: a stream on top of the highlands falls from the lip of their wall into a pool, which runs off
+	 * into the nearer river
+	 */
 	void jungleWaterfalls(double width, double height, Random wild, JungleMaterials jungleMaterials, double riverZ, double riverWidth) {
 		PhongMaterial water = jungleMaterials.water();
 		PhongMaterial waterfall = jungleMaterials.waterfall();
-		// Waterfalls far at both ends, falling from a cliff to a pool
 		for (int side = -1; side <= 1; side += 2) {
 			double posX = side * (width / 2 + 1000);
 			double posZ = (wild.nextDouble() - 0.5) * 300;
-			// The cliff, its face to the field at x
+			// The highlands, the face of their wall to the field at x, and the rocks at its foot
+			this.cliffs.build(posX, posZ, side, jungleMaterials, wild);
+			this.pools.add(new double[] { posX - side * 120, posZ });
 			this.rockMountain(posX, posZ, side, wild);
 			// The water in front of the face, not on it (two surfaces in the same
-			// place flicker)
+			// place flicker), from the stream on top down to the pool
 			double front = posX - side * 2.5;
-			host.lavaFlows.flow(new double[][] { { front, 6 - 450, posZ - 70 }, { front, 6 - 450, posZ + 70 }, { front, 5, posZ + 70 }, { front, 5, posZ - 70 } }, 0, -0.9, waterfall, 60);
+			double lip = 6 - JungleCliffs.LIP;
+			host.lavaFlows.flow(new double[][] { { front, lip, posZ - 70 }, { front, lip, posZ + 70 }, { front, 5, posZ + 70 }, { front, 5, posZ - 70 } }, 0, -0.9, waterfall, 60);
 			// The pool at its foot, toward the field
 			double poolEnd = posX - side * 240;
 			double[][] pool = { { posX - side * 2.5, 3, posZ - 150 }, { poolEnd, 3, posZ - 150 }, { poolEnd, 3, posZ + 150 }, { posX - side * 2.5, 3, posZ + 150 } };
 			host.lavaFlows.flow(pool, 0.025, 0.018, water, 120);
+			this.outlet(posX, posZ, side, riverZ, water);
 		}
+	}
+
+	/**
+	 * The brook that runs from the pool into the nearer river, so the water of the fall goes somewhere: out of the side of the pool,
+	 * toward the field and then aside. A little under the pool and the river, so where they meet they do not flicker.
+	 */
+	private void outlet(double posX, double posZ, int side, double riverZ, PhongMaterial water) {
+		double toward = posZ >= 0 ? 1 : -1;
+		// The river on the side of z > 0 has the phase 2.3, the other 0 (see jungleRivers)
+		double phase = toward > 0 ? 2.3 : 0;
+		double endX = posX - side * 330;
+		double[] start = { posX - side * 120, posZ + toward * 120 };
+		double[] bend = { posX - side * 290, posZ + toward * 130 };
+		double[] end = { endX, toward * (riverZ + LavaFlows.bend(endX, phase)) };
+		int count = 10;
+		double[] xs = new double[count];
+		double[] zs = new double[count];
+		double[] halves = new double[count];
+		for (int index = 0; index < count; index++) {
+			double time = (double) index / (count - 1);
+			xs[index] = (1 - time) * (1 - time) * start[0] + 2 * (1 - time) * time * bend[0] + time * time * end[0];
+			zs[index] = (1 - time) * (1 - time) * start[1] + 2 * (1 - time) * time * bend[1] + time * time * end[1];
+			halves[index] = 15 + 6 * time;
+		}
+		host.lavaFlows.flowRibbon(xs, zs, halves, 3.3, -0.3, 0, water, 120);
+	}
+
+	/** Whether the point is in front of a waterfall, between it and the field, where a tree would hide it */
+	private boolean beforeAFall(double posX, double posZ) {
+		for (double[] pool : this.pools) {
+			if (Math.abs(posZ - pool[1]) < 330 && Math.abs(posX) < Math.abs(pool[0]) + 200 && Math.signum(posX) == Math.signum(pool[0]) && Math.abs(posX) > Math.abs(pool[0]) - 700) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Rocks covered with moss between the field and the rivers */
@@ -242,7 +294,7 @@ final class JungleArena {
 				posX = (wild.nextDouble() - 0.5) * (width + 1700);
 				posZ = (wild.nextDouble() - 0.5) * (height + 1300);
 				// Not in the field, not in the rivers
-			} while (Math.abs(posX) < width / 2 + 25 && Math.abs(posZ) < height / 2 + 25 || Math.abs(Math.abs(posZ) - riverZ) < riverWidth / 2 + 14 + 80);
+			} while (Math.abs(posX) < width / 2 + 25 && Math.abs(posZ) < height / 2 + 25 || Math.abs(Math.abs(posZ) - riverZ) < riverWidth / 2 + 14 + 80 || this.cliffs.covers(posX, posZ, 20));
 			this.fern(ferns[wild.nextInt(ferns.length)], posX, posZ, wild);
 		}
 		for (int index2 = 0; index2 < ferns.length; index2++) {
@@ -270,8 +322,8 @@ final class JungleArena {
 				double distance = 950 + wild.nextDouble() * 1100;
 				posX = Math.cos(angle) * distance * 1.15;
 				posZ = Math.sin(angle) * distance;
-				// Not over the rivers
-			} while (Math.abs(Math.abs(posZ) - riverZ) < riverWidth / 2 + 90);
+				// Not over the rivers, not in the rock of the highlands
+			} while (Math.abs(Math.abs(posZ) - riverZ) < riverWidth / 2 + 90 || this.cliffs.covers(posX, posZ, 120) || this.beforeAFall(posX, posZ));
 			forest.addTree(posX, 6, posZ, 0.85 + wild.nextDouble() * 0.5, wild);
 		}
 		MeshView trunks = new MeshView(forest.bark);
@@ -284,10 +336,9 @@ final class JungleArena {
 	}
 
 	/**
-	 * The mountain the waterfall falls from: tiers of irregular rocks, higher in
-	 * the middle, with buttresses and ledges on both sides of the water, a rock
-	 * lip over it, boulders at its foot and moss on the tops. The water is a flat
-	 * strip in front of x, so the rocks behind it stay behind x.
+	 * The rocks at the foot of the wall the waterfall falls from: buttresses and
+	 * ledges on both sides of the water, boulders at its foot and moss on the tops. The water is a flat strip in
+	 * front of x, so the rocks behind it stay behind x.
 	 *
 	 * @param side
 	 *            1 or -1: which end of the arena, the mountain goes away from the
@@ -300,7 +351,6 @@ final class JungleArena {
 			stones[index] = new LowPoly();
 		}
 		LowPoly moss = new LowPoly();
-		rockBody(posX, posZ, side, stones, moss, wild);
 		rockButtresses(posX, posZ, side, stones, moss, wild);
 		rockBoulders(posX, posZ, side, stones, wild);
 
@@ -315,29 +365,7 @@ final class JungleArena {
 		host.arena.getChildren().add(moss.view(mossy));
 	}
 
-	/** The body of the mountain: tiers side by side, tall behind the water and lower at the sides */
-	private void rockBody(double posX, double posZ, int side, LowPoly[] stones, LowPoly moss, Random wild) {
-		double toward = -side;
-		for (int index2 = 0; index2 < 10; index2++) {
-			double deltaZ = -250 + index2 * 55 + (wild.nextDouble() - 0.5) * 30;
-			boolean channel = Math.abs(deltaZ) < 105;
-			double rxValue = 55 + wild.nextDouble() * 35;
-			double rzValue = 55 + wild.nextDouble() * 30;
-			double height = channel ? 440 + wild.nextDouble() * 70 : 360 - Math.abs(deltaZ) * 0.5 + wild.nextDouble() * 120;
-			// Behind the water in the middle, sticking out toward the field at the sides
-			double jut = channel ? 0 : wild.nextDouble() * 45;
-			double cxValue = posX + side * (rxValue * 1.25 + 4) + toward * jut;
-			stones[wild.nextInt(stones.length)].rock(cxValue, posZ + deltaZ, 6, height, rxValue, rzValue, 7, 0.45 + wild.nextDouble() * 0.3, 0.6, wild);
-			if (!channel) {
-				// A ledge on top of it
-				double upperHeight = 90 + wild.nextDouble() * 110;
-				stones[wild.nextInt(stones.length)].rock(cxValue + side * 10, posZ + deltaZ, 6 - height * 0.72, upperHeight, rxValue * 0.65, rzValue * 0.65, 6, 0.55, 0.55, wild);
-				moss.rock(cxValue, posZ + deltaZ, 6 - height * 0.88, 7, rxValue * 0.5, rzValue * 0.5, 6, 0.8, 0.4, wild);
-			}
-		}
-	}
-
-	/** Buttresses: rocks coming out of the mountain to the sides of the water, and a lip of rock over the water */
+	/** Buttresses: rocks coming out of the wall to the sides of the water */
 	private void rockButtresses(double posX, double posZ, int side, LowPoly[] stones, LowPoly moss, Random wild) {
 		double toward = -side;
 		for (int index3 = 0; index3 < 8; index3++) {
@@ -352,10 +380,6 @@ final class JungleArena {
 			}
 		}
 
-		// A lip of rock over the water: it comes out from under it
-		stones[1].rock(posX + toward * 16, posZ, 6 - 400, 80, 70, 100, 8, 0.75, 0.45, wild);
-		stones[3].rock(posX + toward * 6, posZ + 55, 6 - 380, 70, 40, 45, 6, 0.7, 0.5, wild);
-		stones[0].rock(posX + toward * 6, posZ - 55, 6 - 385, 70, 40, 45, 6, 0.7, 0.5, wild);
 	}
 
 	/** Boulders at the foot on both sides of the pool, and a few stones in the water at its edge */

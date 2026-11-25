@@ -122,6 +122,16 @@ final class LavaFlows {
 		host.flows.add(new Flow(mesh, texture, duValue, dvValue));
 	}
 
+	/** How far a river with the phase bends away from its line, at x */
+	static double bend(double posX, double phase) {
+		return 45 * Math.sin(posX / 330 + phase) + 22 * Math.sin(posX / 120 + 1.7 + 2 * phase) + 10 * Math.sin(posX / 57 + 0.3 * phase);
+	}
+
+	/** Half the width of a river with the phase and the width, at x: its banks are wider and narrower in turn */
+	static double halfWidth(double posX, double phase, double width) {
+		return width / 2 * (0.8 + 0.3 * (0.5 + 0.5 * Math.sin(posX / 190 + 0.9 + phase)));
+	}
+
 	/**
 	 * A river from one side of the field to the other, meandering around a line at
 	 * distance centre from the middle, its banks wider and narrower in turn
@@ -133,10 +143,9 @@ final class LavaFlows {
 		double[] halfWidths = new double[count];
 		for (int index = 0; index < count; index++) {
 			double posX = fromX + (toX - fromX) * index / (count - 1);
-			double bend = 45 * Math.sin(posX / 330 + phase) + 22 * Math.sin(posX / 120 + 1.7 + 2 * phase) + 10 * Math.sin(posX / 57 + 0.3 * phase);
 			xsValue[index] = posX;
-			zsValue[index] = sign * (centre + bend);
-			halfWidths[index] = width / 2 * (0.8 + 0.3 * (0.5 + 0.5 * Math.sin(posX / 190 + 0.9 + phase)));
+			zsValue[index] = sign * (centre + bend(posX, phase));
+			halfWidths[index] = halfWidth(posX, phase, width);
 		}
 		this.flowRibbon(xsValue, zsValue, halfWidths, 3, -speed, 0, material, tile);
 	}
