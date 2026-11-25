@@ -113,6 +113,8 @@ Cada tipo de acontecimento tem o seu apresentador. Quando algo importante aconte
 | <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Quem está na frente, reviravoltas e silêncios longos (como *"Reviravolta!"*) | O DJ tranquilo do ritmo: de fone e moletom, comenta o clima da partida. |
 | <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fogo, perigo e nocaute duplo (como *"Alerta vermelho!"*) | A mecânica atenta: de macacão e chave inglesa, avisa quando um robô está por um fio. |
 
+A vida de cada um, de Kayodê a Nala, está em [docs/HISTORIA.md](docs/HISTORIA.md#biografias).
+
 ### Bichos das arenas
 
 Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área da batalha** e fogem quando há tiros ou explosões por perto. Antes da primeira batalha, a câmera dá uma volta por cima da arena, fica 2 segundos num deles e depois segue o seu passeio.
@@ -124,7 +126,7 @@ Cada arena tem os seus bichos. Eles andam pelo cenário, **nunca entram na área
 | <img src="docs/images/bicho-scorpion.jpg" width="300" alt="Escorpião"><br>**Escorpião**<br><i>Areias do Oriente Médio (dois a cada três bichos)</i><br>Anda pela areia em volta do pátio, com a cauda curvada sobre as costas e o ferrão em cima. | | |
 
 > [!NOTE]
-> Os traços de personalidade descritos acima são uma leitura do estilo de cada personagem, feita a partir das falas que eles dizem e da aparência de cada um. Eles não têm regras de jogo ligadas a esses traços.
+> A coluna "Como ele é" é uma leitura do estilo de cada personagem, feita a partir das falas e da aparência; quem cada um é está nas biografias. Nada disso tem regras de jogo ligadas.
 
 ---
 

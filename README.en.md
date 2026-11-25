@@ -113,6 +113,8 @@ Each kind of event has its own presenter. When something important happens, the 
 | <img src="docs/images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Who is ahead, comebacks and long silences (such as "Twist!") | The laid-back DJ of the pace: with headphones and a hoodie, comments on the mood of the match. |
 | <img src="docs/images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Fire, danger and double knockouts (such as "Red alert!") | The attentive mechanic: in overalls with a wrench, warns when a robot is hanging by a thread. |
 
+Who each one is, from Kayodê to Nala, is in [docs/STORY.md](docs/STORY.md#biographies).
+
 ### Arena critters
 
 Each arena has its own critters. They walk around the scenery, **never enter the battle area**, and run away when shots or explosions happen nearby. Before the first battle, the camera sweeps above the arena, stays on one of them for 2 seconds and then goes on with its trip around the arena.
@@ -124,7 +126,7 @@ Each arena has its own critters. They walk around the scenery, **never enter the
 | <img src="docs/images/bicho-scorpion.jpg" width="300" alt="Scorpion"><br>**Scorpion**<br><i>Middle East Sands (two in every three critters)</i><br>Walks over the sand around the courtyard, its tail curled over its back and the sting on top. | | |
 
 > [!NOTE]
-> The personality traits above are a reading of each character's style, based on the lines they say and how they look. They have no gameplay rules tied to those traits.
+> The personality column is a reading of each character's style, based on their lines and looks; who they are is in the biographies. None of this has gameplay rules tied to it.
 
 ---
 

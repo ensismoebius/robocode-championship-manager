@@ -158,6 +158,22 @@ Entre as figuras que participam das transmissões estão:
 
 Esses personagens dão identidade às transmissões e ajudam a construir uma linguagem própria para o espetáculo. No programa, eles aparecem o mesmo número de vezes ao longo de cada campeonato.
 
+### Biografias
+
+**Kayodê** é um jovem adulto, formado em comunicações e ciências sociais. Entrou no projeto Robocode a convite de Benê. É mestre em captar a simpatia do público e em criar expectativa antes de uma batalha. Interessa-se por psicologia de massas, uma de suas principais áreas de estudo.
+
+**Benê** é professor de ciências exatas na universidade da Federação Africana, e um matemático respeitado. Envolveu-se com a fundação Robocode a pedido da Federação Africana, e foi sob a sua tutela que os sistemas de medição e de estatística do Robocode foram construídos. É o integrante mais velho da atual equipe, e as suas histórias e experiências inspiram e ajudam os mais jovens nos seus aprendizados.
+
+**Zuri** atua na fundação como convidada de honra. A sua principal atividade é a condução de políticas públicas e o planejamento na Agência de Políticas Públicas Mundial, onde é a principal responsável pela continuidade e pelo sucesso da política de paz e de supressão de guerras implementada pela Federação Africana. A sua capacidade analítica e a sua visão generalista fazem dela uma ótima juíza dentro da fundação Robocode.
+
+**Dandara** é mestra em sistemas computacionais e inteligentes. Na fundação, é tutora das novas equipes e evangelizadora do Robocode: já viajou a todos os continentes levando a metodologia e as técnicas de criação das inteligências artificiais do Robocode. O seu principal projeto atual é o estudo de redes computacionais inteligentes e adaptáveis para o fluxo mundial de bens e serviços.
+
+**Luana** é a esportista radical do time. A sua paixão são as corridas de alta velocidade e as acrobacias com asas autoplanáveis, e desde criança se interessa por situações de alta adrenalina. Na fundação, o seu papel é destacar as situações em que a exatidão dos movimentos e a precisão são indispensáveis. Toda semana, apresenta na neurovisão um programa de esportes radicais.
+
+**Caio** é o artista responsável pela identidade visual, pela divulgação e pela transmissão das batalhas na fundação. Formado em música e cinema, gerencia toda a transmissão das partidas e garante que cada detalhe chegue aos bilhões de espectadores ao redor do mundo. O seu projeto atual é um museu histórico com todas as batalhas de Robocode desde a primeira, com estreia prevista para daqui a seis meses, pela neurovisão.
+
+**Nala** é a engenheira da equipe, formada em robótica e processos industriais. Na fundação, acompanha e fiscaliza a construção dos robôs e fiscaliza as batalhas, para que as lutas sejam justas. Em seu trabalho de pós-graduação, foi a responsável pela criação dos canhões de energia que hoje equipam os robôs nas arenas. Essa tecnologia tornou as batalhas ainda mais amigáveis ao meio ambiente e menos perigosas para o público em geral.
+
 ## 9. As arenas do Robocode
 
 Para receber as competições, foram desenvolvidas **seis arenas** distribuídas por diferentes regiões do planeta.
