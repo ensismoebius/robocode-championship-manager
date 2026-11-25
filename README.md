@@ -63,7 +63,7 @@ Tudo roda em tela cheia, com menus e diálogos no estilo de um jogo de fliperama
 
 ## 📜 A história
 
-O Robocode Championship Manager acontece num mundo com uma história própria. Em 2150, nações africanas, com uma tecnologia sem precedentes, obrigaram as potências militares a abandonar a guerra. Veio a reconstrução do planeta, e com ela uma pergunta: o que fazer com o espírito bélico da humanidade? A resposta foi o **Robocode**, batalhas de robôs de combate dentro de arenas protegidas por campos de força, para competir sem destruir. A administração é africana, os apresentadores são os personagens da transmissão, e cada uma das seis arenas fica numa região do planeta, com a grande final no Éden Solar, na África central.
+Em 2150, nações africanas, com uma tecnologia sem precedentes, obrigaram as potências militares a abandonar a guerra. Veio a reconstrução do planeta, e com ela uma pergunta: o que fazer com o espírito bélico da humanidade? A resposta foi o **Robocode**, batalhas de robôs de combate dentro de arenas protegidas por campos de força, para competir sem destruir. A administração é africana, os apresentadores são os personagens da transmissão, e cada uma das seis arenas fica numa região do planeta, com a grande final no Éden Solar, na África central.
 
 Leia a história completa em **[docs/HISTORIA.md](docs/HISTORIA.md)**.
 
