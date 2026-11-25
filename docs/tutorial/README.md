@@ -8,6 +8,8 @@ Este tutorial constrói, do zero, uma versão reduzida do **Robocode Championshi
 
 Quem seguir todos os capítulos escreve cada classe, vê cada resultado na tela ou no terminal e termina com o programa inteiro funcionando. O projeto é **um só**, o `mini-campeonato`, e cada capítulo acrescenta uma peça a ele.
 
+O mundo em que essas batalhas acontecem tem uma história própria, contada em [A grande batalha](../HISTORIA.md).
+
 ## Para quem é
 
 Para quem já escreveu alguns programas, em qualquer linguagem, e sabe o que são variável, condição, repetição e função. Java, 3D, Robocode e a matemática necessária (ângulos, seno e cosseno, um pouco de interpolação) são explicados quando aparecem. A matemática é a do ensino médio.

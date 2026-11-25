@@ -19,6 +19,7 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 ## Contents
 
 - [What it does](#-what-it-does)
+- [The story](#-the-story)
 - [The arenas](#-the-arenas)
 - [Characters](#-characters)
 - [Installation](#-installation)
@@ -57,6 +58,14 @@ web registration, automatic brackets, 3D battles and a podium ceremony.**
 Everything runs full screen, with menus and dialogs in the style of an arcade game.
 
 ![Start screen](docs/images/start.jpg)
+
+---
+
+## 📜 The story
+
+The Robocode Championship Manager takes place in a world with a story of its own. In 2150, African nations, with an unprecedented technology, forced the military powers to give up war. The planet was rebuilt, and a question came with it: what to do with humanity's fighting spirit? The answer was **Robocode**, battles of combat robots inside arenas protected by force fields, to compete without destroying. The administration is African, the presenters are the characters of the broadcast, and each of the six arenas sits in a region of the planet, with the grand final in Solar Eden, in central Africa.
+
+Read the whole story in **[docs/STORY.md](docs/STORY.md)**.
 
 ---
 
