@@ -148,13 +148,13 @@ Among the figures in the broadcasts are:
 
 | | Presenter | Role in the broadcast |
 |---|---|---|
-| <img src="images/apresentador-kayode.png" height="90" alt="Kayodê"> | **Kayodê** | Opens and closes the rounds, announces knockouts and presents historic moments of the competitions. |
-| <img src="images/apresentador-bene.png" height="90" alt="Benê"> | **Benê** | Specialist in statistics, performance analysis, accuracy and exceptional results. |
-| <img src="images/apresentador-zuri.png" height="90" alt="Zuri"> | **Zuri** | Follows collisions, impacts against the walls and situations about enforcing the rules. |
-| <img src="images/apresentador-dandara.png" height="90" alt="Dandara"> | **Dandara** | Comments on blows, critical damage and attack sequences. |
-| <img src="images/apresentador-luana.png" height="90" alt="Luana"> | **Luana** | Specialist in long-distance shots, cancelled shots and the accuracy of aiming systems. |
-| <img src="images/apresentador-caio.png" height="90" alt="Caio"> | **Caio** | Follows who is in the lead, the comebacks and the overall course of the fights. |
-| <img src="images/apresentador-nala.png" height="90" alt="Nala"> | **Nala** | Comments on fire, danger and high-intensity moments, including double knockouts. |
+| <img src="images/apresentador-kayode.png" height="220" alt="Kayodê"> | **Kayodê** | Opens and closes the rounds, announces knockouts and presents historic moments of the competitions. |
+| <img src="images/apresentador-bene.png" height="220" alt="Benê"> | **Benê** | Specialist in statistics, performance analysis, accuracy and exceptional results. |
+| <img src="images/apresentador-zuri.png" height="220" alt="Zuri"> | **Zuri** | Follows collisions, impacts against the walls and situations about enforcing the rules. |
+| <img src="images/apresentador-dandara.png" height="220" alt="Dandara"> | **Dandara** | Comments on blows, critical damage and attack sequences. |
+| <img src="images/apresentador-luana.png" height="220" alt="Luana"> | **Luana** | Specialist in long-distance shots, cancelled shots and the accuracy of aiming systems. |
+| <img src="images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Follows who is in the lead, the comebacks and the overall course of the fights. |
+| <img src="images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Comments on fire, danger and high-intensity moments, including double knockouts. |
 
 These characters give the broadcasts an identity and help build a language of their own for the show. In the program, they appear the same number of times over each championship.
 

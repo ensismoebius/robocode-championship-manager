@@ -148,13 +148,13 @@ Entre as figuras que participam das transmissões estão:
 
 | | Apresentador | Função na transmissão |
 |---|---|---|
-| <img src="images/apresentador-kayode.png" height="90" alt="Kayodê"> | **Kayodê** | Responsável pelas aberturas e encerramentos dos rounds, anúncios de nocautes e apresentação de acontecimentos históricos das competições. |
-| <img src="images/apresentador-bene.png" height="90" alt="Benê"> | **Benê** | Especialista em estatísticas, análise de desempenho, precisão e resultados excepcionais dos robôs. |
-| <img src="images/apresentador-zuri.png" height="90" alt="Zuri"> | **Zuri** | Acompanha colisões, impactos contra as paredes e situações relacionadas à fiscalização das regras da competição. |
-| <img src="images/apresentador-dandara.png" height="90" alt="Dandara"> | **Dandara** | Comenta os golpes, danos críticos e sequências de ataques realizados durante as batalhas. |
-| <img src="images/apresentador-luana.png" height="90" alt="Luana"> | **Luana** | Especialista em disparos de longa distância, tiros anulados e situações relacionadas à precisão dos sistemas de mira. |
-| <img src="images/apresentador-caio.png" height="90" alt="Caio"> | **Caio** | Acompanha a liderança das partidas, as reviravoltas e o desenvolvimento geral dos confrontos. |
-| <img src="images/apresentador-nala.png" height="90" alt="Nala"> | **Nala** | Comenta situações envolvendo fogo, perigo e acontecimentos de grande intensidade, incluindo nocautes duplos. |
+| <img src="images/apresentador-kayode.png" height="220" alt="Kayodê"> | **Kayodê** | Responsável pelas aberturas e encerramentos dos rounds, anúncios de nocautes e apresentação de acontecimentos históricos das competições. |
+| <img src="images/apresentador-bene.png" height="220" alt="Benê"> | **Benê** | Especialista em estatísticas, análise de desempenho, precisão e resultados excepcionais dos robôs. |
+| <img src="images/apresentador-zuri.png" height="220" alt="Zuri"> | **Zuri** | Acompanha colisões, impactos contra as paredes e situações relacionadas à fiscalização das regras da competição. |
+| <img src="images/apresentador-dandara.png" height="220" alt="Dandara"> | **Dandara** | Comenta os golpes, danos críticos e sequências de ataques realizados durante as batalhas. |
+| <img src="images/apresentador-luana.png" height="220" alt="Luana"> | **Luana** | Especialista em disparos de longa distância, tiros anulados e situações relacionadas à precisão dos sistemas de mira. |
+| <img src="images/apresentador-caio.png" height="220" alt="Caio"> | **Caio** | Acompanha a liderança das partidas, as reviravoltas e o desenvolvimento geral dos confrontos. |
+| <img src="images/apresentador-nala.png" height="220" alt="Nala"> | **Nala** | Comenta situações envolvendo fogo, perigo e acontecimentos de grande intensidade, incluindo nocautes duplos. |
 
 Esses personagens dão identidade às transmissões e ajudam a construir uma linguagem própria para o espetáculo. No programa, eles aparecem o mesmo número de vezes ao longo de cada campeonato.
 
