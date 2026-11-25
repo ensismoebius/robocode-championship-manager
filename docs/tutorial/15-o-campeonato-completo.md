@@ -520,7 +520,7 @@ public final class CampeonatoNoTerminal {
 
 <!-- compilar -->
 
-Rode, **no mesmo terminal** em que a variável `ROBOCODE` foi definida. Cada batalha leva alguns segundos, e as 10 de um campeonato com 6 robôs e repescagem, menos de um minuto. No Linux e no macOS:
+Rode, **no mesmo terminal** em que a variável `ROBOCODE` foi definida. Cada batalha leva alguns segundos, e as 13 de um campeonato com 6 robôs e repescagem, cerca de um minuto. No Linux e no macOS:
 
 <!-- executar: | espera: Pódio: \[ | tempo: 600 | proibe: Exception -->
 ```bash
@@ -538,32 +538,38 @@ java -cp target/classes campeonato.CampeonatoNoTerminal "%ROBOCODE%"
 A saída muda a cada execução, porque o sorteio muda as sementes e as batalhas têm acaso. Foi esta, numa delas:
 
 ```text
-Sementes: [sample.Crazy, aluno.Vigia*, sample.Fire, sample.Walls, sample.Tracker, sample.SpinBot]
-V1-2 Quartas de final: sample.Walls x sample.Tracker
-   venceu sample.Walls (3 rodadas, 536 pontos)
-V1-4 Quartas de final: sample.Fire x sample.SpinBot
-   venceu sample.SpinBot (3 rodadas, 529 pontos)
-V2-1 Semifinal: sample.Crazy x sample.Walls
-   venceu sample.Walls (3 rodadas, 246 pontos)
-V2-2 Semifinal: aluno.Vigia* x sample.SpinBot
-   venceu aluno.Vigia* (2 rodadas, 300 pontos)
-V3-1 Fim da chave principal: sample.Walls x aluno.Vigia*
-   venceu sample.Walls (3 rodadas, 411 pontos)
-R2-1 Repescagem 2: sample.Tracker x sample.SpinBot
-   venceu sample.SpinBot (3 rodadas, 548 pontos)
-R2-2 Repescagem 2: sample.Fire x sample.Crazy
-   venceu sample.Crazy (2 rodadas, 361 pontos)
-R3-1 Repescagem 3: sample.SpinBot x sample.Crazy
-   venceu sample.SpinBot (3 rodadas, 367 pontos)
-R4-1 Fim da repescagem: sample.SpinBot x aluno.Vigia*
-   venceu sample.SpinBot (2 rodadas, 358 pontos)
-F1 Grande final: sample.Walls x sample.SpinBot
-   venceu sample.Walls (3 rodadas, 347 pontos)
+Sementes: [sample.Walls, sample.Crazy, sample.SpinBot, sample.Fire, sample.Tracker, aluno.Vigia*]
+V1-1 Quartas de final: sample.Walls x sample.Fire
+   venceu sample.Walls (3 rodadas, 497 pontos)
+V1-2 Quartas de final: sample.Tracker x sample.Crazy
+   venceu sample.Tracker (3 rodadas, 415 pontos)
+V1-3 Quartas de final: sample.SpinBot x aluno.Vigia*
+   venceu aluno.Vigia* (3 rodadas, 433 pontos)
+V2-1 Semifinal: sample.Walls x sample.Tracker
+   venceu sample.Walls (3 rodadas, 587 pontos)
+R1-1 Repescagem 1: sample.Fire x sample.Crazy
+   venceu sample.Fire (2 rodadas, 299 pontos)
+V2-2 Semifinal: aluno.Vigia* x sample.Tracker
+   venceu sample.Tracker (3 rodadas, 684 pontos)
+R1-2 Repescagem 1: sample.SpinBot x sample.Crazy
+   venceu sample.SpinBot (3 rodadas, 377 pontos)
+V3-1 Fim da chave principal: sample.Walls x sample.Tracker
+   venceu sample.Walls (3 rodadas, 540 pontos)
+R2-1 Repescagem 2: sample.Fire x aluno.Vigia*
+   venceu aluno.Vigia* (3 rodadas, 511 pontos)
+R2-2 Repescagem 2: sample.SpinBot x sample.Fire
+   venceu sample.SpinBot (3 rodadas, 518 pontos)
+R3-1 Repescagem 3: aluno.Vigia* x sample.SpinBot
+   venceu aluno.Vigia* (2 rodadas, 346 pontos)
+R4-1 Fim da repescagem: aluno.Vigia* x sample.Tracker
+   venceu sample.Tracker (2 rodadas, 535 pontos)
+F1 Grande final: sample.Walls x sample.Tracker
+   venceu sample.Walls (3 rodadas, 554 pontos)
 Campeão: sample.Walls
-Pódio: [sample.Walls, sample.SpinBot, aluno.Vigia*]
+Pódio: [sample.Walls, sample.Tracker, aluno.Vigia*]
 ```
 
-Com 6 robôs, a chave principal é a de 8, e as duas folgas (das sementes 1 e 2) tiram do jogo as partidas `V1-1` e `V1-3`. A repescagem também tem folgas, e por isso a `R1-1` e a `R1-2` não aparecem: foram decididas sem batalha. Foram 10 batalhas, as `2 × 6 − 2` do capítulo 13.
+Com 6 robôs, ninguém avança sem vencer, e nenhuma partida foi decidida sem batalha. Seis robôs formam três partidas na primeira rodada, e os três vencedores deixam um sem par na segunda: na `V2-2`, `sample.Tracker`, que tinha perdido a `V2-1`, jogou o **desafio** contra `aluno.Vigia*`, e venceu. A repescagem também tem os seus desafios: a `R1-2` e a `R2-2` repetem quem acabou de perder a partida anterior (`sample.Crazy` e `sample.Fire`). Foram 13 batalhas: as `2 × 6 − 2 = 10` do capítulo 13, mais os 3 desafios.
 
 ## Passo 6 — Anunciar as partidas importantes
 
@@ -1014,7 +1020,7 @@ mvn javafx:run
 A janela abre com a chave de um campeonato sorteado, e o terminal diz as sementes. Sem nenhum resultado, a primeira partida pronta já vem escolhida, com a borda dourada, e a faixa de ajuda embaixo lembra as teclas. Aperte **ENTER**: o cartão "Preparando a batalha" aparece (nas semifinais e nas finais, com o anúncio), a barra anda, e logo a arena mostra a batalha em 3D, como no capítulo 6. Quando o replay acaba, ou quando você aperta **ESC**, a chave volta com o resultado: o vencedor em verde, as linhas verdes, a próxima partida escolhida.
 
 <!-- marco: 15-meio -->
-![A chave de um campeonato com 6 robôs depois de 6 partidas](imagens/15-meio.jpg)
+![A chave de um campeonato com 6 robôs com a repescagem em andamento](imagens/15-meio.jpg)
 
 Experimente o resto:
 

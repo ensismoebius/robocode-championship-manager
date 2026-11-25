@@ -27,14 +27,14 @@ public final class Slot {
 	}
 
 	/**
-	 * @return the participant, or null if not known yet or if it is a bye
+	 * @return the participant, or null if not known yet
 	 */
 	public Long getParticipant() {
 		return participant;
 	}
 
 	/**
-	 * @return true when it is known who (or nobody) is in this slot
+	 * @return true when it is known who is in this slot
 	 */
 	public boolean isResolved() {
 		return resolved;
@@ -55,7 +55,7 @@ public final class Slot {
 	 */
 	public String describeSource() {
 		if (this.source == null) {
-			return "Folga";
+			return "Sorteado";
 		}
 		return (this.sourceWinner ? "Vencedor de " : "Perdedor de ") + this.source.getCode();
 	}

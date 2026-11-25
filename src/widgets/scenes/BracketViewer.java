@@ -80,7 +80,7 @@ public class BracketViewer extends StackPane {
 	static final Duration ACTION_TIME = Duration.millis(1);
 
 	final Pane canvas = new Pane();
-	private final VBox content = new VBox(24);
+	final VBox content = new VBox(24);
 	final Pane viewport = new Pane();
 
 	final Map<Match, double[]> positions = new HashMap<Match, double[]>();
@@ -342,6 +342,14 @@ public class BracketViewer extends StackPane {
 			return null;
 		}
 		return new Point2D(this.canvas.getLayoutX() + card.getLayoutX() + CARD_W / 2, this.canvas.getLayoutY() + card.getLayoutY() + CARD_H / 2);
+	}
+
+	/** Camera position where the whole bracket, its width and its height, fits the screen. */
+	double[] whole() {
+		double width = this.content.getLayoutBounds().getWidth();
+		double height = this.content.getLayoutBounds().getHeight();
+		double zoom = Math.min((this.viewport.getWidth() - 20) / width, (this.viewport.getHeight() - 20) / height);
+		return new double[] { width / 2, height / 2, Math.max(MIN_ZOOM, Math.min(1, zoom)) };
 	}
 
 	/**

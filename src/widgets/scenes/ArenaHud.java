@@ -48,6 +48,11 @@ import widgets.Theme;
  */
 final class ArenaHud {
 
+	/** How wide, in pixels, the text of the round and stage may be, between the energy bars (their padding is not counted) */
+	private static final double ROUND_LABEL_WIDTH = 215;
+	/** How many characters fit at the normal size */
+	private static final int ROUND_LABEL_CHARS = 13;
+
 	private final BattleArena3D host;
 
 	/** Creates the head-up display of the arena, drawn over the 3D scene by the host. */
@@ -310,7 +315,15 @@ final class ArenaHud {
 		if (host.recording != null) {
 			boolean knockout = Configuration.getWinnerCriterion().isKnockout();
 			String stage = host.stageImportance == Importance.REGULAR ? "" : host.stageName + " · ";
-			host.roundLabel.setText(stage + "ROUND " + host.rounds.roundNumber() + (knockout ? " · MD" + Configuration.getRobocodeRounds() : "/" + host.recording.getRounds().size()));
+			String ofRounds = (knockout ? " · MD" + Configuration.getRobocodeRounds() : "/" + host.recording.getRounds().size());
+			String text = stage + "ROUND " + host.rounds.roundNumber() + ofRounds;
+			if (text.length() > ROUND_LABEL_CHARS) {
+				// A long stage ("GRANDE FINAL") would not fit between the energy bars: the round is abbreviated, and the font shrinks
+				text = stage + "R" + host.rounds.roundNumber() + ofRounds;
+			}
+			host.roundLabel.setText(text);
+			// The font is as wide as it is tall: a long text shrinks, not the bars beside it
+			host.roundLabel.setStyle("-fx-font-size: " + Math.min(16, Math.floor(ROUND_LABEL_WIDTH / text.length())) + "px;");
 		}
 	}
 

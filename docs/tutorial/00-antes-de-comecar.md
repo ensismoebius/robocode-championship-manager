@@ -33,7 +33,7 @@ O programa completo deste repositório tem muito mais (seis arenas, apresentador
 | 9. Fumaça, brasas e faíscas | O sistema de partículas, e o robô machucado soltando fumaça. |
 | 10. A imagem da chama | A chama desenhada pixel a pixel, em seis versões animadas. |
 | 11. O corpo da chama | A chama presa ao robô, que se arrasta quando ele anda. |
-| 12. A chave do campeonato | A chave de eliminação simples, com folgas, e a simulação no terminal. |
+| 12. A chave do campeonato | A chave de eliminação simples, com desafios para quem fica sem par, e a simulação no terminal. |
 | 13. A repescagem | A segunda chance, a grande final, os nomes das rodadas, as colocações e o pódio. |
 | 14. A chave na tela | A chave numa janela: cartões, linhas e a próxima partida em destaque. |
 | 15. O campeonato completo | O programa inteiro: sorteio, batalhas, replays, desfazer e continuar de onde parou. |

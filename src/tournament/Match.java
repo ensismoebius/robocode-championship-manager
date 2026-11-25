@@ -12,6 +12,8 @@ public final class Match {
 	final Slot b;
 	final int depth;
 
+	/** Whether it is the challenge of the one left without a pair in the round, against the loser of its first match */
+	boolean challenge;
 	Status status = Status.WAITING;
 	Long winner;
 	Long loser;
@@ -78,6 +80,11 @@ public final class Match {
 		return depth;
 	}
 
+	/** Tells whether the match is a challenge: the robot left without a pair in the round plays the loser of its first match. */
+	public boolean isChallenge() {
+		return challenge;
+	}
+
 	/** Returns the status. */
 	public Status getStatus() {
 		return status;
@@ -119,14 +126,7 @@ public final class Match {
 			return;
 		}
 
-		if (this.a.participant != null && this.b.participant != null) {
-			this.status = Status.READY;
-		} else {
-			// Bye: whoever is here goes on without playing
-			this.status = Status.BYE;
-			this.winner = this.a.participant != null ? this.a.participant : this.b.participant;
-			this.loser = null;
-		}
+		this.status = Status.READY;
 	}
 
 	/** The code of the match with its participants and status. */

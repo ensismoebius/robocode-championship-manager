@@ -66,22 +66,20 @@ Each battle takes place in an arena drawn at random (or a fixed one, if you pref
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b>: a neon city over a cyan grid, with roads and cars of light between the buildings. Its soundtrack is a synthwave played in the scales of the Far East: the Japanese hirajoshi over the minor chords and the Chinese pentatonic over the major ones, with a koto plucking the phrase.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b>: a lake of lava with volcanoes and islands of basalt columns, under a night sky of ash, its smoke lit red by the lava and embers in the air. Cliffs and mountains rise around the lake; at the foot of the cliffs open caves where fungi glow blue green and bats circle at the mouth, some with hot springs beside them. The battlefield floor is dark gray rock, far more subdued than the surrounding lava, so the robots stand out. Its soundtrack is war drums: wood block claves, taikos and a kalimba in the minor pentatonic.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Neon Grid"><br><b>Neon Grid</b> (Asia): a neon city over a cyan grid, with roads and cars of light between the buildings. After the movements to unify the peoples of Asia, Japan and China became a single region, and the arena stands in a metropolis of it. Its soundtrack is a synthwave in the scales of the Far East: the Japanese hirajoshi over the minor chords and the Chinese pentatonic over the major ones, with a koto plucking the phrase.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Volcanic Forge"><br><b>Volcanic Forge</b> (Hawaii): after its struggles for independence, Hawaii used its thermal and volcanic resources to develop, and created a technology of its own that draws geothermal energy from its volcanoes: the volcanic forge. The arena is a lake of lava with volcanoes and basalt islands, under a sky of ash, ringed by cliffs with caves where fungi glow and bats fly. Its soundtrack is war drums: claves, taikos and a kalimba in the minor pentatonic.</td>
 </tr>
 <tr>
-<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b>: ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins. Its soundtrack is inspired by Inuit singing, which has no scale of its own, only habits: a few notes in a narrow range, with minor seconds and major thirds, that undulate and come down over a frame drum, with two throat singers who answer each other's breaths.</td>
-<td><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b>: dense jungle and rivers. At both ends, waterfalls drop from walls of wet rock covered with forest and vines, and the rivers run through gorges that cut through those walls. Its soundtrack uses the Western scale, in G major, with the chords I, V, vi and IV: a marimba sings the melody over a bass, a guitar and a drum kit.</td>
+<td width="50%"><img src="docs/images/arena-gelo-aurora.jpg" alt="Glacial Tundra"><br><b>Glacial Tundra</b> (the far north, Russia): after the Peace Revolution, led by the African countries, the polar ice sheets formed again and the ecosystem of the region was restored, with the help of the Inuit people. The arena has ice crystals, falling snow, an aurora borealis that waves across the sky and a glacial sea with penguins. Its soundtrack honors that people and is inspired by Inuit singing, which has no scale of its own, only habits: a few notes in a narrow range, over a frame drum, with two throat singers who answer each other's breaths.</td>
+<td width="50%"><img src="docs/images/batalha-selva.jpg" alt="Tropical Forest"><br><b>Tropical Forest</b> (Latin America): having finally won its real independence, Latin America united in a single bloc and restored its biomes, standing out as a supplier of advanced biotechnology and bioengineering. The arena is dense jungle cut by rivers, with waterfalls that drop from walls of wet rock covered with forest and vines. Its soundtrack is Latin American: in G major, with the chords I, V, vi and IV over the tresillo (3 + 3 + 2), the rhythm that runs through the music of the continent. A marimba sings the melody over a bass, a guitar, a bass drum, congas, maracas, a guiro and the claves of the son.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (Africa, 2187): an enclosed stadium, its plan sinuous like a kidney and its walls of earth covered in moss, open in the roof to a stormy sky where the sun breaks through the clouds. Arched ribs of wood, hanging vines and stands packed with people from every continent surround a round garden field, whose floor has patterns from African art crossed by lines of light. A glowing baobab stands at each end, with birds perched on it and flying around it, and huge screens show the fight live. Outside, a solarpunk African city: glass skyscrapers with sky gardens, baobab towers, green terraces, solar domes and kente avenues. The music is Afrofuturist, in the equidistant heptatonic scale of the xylophones of Malawi and Mozambique. It is the arena of the grand finals: it only appears in the grand final, even if it is the arena chosen in the settings; if you fix another arena, the final uses the one you fixed.</td>
-</tr>
-<tr>
-<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Middle East Sands"><br><b>Middle East Sands</b>: a courtyard of zellij tiles in the "star and cross" pattern of Islamic art, surrounded by a plain of sand, oases of palm trees and a ring of dunes. Beyond it the ground goes on to the horizon as a futuristic city of Islamic architecture: streets for cars and streets for pedestrians only, "four gardens" (charbagh) with trees of the region (ghaf, umbrella thorn acacia and sidr), houses of pearl ceramic with pointed arches and windows outlined in light, mosques and gates with golden domes, and skyscrapers inspired by contemporary Arab architecture (Burj Khalifa, Doha Tower, Kingdom Centre, Capital Gate). The sky is a sunset. The music is in the Arabic scale (the maqam hijaz): oud, ney and darbuka.</td>
+<td width="50%"><img src="docs/images/batalha-oriente.jpg" alt="Middle East Sands"><br><b>Middle East Sands</b>: after the defeat and containment of the countries that kept making war in the region, the Middle East returned to its days of glory, developing medicine, mathematics and other technologies; in peace, art, architecture and ways of living with the environment flourished. The arena is a courtyard of zellij tiles ringed by dunes and oases, facing a futuristic city of Islamic architecture, under a sunset. The music is in the Arabic scale (the maqam hijaz): oud, ney and darbuka.</td>
+<td width="50%"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (central Africa, near today's Congo): after leading the revolution for world peace, Africa, rich in minerals and natural resources, went through a great surge of local development, and so it hosts the final of the championship. The arena is a stadium with walls of moss, open to a stormy sky, with glowing baobabs, surrounded by a solarpunk African city. The music is Afrofuturist, in the equidistant heptatonic scale of the xylophones of Malawi and Mozambique. It only appears in the grand final; if you fix another arena, the final uses the one you fixed.</td>
 </tr>
 </table>
 
-First comes the "VS" screen (with the stage, the names and the arena) and then the robots are presented, while the battle loads (the loading is only a small line in the corner of the screen). If the battle takes longer than the presentation, the camera tours the scenery until it is ready; what is left of the tour comes before the first round: it makes a sweep above the arena, stays 2 seconds on one of the critters that live in it, and then flies over the field to where the battle starts. In the desert the tour begins with the city: the camera looks up at a skyscraper and flies low down an avenue until it comes out over the dunes, facing the arena.
+First comes the "VS" screen (with the stage, the names and the arena) and then the robots are presented, while the battle loads (the loading is only a small line in the corner of the screen). If the battle takes longer than the presentation, the camera tours the scenery until it is ready; what is left of the tour comes before the first round: it makes a sweep above the arena, stays 2 seconds on one of the critters that live in it, and then flies over the field to where the battle starts. In the desert the tour begins with the city: the camera looks up at a skyscraper and flies low down an avenue until it comes out over the dunes, facing the arena. In the volcanic forge the camera moves in on a cave at the foot of the cliffs, where fungi glow and bats fly.
 They never enter the battle area, but they get startled by shots and explosions.
 
 ![A salamander from the Volcanic Forge](docs/images/bicho-vulcao.jpg)
@@ -94,7 +92,7 @@ During a battle, **presenters** comment on what is happening, and **critters** l
 
 ### Presenters
 
-Each kind of event has its own presenter. When something important happens, the presenter comes up from the bottom of the screen to comment, and goes down when there is nothing more to say. They share the screen: a presenter who was on more than the others speaks less, one who was on less speaks more, and the same presenter does not appear twice in a row. The big moments (start and end of a round, knockouts, headlines) are always told.
+Each kind of event has its own presenter. When something important happens, the presenter comes up from the bottom of the screen to comment, and goes down when there is nothing more to say. They share the screen equally: over the championship **all of them appear the same number of times** (they never differ by more than one appearance). When the presenter of the subject was already on more than one of the others, one of those who were on less speaks instead; and the same presenter does not appear twice in a row. The count is kept with the championship, from one battle to the next, even if the program is closed. The big moments (start and end of a round, knockouts, headlines) are always told.
 
 | Photo | Presenter | Comments on | Personality |
 |---|---|---|---|
@@ -204,7 +202,7 @@ On Linux the program is installed in `/opt/robocodechampmanager`. If it does not
 
 ![The settings tabs](docs/images/config.jpg)
 
-To change anything later, press **C** at any time. The start screen shows the shortcuts while you hold **Alt**.
+To change anything later, press **C** at any time. On any screen, the shortcut hints only show while you hold **Alt**.
 
 ### 5. Done!
 
@@ -236,7 +234,14 @@ change it. The configuration is a screen of the program itself, and every field 
 explaining what it accepts. Changes apply right away, with no restart: the web server moves to the
 new port and the new database file is opened immediately.
 
-![The four configuration tabs](docs/images/config.jpg)
+![The Home screen tab of the settings](docs/images/config.jpg)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/config-batalha.jpg" alt="The Battle tab"><br><b>Battle</b>: the kind (by points or by knockout), the number of rounds, the display and the speed.</td>
+<td width="50%"><img src="docs/images/config-arena.jpg" alt="The Arena and sound tab"><br><b>Arena and sound</b>: the arena, the music, the volume and anti-aliasing.</td>
+</tr>
+</table>
 
 | Tab | What's there |
 |---|---|
@@ -253,7 +258,7 @@ The configuration is stored in `~/robocodeChampManager.config` and the data in
 With registrations open, the start screen shows the address where teams register their robots.
 Put that screen up where everyone can see it! **`Ctrl + S`** opens or closes registrations.
 
-You don't need to memorize the shortcuts: **hold `Alt`** on the start screen and they appear.
+You don't need to memorize the shortcuts: **hold `Alt`** and they appear. This holds for the whole program, during the battle too: the hints stay hidden, to keep the screen clean, and show only while the key is pressed.
 
 ![Holding Alt on the start screen](docs/images/keys.jpg)
 
@@ -287,6 +292,7 @@ then **`R`** to see the bracket.
 ![The bracket](docs/images/bracket.jpg)
 
 - The main bracket is on top, the repechage below, and the finals and standings on the side.
+- **Every robot plays in every round.** When the number of robots in a round is odd, the one left without a pair plays a **challenge** (its card says `· desafio` in the header) against the loser of the first match of the round: the winner advances, and the loser goes to the repechage.
 - **Semifinals and finals are announced**: on the bracket screen the next match is shown in gold with the name of the stage, and in the 3D arena the stage (★ SEMIFINAL ★, ★ FINAL ★) appears in the intro, in the scoreboard during the battle and in the presenter's line.
 - Click a match to select it; after each result the next match is selected automatically.
 - **`+`**, **`-`** and **`0`** zoom in, zoom out and show the whole bracket (or `Ctrl` + mouse wheel);
@@ -312,7 +318,7 @@ battle. Any key or click skips the animation.
 
 ![Robot presented in the arena](docs/images/apresentacao-3d.jpg)
 
-...then (all of it while the battle loads, with the camera touring the scenery if it takes longer) the camera tours the arena (a sweep from above, 2 seconds on a critter and the flight over to the field; in the desert, the city first), and each round starts with a 3-second countdown.
+...then (all of it while the battle loads, with the camera touring the scenery if it takes longer) the camera tours the arena (a sweep from above, 2 seconds on a critter and the flight over to the field; in the desert, the city first; in the volcanic forge, a cave with its bats), and each round starts with a 3-second countdown.
 
 ![The two robots face to face](docs/images/versus-3d.jpg)
 
@@ -326,7 +332,7 @@ destroyed, the moments before its death are replayed in slow motion, following t
 
 ![Battle in the Glacial Tundra](docs/images/batalha-gelo.jpg)
 
-| During the 3D battle | |
+| During the 3D battle (hold `Alt` to see these hints on screen) | |
 |---|---|
 | `V` | Changes the camera: **CINEMATIC** (follows the action by itself), **FREE**, **ISOMETRIC** and **TOP VIEW** |
 | `Space` | Pause |
@@ -402,7 +408,7 @@ many times as you like.
 
 ## ⌨️ All controls
 
-Hold **`Alt`** on the start screen to see this list.
+Hold **`Alt`** on the start screen to see this list; on the other screens (battle, bracket, podium...) the same `Alt` shows the hints of the screen.
 
 | Key | Action |
 |---|---|
@@ -430,8 +436,11 @@ tutorials above.
 
 ## 📜 Championship rules
 
-- **Any number of robots** (two or more). When it isn't a power of two, the first robots drawn go
-  straight to the second round.
+- **Any number of robots** (two or more). Everyone plays in every round: nobody goes on without
+  beating another robot, and whoever loses goes to the repechage. When a robot is left without a
+  pair in a round (the number is odd), it plays a **challenge** against the loser of the first
+  match of the round: the winner of the challenge goes on, and the loser goes to the repechage (or,
+  in the repechage, is out). In the bracket this match shows as `V1-3 · desafio`.
 - **With repechage** (double elimination, the default): whoever loses in the main bracket goes to the
   repechage and is only out after a second loss. The main bracket champion and the repechage champion
   play the grand final, which decides the champion (there is no rematch).

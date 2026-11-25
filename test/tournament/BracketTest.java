@@ -80,6 +80,43 @@ class BracketTest {
 		return losses;
 	}
 
+	/** How many challenges the bracket has: one in each round with an odd number of participants. */
+	private static long challenges(Bracket bracket) {
+		return bracket.getMatches().stream().filter(Match::isChallenge).count();
+	}
+
+	/**
+	 * Checks, on a finished bracket, that everyone played the first round and that nobody went on without beating someone: whoever
+	 * plays a match that is not of the first round won the match before it, or lost the first match of the round and plays its
+	 * challenge.
+	 */
+	private static void nobodyGoesOnWithoutWinning(Bracket bracket) {
+		Set<Long> firstRound = new HashSet<Long>();
+		for (Match m : bracket.getWinnersRounds().get(0)) {
+			if (!m.isChallenge()) {
+				firstRound.add(m.getA().getParticipant());
+				firstRound.add(m.getB().getParticipant());
+			} else {
+				firstRound.add(m.getA().getParticipant());
+			}
+		}
+		assertEquals(new HashSet<Long>(bracket.getParticipants()), firstRound, "Everyone plays the first round");
+		for (Match m : bracket.getMatches()) {
+			for (Slot slot : List.of(m.getA(), m.getB())) {
+				Match source = slot.getSource();
+				if (source == null) {
+					continue;
+				}
+				if (slot.isSourceWinner()) {
+					assertEquals(source.getWinner(), slot.getParticipant(), m.getCode());
+				} else {
+					// A loser goes on only to the repechage, to the grand final, or to the challenge of its round
+					assertTrue(m.getSide() != Side.WINNERS || m.isChallenge(), "Loser going on in the main bracket: " + m.getCode());
+				}
+			}
+		}
+	}
+
 	@Test
 	void seedingOrderSpreadsTheBestSeeds() {
 		assertArrayEquals(new int[] { 1, 2 }, Bracket.seedingOrder(2));
@@ -95,14 +132,17 @@ class BracketTest {
 			Map<Long, Integer> losses = playAll(bracket, random);
 
 			assertTrue(bracket.isFinished(), "n=" + n);
+			nobodyGoesOnWithoutWinning(bracket);
+			// Each match puts one out, but the challenges, which give the loser of the first match of the round another chance
 			long played = bracket.getMatches().stream().filter(m -> m.getStatus() == Status.FINISHED).count();
-			assertEquals(n - 1, played, "n=" + n);
+			assertEquals(n - 1 + challenges(bracket), played, "n=" + n);
+			assertEquals(n == (Integer.highestOneBit(n)), challenges(bracket) == 0, "n=" + n);
 
 			Long champion = bracket.getChampion();
-			assertNull(losses.get(champion));
+			assertTrue(losses.getOrDefault(champion, 0) <= 1);
 			for (long p = 1; p <= n; p++) {
 				if (p != champion) {
-					assertEquals(1, losses.get(p), "n=" + n + " p=" + p);
+					assertTrue(losses.get(p) >= 1, "n=" + n + " p=" + p);
 				}
 			}
 			assertEquals(n, bracket.getPlacements().size());
@@ -121,25 +161,33 @@ class BracketTest {
 				Map<Long, Integer> losses = playAll(bracket, random);
 
 				assertTrue(bracket.isFinished(), "n=" + n);
+				nobodyGoesOnWithoutWinning(bracket);
 				Long champion = bracket.getChampion();
 
-				// Everybody but the finalists is out after exactly two losses. The grand
-				// final has no rematch: the champion lost at most once, and the runner up
-				// once (if it came from the main bracket) or twice
+				// Everybody but the finalists is out after two losses (or three, for who lost the first match of a round and then its
+				// challenge). The grand final has no rematch: the runner up lost at least once
 				Long runnerUp = bracket.getPlacements().entrySet().stream().filter(e -> e.getValue() == 2).map(Map.Entry::getKey).findFirst().orElseThrow();
 				for (long p = 1; p <= n; p++) {
-					if (p == champion) {
-						assertTrue(losses.getOrDefault(p, 0) <= 1, "n=" + n);
-					} else if (p == runnerUp) {
-						assertTrue(losses.get(p) == 1 || losses.get(p) == 2, "n=" + n);
-					} else {
-						assertEquals(2, losses.get(p), "n=" + n + " p=" + p);
+					if (p == runnerUp) {
+						assertTrue(losses.get(p) >= 1, "n=" + n);
+					} else if (p != champion) {
+						assertTrue(losses.get(p) >= 2, "n=" + n + " p=" + p);
 					}
 				}
 
-				// Every match takes one of the 2 losses of each robot but the finalists
-				long played = bracket.getMatches().stream().filter(m -> m.getStatus() == Status.FINISHED).count();
-				assertEquals(2L * n - 2, played, "n=" + n);
+				// Whoever loses in the main bracket goes to the repechage (or, with two robots, straight to the grand final)
+				Set<Long> secondChance = new HashSet<Long>();
+				for (Match m : bracket.getMatches()) {
+					if (m.getSide() != Side.WINNERS) {
+						secondChance.add(m.getA().getParticipant());
+						secondChance.add(m.getB().getParticipant());
+					}
+				}
+				for (Match m : bracket.getMatches()) {
+					if (m.getSide() == Side.WINNERS) {
+						assertTrue(secondChance.contains(m.getLoser()), "n=" + n + " " + m.getCode());
+					}
+				}
 
 				Map<Long, Integer> placements = bracket.getPlacements();
 				assertEquals(n, placements.size(), "n=" + n);
@@ -181,21 +229,30 @@ class BracketTest {
 	}
 
 	@Test
-	void byesGoToTheFirstSeedsAndAreDecidedAutomatically() {
-		// 5 participants: bracket of 8, seeds 1, 2 and 3 get byes
+	void theOneWithoutAPairChallengesTheLoserOfTheFirstMatch() {
+		// 5 participants: two matches and a challenge in the first round, nobody goes on without playing
 		Bracket bracket = new Bracket(ids(5), true);
 
 		List<Match> firstRound = bracket.getWinnersRounds().get(0);
-		assertEquals(4, firstRound.size());
-		assertEquals(3, firstRound.stream().filter(m -> m.getStatus() == Status.BYE).count());
+		assertEquals(3, firstRound.size());
+		assertTrue(bracket.getMatches().stream().allMatch(m -> m.getStatus() != Status.FINISHED));
+		Match challenge = firstRound.get(2);
+		assertTrue(challenge.isChallenge());
+		assertEquals(Status.WAITING, challenge.getStatus());
+		assertEquals(3L, challenge.getA().getParticipant());
 
-		Match onlyPlayable = bracket.getNextMatch().orElseThrow();
-		assertEquals(Set.of(4L, 5L), Set.of(onlyPlayable.getA().getParticipant(), onlyPlayable.getB().getParticipant()));
+		// The loser of the first match plays the challenge
+		bracket.record("V1-1", 1, null, null);
+		assertEquals(Status.READY, challenge.getStatus());
+		assertEquals(Set.of(3L, 4L), Set.of(challenge.getA().getParticipant(), challenge.getB().getParticipant()));
 
-		// Seeds 2 and 3 already meet in the second round
-		Match semifinal = bracket.getWinnersRounds().get(1).get(1);
-		assertEquals(Status.READY, semifinal.getStatus());
-		assertEquals(Set.of(2L, 3L), Set.of(semifinal.getA().getParticipant(), semifinal.getB().getParticipant()));
+		// Who loses the challenge goes to the repechage; who wins goes on
+		bracket.record("V1-3", 3, null, null);
+		bracket.record("V1-2", 2, null, null);
+		Match repechage = bracket.getLosersRounds().get(0).get(0);
+		assertEquals(Set.of(4L, 5L), Set.of(repechage.getA().getParticipant(), repechage.getB().getParticipant()));
+		assertEquals(Set.of(1L, 2L), Set.of(bracket.getMatch("V2-1").getA().getParticipant(), bracket.getMatch("V2-1").getB().getParticipant()));
+		assertEquals(3L, bracket.getMatch("V2-2").getA().getParticipant());
 	}
 
 	@Test
@@ -250,9 +307,9 @@ class BracketTest {
 	}
 
 	@Test
-	void aSlotWithoutSourceIsAByeAndTheRoundsHaveNames() {
+	void aSlotWithoutSourceIsDrawnAndTheRoundsHaveNames() {
 		Bracket five = new Bracket(ids(5), false);
-		assertTrue(five.getMatches().stream().anyMatch(m -> m.getA().describeSource().equals("Folga") || m.getB().describeSource().equals("Folga")));
+		assertTrue(five.getWinnersRounds().get(0).stream().allMatch(m -> m.getA().describeSource().equals("Sorteado")));
 
 		Bracket thirtyTwo = new Bracket(ids(32), false);
 		assertEquals("1ª rodada", thirtyTwo.winnersRoundName(1));

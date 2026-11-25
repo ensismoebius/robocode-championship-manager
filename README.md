@@ -66,22 +66,20 @@ Cada batalha acontece numa arena sorteada (ou numa arena fixa, se você preferir
 
 <table>
 <tr>
-<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b>: uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios. A trilha é um synthwave tocado nas escalas do Extremo Oriente: o hirajoshi japonês sobre os acordes menores e a pentatônica chinesa sobre os maiores, com um koto dedilhando a frase.</td>
-<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b>: um lago de lava com vulcões e ilhas de colunas de basalto, sob um céu noturno de cinzas, com a fumaça iluminada de vermelho pela lava e fagulhas no ar. Em volta do lago erguem-se penhascos e montanhas; no pé dos penhascos abrem-se cavernas onde fungos brilham em verde-azulado e morcegos voam em círculos na entrada, e ao lado de algumas há fontes termais. O piso do campo de batalha é de rocha cinza-escura, bem mais discreto que a lava ao redor, para os robôs se destacarem. A trilha são tambores de guerra: claves de madeira, taikos e uma kalimba na pentatônica menor.</td>
+<td width="50%"><img src="docs/images/batalha-neon.jpg" alt="Grade Neon"><br><b>Grade Neon</b> (Ásia): uma cidade neon sobre uma grade ciano, com estradas e carros de luz entre os prédios. Depois dos movimentos de unificação dos povos asiáticos, Japão e China se tornaram uma única região, e a arena fica numa metrópole dela. A trilha é um synthwave nas escalas do Extremo Oriente: o hirajoshi japonês sobre os acordes menores e a pentatônica chinesa sobre os maiores, com um koto dedilhando a frase.</td>
+<td width="50%"><img src="docs/images/batalha-vulcao.jpg" alt="Forja Vulcânica"><br><b>Forja Vulcânica</b> (Havaí): depois das lutas por independência, o Havaí aproveitou seus recursos termais e vulcânicos para se desenvolver e criou uma tecnologia própria, que extrai energia geotérmica dos vulcões: a forja vulcânica. A arena é um lago de lava com vulcões e ilhas de basalto, sob um céu de cinzas, cercado de penhascos com cavernas onde brilham fungos e voam morcegos. A trilha são tambores de guerra: claves, taikos e uma kalimba na pentatônica menor.</td>
 </tr>
 <tr>
-<td><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b>: cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins. A trilha se inspira no canto inuíte, que não tem uma escala própria, só hábitos: poucas notas numa faixa estreita, com segundas menores e terças maiores, que ondulam e descem sobre um tambor de moldura, com dois cantores de garganta que respondem à respiração um do outro.</td>
-<td><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b>: mata fechada e rios. Nas duas pontas, cachoeiras despencam de paredões de rocha úmida, cobertos de mata e de cipós, e os rios correm por desfiladeiros que cortam esses paredões. A trilha usa a escala ocidental, em sol maior, com os acordes I, V, vi e IV: uma marimba canta a melodia, sobre baixo, violão e bateria.</td>
+<td width="50%"><img src="docs/images/arena-gelo-aurora.jpg" alt="Tundra Glacial"><br><b>Tundra Glacial</b> (extremo norte, Rússia): depois da Revolução pela Paz, liderada pelos países africanos, as camadas de gelo polares voltaram a se formar e o ecossistema da região foi restaurado, com a ajuda do povo inuíte. A arena tem cristais de gelo, neve caindo, uma aurora boreal que ondula no céu e um mar glacial com pinguins. A trilha homenageia esse povo e se inspira no canto inuíte, que não tem escala própria, só hábitos: poucas notas numa faixa estreita, sobre um tambor de moldura, com dois cantores de garganta que respondem à respiração um do outro.</td>
+<td width="50%"><img src="docs/images/batalha-selva.jpg" alt="Floresta Tropical"><br><b>Floresta Tropical</b> (América Latina): ao conquistar sua independência de fato, a América Latina se uniu num único bloco e restaurou seus biomas, destacando-se como fornecedora de biotecnologia e bioengenharia avançadas. A arena é uma mata fechada cortada por rios, com cachoeiras que despencam de paredões de rocha úmida, cobertos de mata e de cipós. A trilha é latino-americana: em sol maior, com os acordes I, V, vi e IV sobre o tresillo (3 + 3 + 2), o ritmo que atravessa a música do continente. Uma marimba canta a melodia, sobre baixo, violão, bombo, congas, maracas, güiro e as claves do son.</td>
 </tr>
 <tr>
-<td colspan="2"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África, 2187): um estádio fechado, de planta sinuosa como um rim e paredes de terra com musgo, aberto no teto para um céu de tempestade onde o sol rompe as nuvens. Nervuras de madeira em arco, trepadeiras e arquibancadas lotadas, com gente de todos os continentes, cercam um campo de jardim redondo, com piso de padrões da arte africana cortado por linhas de luz. Um baobá brilha em cada ponta, com aves pousadas e voando em volta, e telas gigantes mostram a luta ao vivo. Por fora, uma cidade solarpunk africana: arranha-céus de vidro com jardins suspensos, torres-baobá, terraços verdes, domos solares e avenidas de kente. A trilha é afrofuturista, na escala heptatônica equidistante dos xilofones de Malawi e Moçambique. É a arena das grandes finais: só aparece na grande final, mesmo que seja a escolhida na configuração; se você fixar outra arena, a final usa a que você fixou.</td>
-</tr>
-<tr>
-<td colspan="2"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: um pátio de azulejos zellij no padrão "estrela e cruz" da arte islâmica, cercado por um platô de areia, oásis de palmeiras e um anel de dunas. Além dele, o chão se estende até o horizonte como uma cidade futurista de arquitetura islâmica: ruas de carros e ruas só de pedestres, jardins de quatro canais ("charbagh") com árvores da região (ghaf, acácia-guarda-chuva e sidr), casas de cerâmica perolada com arcos ogivais e janelas contornadas de luz, mesquitas e portões de cúpulas douradas, e arranha-céus inspirados na arquitetura árabe contemporânea (Burj Khalifa, Torre de Doha, Kingdom Centre, Capital Gate). O céu é de pôr do sol. A música é na escala árabe (o maqam hijaz): alaúde, ney e darbuka.</td>
+<td width="50%"><img src="docs/images/batalha-oriente.jpg" alt="Areias do Oriente Médio"><br><b>Areias do Oriente Médio</b>: depois da derrota e da contenção dos países que promoviam a guerra na região, o Oriente Médio voltou aos seus dias de glória, desenvolvendo a medicina, a matemática e outras tecnologias; na paz, floresceram a arte, a arquitetura e a integração com o meio ambiente. A arena é um pátio de azulejos zellij cercado de dunas e oásis, diante de uma cidade futurista de arquitetura islâmica, sob um pôr do sol. A música é na escala árabe (maqam hijaz): alaúde, ney e darbuka.</td>
+<td width="50%"><img src="docs/images/batalha-eden.jpg" alt="Éden Solar"><br><b>Éden Solar</b> (África central, perto do atual Congo): depois de liderar a revolução pela paz mundial, a África, riquíssima em minerais e recursos naturais, viveu um grande surto de desenvolvimento local, e por isso sedia a final do campeonato. A arena é um estádio de paredes de musgo aberto a um céu de tempestade, com baobás que brilham, cercado por uma cidade solarpunk africana. A trilha é afrofuturista, na escala heptatônica equidistante dos xilofones de Malawi e Moçambique. Só aparece na grande final; se você fixar outra arena, a final usa a fixada.</td>
 </tr>
 </table>
 
-Primeiro vem a tela do "VS" (com a fase, os nomes e a arena) e, em seguida, os robôs são apresentados, já enquanto a batalha carrega (o carregamento é só uma linha pequena no canto da tela). Se a batalha demorar mais que a apresentação, a câmera passeia pelo cenário até ela ficar pronta; o que sobrar do passeio vem antes do primeiro round: dá uma volta por cima da arena, fica 2 segundos num dos bichos que vivem nela e depois sobrevoa o campo, até onde a batalha começa. No deserto o passeio começa pela cidade: a câmera olha para cima, para um arranha-céu, e voa baixo por uma avenida até sair sobre as dunas, diante da arena.
+Primeiro vem a tela do "VS" (com a fase, os nomes e a arena) e, em seguida, os robôs são apresentados, já enquanto a batalha carrega (o carregamento é só uma linha pequena no canto da tela). Se a batalha demorar mais que a apresentação, a câmera passeia pelo cenário até ela ficar pronta; o que sobrar do passeio vem antes do primeiro round: dá uma volta por cima da arena, fica 2 segundos num dos bichos que vivem nela e depois sobrevoa o campo, até onde a batalha começa. No deserto o passeio começa pela cidade: a câmera olha para cima, para um arranha-céu, e voa baixo por uma avenida até sair sobre as dunas, diante da arena. Na forja vulcânica a câmera se aproxima de uma caverna no pé dos penhascos, onde brilham fungos e voam morcegos.
 Eles nunca entram na área de batalha, mas se assustam com os tiros e as explosões.
 
 ![Uma salamandra da Forja Vulcânica](docs/images/bicho-vulcao.jpg)
@@ -94,7 +92,7 @@ Durante a batalha, **apresentadores** comentam o que acontece, e **bichos** vive
 
 ### Apresentadores
 
-Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer. Eles dividem a tela: quem já apareceu mais do que os outros fala menos, quem apareceu menos fala mais, e o mesmo apresentador não aparece duas vezes seguidas. Os grandes momentos (início e fim do round, nocaute, manchetes) sempre são ditos.
+Cada tipo de acontecimento tem o seu apresentador. Quando algo importante acontece, ele aparece de baixo da tela para comentar, e sai quando não há mais nada a dizer. Eles dividem a tela por igual: ao longo do campeonato, **todos aparecem o mesmo número de vezes** (a diferença entre eles nunca passa de uma aparição). Quando o apresentador do assunto já apareceu mais do que algum colega, quem fala é um dos que apareceram menos; e o mesmo apresentador não aparece duas vezes seguidas. A contagem fica guardada com o campeonato, de uma batalha para a outra, mesmo que o programa seja fechado. Os grandes momentos (início e fim do round, nocaute, manchetes) sempre são ditos.
 
 | Foto | Apresentador | Comenta sobre | Como ele é |
 |---|---|---|---|
@@ -204,7 +202,7 @@ No Linux, o programa é instalado em `/opt/robocodechampmanager`. Se ele não ap
 
 ![As abas da configuração](docs/images/config.jpg)
 
-Depois, para mudar qualquer coisa, aperte **C** a qualquer momento. A tela inicial mostra os atalhos quando você segura **Alt**.
+Depois, para mudar qualquer coisa, aperte **C** a qualquer momento. Em qualquer tela, as dicas de atalhos só aparecem enquanto você segura **Alt**.
 
 ### 5. Pronto!
 
@@ -236,7 +234,14 @@ momento para mudá-la. A configuração é uma tela do próprio programa, e cada
 explicando o que ele aceita. As mudanças valem na hora, sem reiniciar: o servidor web muda de
 porta e o novo banco de dados é aberto na mesma hora.
 
-![As quatro abas da configuração](docs/images/config.jpg)
+![A aba Tela inicial da configuração](docs/images/config.jpg)
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/config-batalha.jpg" alt="A aba Batalha"><br><b>Batalha</b>: o tipo (por pontos ou por K.O.), o número de partidas, a exibição e a velocidade.</td>
+<td width="50%"><img src="docs/images/config-arena.jpg" alt="A aba Arena e som"><br><b>Arena e som</b>: a arena, a música, o volume e a suavização de bordas.</td>
+</tr>
+</table>
 
 | Aba | O que tem lá |
 |---|---|
@@ -253,7 +258,7 @@ A configuração fica em `~/robocodeChampManager.config` e os dados em
 Com as inscrições abertas, a tela inicial mostra o endereço onde as equipes cadastram seus
 robôs. Projete essa tela para todo mundo ver! **`Ctrl + S`** abre ou fecha as inscrições.
 
-Não decore os atalhos: **segure `Alt`** na tela inicial e eles aparecem.
+Não decore os atalhos: **segure `Alt`** e eles aparecem. Isso vale para o programa todo, inclusive durante a batalha: as dicas ficam escondidas, para deixar a tela limpa, e surgem só enquanto a tecla está apertada.
 
 ![Segurando Alt na tela inicial](docs/images/keys.jpg)
 
@@ -287,6 +292,7 @@ robôs cadastrados, depois **`R`** para ver o chaveamento.
 ![O chaveamento](docs/images/bracket.jpg)
 
 - A chave principal fica em cima, a repescagem embaixo, as finais e a classificação ao lado.
+- **Todo robô joga em toda rodada.** Quando o número de robôs da rodada é ímpar, o que fica sem par joga um **desafio** (o cartão traz `· desafio` no cabeçalho) contra o perdedor da primeira partida da rodada: quem vence avança, e quem perde vai para a repescagem.
 - **Semifinais e finais são avisadas**: na tela da chave a próxima partida aparece em dourado com o nome da fase, e na arena 3D o nome da fase (★ SEMIFINAL ★, ★ FINAL ★) aparece na abertura, no placar durante a batalha e na fala do apresentador.
 - Clique numa partida para selecioná-la; depois de cada resultado a próxima é selecionada sozinha.
 - **`+`**, **`-`** e **`0`** aproximam, afastam e mostram a chave inteira (ou `Ctrl` + roda do mouse);
@@ -312,7 +318,7 @@ aproxima a próxima batalha. Qualquer tecla ou clique pula a animação.
 
 ![Robô apresentado na arena](docs/images/apresentacao-3d.jpg)
 
-...depois (tudo isso enquanto a batalha carrega, com a câmera passeando pelo cenário se ela demorar mais) a câmera passeia pela arena (uma volta por cima, 2 segundos num bicho e o sobrevoo até o campo; no deserto, antes disso, a cidade) e cada round começa com uma contagem de 3 segundos.
+...depois (tudo isso enquanto a batalha carrega, com a câmera passeando pelo cenário se ela demorar mais) a câmera passeia pela arena (uma volta por cima, 2 segundos num bicho e o sobrevoo até o campo; no deserto, antes disso, a cidade; na forja vulcânica, uma caverna com seus morcegos) e cada round começa com uma contagem de 3 segundos.
 
 ![Os dois robôs frente a frente](docs/images/versus-3d.jpg)
 
@@ -326,7 +332,7 @@ destruído, os momentos antes da sua morte são repetidos em câmera lenta, segu
 
 ![Batalha na Tundra Glacial](docs/images/batalha-gelo.jpg)
 
-| Durante a batalha 3D | |
+| Durante a batalha 3D (segure `Alt` para ver estas dicas na tela) | |
 |---|---|
 | `V` | Troca a câmera: **CINEMATOGRÁFICA** (segue a ação sozinha), **LIVRE**, **ISOMÉTRICA** e **VISTA DE CIMA** |
 | `Espaço` | Pausa |
@@ -402,7 +408,7 @@ o robô quantas vezes quiser.
 
 ## ⌨️ Todos os controles
 
-Segure **`Alt`** na tela inicial para ver esta lista.
+Segure **`Alt`** na tela inicial para ver esta lista; nas outras telas (batalha, chave, pódio...) o mesmo `Alt` mostra as dicas da tela.
 
 | Tecla | Ação |
 |---|---|
@@ -430,8 +436,11 @@ nos seus tutoriais.
 
 ## 📜 Regras do campeonato
 
-- **Qualquer número de robôs** (dois ou mais). Quando não é uma potência de dois, os primeiros
-  sorteados avançam direto na primeira rodada.
+- **Qualquer número de robôs** (dois ou mais). Todos jogam em toda rodada: ninguém avança sem
+  derrotar outro robô, e quem perde vai para a repescagem. Quando sobra um robô sem par na rodada
+  (o número é ímpar), ele joga um **desafio** contra o perdedor da primeira partida da rodada:
+  quem vence o desafio avança, e quem perde vai para a repescagem (ou, nela, está fora). Na chave,
+  essa partida aparece como `V1-3 · desafio`.
 - **Com repescagem** (eliminação dupla, o padrão): quem perde na chave principal vai para a
   repescagem e só sai depois da segunda derrota. O campeão da chave principal e o da repescagem
   fazem a grande final, que decide o campeão (não há revanche).

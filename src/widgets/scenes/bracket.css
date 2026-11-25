@@ -102,14 +102,6 @@
 	-fx-font-size: 11px;
 }
 
-.match-card.bye {
-	-fx-opacity: 0.45;
-}
-
-.match-card.empty {
-	-fx-opacity: 0.2;
-}
-
 .match-header {
 	-fx-padding: 3 10 3 10;
 	-fx-background-color: -rc-surface-2;

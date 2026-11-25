@@ -11,6 +11,7 @@ import tournament.Match;
 import tournament.Status;
 import tournament.ChampionshipService;
 import widgets.scenes.BracketViewer;
+import widgets.scenes.PresenterRoster;
 import widgets.GameDialog;
 
 /**
@@ -159,6 +160,20 @@ final class ChampionshipFlow {
 	void recordResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		if (this.saveResult(match, winnerId, winnerScore, loserScore)) {
 			this.showResult(winnerId);
+		}
+	}
+
+	/** Keeps with the championship how many times each presenter was on the screen; a failure only loses the balance. */
+	void savePresenters(PresenterRoster roster) {
+		if (host.championship == null) {
+			return;
+		}
+		try {
+			String appearances = ChampionshipService.savePresenterAppearances(host.championship, roster.format()).getPresenterAppearances();
+			host.championship.setPresenterAppearances(appearances);
+		} catch (PersistenceException persistenceException) {
+			// Only the balance of the presenters is lost: the result is already saved
+			persistenceException.printStackTrace();
 		}
 	}
 

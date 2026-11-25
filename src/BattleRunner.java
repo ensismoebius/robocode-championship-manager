@@ -14,6 +14,7 @@ import utils.robocode.BattleControl.BattleOutcome;
 import utils.robocode.BattleControl.BattleResult;
 import utils.robocode.BattleRecording;
 import widgets.scenes.BattleArena3D;
+import widgets.scenes.PresenterRoster;
 import widgets.GameWindow;
 
 /**
@@ -98,6 +99,8 @@ final class BattleRunner {
 		}
 		BattleArena3D arena = new BattleArena3D(fighters, host.bracket.isDecider(match));
 		arena.setStage(host.bracket.roundName(match), host.bracket.importance(match));
+		// The presenters go on counting from the battles before, so that all of them are on the screen as often in the championship
+		arena.setPresenters(PresenterRoster.parse(host.championship == null ? null : host.championship.getPresenterAppearances()));
 		host.resetAllScenes();
 		host.show(arena);
 		return arena;
@@ -148,6 +151,7 @@ final class BattleRunner {
 		if (arena != null && GameWindow.getScreen() == arena && !recording.isEmpty()) {
 			arena.play(recording, () -> {
 				host.battleRunning = false;
+				host.savePresenters(arena.getPresenters());
 				MatchPhotos.keep(host.championship.getId(), arena, match, fighters);
 				host.showResult(winner);
 			});

@@ -21,7 +21,7 @@ public enum Song {
 	AFRO_FUTURE("Afrofuturista", new double[] { 82.41, 98.0, 73.42, 110.0 }, new boolean[] { true, false, false, true }, 112, 48),
 	/** D minor, i - VI - III - VII: an oud that plucks the maqam Hijaz, a ney that sings above it, a darbuka that keeps the maqsum, and a deep bass */
 	HIJAZ("Hijaz", new double[] { 73.42, 58.27, 87.31, 65.41 }, new boolean[] { true, false, false, false }, 96, 40),
-	/** G major, I - V - vi - IV: the Western scale and its chords, a marimba that sings a melody over a bass that walks between the root and the fifth, a strummed guitar and the kit of a band */
+	/** Latin American: G major, I - V - vi - IV, over the tresillo (3 + 3 + 2); a marimba that sings a melody over a bass that plays the root and the fifth, a strummed guitar, a bass drum, congas, maracas, a guiro and the claves of the son */
 	FOREST("Floresta", new double[] { 98.0, 73.42, 82.41, 65.41 }, new boolean[] { false, false, true, false }, 100, 44),
 	/** A, a bare drone and five notes in the range of a minor sixth: a frame drum, two throat singers that answer each other's breaths, and a voice that undulates and comes down */
 	TUNDRA("Tundra", new double[] { 110.0, 110.0, 110.0, 110.0 }, new boolean[] { true, true, true, true }, 84, 34);

@@ -72,11 +72,15 @@ public class ChampionshipService {
 	public static Bracket bracketOf(Championship championship) {
 		Bracket bracket = new Bracket(championship.getSeeds().stream().map(Opponent::getId).toList(), championship.isRepechage());
 		for (MatchResult result : championship.getResults()) {
-			// Championships drawn before the rematch was removed may have its result
+			// Championships drawn before the rematch was removed, or before the byes were (now the odd one out plays a challenge), may have results that do not fit the bracket
 			if (bracket.getMatch(result.getMatchCode()) == null) {
 				continue;
 			}
-			bracket.record(result.getMatchCode(), result.getWinner().getId(), result.getWinnerScore(), result.getLoserScore());
+			try {
+				bracket.record(result.getMatchCode(), result.getWinner().getId(), result.getWinnerScore(), result.getLoserScore());
+			} catch (IllegalArgumentException | IllegalStateException doesNotFit) {
+				continue;
+			}
 		}
 		return bracket;
 	}
@@ -116,6 +120,19 @@ public class ChampionshipService {
 			result.setPlayedAt(LocalDateTime.now());
 			managed.getResults().add(result);
 
+			return managed;
+		});
+	}
+
+	/**
+	 * Saves how many times each presenter was on the screen in the championship
+	 *
+	 * @return the championship with the count
+	 */
+	public static Championship savePresenterAppearances(Championship championship, String appearances) {
+		return Database.inTransaction(entityManager -> {
+			Championship managed = entityManager.find(Championship.class, championship.getId());
+			managed.setPresenterAppearances(appearances);
 			return managed;
 		});
 	}

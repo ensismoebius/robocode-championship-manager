@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Decidir quem enfrenta quem. Neste capítulo você escreve a chave de **eliminação simples**: quem perde uma partida está fora, e o último que sobra é o campeão. A chave funciona para qualquer número de robôs, completando com **folgas** quando o número não é uma potência de dois, e tem tudo o que o programa precisa para conduzir o campeonato: qual é a próxima partida, o registro de cada resultado e o campeão. No fim, uma simulação joga um campeonato inteiro, com vencedores sorteados, e mostra o resultado no terminal. A repescagem vem no capítulo seguinte.
+Decidir quem enfrenta quem. Neste capítulo você escreve a chave de **eliminação simples**: quem perde uma partida está fora, e o último que sobra é o campeão. A chave funciona para qualquer número de robôs, e **todo robô joga em toda rodada**: quando o número não é uma potência de dois, o robô que fica sem par joga um **desafio**, em vez de passar de rodada sem lutar. Ela tem tudo o que o programa precisa para conduzir o campeonato: qual é a próxima partida, o registro de cada resultado e o campeão. No fim, uma simulação joga um campeonato inteiro, com vencedores sorteados, e mostra o resultado no terminal. A repescagem vem no capítulo seguinte.
 
 Este capítulo não usa JavaFX nem o Robocode: é só lógica, em Java puro, e por isso pode ser testada de cima a baixo com testes automáticos.
 
@@ -35,20 +35,21 @@ robo6 ─┘
 
 O número de cada robô é a sua **semente**: a posição dele na lista de participantes, com a semente 1 sendo a melhor. Repare em quem enfrenta quem na primeira rodada: 1 contra 8, 4 contra 5, 2 contra 7 e 3 contra 6. A ordem espalha as sementes para os melhores só se encontrarem no fim: o 1 e o 2 só se enfrentam na final, e o 1 só encontra o 3 ou o 4 na semifinal. Os campeonatos de tênis e de futebol, com as suas chaves de sorteio, usam a mesma ideia.
 
-E se o número de robôs não for 2, 4, 8, 16, e assim por diante? Com 5 robôs, a chave é a de 8 com três lugares vazios, que são as sementes 6, 7 e 8. Quem enfrentaria um lugar vazio tem uma **folga**: segue para a rodada seguinte sem jogar. Na ordem da lista acima, os lugares vazios caem justamente ao lado das sementes 3, 2 e 1, que são as melhores, e por isso as folgas vão para as primeiras sementes, como um prêmio.
+E se o número de robôs não for 2, 4, 8, 16, e assim por diante? A regra da chave é que **todo robô joga em toda rodada**, e que **ninguém avança sem derrotar alguém**: não existe "folga", o robô que passa de rodada sem lutar. Em vez disso, quando o número de robôs de uma rodada é ímpar, sobra um robô sem par, e ele joga um **desafio**: enfrenta o **perdedor da primeira partida da rodada**, que já tinha lutado e perdido. Quem vence o desafio avança, e quem perde o desafio está fora.
+
+Com 5 robôs, a primeira rodada tem duas partidas normais, `V1-1` (1 contra 4) e `V1-2` (5 contra 2), e o robô 3 fica sem par: ele joga a `V1-3`, o desafio, contra o perdedor da `V1-1`. Os três vencedores (da `V1-1`, da `V1-2` e do desafio) seguem, e como três também é ímpar, a segunda rodada repete a ideia: a `V2-1` é uma partida normal, e a `V2-2` é o desafio entre o terceiro robô e o perdedor da `V2-1`. A final, a `V3-1`, tem dois robôs. A chave de 5 joga 6 partidas, e não 4: cada desafio é uma partida a mais, que dá uma segunda chance a quem perdeu a primeira partida da rodada.
 
 Um último ponto, de projeto. A chave guardará o menos possível: só quem são os participantes, em que ordem, e os resultados das partidas já jogadas. Tudo o mais (quem enfrenta quem, qual é a próxima partida, quem é o campeão) é **calculado** a partir disso. Para guardar um campeonato em andamento, bastará guardar a lista de participantes e a lista de resultados, e para continuar depois, montar a chave de novo e repetir os resultados. O capítulo 15 vai usar essa vantagem.
 
 ## Passo 2 — A situação de uma partida
 
-Uma partida passa por quatro situações:
+Uma partida passa por três situações:
 
 - `AGUARDANDO`: espera o resultado de partidas anteriores, e então não se sabe ainda quem joga.
 - `PRONTA`: os dois participantes já são conhecidos, e a partida pode ser jogada.
 - `FINALIZADA`: já foi jogada.
-- `FOLGA`: foi decidida sem jogar, porque falta um participante.
 
-Em Java, um conjunto fixo de valores como esse é um `enum`, o mesmo tipo do `Tipo` das partículas do capítulo 9. Um `enum` também pode guardar dados e ter métodos. Aqui cada situação tem o seu `texto`, para escrever na tela, passado ao **construtor** do `enum` entre parênteses (`AGUARDANDO("aguardando")`), e um método `decidida`, que diz se a partida já está resolvida: `FINALIZADA` e `FOLGA` estão, as outras não. **Crie o arquivo** `src/main/java/campeonato/torneio/Situacao.java`:
+Em Java, um conjunto fixo de valores como esse é um `enum`, o mesmo tipo do `Tipo` das partículas do capítulo 9. Um `enum` também pode guardar dados e ter métodos. Aqui cada situação tem o seu `texto`, para escrever na tela, passado ao **construtor** do `enum` entre parênteses (`AGUARDANDO("aguardando")`), e um método `decidida`, que diz se a partida já está resolvida: só a `FINALIZADA` está. **Crie o arquivo** `src/main/java/campeonato/torneio/Situacao.java`:
 
 <!-- arquivo: src/main/java/campeonato/torneio/Situacao.java | criar -->
 ```java
@@ -62,9 +63,7 @@ public enum Situacao {
     /** Os dois participantes são conhecidos: a partida pode ser jogada. */
     PRONTA("pronta"),
     /** Já foi jogada. */
-    FINALIZADA("finalizada"),
-    /** Decidida sem jogar: falta um participante, e quem está presente segue em frente. */
-    FOLGA("folga");
+    FINALIZADA("finalizada");
 
     private final String texto;
 
@@ -77,9 +76,9 @@ public enum Situacao {
         return texto;
     }
 
-    /** Diz se a situação é final: a partida foi jogada ou decidida por folga. */
+    /** Diz se a situação é final: a partida já foi jogada. */
     public boolean decidida() {
-        return this == FINALIZADA || this == FOLGA;
+        return this == FINALIZADA;
     }
 }
 ```
@@ -108,16 +107,16 @@ public enum Lado {
 
 Uma partida tem duas **vagas**, e cada vaga é ocupada de um de dois jeitos:
 
-- por uma **semente**, na primeira rodada: o participante já é conhecido, ou a vaga está vazia, e é uma folga;
-- pelo **vencedor** de outra partida, nas rodadas seguintes: o participante só será conhecido quando essa partida terminar.
+- por uma **semente**, na primeira rodada: o participante já é conhecido;
+- pelo **vencedor** (ou, no desafio, pelo **perdedor**) de outra partida: o participante só será conhecido quando essa partida terminar.
 
-Em vez de guardar um nome que ainda não existe, a vaga guarda **de onde** o participante vai vir: a partida de `origem`, e se ela fica com o vencedor (`doVencedor` verdadeiro) ou com o perdedor. O método `resolver` olha a origem e, se ela já está decidida, preenche a vaga. O campo `resolvida` distingue "ainda não sei quem é" de "sei que não é ninguém" (uma folga): nos dois casos o `participante` é `null`, mas só no segundo `resolvida` é verdadeiro. O `descrever` devolve o texto para a tela: o nome do participante, `Folga` ou, enquanto não se sabe, de onde ele virá, como `Vencedor de V1-2`.
+Em vez de guardar um nome que ainda não existe, a vaga guarda **de onde** o participante vai vir: a partida de `origem`, e se ela fica com o vencedor (`doVencedor` verdadeiro) ou com o perdedor. O método `resolver` olha a origem e, se ela já está decidida, preenche a vaga. Enquanto o `participante` é `null`, ainda não se sabe quem é. O `descrever` devolve o texto para a tela: o nome do participante ou, enquanto não se sabe, de onde ele virá, como `Vencedor de V1-2`.
 
-O capítulo 13 usa também as vagas do perdedor, para a repescagem; por isso `doVencedor` já existe aqui.
+As vagas do perdedor servem ao desafio, já neste capítulo, e ao capítulo 13, para a repescagem; por isso `doVencedor` existe desde já.
 
-A `Partida` guarda o código, o lado, a rodada, a posição, as duas vagas e o resultado. Há uma conta nova, a `profundidade`: **quantas partidas, em sequência, precisam ser jogadas antes desta**. Na primeira rodada é 1; uma partida cujas vagas vêm de partidas de profundidade 1 tem profundidade 2, e assim por diante. É ela que decide a ordem em que as partidas são jogadas. A conta é `1 + max(profundidade de a, profundidade de b)`, e a profundidade de uma vaga sem origem é 0.
+A `Partida` guarda o código, o lado, a rodada, a posição, as duas vagas, se é um `desafio` e o resultado. Há uma conta nova, a `profundidade`: **quantas partidas, em sequência, precisam ser jogadas antes desta**. Na primeira rodada é 1; uma partida cujas vagas vêm de partidas de profundidade 1 tem profundidade 2, e assim por diante. É ela que decide a ordem em que as partidas são jogadas. A conta é `1 + max(profundidade de a, profundidade de b)`, e a profundidade de uma vaga sem origem é 0.
 
-O método `atualizar` da partida faz a transição de situação: se ela ainda aguarda, pede às duas vagas que se resolvam. Se as duas ficarem resolvidas e com participantes, a partida está `PRONTA`. Se alguma ficou vazia, é uma `FOLGA` e o vencedor é quem está presente.
+O método `atualizar` da partida faz a transição de situação: se ela ainda aguarda, pede às duas vagas que se resolvam. Se as duas ficarem com participante, a partida está `PRONTA`.
 
 Os campos não são `private`, para a `Vaga`, a `Partida` e a `Chave`, do mesmo pacote, mexerem neles direto, como no `Particula` do capítulo 9. Fora do pacote, só se lê, pelos métodos de mesmo nome dos campos. As duas classes se referem uma à outra (uma vaga conhece a partida de origem, uma partida tem duas vagas), então o projeto só compila depois de as duas existirem. **Crie o arquivo** `src/main/java/campeonato/torneio/Vaga.java`:
 
@@ -133,15 +132,13 @@ public final class Vaga {
     /** Verdadeiro se a vaga fica com o vencedor da partida de origem, falso se fica com o perdedor. */
     final boolean doVencedor;
 
-    boolean resolvida;
     String participante;
 
-    /** Uma vaga ocupada por uma semente do campeonato; sem semente (null) ela é uma folga. */
+    /** Uma vaga ocupada por uma semente do campeonato. */
     Vaga(String semente) {
         this.origem = null;
         this.doVencedor = false;
         this.participante = semente;
-        this.resolvida = true;
     }
 
     /** Uma vaga que fica com o vencedor, ou com o perdedor, de outra partida. */
@@ -150,14 +147,9 @@ public final class Vaga {
         this.doVencedor = doVencedor;
     }
 
-    /** O participante, ou null se ainda não se sabe quem é ou se ninguém ocupa a vaga (folga). */
+    /** O participante, ou null se ainda não se sabe quem é. */
     public String participante() {
         return participante;
-    }
-
-    /** Verdadeiro quando já se sabe quem ocupa a vaga, ou que ninguém ocupa. */
-    public boolean resolvida() {
-        return resolvida;
     }
 
     /** A partida de onde o participante vem, ou null na primeira rodada. */
@@ -170,19 +162,18 @@ public final class Vaga {
         return doVencedor;
     }
 
-    /** O que escrever na tela: o participante, ou "Folga", ou de onde ele vai vir, como "Vencedor de V1-2". */
+    /** O que escrever na tela: o participante, ou de onde ele vai vir, como "Vencedor de V1-2". */
     public String descrever() {
-        if (resolvida) {
-            return participante == null ? "Folga" : participante;
+        if (participante != null) {
+            return participante;
         }
         return (doVencedor ? "Vencedor de " : "Perdedor de ") + origem.codigo();
     }
 
     /** Preenche a vaga com o vencedor, ou o perdedor, da partida de origem, quando essa partida já estiver decidida. */
     void resolver() {
-        if (!resolvida && origem != null && origem.situacao.decidida()) {
+        if (participante == null && origem != null && origem.situacao.decidida()) {
             participante = doVencedor ? origem.vencedor : origem.perdedor;
-            resolvida = true;
         }
     }
 }
@@ -205,6 +196,8 @@ public final class Partida {
     final Vaga b;
     final int profundidade;
 
+    /** Verdadeiro no desafio: a partida de quem ficou sem par, contra o perdedor da primeira partida da rodada. */
+    boolean desafio;
     Situacao situacao = Situacao.AGUARDANDO;
     String vencedor;
     String perdedor;
@@ -254,6 +247,11 @@ public final class Partida {
         return b;
     }
 
+    /** Diz se a partida é um desafio. */
+    public boolean desafio() {
+        return desafio;
+    }
+
     /** Quantas partidas, no máximo, precisam ser jogadas antes desta: serve para decidir a ordem em que se joga. */
     public int profundidade() {
         return profundidade;
@@ -291,16 +289,8 @@ public final class Partida {
         }
         a.resolver();
         b.resolver();
-        if (!a.resolvida || !b.resolvida) {
-            return;
-        }
         if (a.participante != null && b.participante != null) {
             situacao = Situacao.PRONTA;
-        } else {
-            // folga: quem está aqui segue em frente sem jogar
-            situacao = Situacao.FOLGA;
-            vencedor = a.participante != null ? a.participante : b.participante;
-            perdedor = null;
         }
     }
 
@@ -347,8 +337,8 @@ import java.util.List;
 /**
  * A chave de um campeonato, para qualquer número de participantes.
  *
- * <p>Na eliminação simples, quem perde uma partida está fora. Quando o número de participantes não é uma potência de dois (2, 4, 8, 16...), a
- * chave é completada com folgas, dadas às primeiras sementes: a partida de quem tem folga é decidida sem jogar.
+ * <p>Na eliminação simples, quem perde uma partida está fora. Todos jogam em toda rodada, e ninguém avança sem vencer alguém: quando o número
+ * de participantes de uma rodada é ímpar, quem ficou sem par joga um desafio contra o perdedor da primeira partida da rodada.
  *
  * <p>A chave não guarda nada além dos resultados: ela é montada de novo a partir das sementes e dos resultados.
  */
@@ -418,13 +408,14 @@ class ChaveTest {
 Agora o construtor. A `Chave` recebe a lista de participantes **na ordem das sementes**, e faz:
 
 1. **Confere** os participantes: pelo menos dois, todos diferentes e nenhum nulo. Se não, lança uma `IllegalArgumentException`, a exceção do Java para "o argumento que você passou não serve". O `throw new` interrompe o construtor, e quem o chamou recebe o erro. O `List.copyOf` guarda uma cópia que não pode ser mudada, e a chave não muda se quem a criou mexer na lista depois.
-2. **Descobre o tamanho** da chave: a menor potência de dois que comporta todos os participantes, e o número de rodadas. Com 5 participantes, o tamanho é 8 e as rodadas são 3. Cada volta do `while` dobra o tamanho e conta uma rodada.
-3. **Cria as partidas**, rodada por rodada. A primeira rodada recebe as sementes na ordem do passo 4: a partida de índice `indice` fica com as sementes `ordem[2 × indice]` e `ordem[2 × indice + 1]`. As outras rodadas recebem os vencedores da rodada anterior: a partida `indice` pega os vencedores das partidas `2 × indice` e `2 × indice + 1`, e por isso a chave tem metade das partidas a cada rodada, o que a variável `partidasNaRodada` acompanha, dividindo por 2 no fim de cada rodada.
-4. **Resolve** as folgas, com o `atualizar`.
+2. **Monta a primeira rodada** com as sementes, na ordem do passo 4. O tamanho da chave é a menor potência de dois que comporta todos os participantes (com 5 participantes, 8), e a ordem das sementes é a de uma chave desse tamanho, mas **sem as sementes que não existem**: com 5 participantes, a ordem `1 8 4 5 2 7 3 6` vira `1 4 5 2 3`.
+3. **Emparelha** as vagas, rodada por rodada, com o método `emparelhar`: as duas primeiras jogam entre si, as duas seguintes jogam entre si, e assim por diante. Se sobra uma, ela joga o **desafio** contra o perdedor da primeira partida. Os vencedores de cada rodada são as vagas da rodada seguinte, e isso se repete até sobrar uma vaga só.
 
-O `semente(numero)` devolve o participante da semente `numero`, contada a partir de 1 (a lista começa em 0, e por isso o `numero - 1`), ou `null` quando não há tanta gente: é assim que as folgas nascem. A partida de código `"V" + rodada + "-" + (indice + 1)` é guardada em dois lugares: na lista `partidas`, em ordem de criação, e no `porCodigo`, um `Map` (o `HashMap` do capítulo 6) que acha uma partida pelo código.
+O `emparelhar` devolve três coisas de uma vez, e por isso há um **`record`** (o do capítulo 14 é igual): `Rodada` guarda as `partidas` da rodada, as vagas de quem `avancam` e as vagas de quem `caem`, os perdedores. Quem cai só é usado no capítulo 13, onde a repescagem os recebe: no desafio, o perdedor da primeira partida já voltou a jogar, e então a vaga de quem cai, nessa posição, passa a ser a do perdedor **do desafio**. O desafio tem a vaga de um perdedor: `new Vaga(primeira, false)`.
 
-A ordem de criação importa: uma partida é sempre criada **depois** das que alimentam as suas vagas. Por isso o `atualizar` precisa de uma passada só pela lista: quando chega a uma partida, as anteriores já foram resolvidas, e as folgas da primeira rodada se propagam até as rodadas seguintes na mesma passada.
+O código das partidas é `"V" + rodada + "-" + (indice + 1)`, e o desafio vem depois das partidas normais, com o próximo número da rodada. Cada partida é guardada em dois lugares: na lista `partidas`, em ordem de criação, e no `porCodigo`, um `Map` (o `HashMap` do capítulo 6) que acha uma partida pelo código.
+
+A ordem de criação importa: uma partida é sempre criada **depois** das que alimentam as suas vagas, e o desafio, depois da primeira partida da sua rodada. Por isso o `atualizar` precisa de uma passada só pela lista: quando chega a uma partida, as anteriores já foram resolvidas.
 
 A `decisiva` é a partida que decide o campeão: nesta chave, a única da última rodada. **Acrescente o import** no topo de `Chave.java`:
 
@@ -442,9 +433,15 @@ import java.util.Map;
     private final List<Partida> partidas = new ArrayList<>();
     private final Map<String, Partida> porCodigo = new HashMap<>();
     private final List<List<Partida>> rodadasPrincipais = new ArrayList<>();
+    /** Quem perde cada rodada da chave principal: a repescagem do capítulo 13 os recebe. */
+    private final List<List<Vaga>> perdedoresDasRodadas = new ArrayList<>();
 
     /** A partida que decide o campeão. */
     private Partida decisiva;
+
+    /** Uma rodada: as suas partidas, as vagas de quem avança e as de quem cai. */
+    private record Rodada(List<Partida> partidas, List<Vaga> avancam, List<Vaga> caem) {
+    }
 
     /**
      * @param sementes os participantes na ordem das sementes, a melhor primeiro; pelo menos dois, todos diferentes
@@ -463,39 +460,56 @@ import java.util.Map;
 
     /** Cria as partidas da chave, rodada por rodada. */
     private void construir() {
-        // o tamanho da chave é a menor potência de dois que comporta todos; o que sobra são folgas
-        int tamanho = 2;
-        int rodadas = 1;
-        while (tamanho < participantes.size()) {
-            tamanho *= 2;
-            rodadas++;
-        }
-        construirPrincipal(tamanho, rodadas);
-        decisiva = rodadasPrincipais.get(rodadas - 1).get(0);
+        construirPrincipal();
+        decisiva = rodadasPrincipais.get(rodadasPrincipais.size() - 1).get(0);
     }
 
     /** As rodadas da chave principal: a primeira recebe as sementes, as outras recebem os vencedores da anterior. */
-    private void construirPrincipal(int tamanho, int rodadas) {
-        int[] ordem = ordemDasSementes(tamanho);
-        int partidasNaRodada = tamanho / 2;
-        for (int rodada = 1; rodada <= rodadas; rodada++) {
-            List<Partida> daRodada = new ArrayList<>();
-            for (int indice = 0; indice < partidasNaRodada; indice++) {
-                Vaga a;
-                Vaga b;
-                if (rodada == 1) {
-                    a = new Vaga(semente(ordem[2 * indice]));
-                    b = new Vaga(semente(ordem[2 * indice + 1]));
-                } else {
-                    List<Partida> anterior = rodadasPrincipais.get(rodada - 2);
-                    a = new Vaga(anterior.get(2 * indice), true);
-                    b = new Vaga(anterior.get(2 * indice + 1), true);
-                }
-                daRodada.add(adicionar("V" + rodada + "-" + (indice + 1), Lado.PRINCIPAL, rodada, indice + 1, a, b));
-            }
-            rodadasPrincipais.add(daRodada);
-            partidasNaRodada /= 2;
+    private void construirPrincipal() {
+        // o tamanho da chave é a menor potência de dois que comporta todos; as sementes que não existem não entram
+        int tamanho = 2;
+        while (tamanho < participantes.size()) {
+            tamanho *= 2;
         }
+        List<Vaga> vagas = new ArrayList<>();
+        for (int semente : ordemDasSementes(tamanho)) {
+            if (semente <= participantes.size()) {
+                vagas.add(new Vaga(participantes.get(semente - 1)));
+            }
+        }
+        for (int rodada = 1; vagas.size() > 1; rodada++) {
+            Rodada atual = emparelhar(Lado.PRINCIPAL, rodada, vagas);
+            rodadasPrincipais.add(atual.partidas());
+            perdedoresDasRodadas.add(atual.caem());
+            vagas = atual.avancam();
+        }
+    }
+
+    /**
+     * Emparelha as vagas, duas a duas, na ordem. Todos jogam em toda rodada, e quem avança venceu alguém: se o número de vagas é
+     * ímpar, a que sobra joga um desafio contra o perdedor da primeira partida da rodada. Quem vence o desafio avança, e o perdedor
+     * do desafio ocupa, entre os que caem, o lugar do perdedor da primeira partida, que já voltou a jogar.
+     */
+    private Rodada emparelhar(Lado lado, int rodada, List<Vaga> vagas) {
+        String prefixo = lado == Lado.PRINCIPAL ? "V" : "R";
+        List<Partida> daRodada = new ArrayList<>();
+        List<Vaga> avancam = new ArrayList<>();
+        List<Vaga> caem = new ArrayList<>();
+        int pares = vagas.size() / 2;
+        for (int indice = 0; indice < pares; indice++) {
+            Partida partida = adicionar(prefixo + rodada + "-" + (indice + 1), lado, rodada, indice + 1, vagas.get(2 * indice), vagas.get(2 * indice + 1));
+            daRodada.add(partida);
+            avancam.add(new Vaga(partida, true));
+            caem.add(new Vaga(partida, false));
+        }
+        if (vagas.size() % 2 == 1) {
+            Partida desafio = adicionar(prefixo + rodada + "-" + (pares + 1), lado, rodada, pares + 1, vagas.get(vagas.size() - 1), new Vaga(daRodada.get(0), false));
+            desafio.desafio = true;
+            daRodada.add(desafio);
+            avancam.add(new Vaga(desafio, true));
+            caem.set(0, new Vaga(desafio, false));
+        }
+        return new Rodada(daRodada, avancam, caem);
     }
 
     /** Cria uma partida, guarda na lista e no índice por código, e a devolve. */
@@ -504,11 +518,6 @@ import java.util.Map;
         partidas.add(partida);
         porCodigo.put(codigo, partida);
         return partida;
-    }
-
-    /** O participante de uma semente, contada de 1, ou null quando há menos participantes (uma folga). */
-    private String semente(int numero) {
-        return numero <= participantes.size() ? participantes.get(numero - 1) : null;
     }
 
     /** As partidas são criadas depois das que dependem delas, e uma passada só já basta. */
@@ -556,7 +565,7 @@ O `Collections.unmodifiableList` devolve a mesma lista, mas **só para leitura**
 
 <!-- compilar -->
 
-Os testes novos usam uma função de apoio, `robos(n)`, que faz a lista `robo1`, `robo2` e assim por diante, e conferem a chave de 4 participantes (3 partidas, e quem enfrenta quem), a de 2 (uma partida só), a de 5, com as folgas, e as recusas de listas ruins. Na chave de 5, as sementes 1, 2 e 3 têm folga e já têm a partida decidida; a única partida da primeira rodada que se joga é a das sementes 4 e 5; e as sementes 2 e 3 já se encontram na segunda rodada, pois as duas folgas se propagaram na mesma passada. O `assertThrows` confere que um trecho de código lança a exceção esperada: o `() -> new Chave(...)` é uma **função sem parâmetros** que o `assertThrows` executa por conta própria, para pegar a exceção. **Acrescente os imports** no topo de `ChaveTest.java`:
+Os testes novos usam uma função de apoio, `robos(n)`, que faz a lista `robo1`, `robo2` e assim por diante, e conferem a chave de 4 participantes (3 partidas, e quem enfrenta quem), a de 2 (uma partida só), a de 5, com os desafios, e as recusas de listas ruins. Na chave de 5, a primeira rodada tem duas partidas prontas (1 contra 4 e 5 contra 2) e o desafio da semente 3, que espera o perdedor da primeira; a segunda rodada tem a `V2-1` e outro desafio; e as 4 partidas normais mais os 2 desafios dão 6 partidas na chave, mais a final. O `assertThrows` confere que um trecho de código lança a exceção esperada: o `() -> new Chave(...)` é uma **função sem parâmetros** que o `assertThrows` executa por conta própria, para pegar a exceção. **Acrescente os imports** no topo de `ChaveTest.java`:
 
 <!-- arquivo: src/test/java/campeonato/torneio/ChaveTest.java | importar -->
 ```java
@@ -606,20 +615,19 @@ import java.util.Set;
     }
 
     @Test
-    void asFolgasVaoParaAsPrimeirasSementesEJaSaoDecididas() {
-        // 5 participantes: chave de 8, e as sementes 1, 2 e 3 têm folga
+    void quemFicaSemParJogaUmDesafioContraOPerdedorDaPrimeiraPartida() {
+        // 5 participantes: duas partidas, e a semente 3 fica sem par
         Chave chave = new Chave(robos(5));
 
         List<Partida> primeiraRodada = chave.rodadasPrincipais().get(0);
-        assertEquals(4, primeiraRodada.size());
-        assertEquals(3, primeiraRodada.stream().filter(partida -> partida.situacao() == Situacao.FOLGA).count());
-        assertEquals("robo1", chave.partida("V1-1").vencedor());
-        assertEquals("Folga", chave.partida("V1-1").b().descrever());
-
-        // as sementes 2 e 3 já se encontram na segunda rodada
-        Partida semifinal = chave.partida("V2-2");
-        assertEquals(Situacao.PRONTA, semifinal.situacao());
-        assertEquals(Set.of("robo2", "robo3"), Set.of(semifinal.a().participante(), semifinal.b().participante()));
+        assertEquals(3, primeiraRodada.size());
+        assertEquals(Situacao.PRONTA, chave.partida("V1-1").situacao());
+        assertEquals(Situacao.PRONTA, chave.partida("V1-2").situacao());
+        Partida desafio = chave.partida("V1-3");
+        assertEquals(true, desafio.desafio());
+        assertEquals("robo3", desafio.a().participante());
+        assertEquals("Perdedor de V1-1", desafio.b().descrever());
+        assertEquals(Situacao.AGUARDANDO, desafio.situacao());
     }
 
     @Test
@@ -673,7 +681,7 @@ Se tudo está certo, o método grava o vencedor, o perdedor (o outro dos dois) e
 
 <!-- compilar -->
 
-O primeiro teste segue o caminho de um vencedor numa chave de 4: depois de `V1-1`, a partida fica `FINALIZADA` com os pontos gravados, e a vaga da decisiva já tem o vencedor, mas ela continua aguardando até a outra semifinal acabar. O segundo confere as quatro recusas. **Acrescente ao final da classe** `ChaveTest`:
+O primeiro teste segue o caminho de um vencedor numa chave de 4: depois de `V1-1`, a partida fica `FINALIZADA` com os pontos gravados, e a vaga da decisiva já tem o vencedor, mas ela continua aguardando até a outra semifinal acabar. O segundo mostra o desafio: ele fica pronto quando a primeira partida da rodada termina, e quem o vence continua na chave. O terceiro confere as quatro recusas. **Acrescente ao final da classe** `ChaveTest`:
 
 <!-- arquivo: src/test/java/campeonato/torneio/ChaveTest.java | acrescentar -->
 ```java
@@ -700,6 +708,22 @@ O primeiro teste segue o caminho de um vencedor numa chave de 4: depois de `V1-1
     }
 
     @Test
+    void oDesafioFicaProntoDepoisDaPrimeiraPartidaEQuemVenceAvanca() {
+        Chave chave = new Chave(robos(5));
+        Partida desafio = chave.partida("V1-3");
+        assertEquals(Situacao.AGUARDANDO, desafio.situacao());
+
+        // o perdedor da primeira partida (o robo4) enfrenta o robo3, que ficou sem par
+        chave.registrar("V1-1", "robo1", 1, 0);
+        assertEquals(Situacao.PRONTA, desafio.situacao());
+        assertEquals(Set.of("robo3", "robo4"), Set.of(desafio.a().participante(), desafio.b().participante()));
+
+        // o robo4 perdeu a primeira partida, mas venceu o desafio: está na segunda rodada, e o robo3 saiu
+        chave.registrar("V1-3", "robo4", 1, 0);
+        assertEquals("robo4", chave.partida("V2-2").a().participante());
+    }
+
+    @Test
     void recusaResultadosInvalidos() {
         Chave chave = new Chave(robos(4));
         assertThrows(IllegalArgumentException.class, () -> chave.registrar("X9", "robo1", 1, 0));
@@ -720,7 +744,7 @@ A próxima partida é escolhida entre as `PRONTA`. Quando há mais de uma (na pr
 
 O resultado vem num `Optional<Partida>`, que é uma **caixa que pode estar vazia**. Se não há nenhuma partida pronta, ou porque o campeonato acabou ou porque falta resultado, a caixa vem vazia. Isso é mais honesto que devolver `null`: quem recebe o `Optional` vê, pelo tipo, que a resposta pode não existir, e precisa tratá-la. Os métodos que mais vamos usar são `isPresent()` (tem algo?), `isEmpty()` (está vazia?) e `get()` (pega o conteúdo, e só deve ser chamado depois de verificar), e o `orElseThrow()` (pega o conteúdo, e lança uma exceção se estiver vazia, o que é prático nos testes).
 
-O campeão é o vencedor da partida `decisiva`, se ela já estiver decidida, ou `null`. Como a decisiva pode ser decidida por folga? Só se a chave tiver menos de dois participantes, e o construtor já recusa isso: com dois ou mais, a partida decisiva sempre é jogada. **Acrescente os imports** no topo de `Chave.java`:
+O campeão é o vencedor da partida `decisiva`, se ela já estiver decidida, ou `null`. A decisiva sempre é jogada: a chave tem pelo menos dois participantes, e o construtor recusa menos que isso. **Acrescente os imports** no topo de `Chave.java`:
 
 <!-- arquivo: src/main/java/campeonato/torneio/Chave.java | importar -->
 ```java
@@ -759,7 +783,7 @@ import java.util.Optional;
 O teste mais importante do capítulo joga **campeonatos inteiros**, de 2 a 40 participantes, sorteando o vencedor de cada partida, e confere as regras da chave em todos eles:
 
 - Antes de cada partida, **ninguém está em duas partidas prontas ao mesmo tempo**. Se estivesse, o robô teria de lutar em dois lugares.
-- Ao fim, a chave tem campeão, foram jogadas exatamente `n − 1` partidas, o campeão não perdeu nenhuma e **todos os outros perderam exatamente uma**.
+- Ao fim, a chave tem campeão, e foram jogadas `n − 1` partidas **mais os desafios**: cada partida elimina um robô, menos o desafio, que dá a quem perdeu a primeira partida da rodada uma segunda chance. Com uma quantidade de robôs que é potência de dois, não há desafio. O campeão perdeu no máximo uma vez, e **todos os outros perderam pelo menos uma**.
 
 A função `jogarTudo` faz o jogo. O `Random(1)`, com semente fixa, repete o mesmo sorteio sempre, e o teste fica igual em todos os computadores. O `derrotas.merge(perdedor, 1, Integer::sum)` soma 1 às derrotas do perdedor (como no `Vitorias` do capítulo 8). Há ainda dois testes menores: a ordem da `proximaPartida` e o que acontece quando não há nenhuma. **Acrescente os imports** no topo de `ChaveTest.java`:
 
@@ -834,14 +858,17 @@ import java.util.Random;
             Map<String, Integer> derrotas = jogarTudo(chave, sorteio);
 
             assertTrue(chave.terminou(), "n=" + quantidade);
-            // cada partida jogada elimina um: sobra um campeão
+            // cada partida elimina um robô, menos o desafio: o perdedor da primeira partida da rodada tem uma segunda chance
             long jogadas = chave.partidas().stream().filter(partida -> partida.situacao() == Situacao.FINALIZADA).count();
-            assertEquals(quantidade - 1, jogadas, "n=" + quantidade);
+            long desafios = chave.partidas().stream().filter(Partida::desafio).count();
+            assertEquals(quantidade - 1 + desafios, jogadas, "n=" + quantidade);
+            // só as quantidades que são potência de dois não têm desafio
+            assertEquals(quantidade == Integer.highestOneBit(quantidade), desafios == 0, "n=" + quantidade);
             String campeao = chave.campeao();
-            assertNull(derrotas.get(campeao));
+            assertTrue(derrotas.getOrDefault(campeao, 0) <= 1, "n=" + quantidade);
             for (String robo : robos(quantidade)) {
                 if (!robo.equals(campeao)) {
-                    assertEquals(1, derrotas.get(robo), "n=" + quantidade + " " + robo);
+                    assertTrue(derrotas.get(robo) >= 1, "n=" + quantidade + " " + robo);
                 }
             }
         }
@@ -901,7 +928,7 @@ public final class Simulacao {
 
 Compile e rode, de dentro da pasta `mini-campeonato`, como no capítulo 5:
 
-<!-- executar: | espera: Campeão: robo6 | proibe: Exception -->
+<!-- executar: | espera: Campeão: robo1 | proibe: Exception -->
 ```bash
 mvn -q compile
 java -cp target/classes campeonato.torneio.Simulacao 6
@@ -911,32 +938,32 @@ A saída, com 6 robôs, é esta:
 
 ```text
 A chave, antes de qualquer partida:
-  V1-1  robo1 x Folga  (folga)
-  V1-2  robo4 x robo5  (pronta)
-  V1-3  robo2 x Folga  (folga)
-  V1-4  robo3 x robo6  (pronta)
-  V2-1  robo1 x Vencedor de V1-2  (aguardando)
-  V2-2  robo2 x Vencedor de V1-4  (aguardando)
+  V1-1  robo1 x robo4  (pronta)
+  V1-2  robo5 x robo2  (pronta)
+  V1-3  robo3 x robo6  (pronta)
+  V2-1  Vencedor de V1-1 x Vencedor de V1-2  (aguardando)
+  V2-2  Vencedor de V1-3 x Perdedor de V2-1  (aguardando)
   V3-1  Vencedor de V2-1 x Vencedor de V2-2  (aguardando)
 As partidas, na ordem em que são jogadas:
-  V1-2: robo4 x robo5 -> venceu robo4
-  V1-4: robo3 x robo6 -> venceu robo6
-  V2-1: robo1 x robo4 -> venceu robo4
-  V2-2: robo2 x robo6 -> venceu robo6
-  V3-1: robo4 x robo6 -> venceu robo6
-Campeão: robo6
+  V1-1: robo1 x robo4 -> venceu robo1
+  V1-2: robo5 x robo2 -> venceu robo2
+  V1-3: robo3 x robo6 -> venceu robo6
+  V2-1: robo1 x robo2 -> venceu robo2
+  V2-2: robo6 x robo1 -> venceu robo1
+  V3-1: robo2 x robo1 -> venceu robo1
+Campeão: robo1
 ```
 
-Com 6 robôs, a chave é a de 8, e as sementes 7 e 8 não existem: o `robo1` e o `robo2` têm folga na primeira rodada, e as partidas `V1-1` e `V1-3` já aparecem `folga`. As duas partidas da primeira rodada que se jogam são `V1-2` (4 contra 5) e `V1-4` (3 contra 6). Os vencedores sobem, e as vagas da segunda rodada, que diziam `Vencedor de V1-2`, são preenchidas. Foram 5 partidas jogadas, uma a menos que os 6 robôs, como o teste garante. Os campeões sorteados mudam se você trocar a semente do `Random`.
+Com 6 robôs, a primeira rodada tem três partidas, e ninguém fica sem par. Os três vencedores (robo1, robo2 e robo6) formam uma rodada ímpar, e então aparece o **desafio**: a `V2-1` é a partida normal (robo1 contra robo2), e a `V2-2` é o desafio do robo6, que ficou sem par, contra o **perdedor** da `V2-1`, o robo1. O robo1 perdeu a `V2-1`, mas ganhou o desafio, e por isso chegou à final, que ganhou: foi campeão depois de perder uma partida, o que só acontece graças ao desafio. Foram 6 partidas jogadas: as 5 do `n − 1` mais o desafio, como o teste garante. Os campeões sorteados mudam se você trocar a semente do `Random`.
 
 ## O que construímos
 
 ```text
 src/main/java/campeonato/torneio/
-├── Situacao.java    em que pé está uma partida: aguardando, pronta, finalizada ou folga
+├── Situacao.java    em que pé está uma partida: aguardando, pronta ou finalizada
 ├── Lado.java        a parte da chave: principal, repescagem ou final
 ├── Vaga.java        um lugar de uma partida: uma semente, ou o vencedor/perdedor de outra partida
-├── Partida.java     uma partida: as vagas, o código, a profundidade e o resultado
+├── Partida.java     uma partida: as vagas, o código, a profundidade, se é desafio e o resultado
 ├── Chave.java       a chave de eliminação: monta as rodadas, registra resultados e diz a próxima partida
 └── Simulacao.java   joga uma chave inteira com vencedores sorteados
 
@@ -948,13 +975,13 @@ src/test/java/campeonato/torneio/
 
 **Fácil**
 
-1. Rode a `Simulacao` com 3, 7 e 16 robôs. Conte, em cada caso, quantas partidas são jogadas e quantas são `folga`. A soma dá o número de partidas da chave? Por que as jogadas são sempre uma a menos que o número de robôs?
+1. Rode a `Simulacao` com 3, 7 e 16 robôs. Conte, em cada caso, quantas partidas são jogadas e quantas são `desafio`. A conta `n − 1 + desafios` confere? Por que a chave de 16 não tem nenhum desafio?
 2. Troque a semente do `Random` na `Simulacao`, de 1 para 2 e depois para 3. A chave muda? O campeão muda? O que a semente do sorteio muda, e o que ela não muda?
 3. Escreva um teste para `Chave.ordemDasSementes(16)`. Prever a resposta à mão, com a receita do passo 4 (o total é 17), dá a sequência `1, 16, 8, 9, 4, 13, 5, 12, 2, 15, 7, 10, 3, 14, 6, 11`. Confira.
 
 **Médio**
 
-4. Acrescente à `Chave` o método `int partidasRestantes()`, que conta as partidas que ainda precisam ser jogadas (as `AGUARDANDO` e as `PRONTA`). Use-o na `Simulacao` para escrever `faltam N` depois de cada resultado, e escreva um teste: numa chave de 8, são 7 no começo e 0 no fim. As folgas contam como partidas a jogar?
+4. Acrescente à `Chave` o método `int partidasRestantes()`, que conta as partidas que ainda precisam ser jogadas (as `AGUARDANDO` e as `PRONTA`). Use-o na `Simulacao` para escrever `faltam N` depois de cada resultado, e escreva um teste: numa chave de 8, são 7 no começo e 0 no fim. Os desafios contam como partidas a jogar, mesmo antes de a primeira partida da sua rodada ser jogada?
 5. Acrescente o método `List<String> aindaNaDisputa()`, que devolve os participantes que ainda não perderam nenhuma partida. Numa chave de 4, são 4 no começo e, depois de `V1-1` vencida pelo `robo4`, os outros 3. Dica: um participante perdeu uma partida se ele é o `perdedor()` de uma partida `FINALIZADA`.
 
 **Difícil**
@@ -963,8 +990,8 @@ src/test/java/campeonato/torneio/
 
 ## Perguntas para fixação
 
-1. Por que uma chave de 8 robôs tem 7 partidas? E a de 5, quantas partidas joga e quantas são folgas?
-2. Por que as folgas vão para as primeiras sementes? O que, na ordem das sementes, garante isso?
+1. Por que uma chave de 8 robôs tem 7 partidas? E a de 5, quantas partidas joga e quantas são desafios?
+2. Por que o robô sem par joga contra o perdedor da primeira partida da rodada, e não passa direto? O que isso muda para quem perdeu essa partida?
 3. Por que a `Vaga` guarda a partida de **origem**, em vez de guardar o nome do vencedor?
 4. Por que o `atualizar` precisa de só uma passada pela lista de partidas?
 5. Quando o `registrar` lança uma `IllegalArgumentException` e quando lança uma `IllegalStateException`? Dê um exemplo de cada.
@@ -972,10 +999,10 @@ src/test/java/campeonato/torneio/
 <details>
 <summary>Respostas</summary>
 
-1. Cada partida elimina exatamente um robô, e só o campeão não é eliminado, então são `n − 1` partidas: 7, com 8 robôs. Com 5 robôs a chave é a de 8, com 7 partidas na chave, das quais 3 são folgas (decididas sem jogar) e 4 são jogadas: de novo `n − 1 = 4`.
-2. Na ordem das sementes, cada semente é emparelhada com a que soma, com ela, `tamanho + 1`. Os lugares vazios são os de número mais alto (o 6, o 7, o 8), e os pares deles são os números mais baixos: o 8 é o par do 1, o 7 é o do 2, o 6 é o do 3. Quem enfrenta um lugar vazio tem a folga.
+1. Cada partida elimina exatamente um robô, e só o campeão não é eliminado, então são `n − 1` partidas: 7, com 8 robôs. Com 5 robôs, são 6 partidas: 4 normais (`n − 1`) e 2 desafios, a `V1-3` e a `V2-2`, que são partidas a mais.
+2. Para que ninguém avance sem derrotar alguém: o robô sem par precisa de um adversário, e o que está à mão é o perdedor da primeira partida da rodada, que já lutou. Esse robô ganha uma segunda chance: se vencer o desafio, avança; se perder, está fora. Em contrapartida, o robô sem par arrisca ser eliminado, como todos os outros.
 3. Porque, quando a chave é montada, o vencedor ainda não existe. A vaga só sabe de onde ele vai vir, e preenche o `participante` quando a partida de origem é decidida. Assim a chave é montada uma vez, e cada resultado só atualiza o que depende dele. Também é por isso que a chave pode ser montada de novo a partir dos resultados.
-4. Porque as partidas são criadas depois das que alimentam as suas vagas. Quando o `atualizar` chega a uma partida, as anteriores já foram resolvidas, e uma folga numa partida cedo na lista já preencheu a vaga da partida seguinte antes de esta ser olhada.
+4. Porque as partidas são criadas depois das que alimentam as suas vagas. Quando o `atualizar` chega a uma partida, as anteriores já foram resolvidas, e o vencedor de uma partida cedo na lista já preencheu a vaga da partida seguinte antes de esta ser olhada.
 5. A `IllegalArgumentException` é para um argumento errado: um código que não existe (`"X9"`), ou um vencedor que não joga a partida. A `IllegalStateException` é para o momento errado: registrar `V2-1` quando os participantes ainda não são conhecidos, ou registrar de novo uma partida já finalizada.
 
 </details>

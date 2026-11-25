@@ -75,10 +75,22 @@ final class ArenaCommentary {
 	private double lastPresented = -1000;
 	/** Who was on the screen, so that the presenters share it */
 	private final PresenterBalance balance = new PresenterBalance();
+	/** Who says each comment: all the presenters are on the screen the same number of times in the championship */
+	private PresenterRoster roster = new PresenterRoster();
 	private final List<QueuedComment> commentQueue = new ArrayList<QueuedComment>();
 
 	/** A comment waiting its turn, with the time since it was queued. */
 	private record QueuedComment(BattleCommentary.Message message, double since) {
+	}
+
+	/** The count of the presenters of the championship, which the comments of this battle go on. */
+	void setRoster(PresenterRoster roster) {
+		this.roster = roster == null ? new PresenterRoster() : roster;
+	}
+
+	/** The count of the presenters that the comments of this battle go on. */
+	PresenterRoster roster() {
+		return this.roster;
 	}
 
 	/** Clears the comments waiting their turn, on a new round or a new battle */
@@ -252,7 +264,8 @@ final class ArenaCommentary {
 	}
 
 	/**
-	 * Shows the comment with the presenter of its topic
+	 * Shows the comment with the presenter of its topic, or, if that one was on the screen more times than another in the
+	 * championship, with one of those who were on the fewest times
 	 *
 	 * @return false if it was not time for it and it was dropped
 	 */
@@ -262,8 +275,10 @@ final class ArenaCommentary {
 		}
 		this.lastPresented = this.commentClock;
 		this.balance.appeared(message.topic());
-		this.presenter.present(message.topic(), COMMENT_SECONDS + 0.4);
-		this.liveTag.setText("● " + message.topic().presenter.toUpperCase());
+		Topic speaker = this.roster.speaker(message.topic());
+		this.roster.appeared(speaker);
+		this.presenter.present(speaker, COMMENT_SECONDS + 0.4);
+		this.liveTag.setText("● " + speaker.presenter.toUpperCase());
 		this.comment = message;
 		this.commentAge = 0;
 		this.commentText.setText(message.text());

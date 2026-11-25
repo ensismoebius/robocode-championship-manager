@@ -56,7 +56,14 @@ public class Championship {
 	private boolean finalReset;
 
 	/**
-	 * Robots in seed order, the first ones get the byes
+	 * How many times each presenter was on the screen in the battles of the championship, so that all of them are on it the same
+	 * number of times (see widgets.scenes.PresenterRoster). Null before the first battle.
+	 */
+	@Column(length = 500)
+	private String presenterAppearances;
+
+	/**
+	 * Robots in seed order: the order of the draw, which spreads the first ones so they only meet at the end
 	 */
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "ChampionshipSeed", joinColumns = @JoinColumn(name = "championshipId"), inverseJoinColumns = @JoinColumn(name = "opponentId"))
@@ -106,6 +113,16 @@ public class Championship {
 	/** Returns the seeds. */
 	public List<Opponent> getSeeds() {
 		return seeds;
+	}
+
+	/** How many times each presenter was on the screen, as text; null before the first battle. */
+	public String getPresenterAppearances() {
+		return presenterAppearances;
+	}
+
+	/** Sets how many times each presenter was on the screen, as text. */
+	public void setPresenterAppearances(String presenterAppearances) {
+		this.presenterAppearances = presenterAppearances;
 	}
 
 	/** Returns the results. */

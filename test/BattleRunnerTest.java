@@ -1,5 +1,6 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -191,6 +192,9 @@ class BattleRunnerTest {
 		}
 		assertInstanceOf(ShowOponent.class, FxSupport.run(() -> GameWindow.getScreen()));
 		assertFalse(FxSupport.run(() -> host.battleRunning));
+		// The count of the presenters of the battle is kept with the championship, for the next battles
+		assertNotNull(FxSupport.run(() -> host.championship.getPresenterAppearances()));
+		assertEquals(host.championship.getPresenterAppearances(), tournament.ChampionshipService.current().getPresenterAppearances());
 	}
 
 	@Test

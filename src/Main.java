@@ -20,6 +20,7 @@ import utils.database.Database;
 import widgets.scenes.BattleViewer;
 import widgets.scenes.BracketViewer;
 import widgets.scenes.Podium;
+import widgets.scenes.PresenterRoster;
 import widgets.scenes.RobotsEditor;
 import widgets.scenes.ShowOponent;
 import widgets.scenes.StartScreen;
@@ -462,6 +463,11 @@ public class Main extends Application {
 	/** Saves the result of a match; false when it could not be saved, and the error was shown. */
 	boolean saveResult(Match match, long winnerId, Integer winnerScore, Integer loserScore) {
 		return flow.saveResult(match, winnerId, winnerScore, loserScore);
+	}
+
+	/** Keeps with the championship how many times each presenter was on the screen. */
+	void savePresenters(PresenterRoster roster) {
+		flow.savePresenters(roster);
 	}
 
 	/** Shows the winner of the match, or the champion when the bracket is finished. */

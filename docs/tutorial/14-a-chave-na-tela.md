@@ -152,12 +152,13 @@ import java.util.stream.Stream;
     }
 
     /**
-     * A média das alturas do centro das partidas que alimentam esta com o vencedor delas, se já foram colocadas. Só contam as
-     * do mesmo lado da chave (a grande final conta as duas), pois quem cai da chave principal vem de outra parte da tela.
+     * A média das alturas do centro das partidas que alimentam esta, se já foram colocadas. Só contam as do mesmo lado da chave e
+     * de uma rodada anterior (a grande final conta as duas): quem cai da chave principal vem de outra parte da tela, e o perdedor
+     * da primeira partida da rodada, que joga o desafio, vem de uma partida da mesma coluna.
      */
     private OptionalDouble centroDasOrigens(Partida partida) {
         return Stream.of(partida.a().origem(), partida.b().origem())
-                .filter(origem -> origem != null && (origem.lado() == partida.lado() || partida.lado() == Lado.FINAL))
+                .filter(origem -> origem != null && (partida.lado() == Lado.FINAL || (origem.lado() == partida.lado() && origem.rodada() < partida.rodada())))
                 .mapToDouble(origem -> cartoes.get(origem.codigo()).y() + ALTURA_DO_CARTAO / 2)
                 .average();
     }
@@ -168,7 +169,7 @@ import java.util.stream.Stream;
 
 O próximo método coloca as rodadas de uma parte da chave. Ele recebe as rodadas, o `topo` (onde a parte começa, na vertical) e uma função `nomes`, que dá o nome de uma rodada pelo número dela. O tipo `IntFunction<String>` é "uma função que recebe um `int` e devolve um `String`", e quem chama passa a referência a método do capítulo 12: `chave::nomeDaRodadaPrincipal`, que é o método da chave, já ligado a ela.
 
-Cada volta do laço de fora cuida de uma coluna: calcula o `x`, escreve o título da rodada no `topo` e coloca as partidas dela. Para cada partida, o centro é a média das origens, e **se não há origem do mesmo lado** (o `OptionalDouble` vazio), é a primeira rodada, e o centro vem da conta dos espaços iguais: o `indice + 0.5`, de modo que o primeiro cartão fique no meio do primeiro espaço, e assim por diante. O método devolve a altura que a parte ocupou: o título da rodada mais os espaços da primeira rodada, a que tem mais partidas. **Acrescente os imports**:
+Cada volta do laço de fora cuida de uma coluna: calcula o `x`, escreve o título da rodada no `topo` e coloca as partidas dela. Para cada partida, o centro é a média das origens, e **se não há origem do mesmo lado e de uma rodada anterior** (o `OptionalDouble` vazio), é a primeira rodada, e o centro vem da conta dos espaços iguais: o `indice + 0.5`, de modo que o primeiro cartão fique no meio do primeiro espaço, e assim por diante. É o caso também do desafio da primeira rodada, que fica depois das outras partidas. O método devolve a altura que a parte ocupou: o título da rodada mais os espaços da rodada que tem mais partidas (na repescagem, não é sempre a primeira). **Acrescente os imports**:
 
 <!-- arquivo: src/main/java/campeonato/tela/Disposicao.java | importar -->
 ```java
@@ -191,7 +192,7 @@ import java.util.function.IntFunction;
                 colocar(rodada.get(indice), x, centroDasOrigens(rodada.get(indice)).orElse(centroDaPrimeira));
             }
         }
-        return ALTURA_DO_TITULO_DA_RODADA + rodadas.get(0).size() * ESPACO_DA_PARTIDA;
+        return ALTURA_DO_TITULO_DA_RODADA + rodadas.stream().mapToInt(List::size).max().orElse(1) * ESPACO_DA_PARTIDA;
     }
 
 ```
@@ -408,7 +409,7 @@ import campeonato.torneio.Partida;
 
 ## Passo 3 — O aspecto de um cartão
 
-A aparência de um cartão depende da situação da partida e de ela ser ou não a **escolhida**. É uma decisão pura, e fica num `enum`, como a `Situacao`: o `Aspecto` tem cinco valores, cada um com o texto que aparece no canto do cartão, e um método `de(partida, escolhida)` que escolhe o valor.
+A aparência de um cartão depende da situação da partida e de ela ser ou não a **escolhida**. É uma decisão pura, e fica num `enum`, como a `Situacao`: o `Aspecto` tem quatro valores, cada um com o texto que aparece no canto do cartão, e um método `de(partida, escolhida)` que escolhe o valor.
 
 O método `de` tem duas novidades de sintaxe. A primeira é o `static`: ele pertence ao `enum` e não a um valor dele, e se chama `Aspecto.de(...)`, como o `Cores.deArgb` do capítulo 6. A segunda é o `switch` com `->` sobre `partida.situacao()`: dentro dele, os valores do `enum` se escrevem **sem o nome do tipo** (`case AGUARDANDO`, e não `case Situacao.AGUARDANDO`), pois o Java já sabe de qual `enum` se trata. Como o `switch` devolve um valor, o compilador exige que todas as situações estejam tratadas, e se o capítulo 13 ganhasse uma situação nova, este código não compilaria até que ela fosse tratada aqui.
 
@@ -426,8 +427,7 @@ public enum Aspecto {
     AGUARDANDO("aguardando"),
     PRONTA("pronta"),
     ESCOLHIDA("▶ escolhida"),
-    ENCERRADA("encerrada"),
-    FOLGA("folga");
+    ENCERRADA("encerrada");
 
     private final String texto;
 
@@ -446,13 +446,12 @@ public enum Aspecto {
         case AGUARDANDO -> AGUARDANDO;
         case PRONTA -> escolhida ? ESCOLHIDA : PRONTA;
         case FINALIZADA -> ENCERRADA;
-        case FOLGA -> FOLGA;
         };
     }
 }
 ```
 
-O teste usa a chave de 5 participantes, a das folgas do capítulo 12, que tem uma partida em cada situação: a `V1-1` é folga, a `V1-2` está pronta, e a `V2-1` aguarda. **Crie o arquivo** `src/test/java/campeonato/tela/AspectoTest.java`:
+O teste usa a chave de 5 participantes, a dos desafios do capítulo 12, que tem partidas prontas e partidas que aguardam: a `V1-1` e a `V1-2` estão prontas, e a `V1-3` (o desafio) e a `V2-1` aguardam. **Crie o arquivo** `src/test/java/campeonato/tela/AspectoTest.java`:
 
 <!-- arquivo: src/test/java/campeonato/tela/AspectoTest.java | criar -->
 ```java
@@ -478,13 +477,14 @@ class AspectoTest {
 
     @Test
     void oAspectoSegueASituacaoDaPartida() {
-        // 5 robôs: a V1-1 é folga, a V1-2 está pronta e a V2-1 espera o vencedor da V1-2
+        // 5 robôs: a V1-1 e a V1-2 estão prontas, e o desafio V1-3 e a V2-1 esperam resultados
         Chave chave = new Chave(robos(5));
-        assertEquals(Aspecto.FOLGA, Aspecto.de(chave.partida("V1-1"), false));
+        assertEquals(Aspecto.PRONTA, Aspecto.de(chave.partida("V1-1"), false));
         assertEquals(Aspecto.PRONTA, Aspecto.de(chave.partida("V1-2"), false));
+        assertEquals(Aspecto.AGUARDANDO, Aspecto.de(chave.partida("V1-3"), false));
         assertEquals(Aspecto.AGUARDANDO, Aspecto.de(chave.partida("V2-1"), false));
 
-        chave.registrar("V1-2", "robo4", 1, 0);
+        chave.registrar("V1-2", "robo2", 1, 0);
         assertEquals(Aspecto.ENCERRADA, Aspecto.de(chave.partida("V1-2"), false));
     }
 
@@ -494,7 +494,7 @@ class AspectoTest {
         assertEquals(Aspecto.ESCOLHIDA, Aspecto.de(chave.partida("V1-2"), true));
         // nas outras situações, a escolha é ignorada
         assertEquals(Aspecto.AGUARDANDO, Aspecto.de(chave.partida("V2-1"), true));
-        assertEquals(Aspecto.FOLGA, Aspecto.de(chave.partida("V1-1"), true));
+        assertEquals(Aspecto.AGUARDANDO, Aspecto.de(chave.partida("V1-3"), true));
     }
 
     @Test
@@ -535,7 +535,6 @@ final class CartaoDaPartida extends VBox {
         case PRONTA -> "#2ec4ff";
         case ESCOLHIDA -> "#ffd400";
         case ENCERRADA -> "#3ddc84";
-        case FOLGA -> "#2a3140";
         };
     }
 
@@ -573,7 +572,7 @@ import javafx.scene.control.Label;
         case SEMIFINAL -> "#1d3a5c";
         case FINAL -> "#5a4300";
         };
-        Label codigo = new Label(partida.codigo());
+        Label codigo = new Label(partida.desafio() ? partida.codigo() + " · desafio" : partida.codigo());
         codigo.setStyle("-fx-text-fill: " + (importancia == Importancia.COMUM ? "#c8d3e6" : "#ffd400") + "; -fx-font-weight: bold; -fx-font-size: 12px;");
         Label situacao = new Label(aspecto.texto());
         situacao.setStyle("-fx-text-fill: #8b98ab; -fx-font-size: 11px;");
@@ -590,9 +589,9 @@ import javafx.scene.control.Label;
 
 <!-- compilar -->
 
-A **linha** de uma vaga tem o nome (o `vaga.descrever()` do capítulo 12: o robô, `Folga` ou `Vencedor de V1-2`) e, se a partida terminou, os pontos à direita. O estilo do texto depende de quatro casos, escolhidos por uma cadeia de `? :` (o operador condicional do capítulo 1, um dentro do outro, a cada `:`), na ordem em que são testados:
+A **linha** de uma vaga tem o nome (o `vaga.descrever()` do capítulo 12: o robô ou `Vencedor de V1-2`) e, se a partida terminou, os pontos à direita. O estilo do texto depende de quatro casos, escolhidos por uma cadeia de `? :` (o operador condicional do capítulo 1, um dentro do outro, a cada `:`), na ordem em que são testados:
 
-1. O participante é `null`: ainda não se sabe quem é, ou é uma folga. Cinza e em itálico.
+1. O participante é `null`: ainda não se sabe quem é. Cinza e em itálico.
 2. A partida terminou e este é o vencedor: verde e em negrito.
 3. A partida terminou e este perdeu: cinza.
 4. Qualquer outro caso: branco, o normal.
@@ -615,7 +614,7 @@ import campeonato.torneio.Vaga;
         boolean venceu = encerrada && participante != null && participante.equals(partida.vencedor());
 
         Label nome = new Label(vaga.descrever());
-        // quem ainda não se sabe quem é, ou a folga, aparece em cinza e em itálico
+        // quem ainda não se sabe quem é aparece em cinza e em itálico
         String estilo = participante == null ? "-fx-text-fill: #6f7c90; -fx-font-style: italic;"
                 : venceu ? "-fx-text-fill: #3ddc84; -fx-font-weight: bold;"
                 : encerrada ? "-fx-text-fill: #7a8699;"
@@ -638,10 +637,10 @@ import campeonato.torneio.Vaga;
 
 <!-- compilar -->
 
-O **construtor** monta o cartão: fixa o tamanho (`setPrefSize`, `setMinSize` e `setMaxSize` com o mesmo valor, para o cartão não encolher nem crescer), aplica o estilo do fundo e da borda, e acrescenta os três filhos na ordem: o cabeçalho, a linha da vaga `a` e a da vaga `b`. Dois detalhes de aparência dependem do aspecto:
+O **construtor** monta o cartão: fixa o tamanho (`setPrefSize`, `setMinSize` e `setMaxSize` com o mesmo valor, para o cartão não encolher nem crescer), aplica o estilo do fundo e da borda, e acrescenta os três filhos na ordem: o cabeçalho, a linha da vaga `a` e a da vaga `b`. Um detalhe de aparência depende do aspecto, e outro, de a partida ser um desafio:
 
 - A borda do cartão escolhido é mais grossa (3 pixels, em vez de 2) e tem um **brilho**, um `DropShadow` dourado: uma sombra sem deslocamento, com raio 18, que vira um halo em volta do cartão. O `DropShadow(18, Color.web("#ffd400"))` recebe o raio e a cor.
-- O cartão de **folga** fica com metade da opacidade, para não competir com os que serão jogados.
+- O cartão de um **desafio** diz isso no cabeçalho, depois do código: `V1-3 · desafio`. Isso fica no `cabecalho`, que já recebe a partida.
 
 O `Color.web("#ffd400")` converte um texto de cor em um objeto `Color`, o tipo que o `DropShadow` aceita. **Acrescente os imports** e depois **o construtor**, logo depois da constante `ALTURA_DO_CABECALHO`:
 
@@ -662,9 +661,6 @@ import javafx.scene.paint.Color;
                 + (aspecto == Aspecto.ESCOLHIDA ? 3 : 2) + "; -fx-border-color: " + corDaBorda(aspecto) + ";");
         if (aspecto == Aspecto.ESCOLHIDA) {
             setEffect(new DropShadow(18, Color.web("#ffd400")));
-        }
-        if (aspecto == Aspecto.FOLGA) {
-            setOpacity(0.5);
         }
         getChildren().addAll(cabecalho(partida, aspecto, importancia), linha(partida, partida.a()), linha(partida, partida.b()));
     }
@@ -1020,17 +1016,17 @@ A janela abre com a chave de 8 robôs, e a primeira partida, a `V1-1`, vem escol
 <!-- marco: 14-final -->
 ![A chave terminada, com o pódio na faixa dourada do alto](imagens/14-final.jpg)
 
-Experimente também **clicar** numa partida pronta que não é a escolhida: o brilho passa para ela, e o ENTER joga essa. Uma chave sem repescagem (troque `COM_REPESCAGEM` por `false`) tem uma só parte, chamada "Chave", e com um número de robôs que não é potência de dois aparecem as folgas, desbotadas, como mostra a imagem de 6 robôs sem repescagem, depois de duas partidas:
+Experimente também **clicar** numa partida pronta que não é a escolhida: o brilho passa para ela, e o ENTER joga essa. Uma chave sem repescagem (troque `COM_REPESCAGEM` por `false`) tem uma só parte, chamada "Chave", e com um número de robôs que não é potência de dois aparecem os desafios, com a palavra no cabeçalho, como mostra a imagem de 6 robôs sem repescagem, depois de quatro partidas:
 
-<!-- marco: 14-folgas -->
-![Uma chave de 6 robôs sem repescagem: as folgas ficam desbotadas](imagens/14-folgas.jpg)
+<!-- marco: 14-desafios -->
+![Uma chave de 6 robôs sem repescagem: na segunda rodada, quem ficou sem par joga o desafio contra o perdedor da primeira partida](imagens/14-desafios.jpg)
 
 ## O que construímos
 
 ```text
 src/main/java/campeonato/tela/
 ├── Disposicao.java          (cap. 14) as contas: onde fica cada cartão, cada título e cada ponto de ligação
-├── Aspecto.java             (cap. 14) como o cartão se apresenta: aguardando, pronta, escolhida, encerrada ou folga
+├── Aspecto.java             (cap. 14) como o cartão se apresenta: aguardando, pronta, escolhida ou encerrada
 ├── CartaoDaPartida.java     (cap. 14) o cartão de uma partida
 ├── VisaoDaChave.java        (cap. 14) a tela da chave: títulos, linhas, cartões, escolha e pódio
 └── DemonstracaoDaChave.java (cap. 14) o programa que mostra a chave e joga as partidas sorteadas
@@ -1044,7 +1040,7 @@ src/test/java/campeonato/tela/
 
 **Fácil**
 
-1. Troque `ROBOS` por 5, por 6 e por 16, e `COM_REPESCAGEM` por `false`, e rode a demonstração. Quantas colunas tem cada chave? Onde estão as folgas, e por que elas aparecem na primeira rodada, junto das sementes mais fortes?
+1. Troque `ROBOS` por 5, por 6 e por 16, e `COM_REPESCAGEM` por `false`, e rode a demonstração. Quantas colunas tem cada chave? Onde estão os desafios, e por que o da primeira rodada fica depois das outras partidas dela?
 2. Troque `ESPACO_DA_PARTIDA` na `Disposicao` por 120 e rode os testes: algum falha? Depois troque por 60 e rode de novo. Qual teste falha, e o que a mensagem de erro diz? Volte ao valor 92.
 3. Escreva um teste para a `Disposicao` de uma chave de 16 robôs com repescagem: a `V1-1` está na coluna 0, a `R6-1` (o fim da repescagem) está na coluna 5 (`5 * COLUNA`), e a `F1` está na coluna 6. Dica: quantas rodadas tem a repescagem de 16 robôs?
 

@@ -8,12 +8,10 @@ public enum Status {
 	/** Both participants known, can be played */
 	READY,
 	/** Played */
-	FINISHED,
-	/** Decided without playing: one or both participants are missing */
-	BYE;
+	FINISHED;
 
-	/** Tells whether the state is final: the match is finished or it is a bye. */
+	/** Tells whether the state is final: the match is finished. */
 	public boolean isDone() {
-		return this == FINISHED || this == BYE;
+		return this == FINISHED;
 	}
 }

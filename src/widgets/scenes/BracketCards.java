@@ -46,7 +46,6 @@ final class BracketCards {
 
 		switch (match.getStatus()) {
 		case READY -> card.getStyleClass().add("ready");
-		case BYE -> card.getStyleClass().add(match.getWinner() == null ? "empty" : "bye");
 		default -> {
 		}
 		}
@@ -88,7 +87,7 @@ final class BracketCards {
 
 	/** The header of a card: its code on the left and its status on the right, the title of the grand final instead of the code */
 	private HBox statusHeader(Match match, boolean grand) {
-		Label code = new Label(grand ? "★ GRANDE FINAL ★" : match.getCode());
+		Label code = new Label(grand ? "★ GRANDE FINAL ★" : match.isChallenge() ? match.getCode() + " · desafio" : match.getCode());
 		code.getStyleClass().add("match-code");
 		Region spacer = new Region();
 		HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -121,7 +120,6 @@ final class BracketCards {
 		case WAITING -> "aguardando";
 		case READY -> match.getCode().equals(host.selected) ? "▶ SELECIONADA" : isNext ? "próxima" : "pronta";
 		case FINISHED -> "encerrada";
-		case BYE -> "folga";
 		};
 	}
 
@@ -135,7 +133,7 @@ final class BracketCards {
 
 		Long participant = slot.getParticipant();
 		if (participant == null) {
-			Label placeholder = new Label(slot.isResolved() ? "— folga —" : slot.describeSource());
+			Label placeholder = new Label(slot.describeSource());
 			placeholder.getStyleClass().add("placeholder");
 			row.getChildren().add(placeholder);
 			return row;

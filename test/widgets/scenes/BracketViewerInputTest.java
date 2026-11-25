@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import javafx.event.EventType;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -74,7 +75,7 @@ class BracketViewerInputTest {
 	}
 
 	@Test
-	void aByeAndAMatchWithoutPictureAreShown() {
+	void aChallengeAndAMatchWithoutPictureAreShown() {
 		List<Opponent> opponents = ChampionshipFixture.opponents(5);
 		opponents.get(0).setImage(null);
 		opponents.get(1).setImage(null);
@@ -83,12 +84,28 @@ class BracketViewerInputTest {
 		}, 0));
 		Stage window = FxSupport.show(viewer);
 
-		// With five robots one match has no opponent in its second place: it is a bye
-		assertTrue(FxSupport.run(() -> DialogFields.find(viewer, node -> node.getStyleClass().contains("bye")) != null
-				|| DialogFields.find(viewer, node -> node.getStyleClass().contains("empty")) != null));
+		// With five robots the one left without a pair plays a challenge, and its card says so
+		assertNotNull(FxSupport.run(() -> DialogFields.find(viewer, node -> node instanceof Label label && label.getText().endsWith("· desafio"))));
 		// A selection that is not on the bracket has no card to point at
 		FxSupport.runVoid(() -> viewer.select("ZZ-9"));
 		FxSupport.runVoid(viewer::showNextTag);
+		FxSupport.close(window);
+	}
+
+	@Test
+	void zeroShowsTheWholeBracketItsWidthAndItsHeight() {
+		List<Opponent> opponents = ChampionshipFixture.opponents(7);
+		Bracket bracket = ChampionshipFixture.fresh(opponents, true);
+		BracketViewer viewer = FxSupport.run(() -> new BracketViewer("Campeonato", bracket, ChampionshipFixture.byId(opponents), null, code -> {
+		}, 0));
+		Stage window = FxSupport.show(viewer);
+		FxSupport.sleep(300);
+
+		double[] fit = FxSupport.run(viewer::whole);
+		double width = FxSupport.run(() -> viewer.content.getLayoutBounds().getWidth());
+		double height = FxSupport.run(() -> viewer.content.getLayoutBounds().getHeight());
+		assertTrue(width * fit[2] <= FxSupport.run(() -> viewer.viewport.getWidth()));
+		assertTrue(height * fit[2] <= FxSupport.run(() -> viewer.viewport.getHeight()));
 		FxSupport.close(window);
 	}
 

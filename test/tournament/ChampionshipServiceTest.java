@@ -1,5 +1,6 @@
 package tournament;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -65,5 +66,10 @@ class ChampionshipServiceTest {
 
 		Bracket bracket = ChampionshipService.bracketOf(ChampionshipService.current());
 		assertNull(bracket.getMatch("ZZ-9"));
+
+		// The count of the presenters is kept with the championship, from one battle to the next
+		assertNull(ChampionshipService.current().getPresenterAppearances());
+		ChampionshipService.savePresenterAppearances(championship, "BLOWS=2;AIM=1");
+		assertEquals("BLOWS=2;AIM=1", ChampionshipService.current().getPresenterAppearances());
 	}
 }

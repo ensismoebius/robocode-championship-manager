@@ -30,9 +30,9 @@ Os perdedores de cada rodada da chave principal caem na repescagem, e o campeão
 | `R4` | o vencedor da `R3` contra o perdedor da `V3` |
 | `F1` | o vencedor da `V3-1` contra o vencedor da `R4-1` |
 
-A repescagem alterna duas espécies de rodada: uma em que os **sobreviventes** jogam entre si, e outra em que eles encontram quem acabou de **cair** da chave principal. Uma chave principal de `k` rodadas tem `2 × (k − 1)` rodadas de repescagem: a de 8 robôs tem 3 rodadas na principal e 4 na repescagem, e a de 16 tem 4 e 6.
+A repescagem alterna duas espécies de rodada: uma em que os **sobreviventes** jogam entre si, e outra em que eles encontram quem acabou de **cair** da chave principal. Uma chave principal de `k` rodadas tem `2 × (k − 1)` rodadas de repescagem quando o número de robôs é uma potência de dois: a de 8 robôs tem 3 rodadas na principal e 4 na repescagem, e a de 16 tem 4 e 6. Nas outras quantidades, a repescagem pode ter menos rodadas: se só sobra um sobrevivente, ele não joga contra ninguém e vai direto encontrar quem cai.
 
-Uma conta mostra quantas partidas a chave tem. Cada partida tem um perdedor, e cada robô perde, no máximo, duas vezes. Quem não chega à grande final perde exatamente duas, e dos dois finalistas, o campeão perdeu no máximo uma vez e o vice perdeu uma ou duas. O resultado, com `n` robôs, é sempre de `2n − 2` partidas: 6 com 4 robôs, 14 com 8 e 30 com 16. Esse número é um bom teste da chave.
+Uma conta mostra quantas partidas a chave tem. Cada partida tem um perdedor, e cada robô perde, no máximo, duas vezes. Sem desafios, quem não chega à grande final perde duas, e dos dois finalistas, o campeão perdeu no máximo uma vez e o vice perdeu uma ou duas. O resultado, com `n` robôs, é de `2n − 2` partidas, quando `n` é uma potência de dois: 6 com 4 robôs, 14 com 8 e 30 com 16. Esse número é um bom teste da chave. As outras quantidades têm **desafios** (capítulo 12), e cada desafio é uma partida a mais: `2n − 2 + desafios`. A repescagem também tem os seus desafios, e quem perde um deles está fora de vez. Em contrapartida, quem perdeu a primeira partida de uma rodada e depois o desafio perdeu duas vezes na mesma rodada, e por isso nem todo robô sai com exatamente duas derrotas: sai com **pelo menos** duas. Pelo mesmo motivo, até o campeão pode ter perdido duas vezes: perdeu a primeira partida e o desafio, foi para a repescagem, e ganhou tudo dali em diante.
 
 A grande final é **uma partida só**, sem revanche. Ela é diferente da eliminação dupla clássica, onde o campeão da chave principal, por ainda não ter perdido nenhuma vez, teria direito a uma segunda final. Aqui, quem perder a `F1` perde o campeonato.
 
@@ -84,9 +84,9 @@ E depois do `rodadasPrincipais`, a lista com as rodadas da repescagem, do mesmo 
     }
 ```
 
-O comentário que descreve a classe também precisa falar da repescagem. **Acrescente as linhas** abaixo no comentário da `Chave`, logo depois da linha que termina em "decidida sem jogar.":
+O comentário que descreve a classe também precisa falar da repescagem. **Acrescente as linhas** abaixo no comentário da `Chave`, logo depois da linha que termina em "da rodada.":
 
-<!-- arquivo: src/main/java/campeonato/torneio/Chave.java | inserir-depois a partida de quem tem folga é decidida sem jogar. -->
+<!-- arquivo: src/main/java/campeonato/torneio/Chave.java | inserir-depois quem ficou sem par joga um desafio contra o perdedor da primeira partida da rodada. -->
 ```java
  *
  * <p>Com repescagem, quem perde na chave principal ainda joga na repescagem e só sai na segunda derrota. O campeão da
@@ -97,57 +97,61 @@ O comentário que descreve a classe também precisa falar da repescagem. **Acres
 
 ## Passo 3 — As rodadas da repescagem
 
-Agora o método que cria as partidas da repescagem. Ele repete, para cada rodada, uma de três receitas, e a rodada decide qual:
+Agora o método que cria as partidas da repescagem. Ele usa o mesmo `emparelhar` da chave principal, o que inclui o desafio, e os `caem` de cada rodada da principal, guardados no capítulo 12 na lista `perdedoresDasRodadas`. As vagas dos perdedores são `new Vaga(partida, false)`: o `false` quer dizer que a vaga fica com o **perdedor** da partida de origem, e é o motivo de a `Vaga` ter o campo `doVencedor` desde o capítulo 12.
 
-1. **A primeira rodada** (`R1`). Os perdedores da `V1` jogam entre si, dois a dois: o perdedor da `V1-1` contra o da `V1-2`, o da `V1-3` contra o da `V1-4`, e assim por diante. São `tamanho / 4` partidas, metade das partidas da `V1`. As vagas são `new Vaga(partida, false)`: o `false` quer dizer que a vaga fica com o **perdedor** da partida de origem, e é o motivo de a `Vaga` ter o campo `doVencedor` desde o capítulo 12.
-2. **As rodadas pares** (`R2`, `R4`, `R6`...). Quem sobrou da rodada anterior da repescagem enfrenta quem acabou de cair da chave principal: a `R2` recebe os perdedores da `V2`, a `R4` os da `V3`, e a conta é `rodada / 2`, como índice da lista de rodadas (a `V2` é o índice 1, e a `V3` é o índice 2, pois a lista começa em 0).
-3. **As rodadas ímpares** (`R3`, `R5`...). Quem sobrou joga contra outro sobrevivente, dois a dois, sem ninguém novo.
+A repescagem começa com os perdedores da primeira rodada da principal, que são os **sobreviventes**. Depois, para cada rodada seguinte da principal (da segunda à última), repete duas coisas:
 
-Na rodada par há um cuidado. Se o vencedor da `R1-1` enfrentasse sempre o perdedor da `V2-1`, a revanche seria provável: o vencedor da `R1-1` é um dos perdedores da `V1-1` e da `V1-2`, e o perdedor da `V2-1` é um dos **vencedores** dessas mesmas duas partidas, então os dois podem ter se enfrentado pouco antes. A saída é **inverter a ordem** de quem cai, de modo que o vencedor da `R1-1` encontre o perdedor da `V2-2`, que veio da outra metade da chave. Na `R2`, `invertida` é verdadeiro e o índice vira `caindo.size() - 1 - indice`, o espelho. Na rodada par seguinte (a `R4`), a ordem volta ao normal, e assim se alterna: `(rodada / 2) % 2 == 1`.
+1. Se há mais de um sobrevivente, eles **jogam entre si**: é uma rodada da repescagem em que ninguém entra de fora.
+2. Os que sobraram **encontram quem acabou de cair** da chave principal: os sobreviventes e os que caem são misturados, um de cada lado (o primeiro sobrevivente, o primeiro que cai, o segundo sobrevivente...), e a lista misturada é emparelhada. É outra rodada da repescagem.
 
-O código segue a ordem de criação do capítulo 12: as partidas da `R2` são criadas depois das da `R1` e da `V2`, de que dependem, e por isso o `atualizar` continua precisando de uma passada só. **Acrescente o método** antes do `adicionar`, o que começa com "Cria uma partida":
+No fim, o único sobrevivente é o **campeão da repescagem**, e o método devolve a sua vaga. Numa chave de 8, as rodadas saem como a tabela do passo 1: `R1` (os perdedores da `V1`, dois a dois), `R2` (os vencedores da `R1` contra os perdedores da `V2`), `R3` (os vencedores da `R2`, entre si) e `R4` (o vencedor da `R3` contra o perdedor da `V3`).
+
+Na rodada de encontro há um cuidado. Se o vencedor da `R1-1` enfrentasse sempre o perdedor da `V2-1`, a revanche seria provável: o vencedor da `R1-1` é um dos perdedores da `V1-1` e da `V1-2`, e o perdedor da `V2-1` é um dos **vencedores** dessas mesmas duas partidas, então os dois podem ter se enfrentado pouco antes. A saída é **inverter a ordem** de quem cai, de modo que o vencedor da `R1-1` encontre o perdedor da `V2-2`, que veio da outra metade da chave. Quando a rodada da principal é par (a segunda, a quarta...), a lista de quem cai é invertida com o `Collections.reverse`, e na seguinte a ordem volta ao normal, e assim se alterna.
+
+O código segue a ordem de criação do capítulo 12: as partidas da repescagem são criadas depois das da principal de que dependem, e por isso o `atualizar` continua precisando de uma passada só. **Acrescente o método** antes do `adicionar`, o que começa com "Cria uma partida":
 
 <!-- arquivo: src/main/java/campeonato/torneio/Chave.java | inserir-antes Cria uma partida, guarda na lista -->
 ```java
-    /** As rodadas da repescagem: quem perde na chave principal joga aqui até sobrar um só. */
-    private void construirRepescagem(int tamanho, int rodadas) {
-        for (int rodada = 1; rodada <= 2 * (rodadas - 1); rodada++) {
-            List<Partida> daRodada = new ArrayList<>();
-            if (rodada == 1) {
-                // os perdedores da primeira rodada da principal jogam entre si, dois a dois
-                List<Partida> primeira = rodadasPrincipais.get(0);
-                for (int indice = 0; indice < tamanho / 4; indice++) {
-                    daRodada.add(adicionar("R1-" + (indice + 1), Lado.REPESCAGEM, 1, indice + 1,
-                            new Vaga(primeira.get(2 * indice), false), new Vaga(primeira.get(2 * indice + 1), false)));
+    /**
+     * As rodadas da repescagem: quem perde na chave principal joga aqui até sobrar um só.
+     *
+     * @return a vaga do campeão da repescagem
+     */
+    private Vaga construirRepescagem() {
+        List<Vaga> sobreviventes = perdedoresDasRodadas.get(0);
+        int rodada = 0;
+        for (int principal = 2; principal <= perdedoresDasRodadas.size(); principal++) {
+            // os sobreviventes jogam entre si
+            if (sobreviventes.size() > 1) {
+                Rodada entreSi = emparelhar(Lado.REPESCAGEM, ++rodada, sobreviventes);
+                rodadasDaRepescagem.add(entreSi.partidas());
+                sobreviventes = entreSi.avancam();
+            }
+            // e depois encontram quem acabou de cair da chave principal; trocar a ordem de quem cai, de uma rodada para outra,
+            // evita repetir confrontos já jogados
+            List<Vaga> caindo = new ArrayList<>(perdedoresDasRodadas.get(principal - 1));
+            if (principal % 2 == 0) {
+                Collections.reverse(caindo);
+            }
+            List<Vaga> misturadas = new ArrayList<>();
+            for (int indice = 0; indice < Math.max(sobreviventes.size(), caindo.size()); indice++) {
+                if (indice < sobreviventes.size()) {
+                    misturadas.add(sobreviventes.get(indice));
                 }
-            } else if (rodada % 2 == 0) {
-                // rodada par: quem sobrou da repescagem enfrenta quem acabou de cair da chave principal
-                List<Partida> anterior = rodadasDaRepescagem.get(rodada - 2);
-                List<Partida> caindo = rodadasPrincipais.get(rodada / 2);
-                // trocar a ordem de quem cai, de uma rodada para outra, evita repetir confrontos já jogados
-                boolean invertida = (rodada / 2) % 2 == 1;
-                for (int indice = 0; indice < anterior.size(); indice++) {
-                    Partida daPrincipal = caindo.get(invertida ? caindo.size() - 1 - indice : indice);
-                    daRodada.add(adicionar("R" + rodada + "-" + (indice + 1), Lado.REPESCAGEM, rodada, indice + 1,
-                            new Vaga(anterior.get(indice), true), new Vaga(daPrincipal, false)));
-                }
-            } else {
-                // rodada ímpar: os sobreviventes da repescagem jogam entre si, dois a dois
-                List<Partida> anterior = rodadasDaRepescagem.get(rodada - 2);
-                for (int indice = 0; indice < anterior.size() / 2; indice++) {
-                    daRodada.add(adicionar("R" + rodada + "-" + (indice + 1), Lado.REPESCAGEM, rodada, indice + 1,
-                            new Vaga(anterior.get(2 * indice), true), new Vaga(anterior.get(2 * indice + 1), true)));
+                if (indice < caindo.size()) {
+                    misturadas.add(caindo.get(indice));
                 }
             }
-            rodadasDaRepescagem.add(daRodada);
+            Rodada encontro = emparelhar(Lado.REPESCAGEM, ++rodada, misturadas);
+            rodadasDaRepescagem.add(encontro.partidas());
+            sobreviventes = encontro.avancam();
         }
+        return sobreviventes.get(0);
     }
 
 ```
 
-O laço vai até `2 × (rodadas − 1)`. Numa chave de 2 participantes, `rodadas` vale 1, o laço não roda nenhuma vez e a repescagem fica vazia. Veremos já a seguir o que acontece nesse caso.
-
-O índice `rodada - 2` das listas pode confundir: as rodadas são contadas a partir de 1, e as listas, a partir de 0. A rodada `R2` está no índice 1 de `rodadasDaRepescagem`, e a rodada anterior, a `R1`, no índice 0, que é `rodada - 2` quando `rodada` vale 2. O mesmo vale para a lista das rodadas da chave principal, de onde se tira o `rodada / 2`.
+O laço vai da segunda rodada da principal até a última. Numa chave de 2 participantes, a principal tem uma rodada só, o laço não roda nenhuma vez e a repescagem fica vazia, e o único sobrevivente é o perdedor da `V1-1`. Veremos já a seguir o que acontece nesse caso.
 
 ## Passo 4 — A grande final
 
@@ -166,32 +170,19 @@ Com **dois** participantes não há rodadas de repescagem, como vimos. O perdedo
 ```java
     /** Cria as partidas da chave, rodada por rodada. */
     private void construir() {
-        // o tamanho da chave é a menor potência de dois que comporta todos; o que sobra são folgas
-        int tamanho = 2;
-        int rodadas = 1;
-        while (tamanho < participantes.size()) {
-            tamanho *= 2;
-            rodadas++;
-        }
-        construirPrincipal(tamanho, rodadas);
+        construirPrincipal();
 
-        Partida finalDaPrincipal = rodadasPrincipais.get(rodadas - 1).get(0);
+        Partida finalDaPrincipal = rodadasPrincipais.get(rodadasPrincipais.size() - 1).get(0);
         decisiva = finalDaPrincipal;
         if (!repescagem) {
             return;
         }
 
-        construirRepescagem(tamanho, rodadas);
-
-        // com dois participantes não há repescagem: o perdedor da única partida vai direto para a grande final
-        Vaga daRepescagem = rodadasDaRepescagem.isEmpty()
-                ? new Vaga(finalDaPrincipal, false)
-                : new Vaga(rodadasDaRepescagem.get(rodadasDaRepescagem.size() - 1).get(0), true);
+        // com dois participantes não há rodadas na repescagem: o perdedor da única partida vai direto para a grande final
+        Vaga daRepescagem = construirRepescagem();
         decisiva = adicionar("F1", Lado.FINAL, 1, 1, new Vaga(finalDaPrincipal, true), daRepescagem);
     }
 ```
-
-O `? :` de duas linhas é o **operador condicional** do capítulo 1, que escolhe entre dois valores conforme uma condição.
 
 A ordem em que as partidas são jogadas vem da `profundidade` do capítulo 12, sem nenhuma mudança. A `R1` vem depois da `V1`, de que depende, e tem profundidade 2, igual à da `V2`, e no empate a chave principal sai primeiro: `V2-1`, `V2-2`, `R1-1`, `R1-2`. A final da chave principal, a `V3-1`, tem profundidade 3 e vem depois da `R1`. O `Comparator` do `proximaPartida` já mandava a principal antes da repescagem e a repescagem antes da final, pela ordem de declaração do `enum` `Lado`.
 
@@ -215,11 +206,10 @@ Por fim, os métodos que mostram a repescagem. **Acrescente ao final da classe**
 
 Os testes novos conferem a chave de 4 participantes com repescagem, com as 6 partidas e as suas vagas; a passagem dos perdedores da primeira rodada para a `R1-1`; e a chave de 2, em que a `F1` fica pronta depois da `V1-1`. O teste mais forte joga campeonatos inteiros, de 2 a 40 participantes, 5 vezes cada, e confere o que o passo 1 prometeu:
 
-- foram jogadas exatamente `2n − 2` partidas;
-- o campeão perdeu no máximo uma vez;
-- o vice perdeu uma ou duas vezes, e **todos os outros perderam exatamente duas**.
+- foram jogadas exatamente `2n − 2 + desafios` partidas;
+- o vice perdeu pelo menos uma vez, e **todos os outros, menos o campeão, perderam pelo menos duas**.
 
-O vice é quem perde a `F1`, o `chave.partida("F1").perdedor()`. Há também um teste com folgas, que mostra que a repescagem trata uma vaga vazia como a chave principal trata: com 5 participantes, a `R1-2` reúne duas folgas, e a `R1-1` tem uma folga e só espera o perdedor da `V1-2`, que passa direto. **Acrescente ao final da classe** `ChaveTest`:
+O vice é quem perde a `F1`, o `chave.partida("F1").perdedor()`. Há também um teste com desafios, que mostra que o perdedor de um desafio vai para a repescagem: com 5 participantes, o `robo3` joga a `V1-3` contra quem perdeu a `V1-1`, e, se perder, cai na `R1-1`. **Acrescente ao final da classe** `ChaveTest`:
 
 <!-- arquivo: src/test/java/campeonato/torneio/ChaveTest.java | acrescentar -->
 ```java
@@ -264,16 +254,19 @@ O vice é quem perde a `F1`, o `chave.partida("F1").perdedor()`. Há também um 
     }
 
     @Test
-    void comFolgasAPartidaSemParticipanteSeDecideSozinha() {
-        // 5 participantes: a R1-2 reúne duas folgas, e a R1-1 só espera quem perder a V1-2
+    void quemPerdeODesafioVaiParaARepescagem() {
+        // 5 participantes: o robo3 fica sem par e joga o desafio V1-3 contra o perdedor da V1-1
         Chave chave = new Chave(robos(5), true);
-        assertEquals(Situacao.FOLGA, chave.partida("R1-2").situacao());
-        assertEquals(Situacao.AGUARDANDO, chave.partida("R1-1").situacao());
+        chave.registrar("V1-1", "robo1", 1, 0);
+        chave.registrar("V1-3", "robo4", 1, 0);
+        chave.registrar("V1-2", "robo2", 1, 0);
 
-        chave.registrar("V1-2", "robo4", 1, 0);
-        // o perdedor da V1-2 segue na repescagem sem jogar, porque a R1-1 tem uma folga
-        assertEquals(Situacao.FOLGA, chave.partida("R1-1").situacao());
-        assertEquals("robo5", chave.partida("R1-1").vencedor());
+        // o robo4 perdeu a primeira partida, mas venceu o desafio: continua na chave principal
+        assertEquals(Set.of("robo1", "robo2"), Set.of(chave.partida("V2-1").a().participante(), chave.partida("V2-1").b().participante()));
+        // o robo3, que perdeu o desafio, e o robo5, que perdeu a V1-2, jogam na repescagem
+        Partida r1 = chave.partida("R1-1");
+        assertEquals(Situacao.PRONTA, r1.situacao());
+        assertEquals(Set.of("robo3", "robo5"), Set.of(r1.a().participante(), r1.b().participante()));
     }
 
     @Test
@@ -288,21 +281,22 @@ O vice é quem perde a `F1`, o `chave.partida("F1").perdedor()`. Há também um 
                 String campeao = chave.campeao();
                 String vice = chave.partida("F1").perdedor();
 
-                // todos, menos os finalistas, saem com exatamente duas derrotas; na grande final não há revanche, então o
-                // campeão perdeu no máximo uma vez, e o vice, uma (se veio da principal) ou duas (se veio da repescagem)
+                // todos, menos os finalistas, saem com pelo menos duas derrotas (quem perde a primeira partida de uma rodada e depois o
+                // desafio perde duas na mesma rodada); o vice, que perdeu a grande final, perdeu pelo menos uma vez
                 for (String robo : robos(quantidade)) {
                     if (robo.equals(campeao)) {
-                        assertTrue(derrotas.getOrDefault(robo, 0) <= 1, "n=" + quantidade);
+                        continue;
                     } else if (robo.equals(vice)) {
-                        assertTrue(derrotas.get(robo) == 1 || derrotas.get(robo) == 2, "n=" + quantidade);
+                        assertTrue(derrotas.get(robo) >= 1, "n=" + quantidade);
                     } else {
-                        assertEquals(2, derrotas.get(robo), "n=" + quantidade + " " + robo);
+                        assertTrue(derrotas.get(robo) >= 2, "n=" + quantidade + " " + robo);
                     }
                 }
 
-                // cada partida tira uma das duas vidas de quem perde, e só os finalistas sobram com vida
+                // cada partida tira uma vida de quem perde: 2n − 2 partidas, e mais uma por desafio
                 long jogadas = chave.partidas().stream().filter(partida -> partida.situacao() == Situacao.FINALIZADA).count();
-                assertEquals(2L * quantidade - 2, jogadas, "n=" + quantidade);
+                long desafios = chave.partidas().stream().filter(Partida::desafio).count();
+                assertEquals(2L * quantidade - 2 + desafios, jogadas, "n=" + quantidade);
             }
         }
     }
@@ -717,7 +711,7 @@ src/test/java/campeonato/torneio/
 **Fácil**
 
 1. Rode a `Simulacao` com repescagem para 4, 8 e 16 robôs. Em cada caso, conte as partidas jogadas, quantas são da chave principal (as que começam com `V`), quantas são da repescagem (`R`) e quantas são a `F1`. Confira que o total é `2n − 2`, e descubra a regra para as da repescagem, com `n` potência de dois.
-2. Rode com 3 robôs e repescagem, e leia a chave antes do jogo. Duas partidas têm uma `Folga` numa das vagas: uma já aparece como `folga`, e a outra aparece como `aguardando`. Quais são, e por que a segunda só é decidida depois que outra partida termina? Conte as partidas jogadas: continuam sendo `2n − 2`?
+2. Rode com 3 robôs e repescagem, e leia a chave antes do jogo. A `V1-2` é um desafio. Contra quem o `robo3` joga, e por que essa partida aparece como `aguardando`? Para onde vai quem perde o desafio? Conte as partidas jogadas: com um desafio, são `2n − 2 + 1`?
 3. Escreva um teste que confere os nomes de todas as rodadas de uma chave de 8 robôs com repescagem, na ordem das partidas: `Quartas de final`, `Semifinal`, `Fim da chave principal`, `Repescagem 1`, `Repescagem 2`, `Repescagem 3`, `Fim da repescagem` e `Grande final`. Dica: use a lista `chave.partidas()` e o `nomeDaRodada`, e um `distinct()` para não repetir o nome de rodadas com várias partidas.
 
 **Médio**
@@ -731,7 +725,7 @@ src/test/java/campeonato/torneio/
 
 ## Perguntas para fixação
 
-1. Por que uma chave com repescagem e `n` robôs joga sempre `2n − 2` partidas, quem quer que ganhe?
+1. Por que uma chave com repescagem e `n` robôs (potência de dois) joga sempre `2n − 2` partidas, quem quer que ganhe? E por que, com desafios, o total é `2n − 2 + desafios`?
 2. Por que, na `R2`, o vencedor da `R1-1` enfrenta o perdedor da `V2-2`, e não o da `V2-1`? O que acontece na `R4`?
 3. Com dois participantes e repescagem, a `F1` existe? De onde vêm as suas duas vagas?
 4. Por que o `eliminaOPerdedor` é necessário? O que aconteceria nas colocações se toda derrota contasse como eliminação?
@@ -740,7 +734,7 @@ src/test/java/campeonato/torneio/
 <details>
 <summary>Respostas</summary>
 
-1. Cada partida tem um perdedor, então o número de partidas é o número de derrotas. Cada robô, exceto os dois finalistas, é eliminado com exatamente duas derrotas, e isso dá `2 × (n − 2)`. Quanto aos finalistas, há dois casos. Se o campeão veio da chave principal, não perdeu nenhuma vez, e o vice, que veio da repescagem, perdeu duas. Se o campeão veio da repescagem, perdeu uma vez, e o vice, que veio da principal, também perdeu uma. Nos dois casos, as derrotas dos finalistas somam 2, e o total é `2 × (n − 2) + 2 = 2n − 2`.
+1. Cada partida tem um perdedor, então o número de partidas é o número de derrotas. Cada robô, exceto os dois finalistas, é eliminado com exatamente duas derrotas, e isso dá `2 × (n − 2)`. Quanto aos finalistas, há dois casos. Se o campeão veio da chave principal, não perdeu nenhuma vez, e o vice, que veio da repescagem, perdeu duas. Se o campeão veio da repescagem, perdeu uma vez, e o vice, que veio da principal, também perdeu uma. Nos dois casos, as derrotas dos finalistas somam 2, e o total é `2 × (n − 2) + 2 = 2n − 2`. O desafio é uma partida em que o perdedor da primeira partida da rodada ainda não está eliminado: perde uma vida a mais, e por isso cada desafio soma uma partida ao total.
 2. A `R1-1` reúne os perdedores da `V1-1` e da `V1-2`, e a `V2-1`, os vencedores das duas. Os dois lados já se enfrentaram: se o vencedor da `R1-1` encontrasse o perdedor da `V2-1`, haveria revanche de uma partida que acabou de acontecer. Ao inverter, ele encontra o perdedor da `V2-2`, que nunca jogou contra ele. Na `R4` a ordem volta ao normal, pois `(rodada / 2) % 2` alterna entre 1 e 0 a cada rodada par.
 3. Existe: o perdedor da `V1-1` ainda tem a segunda vida, e a única maneira de usá-la é uma partida contra o vencedor. As vagas da `F1` são o vencedor e o perdedor da `V1-1`, esta última escolhida no `construir` quando a repescagem está vazia.
 4. Porque, na chave principal, perder não elimina: o perdedor ainda joga na repescagem. Sem o `eliminaOPerdedor`, todo perdedor de uma partida `V` apareceria nas colocações como eliminado, na profundidade em que perdeu, e quem ainda joga estaria no meio da lista como se já tivesse saído. O `eliminaOPerdedor` olha se alguma outra partida recebe o perdedor, e só conta como eliminação quando nenhuma recebe.

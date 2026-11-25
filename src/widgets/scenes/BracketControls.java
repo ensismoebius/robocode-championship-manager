@@ -69,7 +69,7 @@ final class BracketControls {
 			switch (event.getCode()) {
 			case PLUS, EQUALS, ADD -> host.zoomAt(host.viewport.getWidth() / 2, host.viewport.getHeight() / 2, 1.3);
 			case MINUS, SUBTRACT -> host.zoomAt(host.viewport.getWidth() / 2, host.viewport.getHeight() / 2, 1 / 1.3);
-			case DIGIT0, NUMPAD0 -> host.moveCamera(host.overview(), Duration.millis(500));
+			case DIGIT0, NUMPAD0 -> host.moveCamera(host.whole(), Duration.millis(500));
 			case LEFT -> host.moveCamera(new double[] { host.targetX - step, host.targetY, host.targetZoom }, Duration.millis(200));
 			case RIGHT -> host.moveCamera(new double[] { host.targetX + step, host.targetY, host.targetZoom }, Duration.millis(200));
 			case UP -> host.moveCamera(new double[] { host.targetX, host.targetY - step, host.targetZoom }, Duration.millis(200));

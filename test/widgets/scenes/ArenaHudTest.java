@@ -56,4 +56,32 @@ class ArenaHudTest {
 		assertEquals(FxSupport.run(() -> player.energy().getMaxWidth()), FxSupport.run(() -> player.lag().getMaxWidth()), 0.5);
 		assertFalse(lead(player) > 0.5);
 	}
+
+	/** The size, in pixels, of the font of the label of the round. */
+	private static double roundFont(BattleArena3D arena) {
+		String style = FxSupport.run(() -> arena.roundLabel.getStyle());
+		return Double.parseDouble(style.replaceAll(".*-fx-font-size: ([0-9.]+)px.*", "$1"));
+	}
+
+	@Test
+	void aLongStageNameShrinksTheRoundLabelInsteadOfBeingCutBetweenTheEnergyBars() {
+		BattleArena3D arena = playedArena();
+		FxSupport.runVoid(() -> {
+			arena.setStage("Quartas de final", tournament.Importance.REGULAR);
+			arena.hud.updateInfo();
+		});
+		// A match like the others only says its round, at the normal size
+		assertTrue(FxSupport.run(() -> arena.roundLabel.getText()).startsWith("ROUND "));
+		assertEquals(16, roundFont(arena), 1e-9);
+
+		FxSupport.runVoid(() -> {
+			arena.setStage("Grande final", tournament.Importance.FINAL);
+			arena.hud.updateInfo();
+		});
+		String text = FxSupport.run(() -> arena.roundLabel.getText());
+		assertTrue(text.startsWith("GRANDE FINAL"), text);
+		// The font is as wide as it is tall: the text fits in the room between the bars
+		assertTrue(text.length() * roundFont(arena) <= 215 + 1e-9, text);
+		assertTrue(roundFont(arena) < 16);
+	}
 }

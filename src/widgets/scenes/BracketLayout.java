@@ -106,7 +106,7 @@ final class BracketLayout {
 	 * @return the height used
 	 */
 	private double layoutRounds(List<List<Match>> rounds, double top, java.util.function.IntFunction<String> roundName) {
-		double height = rounds.get(0).size() * SLOT_H;
+		double height = rounds.stream().mapToInt(List::size).max().orElse(1) * SLOT_H;
 		for (int row = 0; row < rounds.size(); row++) {
 			List<Match> round = rounds.get(row);
 			double posX = row * COL_W;
@@ -156,7 +156,7 @@ final class BracketLayout {
 			Polyline line = new Polyline(x1Value, y1Value, middle, y1Value, middle, y2Value, x2Value, y2Value);
 			line.getStyleClass().add("connector");
 			host.lines.put(source.getCode() + ">" + match.getCode(), line);
-			if (source.getStatus() == Status.FINISHED || (source.getStatus() == Status.BYE && source.getWinner() != null)) {
+			if (source.getStatus() == Status.FINISHED) {
 				line.getStyleClass().add("done");
 			}
 			host.canvas.getChildren().add(line);

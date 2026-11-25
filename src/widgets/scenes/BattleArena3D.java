@@ -267,6 +267,19 @@ public class BattleArena3D extends StackPane {
 	 *            the robots, to show their names, teams and logos
 	 */
 	/**
+	 * The count of the presenters of the championship: the comments of this battle go on it, so that all of them are on the
+	 * screen the same number of times in the championship.
+	 */
+	public void setPresenters(PresenterRoster roster) {
+		this.announcer.setRoster(roster);
+	}
+
+	/** The count of the presenters, with the appearances of this battle. */
+	public PresenterRoster getPresenters() {
+		return this.announcer.roster();
+	}
+
+	/**
 	 * Warns which stage of the championship this battle is, only when it is a
 	 * semifinal or a final. Call it before the battle starts.
 	 */

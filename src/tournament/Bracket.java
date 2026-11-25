@@ -22,9 +22,10 @@ import java.util.Optional;
  * decides the champion: there is no rematch.</li>
  * </ul>
  *
- * When the number of participants is not a power of two the bracket is
- * completed with byes, given to the first seeds. Matches with a bye are decided
- * automatically.
+ * Everyone plays in every round: there are no byes, and nobody goes on without
+ * beating someone. When the number of participants in a round is odd, the one
+ * left without a pair plays a challenge against the loser of the first match of
+ * the round: the winner goes on and the loser goes to the repechage.
  *
  * The bracket has no state besides the results, so it is rebuilt from the
  * seeds and the results list (see {@link #record}).
@@ -41,6 +42,8 @@ public class Bracket {
 	private final List<List<Match>> winnersRounds = new ArrayList<List<Match>>();
 	private final List<List<Match>> losersRounds = new ArrayList<List<Match>>();
 	private final List<Match> finals = new ArrayList<Match>();
+	/** The losers of each round of the main bracket, who go to the repechage */
+	private final List<List<Slot>> dropped = new ArrayList<List<Slot>>();
 
 	/**
 	 * The match that decides the champion
@@ -76,96 +79,121 @@ public class Bracket {
 		return match;
 	}
 
+	/** One round of matches: who goes on, who is out of the side (or goes to the repechage) and the matches themselves. */
+	private record Round(List<Match> matches, List<Slot> advancing, List<Slot> losing) {
+	}
+
 	/** Creates the matches of the bracket: the rounds of the winners, the losers and the finals. */
 	private void build() {
-		int size = 2;
-		while (size < this.participants.size()) {
-			size *= 2;
-		}
-		int rounds = Integer.numberOfTrailingZeros(size);
+		this.buildWinners();
 
-		this.buildWinners(size, rounds);
-
-		Match winnersFinal = this.winnersRounds.get(rounds - 1).get(0);
+		Match winnersFinal = this.winnersRounds.get(this.winnersRounds.size() - 1).get(0);
 		this.decider = winnersFinal;
 
 		if (!this.repechage) {
 			return;
 		}
 
-		this.buildRepechage(size, rounds);
-
-		// With two participants there is no repechage bracket: the loser of the
-		// only match goes straight to the final
-		Slot repechageChampion = this.losersRounds.isEmpty() ? new Slot(winnersFinal, false) : new Slot(this.losersRounds.get(this.losersRounds.size() - 1).get(0), true);
-
+		Slot repechageChampion = this.buildRepechage();
 		Match grandFinal = this.add("F1", Side.FINAL, 1, 1, new Slot(winnersFinal, true), repechageChampion);
 		this.finals.add(grandFinal);
 		this.decider = grandFinal;
 	}
 
-	/** The rounds of the main bracket: the first one takes the seeds, the others take the winners before them. */
-	private void buildWinners(int size, int rounds) {
-		// Main bracket
-		int[] order = Bracket.seedingOrder(size);
-		for (int row = 1; row <= rounds; row++) {
-			List<Match> round = new ArrayList<Match>();
-			for (int index = 0; index < size >> row; index++) {
-				Slot slot, slot2;
-				if (row == 1) {
-					slot = new Slot(this.seed(order[2 * index]));
-					slot2 = new Slot(this.seed(order[2 * index + 1]));
-				} else {
-					List<Match> previous = this.winnersRounds.get(row - 2);
-					slot = new Slot(previous.get(2 * index), true);
-					slot2 = new Slot(previous.get(2 * index + 1), true);
-				}
-				round.add(this.add("V" + row + "-" + (index + 1), Side.WINNERS, row, index + 1, slot, slot2));
+	/**
+	 * Pairs the slots two by two, in order. Everyone plays in every round, and who goes on has beaten someone: when the number of
+	 * slots is odd, the one left without a pair plays a challenge against the loser of the first match of the round. The winner
+	 * goes on; the loser of the challenge takes, among the losing ones, the place of the loser of that first match, who
+	 * has already played the challenge.
+	 */
+	private Round pairUp(Side side, int round, List<Slot> slots) {
+		String prefix = side == Side.WINNERS ? "V" : "R";
+		List<Match> matches = new ArrayList<Match>();
+		List<Slot> advancing = new ArrayList<Slot>();
+		List<Slot> losing = new ArrayList<Slot>();
+		int pairs = slots.size() / 2;
+		for (int index = 0; index < pairs; index++) {
+			Match match = this.add(prefix + round + "-" + (index + 1), side, round, index + 1, slots.get(2 * index), slots.get(2 * index + 1));
+			matches.add(match);
+			advancing.add(new Slot(match, true));
+			losing.add(new Slot(match, false));
+		}
+		if (slots.size() % 2 == 1) {
+			Match challenge = this.add(prefix + round + "-" + (pairs + 1), side, round, pairs + 1, slots.get(slots.size() - 1), new Slot(matches.get(0), false));
+			challenge.challenge = true;
+			matches.add(challenge);
+			advancing.add(new Slot(challenge, true));
+			losing.set(0, new Slot(challenge, false));
+		}
+		return new Round(matches, advancing, losing);
+	}
+
+	/**
+	 * The rounds of the main bracket: the first one takes the seeds, spread so that the best only meet at the end, the others take
+	 * the winners before them, until there is one. The losers of each round are kept, to go to the repechage.
+	 */
+	private void buildWinners() {
+		List<Slot> slots = new ArrayList<Slot>();
+		int size = 2;
+		while (size < this.participants.size()) {
+			size *= 2;
+		}
+		for (int seed : Bracket.seedingOrder(size)) {
+			if (seed <= this.participants.size()) {
+				slots.add(new Slot(this.participants.get(seed - 1)));
 			}
-			this.winnersRounds.add(round);
+		}
+		for (int row = 1; slots.size() > 1; row++) {
+			Round round = this.pairUp(Side.WINNERS, row, slots);
+			this.winnersRounds.add(round.matches());
+			this.dropped.add(round.losing());
+			slots = round.advancing();
 		}
 	}
 
-	/** The rounds of the repechage: the losers of the main bracket play here until one of them is left. */
-	private void buildRepechage(int size, int rounds) {
-		// Repechage bracket. Odd rounds: the repechage survivors play each other.
-		// Even rounds: they play the losers of the next main bracket round
-		for (int innerIndex = 1; innerIndex <= 2 * (rounds - 1); innerIndex++) {
-			List<Match> round = new ArrayList<Match>();
-
-			if (innerIndex == 1) {
-				List<Match> firstRound = this.winnersRounds.get(0);
-				for (int index2 = 0; index2 < size / 4; index2++) {
-					round.add(this.add("R1-" + (index2 + 1), Side.LOSERS, 1, index2 + 1, new Slot(firstRound.get(2 * index2), false), new Slot(firstRound.get(2 * index2 + 1), false)));
+	/**
+	 * The rounds of the repechage: the losers of the first round of the main bracket play each other; then the survivors play the
+	 * losers of the next round of the main bracket, who drop in; and so on until the loser of the final of the main bracket drops
+	 * in. A loss here is the end.
+	 *
+	 * @return the slot of the champion of the repechage
+	 */
+	private Slot buildRepechage() {
+		List<Slot> pool = this.dropped.get(0);
+		int round = 0;
+		for (int main = 2; main <= this.dropped.size(); main++) {
+			// The survivors play each other
+			if (pool.size() > 1) {
+				Round survivors = this.pairUp(Side.LOSERS, ++round, pool);
+				this.losersRounds.add(survivors.matches());
+				pool = survivors.advancing();
+			}
+			// And then they play the losers that drop in, alternating the order of who comes from the main bracket, which avoids
+			// repeating early matches
+			List<Slot> dropping = new ArrayList<Slot>(this.dropped.get(main - 1));
+			if (main % 2 == 0) {
+				Collections.reverse(dropping);
+			}
+			List<Slot> mixed = new ArrayList<Slot>();
+			for (int index = 0; index < Math.max(pool.size(), dropping.size()); index++) {
+				if (index < pool.size()) {
+					mixed.add(pool.get(index));
 				}
-			} else if (innerIndex % 2 == 0) {
-				List<Match> previous = this.losersRounds.get(innerIndex - 2);
-				List<Match> dropping = this.winnersRounds.get(innerIndex / 2);
-				// Alternating the order of who comes from the main bracket avoids
-				// repeating early matches
-				boolean reversed = (innerIndex / 2) % 2 == 1;
-				for (int index3 = 0; index3 < previous.size(); index3++) {
-					Match from = dropping.get(reversed ? dropping.size() - 1 - index3 : index3);
-					round.add(this.add("R" + innerIndex + "-" + (index3 + 1), Side.LOSERS, innerIndex, index3 + 1, new Slot(previous.get(index3), true), new Slot(from, false)));
-				}
-			} else {
-				List<Match> previous = this.losersRounds.get(innerIndex - 2);
-				for (int index4 = 0; index4 < previous.size() / 2; index4++) {
-					round.add(this.add("R" + innerIndex + "-" + (index4 + 1), Side.LOSERS, innerIndex, index4 + 1, new Slot(previous.get(2 * index4), true), new Slot(previous.get(2 * index4 + 1), true)));
+				if (index < dropping.size()) {
+					mixed.add(dropping.get(index));
 				}
 			}
-			this.losersRounds.add(round);
+			Round next = this.pairUp(Side.LOSERS, ++round, mixed);
+			this.losersRounds.add(next.matches());
+			pool = next.advancing();
 		}
-	}
-
-	/** The participant of a seed number, or null when there are fewer participants. */
-	private Long seed(int seedNumber) {
-		return seedNumber <= this.participants.size() ? this.participants.get(seedNumber - 1) : null;
+		// With two participants there is no repechage bracket: the loser of the only match goes straight to the final
+		return pool.get(0);
 	}
 
 	/**
 	 * Standard bracket order of the seeds (1 based) so the best seeds only meet at
-	 * the end and the byes go to the first seeds. For 8: 1 8 4 5 2 7 3 6
+	 * the end. For 8: 1 8 4 5 2 7 3 6
 	 */
 	static int[] seedingOrder(int size) {
 		List<Integer> order = new ArrayList<Integer>(List.of(1, 2));

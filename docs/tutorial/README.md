@@ -42,7 +42,7 @@ Para quem já escreveu alguns programas, em qualquer linguagem, e sabe o que sã
 | 9 | [Fumaça, brasas e faíscas](09-fumaca-brasas-e-faiscas.md) | O sistema de partículas. |
 | 10 | [A imagem da chama](10-a-imagem-da-chama.md) | A chama desenhada pixel a pixel. |
 | 11 | [O corpo da chama](11-o-corpo-da-chama.md) | O fogo preso ao robô, que se arrasta quando ele anda. |
-| 12 | [A chave do campeonato](12-a-chave-do-campeonato.md) | A chave de eliminação simples, com folgas. |
+| 12 | [A chave do campeonato](12-a-chave-do-campeonato.md) | A chave de eliminação simples, com desafios para quem fica sem par. |
 | 13 | [A repescagem](13-a-repescagem.md) | A segunda chance, a grande final, as colocações e o pódio. |
 | 14 | [A chave na tela](14-a-chave-na-tela.md) | A chave numa janela, com cartões e linhas. |
 | 15 | [O campeonato completo](15-o-campeonato-completo.md) | O programa inteiro, que desfaz e continua de onde parou. |
