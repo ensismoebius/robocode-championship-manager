@@ -146,15 +146,36 @@ Its characters play different roles in this universe and help turn the fights in
 
 Among the figures in the broadcasts are:
 
-| | |
-|---|---|
-| <img src="images/apresentador-kayode.png" height="220" alt="Kayodê"> | **Kayodê**<br><i>Opens and closes the rounds, announces knockouts and presents historic moments of the competitions.</i><br><br>Kayodê is a young adult with a degree in communications and social sciences. He joined the Robocode project at Benê's invitation. He is a master at winning over the audience and at building anticipation before a battle. He is interested in mass psychology, one of his main fields of study. |
-| <img src="images/apresentador-bene.png" height="220" alt="Benê"> | **Benê**<br><i>Specialist in statistics, performance analysis, accuracy and exceptional results.</i><br><br>Benê is a professor of exact sciences at the University of the African Federation, and a respected mathematician. He got involved with the Robocode foundation at the request of the African Federation, and the measurement and statistics systems of Robocode were built under his guidance. He is the oldest member of the current team, and his stories and experiences inspire and help the younger ones in their learning. |
-| <img src="images/apresentador-zuri.png" height="220" alt="Zuri"> | **Zuri**<br><i>Follows collisions, impacts against the walls and situations about enforcing the rules.</i><br><br>Zuri works at the foundation as a guest of honor. Her main activity is leading public policy and planning at the World Public Policy Agency, where she is chiefly responsible for the continuity and success of the policy of peace and suppression of wars carried out by the African Federation. Her analytical ability and her generalist view make her a great judge within the Robocode foundation. |
-| <img src="images/apresentador-dandara.png" height="220" alt="Dandara"> | **Dandara**<br><i>Comments on blows, critical damage and attack sequences.</i><br><br>Dandara has a master's degree in computational and intelligent systems. At the foundation she is a tutor to the new teams and an evangelist for Robocode: she has traveled to every continent taking the methodology and the techniques for building Robocode's artificial intelligences. Her main current project is the study of adaptable intelligent computer networks for the world flow of goods and services. |
-| <img src="images/apresentador-luana.png" height="220" alt="Luana"> | **Luana**<br><i>Specialist in long-distance shots, cancelled shots and the accuracy of aiming systems.</i><br><br>Luana is the extreme sports athlete of the team. Her passion is high-speed racing and acrobatics with self-gliding wings, and since childhood she has been drawn to high-adrenaline situations. At the foundation her role is to highlight the situations where exact movement and precision are essential. Every week she hosts an extreme sports show on neurovision. |
-| <img src="images/apresentador-caio.png" height="220" alt="Caio"> | **Caio**<br><i>Follows who is in the lead, the comebacks and the overall course of the fights.</i><br><br>Caio is the artist in charge of the visual identity, the promotion and the broadcast of the battles at the foundation. With a degree in music and film, he manages the whole broadcast of the matches and makes sure every detail reaches the billions of spectators around the world. His current project is a history museum with every Robocode battle since the first, due to open in six months, on neurovision. |
-| <img src="images/apresentador-nala.png" height="220" alt="Nala"> | **Nala**<br><i>Comments on fire, danger and high-intensity moments, including double knockouts.</i><br><br>Nala is the engineer of the team, with a degree in robotics and industrial processes. At the foundation she follows and inspects the building of the robots and inspects the battles, so that the fights are fair. In her postgraduate work she was responsible for creating the energy cannons that now equip the robots in the arenas. This technology made the battles even friendlier to the environment and less dangerous for the general public. |
+<table>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-kayode.png" height="240" alt="Kayodê"></td>
+<td valign="top"><b>Kayodê</b><br><i>Opens and closes the rounds, announces knockouts and presents historic moments of the competitions.</i><br><br>Kayodê is a young adult with a degree in communications and social sciences. He joined the Robocode project at Benê's invitation. He is a master at winning over the audience and at building anticipation before a battle. He is interested in mass psychology, one of his main fields of study.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-bene.png" height="240" alt="Benê"></td>
+<td valign="top"><b>Benê</b><br><i>Specialist in statistics, performance analysis, accuracy and exceptional results.</i><br><br>Benê is a professor of exact sciences at the University of the African Federation, and a respected mathematician. He got involved with the Robocode foundation at the request of the African Federation, and the measurement and statistics systems of Robocode were built under his guidance. He is the oldest member of the current team, and his stories and experiences inspire and help the younger ones in their learning.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-zuri.png" height="240" alt="Zuri"></td>
+<td valign="top"><b>Zuri</b><br><i>Follows collisions, impacts against the walls and situations about enforcing the rules.</i><br><br>Zuri works at the foundation as a guest of honor. Her main activity is leading public policy and planning at the World Public Policy Agency, where she is chiefly responsible for the continuity and success of the policy of peace and suppression of wars carried out by the African Federation. Her analytical ability and her generalist view make her a great judge within the Robocode foundation.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-dandara.png" height="240" alt="Dandara"></td>
+<td valign="top"><b>Dandara</b><br><i>Comments on blows, critical damage and attack sequences.</i><br><br>Dandara has a master's degree in computational and intelligent systems. At the foundation she is a tutor to the new teams and an evangelist for Robocode: she has traveled to every continent taking the methodology and the techniques for building Robocode's artificial intelligences. Her main current project is the study of adaptable intelligent computer networks for the world flow of goods and services.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-luana.png" height="240" alt="Luana"></td>
+<td valign="top"><b>Luana</b><br><i>Specialist in long-distance shots, cancelled shots and the accuracy of aiming systems.</i><br><br>Luana is the extreme sports athlete of the team. Her passion is high-speed racing and acrobatics with self-gliding wings, and since childhood she has been drawn to high-adrenaline situations. At the foundation her role is to highlight the situations where exact movement and precision are essential. Every week she hosts an extreme sports show on neurovision.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-caio.png" height="240" alt="Caio"></td>
+<td valign="top"><b>Caio</b><br><i>Follows who is in the lead, the comebacks and the overall course of the fights.</i><br><br>Caio is the artist in charge of the visual identity, the promotion and the broadcast of the battles at the foundation. With a degree in music and film, he manages the whole broadcast of the matches and makes sure every detail reaches the billions of spectators around the world. His current project is a history museum with every Robocode battle since the first, due to open in six months, on neurovision.</td>
+</tr>
+<tr>
+<td width="300" align="center" valign="top"><img src="images/apresentador-nala.png" height="240" alt="Nala"></td>
+<td valign="top"><b>Nala</b><br><i>Comments on fire, danger and high-intensity moments, including double knockouts.</i><br><br>Nala is the engineer of the team, with a degree in robotics and industrial processes. At the foundation she follows and inspects the building of the robots and inspects the battles, so that the fights are fair. In her postgraduate work she was responsible for creating the energy cannons that now equip the robots in the arenas. This technology made the battles even friendlier to the environment and less dangerous for the general public.</td>
+</tr>
+</table>
 
 These characters give the broadcasts an identity and help build a language of their own for the show. In every championship, each of them gets their turn in front of the cameras, the same number of times.
 
