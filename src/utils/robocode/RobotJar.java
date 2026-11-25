@@ -1,6 +1,7 @@
 package utils.robocode;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashSet;
@@ -8,6 +9,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
@@ -69,5 +71,79 @@ public final class RobotJar {
 			return null;
 		}
 		return "O .jar tem o robô " + String.join(", ", declared) + ", mas o cadastro é " + wanted + ". O Robocode só acha o robô pelo nome da classe: use o mesmo nome nos dois.";
+	}
+
+	/**
+	 * The .jar with its classes marked for the Java that runs the battles, when they were compiled for a newer one: a robot compiled with
+	 * Java 25 has classes of version 69, which Java 21 refuses before reading them. The code of a robot is the same in those versions,
+	 * only the number in the header of each class changes. Classes that use preview features of their Java are left as they are, and so
+	 * is a .jar that cannot be read, or that needs no change.
+	 *
+	 * @param newest
+	 *            the newest version of class the Java of the battles reads (65 for Java 21)
+	 */
+	public static byte[] forJava(byte[] jar, int newest) {
+		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+		boolean changed = false;
+		try (ZipInputStream in = new ZipInputStream(new ByteArrayInputStream(jar)); ZipOutputStream out = new ZipOutputStream(bytes)) {
+			ZipEntry entry;
+			while ((entry = in.getNextEntry()) != null) {
+				byte[] content = in.readAllBytes();
+				if (entry.getName().endsWith(".class") && tooNew(content, newest)) {
+					content[6] = (byte) (newest >> 8);
+					content[7] = (byte) newest;
+					changed = true;
+				}
+				ZipEntry copy = new ZipEntry(entry.getName());
+				copy.setTime(entry.getTime());
+				out.putNextEntry(copy);
+				out.write(content);
+				out.closeEntry();
+			}
+		} catch (IOException | IllegalArgumentException unreadable) {
+			return jar;
+		}
+		return changed ? bytes.toByteArray() : jar;
+	}
+
+	/** Whether the bytes are a class of a version newer than the one given, not one with preview features. */
+	private static boolean tooNew(byte[] content, int newest) {
+		if (content.length < 8 || (content[0] & 0xff) != 0xca || (content[1] & 0xff) != 0xfe || (content[2] & 0xff) != 0xba || (content[3] & 0xff) != 0xbe) {
+			return false;
+		}
+		int minor = (content[4] & 0xff) << 8 | content[5] & 0xff;
+		int major = (content[6] & 0xff) << 8 | content[7] & 0xff;
+		return major > newest && minor == 0;
+	}
+
+	/**
+	 * Why the robot of the .jar cannot run on the Java that runs the battles, which is the Java of this program, or null when it can. A
+	 * robot compiled with a newer Java runs once its classes are marked for this one, unless it uses preview features, which Robocode
+	 * does not turn on, or something of the Java library that only the newer Java has. A .jar that cannot be read says nothing.
+	 */
+	public static String incompatibility(byte[] jar) {
+		int java = Runtime.version().feature();
+		try (ZipInputStream zip = new ZipInputStream(new ByteArrayInputStream(jar))) {
+			ZipEntry entry;
+			while ((entry = zip.getNextEntry()) != null) {
+				if (!entry.getName().endsWith(".class")) {
+					continue;
+				}
+				ClassCheck.Report report = ClassCheck.read(zip.readAllBytes());
+				if (report == null) {
+					continue;
+				}
+				int compiled = report.major() - 44;
+				if (report.minor() == ClassCheck.PREVIEW) {
+					return "O robô usa recursos experimentais (preview) do Java " + compiled + ", que o Robocode não liga. Compile-o sem --enable-preview, com a opção --release " + java + ".";
+				}
+				if (report.missing() != null) {
+					return "O robô usa " + report.missing() + ", que não existe no Java " + java + " que roda as batalhas (o robô foi compilado com o Java " + compiled + "). Compile-o com a opção --release " + java + ".";
+				}
+			}
+		} catch (IOException | IllegalArgumentException unreadable) {
+			return null;
+		}
+		return null;
 	}
 }

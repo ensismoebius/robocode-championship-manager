@@ -333,6 +333,11 @@ public class RobotEditor extends HttpServlet {
 		if (mismatch != null) {
 			errors.add(mismatch);
 		}
+		// It must run on the Java of the battles: a robot that would fail there is not registered
+		String incompatible = RobotJar.incompatibility(robotJar.content());
+		if (incompatible != null) {
+			errors.add(incompatible);
+		}
 		if (errors.isEmpty() && this.robotNameTaken(names.team(), names.robot(), robot.getId())) {
 			errors.add("Já existe um robô chamado " + names.team() + "." + names.robot() + ", escolha outro nome.");
 		}

@@ -275,6 +275,11 @@ public final class OpponentService {
 			if (mismatch != null) {
 				throw new IllegalArgumentException(mismatch);
 			}
+			// It must run on the Java of the battles: a robot that would fail there is not registered
+			String incompatible = RobotJar.incompatibility(data.jar());
+			if (incompatible != null) {
+				throw new IllegalArgumentException(incompatible);
+			}
 		}
 		if (data.music() != null) {
 			checkMusic(data.music());

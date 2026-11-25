@@ -175,9 +175,15 @@ public class BattleControl {
 			if (opponent.getCompiledRobot() == null || opponent.getCompiledRobot().length == 0) {
 				throw new IOException("O robô " + opponent.getFullName() + " não tem arquivo .jar");
 			}
+			// A robot registered before the check, that would fail on the Java of the battles, is named before Robocode starts
+			String incompatible = RobotJar.incompatibility(opponent.getCompiledRobot());
+			if (incompatible != null) {
+				throw new IOException("O robô " + opponent.getFullName() + " não roda nesta máquina. " + incompatible);
+			}
 			Path jar = robotsDir.resolve(opponent.getFullName() + ".jar");
 			System.out.println("Write to " + jar);
-			Files.write(jar, opponent.getCompiledRobot());
+			// The battle runs on the Java of this program: classes compiled for a newer one are marked for it
+			Files.write(jar, RobotJar.forJava(opponent.getCompiledRobot(), Runtime.version().feature() + 44));
 			command.add(opponent.getFullName());
 		}
 	}
