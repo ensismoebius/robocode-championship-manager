@@ -92,7 +92,7 @@ final class ArenaShowcase {
 		host.phase = Phase.SHOWCASE;
 		host.hudTop.setVisible(false);
 		host.hud.showLetterbox(true, false);
-		host.audio.start();
+		host.startAudio();
 		host.audio.setMusicOn(false);
 		this.startVersus();
 	}

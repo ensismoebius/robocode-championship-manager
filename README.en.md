@@ -503,7 +503,7 @@ The `.github/workflows/installers.yml` workflow builds the Linux, Windows and ma
 | `src/utils` | Utilities: configuration, database, battles... |
 | `src/widgets` | Controls, windows and scenes (the 3D arenas are in `widgets/scenes` and their music in `BattleAudio*.java`) |
 | `RobocodeStarter/` | Pre-compiled program that controls the Robocode battles (source in the `robocodebattlestarter` submodule) |
-| `test/` | Automated tests, run with `mvn test` |
+| `test/` | Automated tests, run with `mvn test`: silent and, on Linux with Xvfb installed, on a virtual screen, opening no windows (`mvn test -Dgui` shows the windows) |
 
 ### The battle starter
 

@@ -285,6 +285,8 @@ final class ArenaFire {
 				this.particlePool.add(particle);
 				continue;
 			}
+			// The time can step back, when the replay goes back: a particle is never younger than when it was born
+			particle.age = Math.max(0, particle.age);
 			double time = particle.age / particle.life;
 			this.moveParticle(particle, deltaTime);
 			Look look = this.lookOf(particle, time);

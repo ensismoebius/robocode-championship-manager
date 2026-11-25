@@ -70,13 +70,7 @@ public class ArcadeBackground extends Pane {
 		}
 
 		// Runs only while visible, so screens that are gone do not use CPU
-		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
-			if (newScene == null) {
-				this.timer.stop();
-			} else {
-				this.timer.start();
-			}
-		});
+		OnScreen.whileShown(this, this.timer::start, this.timer::stop);
 	}
 
 	/** Resizes the canvas to the size of the background. */

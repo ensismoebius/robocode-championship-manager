@@ -49,7 +49,11 @@ class MatchPhotosTest {
 		Stage window = FxSupport.show(arena);
 		CountDownLatch finished = new CountDownLatch(1);
 		FxSupport.runVoid(() -> arena.play(ArenaSimulation.recording(ArenaSimulation.OUTPUT), finished::countDown));
-		assertTrue(finished.await(90, TimeUnit.SECONDS), "the battle should end");
+		// The presentation is skipped and the battle played fast, still to the end, so the photos are taken as they would be
+		for (int waited = 0; waited < 900 && !finished.await(100, TimeUnit.MILLISECONDS); waited++) {
+			ArenaSimulation.hurry(arena);
+		}
+		assertEquals(0, finished.getCount(), "the battle should end");
 		FxSupport.close(window);
 		return arena;
 	}

@@ -60,6 +60,11 @@ final class FlyTour {
 	private static final double CROSSFADE_UNITS = 700;
 	private static final double CROSSFADE_MIN = 1.2;
 	private static final double CROSSFADE_MAX = 5;
+	/**
+	 * The fastest the camera goes in a crossfade, in units for each second: a long way, or a high rise over the scenery, makes the
+	 * crossfade longer than the most above, so the camera soars and does not jump
+	 */
+	private static final double CROSSFADE_SPEED = 1600;
 	/** While it crossfades the camera rises over the way between the two poses, by this share of the distance at most, so it does not go through the scenery */
 	private static final double LIFT_SHARE = 0.15;
 	private static final double LIFT_MAX = 450;
@@ -158,7 +163,10 @@ final class FlyTour {
 		from.pose().at(1, this.eye, this.look);
 		next.pose().at(0, this.otherEye, this.otherLook);
 		double far = Math.max(Math.max(distance(this.eye, this.otherEye), distance(this.look, this.otherLook)), 2 * lift);
-		return Math.max(CROSSFADE_MIN, Math.min(CROSSFADE_MAX, far / CROSSFADE_UNITS));
+		// The fastest moment of the crossfade is its middle, where the ease is steepest (1.5 times the average) and the rise too
+		double rise = Math.max(Math.min(LIFT_MAX, LIFT_SHARE * Math.hypot(this.eye[0] - this.otherEye[0], this.eye[2] - this.otherEye[2])), lift);
+		double fastest = 1.5 * Math.max(Math.hypot(distance(this.eye, this.otherEye), Math.PI * rise), distance(this.look, this.otherLook));
+		return Math.max(Math.max(CROSSFADE_MIN, Math.min(CROSSFADE_MAX, far / CROSSFADE_UNITS)), fastest / CROSSFADE_SPEED);
 	}
 
 	/**

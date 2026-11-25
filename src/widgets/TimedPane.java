@@ -36,13 +36,7 @@ public abstract class TimedPane extends Pane {
 	protected TimedPane(double maxDelta) {
 		this.maxDelta = maxDelta;
 		this.setMouseTransparent(true);
-		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
-			if (newScene == null) {
-				this.timer.stop();
-			} else {
-				this.timer.start();
-			}
-		});
+		OnScreen.whileShown(this, this.timer::start, this.timer::stop);
 	}
 
 	/**

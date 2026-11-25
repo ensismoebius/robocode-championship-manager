@@ -25,6 +25,7 @@ import model.Author;
 import model.Opponent;
 import widgets.ArcadeBackground;
 import widgets.Confetti;
+import widgets.OnScreen;
 import widgets.Sfx;
 import widgets.Sound;
 import widgets.Theme;
@@ -156,7 +157,7 @@ public class ShowOponent extends StackPane {
 		scroll.setFromY(0);
 		scroll.setToY(-2000);
 		scroll.setCycleCount(Animation.INDEFINITE);
-		scroll.play();
+		OnScreen.animate(sourcePane, scroll);
 		return sourcePane;
 	}
 

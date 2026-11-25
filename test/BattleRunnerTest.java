@@ -181,9 +181,12 @@ class BattleRunnerTest {
 
 		FxSupport.runVoid(() -> runner.onBattleSucceeded(outcome, next, players, arena));
 
-		// The result is saved at once and shown when the replay of the arena ends
+		// The result is saved at once and shown when the replay of the arena ends: the operator skips it, so the test does not wait
+		// for the whole presentation and battle
 		assertEquals(before + 1, FxSupport.run(() -> host.championship.getResults().size()));
-		for (long waited = 0; waited < 90000 && !(FxSupport.run(() -> GameWindow.getScreen()) instanceof ShowOponent); waited += 100) {
+		assertFalse(FxSupport.run(() -> GameWindow.getScreen()) instanceof ShowOponent, "the result waits for the replay");
+		for (long waited = 0; waited < 30000 && !(FxSupport.run(() -> GameWindow.getScreen()) instanceof ShowOponent); waited += 100) {
+			ArenaSimulation.skip(arena);
 			FxSupport.sleep(100);
 		}
 		assertInstanceOf(ShowOponent.class, FxSupport.run(() -> GameWindow.getScreen()));

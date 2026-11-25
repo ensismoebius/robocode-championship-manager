@@ -4,7 +4,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
@@ -109,7 +108,7 @@ public class Sfx {
 	/** Writes the samples to an audio line and waits until they are played. */
 	private static void write(byte[] pcm) {
 		AudioFormat format = new AudioFormat(Synth.RATE, 16, 1, true, false);
-		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
+		try (SourceDataLine line = AudioOut.line(format)) {
 			line.open(format);
 			line.start();
 			line.write(pcm, 0, pcm.length);

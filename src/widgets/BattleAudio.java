@@ -10,7 +10,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
@@ -419,7 +418,7 @@ public final class BattleAudio {
 	/** The mixer loop: fills the audio line with the music and the sounds in progress. */
 	private void run() {
 		AudioFormat format = new AudioFormat(Synth.RATE, 16, 2, true, false);
-		try (SourceDataLine line = AudioSystem.getSourceDataLine(format)) {
+		try (SourceDataLine line = AudioOut.line(format)) {
 			// Small buffer: the effects must sound with the images
 			line.open(format, CHUNK * 4 * 6);
 			line.start();

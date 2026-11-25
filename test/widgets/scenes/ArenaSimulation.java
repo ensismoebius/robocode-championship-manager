@@ -106,6 +106,27 @@ public final class ArenaSimulation {
 	 */
 	private static long clock;
 
+	/**
+	 * Skips what the arena is showing, as the operator does with the keys: the whole presentation of the robots (Escape), the fly
+	 * by, the replay, or the rest of the battle (Enter).
+	 */
+	public static void skip(BattleArena3D arena) {
+		FxSupport.runVoid(() -> arena.controls.skip(arena.phase == Phase.SHOWCASE));
+	}
+
+	/**
+	 * Hurries the battle the arena shows, as the operator can: the presentation, the fly by and the replays are skipped, and the
+	 * battle itself, which is still fought to the end, is played at the fastest speed.
+	 */
+	public static void hurry(BattleArena3D arena) {
+		FxSupport.runVoid(() -> {
+			arena.speed = BattleArena3D.SPEEDS.length - 1;
+			if (arena.phase == Phase.SHOWCASE || arena.phase == Phase.FLYBY || arena.phase == Phase.FREEZE || arena.phase == Phase.REPLAY) {
+				arena.controls.skip(arena.phase == Phase.SHOWCASE);
+			}
+		});
+	}
+
 	/** Advances the arena by frames of the given length, on the JavaFX thread. */
 	static void frames(BattleArena3D arena, int frames, double seconds) {
 		FxSupport.runVoid(() -> {

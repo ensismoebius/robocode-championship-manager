@@ -137,7 +137,7 @@ public class Sound {
 				try (AudioInputStream decoded = Sound.decode(this.audio)) {
 					AudioFormat format = decoded.getFormat();
 					if (line == null) {
-						line = AudioSystem.getSourceDataLine(format);
+						line = AudioOut.line(format);
 						line.open(format);
 						line.start();
 					}

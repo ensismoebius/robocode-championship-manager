@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import javafx.animation.AnimationTimer;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
@@ -35,6 +36,7 @@ import utils.robocode.BattleControl;
 import utils.robocode.BattleRecording;
 import utils.robocode.BattleRecording.Turn;
 import widgets.BattleAudio;
+import widgets.OnScreen;
 import widgets.Song;
 import widgets.Sfx;
 import widgets.Sound;
@@ -201,6 +203,8 @@ public class BattleArena3D extends StackPane {
 
 	// Playback
 	BattleRecording recording;
+	/** Whether the arena is in a window that is showing */
+	private final ObservableValue<Boolean> onScreen = OnScreen.of(this);
 	double fieldWidth = 800;
 	double fieldHeight = 600;
 	final Map<Integer, RobotView> robots = new HashMap<Integer, RobotView>();
@@ -308,9 +312,9 @@ public class BattleArena3D extends StackPane {
 		this.rounds.beginLoading();
 		this.showcase.buildPreviews();
 
-		// Runs only while on the screen
-		this.sceneProperty().addListener((observable, oldScene, newScene) -> {
-			if (newScene == null) {
+		// Runs only while on the screen: out of it, or in a window that was closed, it does not animate nor sound, and can be let go
+		this.onScreen.addListener((observable, was, shown) -> {
+			if (!shown) {
 				this.timer.stop();
 				this.audio.stop();
 				this.stopShowcaseMusic();
@@ -318,6 +322,9 @@ public class BattleArena3D extends StackPane {
 				this.timer.start();
 				// The robots are presented while the battle is fought
 				this.showcase.startPreview();
+				if (this.recording != null && this.phase != Phase.FINISHED) {
+					this.audio.start();
+				}
 			}
 		});
 	}
@@ -378,8 +385,15 @@ public class BattleArena3D extends StackPane {
 		}
 		this.commentary = new BattleCommentary(names, this.random);
 
-		this.audio.start();
+		this.startAudio();
 		this.showcase.recorded();
+	}
+
+	/** Starts the sound of the battle, if the arena is on the screen: else it starts when the arena is shown. */
+	void startAudio() {
+		if (this.onScreen.getValue()) {
+			this.audio.start();
+		}
 	}
 
 	/** The fighter that drives the given robot of the recording, or null when it is not one of them. */

@@ -88,17 +88,17 @@ public class Theme {
 	// ------------------------------------------------------------- animations
 
 	/**
-	 * Blinks forever, like "PRESS START"
+	 * Blinks forever, like "PRESS START", while it is on the screen
 	 */
 	public static void blink(Node node) {
 		Timeline blink = new Timeline(new KeyFrame(Duration.ZERO, new KeyValue(node.opacityProperty(), 1)), new KeyFrame(Duration.millis(550), new KeyValue(node.opacityProperty(), 1)),
 				new KeyFrame(Duration.millis(600), new KeyValue(node.opacityProperty(), 0.1)), new KeyFrame(Duration.millis(1000), new KeyValue(node.opacityProperty(), 0.1)));
 		blink.setCycleCount(Animation.INDEFINITE);
-		blink.play();
+		OnScreen.animate(node, blink);
 	}
 
 	/**
-	 * Neon glow that breathes forever
+	 * Neon glow that breathes forever, while it is on the screen
 	 */
 	public static DropShadow pulseGlow(Node node, Color color) {
 		DropShadow glow = new DropShadow(20, color);
@@ -108,7 +108,7 @@ public class Theme {
 				new KeyFrame(Duration.millis(800), new KeyValue(glow.radiusProperty(), 34, Interpolator.EASE_BOTH)));
 		pulse.setAutoReverse(true);
 		pulse.setCycleCount(Animation.INDEFINITE);
-		pulse.play();
+		OnScreen.animate(node, pulse);
 		return glow;
 	}
 

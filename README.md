@@ -503,7 +503,7 @@ O workflow `.github/workflows/installers.yml` gera os instaladores de Linux, Win
 | `src/utils` | Utilitários: configuração, banco de dados, batalhas... |
 | `src/widgets` | Controles, janelas e cenas do programa (as arenas 3D estão em `widgets/scenes` e as músicas em `BattleAudio*.java`) |
 | `RobocodeStarter/` | Versão compilada do programa que controla as batalhas do Robocode (fonte no submódulo `robocodebattlestarter`) |
-| `test/` | Testes automáticos, rodados com `mvn test` |
+| `test/` | Testes automáticos, rodados com `mvn test`: sem som e, no Linux com o Xvfb instalado, numa tela virtual, sem abrir janelas (`mvn test -Dgui` mostra as janelas) |
 
 ### O iniciador de batalhas
 
