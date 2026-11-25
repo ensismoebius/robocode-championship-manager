@@ -5,12 +5,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.platform.launcher.LauncherSession;
 import org.junit.platform.launcher.LauncherSessionListener;
+import widgets.AudioOut;
 
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The virtual screen the tests run on, so their windows do not open on the desktop of whoever runs them. The build (the profile
- * headless of the pom) points the tests to the display in the system property test.xvfb; before the first test this starts an Xvfb
+ * What the tests need before the first one runs, however they are run (by Maven or by an editor): no sound, a home of their own (so
+ * they never touch the configuration of whoever runs them), and the virtual screen they run on, so their windows do not open on the
+ * desktop. The display comes from the environment (DISPLAY), which the build (the profile headless of the pom) and the test
+ * configuration of the editor (.vscode/settings.json) point to the display in the system property test.xvfb; this starts an Xvfb
  * there, if none is running yet. It is stopped only after the tests have ended, by a watcher that waits for their process to end,
  * even when it crashes: stopped while JavaFX is still on it, the toolkit would abort the process. Without the property the tests
  * use the screen they are given.
@@ -27,6 +30,7 @@ public class HeadlessDisplay implements LauncherSessionListener {
 
 	@Override
 	public void launcherSessionOpened(LauncherSession session) {
+		quietAndAtHome();
 		String display = System.getProperty("test.xvfb");
 		if (display == null || display.isBlank() || this.server != null) {
 			return;
@@ -52,6 +56,26 @@ public class HeadlessDisplay implements LauncherSessionListener {
 			throw new IllegalStateException("Não foi possível iniciar o Xvfb para os testes (use mvn test -Dgui para usar a tela)", couldNotStart);
 		} catch (InterruptedException interrupted) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	/**
+	 * The tests play no sound, and their home is target/test-home of the project, unless who runs them says otherwise: the
+	 * configuration and the database of the program are in the home, and the tests write them.
+	 */
+	private static void quietAndAtHome() {
+		if (System.getProperty(AudioOut.PROPERTY) == null) {
+			System.setProperty(AudioOut.PROPERTY, "off");
+		}
+		String home = System.getenv("HOME");
+		if (home == null || Path.of(System.getProperty("user.home")).toAbsolutePath().equals(Path.of(home).toAbsolutePath())) {
+			Path own = Path.of("target", "test-home").toAbsolutePath();
+			try {
+				Files.createDirectories(own);
+			} catch (IOException ignored) {
+				// The tests that write there will say so
+			}
+			System.setProperty("user.home", own.toString());
 		}
 	}
 

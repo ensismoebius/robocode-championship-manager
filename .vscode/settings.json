@@ -1,3 +1,19 @@
 {
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "automatic",
+    // The tests run as with Maven: on a virtual screen (Xvfb, started by test/support/HeadlessDisplay), silent, with a home of
+    // their own. "Testes com janelas" shows the windows.
+    "java.test.config": [
+        {
+            "name": "Testes numa tela virtual",
+            "workingDirectory": "${workspaceFolder}",
+            "env": { "DISPLAY": ":87" },
+            "vmArgs": ["-Dtest.xvfb=:87", "-Drobocode.audio=off", "-Duser.home=${workspaceFolder}/target/test-home"]
+        },
+        {
+            "name": "Testes com janelas",
+            "workingDirectory": "${workspaceFolder}",
+            "vmArgs": ["-Drobocode.audio=off", "-Duser.home=${workspaceFolder}/target/test-home"]
+        }
+    ],
+    "java.test.defaultConfig": "Testes numa tela virtual"
 }
