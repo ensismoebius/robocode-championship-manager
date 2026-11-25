@@ -210,7 +210,7 @@ class FlyTourTest {
 
 	@Test
 	void theTourIsSmoothFromStopToStopAndWhenItGoesAround() {
-		for (String style : new String[] { "MIDDLE_EAST", "JUNGLE", "EDEN_SOLAR" }) {
+		for (String style : new String[] { "MIDDLE_EAST", "JUNGLE", "VOLCANO", "EDEN_SOLAR" }) {
 			FlyTour tour = tourOf(style);
 			double[] biggest = new double[1];
 			FxSupport.runVoid(() -> biggest[0] = biggestStep(tour));

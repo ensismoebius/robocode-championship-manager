@@ -120,6 +120,15 @@ final class FlyTour {
 				this.stops.add(sweep);
 			} else {
 				this.stops.add(sweep);
+				if (host.style == ArenaStyle.VOLCANO) {
+					// A cave of the highlands, where the bats live, before the critter by the field
+					double[] eye = new double[3];
+					sweep.pose().at(1, eye, new double[3]);
+					Stop cave = VolcanoTour.cave(host.volcano.highlands().caves(), host.volcano.highlands().peaks(), eye);
+					if (cave != null) {
+						this.stops.add(cave);
+					}
+				}
 				this.critterStop(host, mirrorX, mirrorZ);
 			}
 		}

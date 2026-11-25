@@ -19,8 +19,9 @@ import javafx.scene.shape.TriangleMesh;
 /**
  * This program is licensed under GPLv3 see the README file for more information
  *
- * The volcano arena: the field of gray basalt plates over the lava sea, the moat
- * and the rivers of lava, the volcanoes around the field, and a sky of ash lit
+ * The volcano arena: the field of gray basalt plates over the lake of lava, the moat
+ * and the rivers of lava, the volcanoes around the field, the cliffs and the caves of
+ * the highlands around the lake (see {@link VolcanoHighlands}), and a sky of ash lit
  * red by the lava. The lava flows
  * themselves are shared with the jungle rivers and are drawn by the
  * {@link BattleArena3D}.
@@ -30,6 +31,8 @@ import javafx.scene.shape.TriangleMesh;
 final class VolcanoArena {
 
 	private final BattleArena3D host;
+	/** The shore, the cliffs, the caves and the mountains around the lake */
+	private final VolcanoHighlands highlands;
 	/** The embers in the air, in layers that rise each at its own pace and fade in and out, so they never jump back in sight */
 	private final List<MeshView> emberLayers = new ArrayList<>();
 	private final List<PhongMaterial> emberLights = new ArrayList<>();
@@ -43,6 +46,12 @@ final class VolcanoArena {
 	/** Creates the volcano of the arena, drawn in the host scene. */
 	VolcanoArena(BattleArena3D host) {
 		this.host = host;
+		this.highlands = new VolcanoHighlands(host);
+	}
+
+	/** The highlands around the lake, with their caves. */
+	VolcanoHighlands highlands() {
+		return this.highlands;
 	}
 
 	private static final Image LAVA_TEXTURE = LavaTexture.create(0);
@@ -67,8 +76,10 @@ final class VolcanoArena {
 		this.moat(width, height);
 		this.rivers(width, height, rocks);
 		this.lavaSea();
-		this.volcanoes(rocks);
+		List<VolcanoHighlands.Peak> peaks = this.volcanoes(rocks);
 		this.embers(width, height, rocks);
+		// Its own randomness, so the volcanoes and the embers stay where they were
+		this.highlands.build(width, height, peaks, new Random(29));
 	}
 
 	/**
@@ -85,7 +96,8 @@ final class VolcanoArena {
 			LowPoly specks = new LowPoly();
 			for (int ember = 0; ember < EMBERS; ember++) {
 				double angle = rocks.nextDouble() * Math.PI * 2;
-				double distance = clear + Math.pow(rocks.nextDouble(), 1.5) * 4800;
+				// Over the lake, short of the cliffs, where they would be hidden
+				double distance = clear + Math.pow(rocks.nextDouble(), 1.5) * (VolcanoHighlands.SHORE - 100 - clear);
 				double size = 1.6 + distance * 0.0011;
 				specks.box(Math.cos(angle) * distance, -(20 + rocks.nextDouble() * 650), Math.sin(angle) * distance, size, size, size);
 			}
@@ -103,6 +115,7 @@ final class VolcanoArena {
 
 	/** The embers rise, each layer fading in as it starts and out as it ends, and starting again from below, unseen. */
 	void update(double deltaTime) {
+		this.highlands.update(deltaTime);
 		for (int layer = 0; layer < this.emberLayers.size(); layer++) {
 			// The time can step back, when the replay goes back: the phase stays between 0 and 1
 			double phase = ((this.emberPhases[layer] + deltaTime / EMBER_SECONDS) % 1 + 1) % 1;
@@ -252,25 +265,30 @@ final class VolcanoArena {
 		}
 	}
 
-	/** The sea of lava that surrounds everything, drifting, with a cooler crust */
+	/** The lake of lava around the plateau, drifting, with a cooler crust; it ends under the shore of the highlands */
 	void lavaSea() {
-		// The sea of lava, drifting, with a cooler crust: bright, it would steal the
-		// show and shimmer far away
+		// Drifting, with a cooler crust: bright, it would steal the show and shimmer far away
 		PhongMaterial crust = new PhongMaterial(Color.WHITE);
 		crust.setDiffuseMap(CRUST_TEXTURE);
 		crust.setSelfIlluminationMap(CRUST_TEXTURE);
 		crust.setSpecularColor(Color.BLACK);
-		double sea = ArenaMaterials.GROUND_REACH;
+		double sea = VolcanoHighlands.LAKE;
 		host.lavaFlows.flow(new double[][] { { -sea, 7, -sea }, { sea, 7, -sea }, { sea, 7, sea }, { -sea, 7, sea } }, 0.012, 0.007, crust, 420);
 	}
 
-	/** Volcanoes on the horizon: stacked tiers make a cone, glowing on the top */
-	void volcanoes(Random rocks) {
+	/**
+	 * Volcanoes in the lake, short of its shore: stacked tiers make a cone, glowing on the top. Far enough from the field that the
+	 * sweep of the tour around it passes beside them, not through them.
+	 *
+	 * @return where each one stands and how wide its foot is
+	 */
+	List<VolcanoHighlands.Peak> volcanoes(Random rocks) {
+		List<VolcanoHighlands.Peak> peaks = new ArrayList<>();
 		PhongMaterial rock = new PhongMaterial(Color.web("#1c110e"));
 		rock.setSpecularColor(Color.web("#2c1a14"));
 		for (int index = 0; index < 9; index++) {
 			double angle = index * Math.PI * 2 / 9 + rocks.nextDouble() * 0.4;
-			double distance = 1400 + rocks.nextDouble() * 700;
+			double distance = 1700 + rocks.nextDouble() * 350;
 			double height = 220 + rocks.nextDouble() * 420;
 			double radius = 110 + rocks.nextDouble() * 130;
 			double posX = Math.cos(angle) * distance;
@@ -283,7 +301,9 @@ final class VolcanoArena {
 			crater.setTranslateZ(posZ);
 			crater.setTranslateY(5 - height - 1);
 			host.glowing.getChildren().add(crater);
+			peaks.add(new VolcanoHighlands.Peak(posX, posZ, radius));
 		}
+		return peaks;
 	}
 
 	/** The cone of a volcano: eight tiers, each one a little narrower than the one below */
